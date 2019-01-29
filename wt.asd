@@ -6,43 +6,42 @@
 (defsystem wt
     :version "0.0.0"
     :author "Xiangyu He"
-    :mailto "hexiangyu@coobii.com"
-    :defsystem-depends-on (protobuf)
+    :mailto "xh@coobii.com"
     :depends-on (:alexandria
                  :serapeum
                  :optima.ppcre
                  :quri
-                 :rfc2388
                  :log4cl
                  :routes
                  :metabang-bind
+                 :ng
                  :closer-mop
                  :cl-json
                  :cl-arrows
                  :local-time
                  :cl-change-case
-                 :lparallel
-                 :usocket
-                 :protobuf
-                 :flexi-streams
-                 :com.gigamonkeys.binary-data)
+                 :flexi-streams)
     :serial t
-    :components ((:module "proto"
-                          :components ((:protobuf-source-file "wt_proto_http")))
-                 (:file "package")
-                 (:file "request")
-                 (:file "response")
+    :components ((:file "package")
 
                  ;; Foundation
-                 (:file "handler")
+                 (:file "request")
+                 (:file "response")
                  (:file "router")
-                 (:file "listener")
+                 (:file "handler")
+
+                 ;; NG
+                 (:file "ng-integration")
 
                  ;; HTML Generation
                  (:file "html-escape")
                  (:file "html-elements")
                  (:file "html")
+
+                 ;; From
                  (:file "form-builder")
+
+                 ;; List
                  (:file "list-builder")))
 
 (loop for p in (directory (merge-pathnames "vendor/*.*" (component-pathname (find-system :wt))))

@@ -15,9 +15,10 @@
 (defun escape-raw-text (value &optional stream)
   (escape value (lambda (c)
                   (case c
-                    (#\< "&lt;")
-                    (#\> "&gt;")
-                    (#\/ "&#x2F;")))
+                    ;; (#\< "&lt;") ;; 这个会导致 JavaScript 中的 < 出问题
+                    ;; (#\> "&gt;");; 这个会导致 JavaScript 中的 > 出问题
+                    ;; (#\/ "&#x2F;") ;; 这个会导致 JavaScript 中的 Comment 出问题
+                    ))
           :stream stream))
 
 (defun escape-escapable-raw-text (value &optional stream)

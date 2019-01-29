@@ -1,19 +1,5 @@
 (in-package :cl-user)
 
-(defpackage :wt.http
-  (:use :cl :alexandria)
-  (:import-from :wt.proto.http
-                :request :response :response-headers-entry)
-  (:export :request
-           :request-local-address :request-local-port
-           :request-remote-address :request-remote-port
-           :request-scheme :request-method :request-path :request-query
-           :request-version :request-headers :request-body
-           :request-query-parameters :request-body-parameters
-           :response
-           :response-type :response-code :response-headers
-           :response-body :response-path))
-
 (defpackage :wt.html
   (:use :cl :alexandria)
   (:import-from :serapeum
@@ -49,6 +35,9 @@
   (:use :cl
         :alexandria
         :wt.html)
+  (:import-from :ng
+                :http-request
+                :http-response)
   (:import-from :optima
                 :match)
   (:import-from :serapeum
@@ -57,43 +46,11 @@
   (:import-from :cl-ppcre
                 :regex-replace)
   (:import-from :cl-change-case
-                :param-case :camel-case :snake-case)
+                :param-case :camel-case :snake-case :header-case)
   (:import-from :closer-mop
                 :class-precedence-list)
-  (:import-from :lparallel
-                :*kernel*
-                :make-kernel
-                :end-kernel
-                :make-channel
-                :invoke-transfer-error
-                :submit-task
-                :task-handler-bind)
-  (:import-from :com.gigamonkeys.binary-data
-                :read-value
-                :write-value)
-  (:import-from :com.gigamonkeys.binary-data.common-datatypes
-                :u4)
-  (:import-from :wt.http
-                :request
-                :request-scheme
-                :request-method
-                :request-path
-                :request-query
-                :request-version
-                :request-headers
-                :request-body
-                :request-query-parameters
-                :request-body-parameters
-                :response
-                :response-type
-                :response-code
-                :response-headers
-                :response-body
-                :response-path)
-  (:export
-   :*request*
-   :*response*
-   :define-listener
-   :start-listener
-   :stop-listener
-   :define-handler))
+  (:export :handler
+           :define-handler
+           :call-with-request
+           :*request*
+           :*response*))

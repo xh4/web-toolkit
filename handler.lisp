@@ -2,17 +2,17 @@
 
 (defvar *request* nil)
 
-(defvar *request-headers* nil)
-
-(defvar *request-query-parameters* nil)
-
-(defvar *request-body-parameters* nil)
-
 (defvar *response* nil)
 
 (defclass handler ()
-  ((bindings :initarg :bindings :initform nil :accessor handler-bindings)
-   (thunk :initarg :thunk :initform (lambda ()) :accessor handler-thunk)))
+  ((bindings
+    :initarg :bindings
+    :initform nil
+    :accessor handler-bindings)
+   (function
+    :initarg :function
+    :initform (lambda ())
+    :accessor handler-function)))
 
 (defun option-form-p (form)
   (and (consp form) (keywordp (car form))))
@@ -61,20 +61,6 @@
      when value
      do (return (cdr value))))
 
-(defun request-header (name)
-  (assocdr-cases name *request-headers*))
-
-(defun request-query-parameter (name)
-  (assocdr-cases name *request-query-parameters*))
-
-(defun request-body-parameter (name)
-  (assocdr-cases name *request-body-parameters*))
-
-(defun fetch-parameter (name)
-  (or (request-header name)
-      (request-query-parameter name)
-      (request-body-parameter name)))
-
 (defun make-binding-let-form (binding)
   (let ((symbol (getf binding :symbol)))
     `(,symbol (fetch-parameter ,(make-keyword symbol)))))
@@ -96,16 +82,37 @@
          (defparameter ,name
            (make-instance ',name
                           :bindings ',bindings
-                          :thunk (lambda ()
-                                   (let (,@(loop for binding in bindings
-                                              collect (make-binding-let-form binding)))
-                                     ,@lambda-forms))))))))
+                          :function (lambda ()
+                                      (let (,@(loop for binding in bindings
+                                                 collect (make-binding-let-form binding)))
+                                        ,@lambda-forms))))))))
 
-(defgeneric call-with-request (handler request)
-  (:method (handler request)
-    (let ((thunk (handler-thunk handler)))
-      (let ((*request* request)
-            (*request-headers* (request-headers request))
-            (*request-query-parameters* (request-query-parameters request))
-            (*request-body-parameters* (request-body-parameters request)))
-        (funcall thunk)))))
+;; Note: 返回结果中包含 HANDLER 自身的 Class
+;; TODO: 参数对于 Class 和 Instance 都适用
+(defun handler-class-precedence-list (handler)
+  (subtypep (type-of handler) 'handler)
+  (let ((classes (class-precedence-list (class-of handler))))
+    (remove-if-not
+     (lambda (class)
+       (subtypep class 'handler))
+     classes)))
+
+;; Note: 返回结果中包含 HANDLER 自身
+;; TODO: 参数对于 Class 和 Instance 都适用
+(defun handler-precedence-list (handler)
+  (mapcan
+   (lambda (handler-class)
+     (let ((handler-name (class-name handler-class)))
+       (when (boundp handler-name)
+         (list (symbol-value handler-name)))))
+   (handler-class-precedence-list handler)))
+
+(defun call-with-request (handler request &optional (response *response*))
+  (let ((*request* request)
+        (*response* response))
+    (let ((handlers (reverse (handler-precedence-list handler))))
+      (loop for handler in handlers
+         for function = (handler-function handler)
+         do
+           (funcall function)))
+    *response*))

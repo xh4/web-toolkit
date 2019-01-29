@@ -17,7 +17,7 @@
 start(_StartType, _StartArgs) ->
     Dispatch = cowboy_router:compile([
                                       {'_',
-                                       [{"/static/[...]", cowboy_static, {dir, "/home/xh/rb/static/",
+                                       [{"/static/[...]", cowboy_static, {dir, "/home/xh/rb/master/lisp/static/",
                                                                           [{mimetypes, cow_mimetypes, all}]}},
                                         {'_', wt_handler, []}]
                                       }
