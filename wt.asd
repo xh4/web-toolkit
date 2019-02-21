@@ -14,7 +14,6 @@
                  :log4cl
                  :routes
                  :metabang-bind
-                 :ng
                  :closer-mop
                  :cl-json
                  :cl-arrows
@@ -31,7 +30,7 @@
                  (:file "handler")
 
                  ;; NG
-                 (:file "ng-integration")
+                 ;; (:file "ng-integration")
 
                  ;; HTML Generation
                  (:file "html-escape")
