@@ -11,5 +11,6 @@
                           :serial t
                           :components ((:file "package")
                                        (:file "escape")
-                                       (:file "elements")
+                                       (:file "tag")
+                                       (:file "element")
                                        (:file "html")))))
