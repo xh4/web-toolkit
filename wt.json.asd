@@ -1,7 +1,7 @@
 ;;;; -*- Mode: LISP -*-
 
 (defsystem wt.json
-    :version "0.0.0"
+    :version "0.9.0"
     :author "Xiangyu He"
     :mailto "xh@coobii.com"
     :depends-on (:cl-json)
