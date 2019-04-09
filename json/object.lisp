@@ -3,7 +3,7 @@
 (eval-when (:load-toplevel :compile-toplevel :execute)
   (defclass fluid-class (standard-class) ()))
 
-(finalize-inheritance
+(clos:finalize-inheritance
  (defclass fluid-object (standard-object)
    ((%slots
      :initarg :%slots
