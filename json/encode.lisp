@@ -1,8 +1,8 @@
-(in-package :wt.json)
+(in-package :json)
 
-(defmethod json:encode-json ((object fluid-object) &optional stream)
-  (let ((slots-hash-table (slot-value object '%slots)))
-    (cl-json:encode-json slots-hash-table stream)))
+(defmethod cl-json:encode-json ((object object) &optional stream)
+  (let ((pairs (slot-value object 'pairs)))
+    (cl-json:encode-json pairs stream)))
 
 (defun encode-json (value &optional target &key)
   (typecase target

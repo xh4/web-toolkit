@@ -3,7 +3,9 @@
 (defpackage :json
   (:nicknames :wt.json)
   (:use :cl)
+  (:shadow :get)
   (:export :encode-json
            :decode-json
            :object
-           :alist-object))
+           :alist-object
+           :get))

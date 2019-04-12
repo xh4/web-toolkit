@@ -1,13 +1,10 @@
-(in-package :wt.json)
+(in-package :json)
 
 (defun accumulator-get-object ()
   "Return a CLOS object, using keys and values accumulated so far in
 the list accumulator as slot names and values, respectively. Create a OBJECT with slots interned in *JSON-SYMBOLS-PACKAGE*."
-  (let ((bindings (cdr json::*accumulator*)))
-    (let ((object (make-instance 'fluid-object)))
-      (loop for (key . value) in bindings
-         do (setf (slot-value object key) value))
-      object)))
+  (let ((bindings (cdr cl-json::*accumulator*)))
+    (alist-object bindings)))
 
 (defun set-decoder-clos-semantics ()
   "Set the decoder semantics to the following:
@@ -19,25 +16,25 @@ the function *JSON-IDENTIFIER-NAME-TO-LISP*.  Otherwise, a
 OBJECT is constructed whose slot names are interned in
 *JSON-SYMBOLS-PACKAGE*."
   (cl-json::set-custom-vars
-   :integer #'json::parse-number
-   :real #'json::parse-number
-   :boolean #'json::json-boolean-to-lisp
-   :beginning-of-array #'json::init-accumulator
-   :array-member #'json::accumulator-add
-   :end-of-array #'json::accumulator-get-sequence
+   :integer #'cl-json::parse-number
+   :real #'cl-json::parse-number
+   :boolean #'cl-json::json-boolean-to-lisp
+   :beginning-of-array #'cl-json::init-accumulator
+   :array-member #'cl-json::accumulator-add
+   :end-of-array #'cl-json::accumulator-get-sequence
    :array-type 'list
-   :beginning-of-object #'json::init-accumulator
-   :object-key #'json::accumulator-add-key
-   :object-value #'json::accumulator-add-value
+   :beginning-of-object #'cl-json::init-accumulator
+   :object-key #'cl-json::accumulator-add-key
+   :object-value #'cl-json::accumulator-add-value
    :end-of-object #'accumulator-get-object
-   :beginning-of-string #'json::init-string-stream-accumulator
-   :string-char #'json::string-stream-accumulator-add
-   :end-of-string #'json::string-stream-accumulator-get
-   :aggregate-scope (union json::*aggregate-scope-variables*
-                           '(cl-json::*accumulator* json::*accumulator-last*))
-   :object-scope (union json::*object-scope-variables*
+   :beginning-of-string #'cl-json::init-string-stream-accumulator
+   :string-char #'cl-json::string-stream-accumulator-add
+   :end-of-string #'cl-json::string-stream-accumulator-get
+   :aggregate-scope (union cl-json::*aggregate-scope-variables*
+                           '(cl-json::*accumulator* cl-json::*accumulator-last*))
+   :object-scope (union cl-json::*object-scope-variables*
                         '(cl-json::*json-array-type*))
-   :internal-decoder #'json::decode-json))
+   :internal-decoder #'cl-json::decode-json))
 
 (defmacro with-decoder-clos-semantics (&body body)
   "Execute BODY in a dynamic environement where the decoder semantics

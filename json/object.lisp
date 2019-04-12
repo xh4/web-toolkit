@@ -1,16 +1,11 @@
-(in-package :wt.json)
+(in-package :json)
 
-(eval-when (:load-toplevel :compile-toplevel :execute)
-  (defclass fluid-class (standard-class) ()))
+(defclass object ()
+  ((pairs
+    :initarg :pairs
+    :initform (make-hash-table :test 'equal))))
 
-(clos:finalize-inheritance
- (defclass fluid-object (standard-object)
-   ((%slots
-     :initarg :%slots
-     :initform (make-hash-table :test 'equal)))
-   (:metaclass fluid-class)))
-
-(defun pprint-object (list)
+(defun pprint-object (list &optional *standard-output*)
   (let ((*print-case* :downcase)
         (*print-pretty* t))
     (pprint-logical-block (nil list :prefix "(" :suffix ")")
@@ -27,57 +22,42 @@
               (pprint-object value))
              (t (write value)))))))
 
-(defmethod print-object ((object fluid-object) stream)
+(defmethod print-object ((object object) stream)
   (labels ((value-expr (value)
              (typecase value
-               (fluid-object
-                (let ((slots-hash-table (slot-value value '%slots)))
-                  (loop for key being the hash-keys of slots-hash-table
+               (object
+                (let ((pairs-hash-table (slot-value value 'pairs)))
+                  (loop for key being the hash-keys of pairs-hash-table
                      using (hash-value value)
                      append (list key (value-expr value)) into body
                      finally (return `(object ,@body)))))
                (t value))))
-    (pprint-object (value-expr object))))
+    (pprint-object (value-expr object) stream)))
 
-(defun slot-name-to-object-key (name)
+(defun lisp-name-to-object-key (name)
   (typecase name
     (string name)
-    (symbol (json::lisp-to-camel-case (symbol-name name)))))
+    (symbol (cl-json::lisp-to-camel-case (symbol-name name)))))
 
-(defmethod clos:make-instance ((class fluid-class) &rest initargs)
-  (let ((instance (call-next-method class)))
-    (loop for (name value) on initargs by 'cddr
-       do (setf (slot-value instance (slot-name-to-object-key name)) value))
-    instance))
-
-(defmethod clos:slot-value-using-class ((class fluid-class) instance slot-name)
-  (if (eq slot-name '%slots)
-      (call-next-method class instance '%slots)
-      (let ((slots-hash-table (slot-value instance '%slots)))
-        (gethash (slot-name-to-object-key slot-name) slots-hash-table))))
-
-(defmethod (setf clos:slot-value-using-class) (new-value (class fluid-class) instance slot-name)
-  (let ((slots-hash-table (slot-value instance '%slots)))
-    (setf (gethash (slot-name-to-object-key slot-name) slots-hash-table)
-          new-value)))
-
-(defmethod clos:slot-boundp-using-class ((class fluid-class) instance slot-name)
-  (if (eq slot-name '%slots)
-      t
-      (let ((slots-hash-table (slot-value instance '%slots)))
-        (multiple-value-bind (value present-p)
-            (gethash (slot-name-to-object-key slot-name) slots-hash-table)
-          (declare (ignore value))
-          present-p))))
-
-(defmethod clos:slot-makunbound-using-class ((class fluid-class) instance slot-name)
-  (let ((slots-hash-table (slot-value instance '%slots)))
-    (remhash (slot-name-to-object-key slot-name) slots-hash-table)))
-
-(defun object (&rest initargs)
-  (apply 'make-instance 'fluid-object initargs))
+(defun object (&rest args)
+  (when (oddp (length args))
+    (error "Expect even arguments when initialize object, got ~D" (length args)))
+  (let* ((object (make-instance 'object))
+         (pairs (slot-value object 'pairs)))
+    (loop for (name0 value0) on args by 'cddr
+       for name = (typecase name0
+                    (string name0)
+                    (symbol (lisp-name-to-object-key name0))
+                    (t (error "Value ~A of type ~A can't be a name of object" name0 (type-of name0))))
+       for value = (typecase value0
+                     ((or string symbol
+                          sequence object) value0)
+                     (t (format nil "~A" value0)))
+       do
+         (setf (gethash name pairs) value))
+    object))
 
 (defun alist-object (alist)
-  (let ((initargs (loop for (name . value) in alist
+  (let ((values (loop for (name . value) in alist
                      append (list name value))))
-    (apply 'make-instance 'fluid-object initargs)))
+    (apply 'object values)))
