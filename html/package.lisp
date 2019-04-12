@@ -1,6 +1,7 @@
 (in-package :cl-user)
 
-(defpackage :wt.html
+(defpackage :html
+  (:nicknames :wt.html)
   (:use :cl :alexandria)
   (:export :html
            :html-string

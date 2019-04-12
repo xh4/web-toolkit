@@ -12,3 +12,10 @@
                                      (:file "object")
                                      (:file "encode")
                                      (:file "decode")))))
+
+(push
+ (merge-pathnames
+  "json/cl-json-20141217-git/"
+  (asdf:component-pathname
+   (asdf:find-system "wt.json")))
+ asdf:*central-registry*)

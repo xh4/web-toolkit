@@ -18,7 +18,7 @@ the list accumulator as slot names and values, respectively. Create a OBJECT wit
 the function *JSON-IDENTIFIER-NAME-TO-LISP*.  Otherwise, a
 OBJECT is constructed whose slot names are interned in
 *JSON-SYMBOLS-PACKAGE*."
-  (json::set-custom-vars
+  (cl-json::set-custom-vars
    :integer #'json::parse-number
    :real #'json::parse-number
    :boolean #'json::json-boolean-to-lisp
@@ -34,23 +34,23 @@ OBJECT is constructed whose slot names are interned in
    :string-char #'json::string-stream-accumulator-add
    :end-of-string #'json::string-stream-accumulator-get
    :aggregate-scope (union json::*aggregate-scope-variables*
-                           '(json::*accumulator* json::*accumulator-last*))
+                           '(cl-json::*accumulator* json::*accumulator-last*))
    :object-scope (union json::*object-scope-variables*
-                        '(json::*json-array-type*))
+                        '(cl-json::*json-array-type*))
    :internal-decoder #'json::decode-json))
 
 (defmacro with-decoder-clos-semantics (&body body)
   "Execute BODY in a dynamic environement where the decoder semantics
 is such as set by SET-DECODER-WT-CLOS-SEMANTICS."
-  `(json::with-shadowed-custom-vars
+  `(cl-json::with-shadowed-custom-vars
      (set-decoder-clos-semantics)
      ,@body))
 
 (defun decode-json (source &key)
   (with-decoder-clos-semantics
     (typecase source
-      (string (json:decode-json-from-string source))
+      (string (cl-json:decode-json-from-string source))
       (pathname (with-open-file (stream source)
-                  (json:decode-json-from-source stream)))
-      (stream (json:decode-json-from-source source))
+                  (cl-json:decode-json-from-source stream)))
+      (stream (cl-json:decode-json-from-source source))
       (t (error "unknown source")))))

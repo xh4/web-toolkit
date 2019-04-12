@@ -6,5 +6,6 @@
   :mailto "xh@coobii.com"
   :depends-on (:wt.html
                :wt.json
-               :wt.http)
+               :wt.http
+               :wt.websocket)
   :serial t)

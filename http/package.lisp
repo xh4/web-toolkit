@@ -1,4 +1,5 @@
 (in-package :cl-user)
 
-(defpackage :wt.http
+(defpackage :http
+  (:nicknames :wt.http)
   (:use :cl))
