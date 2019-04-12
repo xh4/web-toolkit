@@ -5,4 +5,5 @@
   (:use :cl)
   (:export :encode-json
            :decode-json
-           :object))
+           :object
+           :alist-object))

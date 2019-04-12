@@ -76,3 +76,8 @@
 
 (defun object (&rest initargs)
   (apply 'make-instance 'fluid-object initargs))
+
+(defun alist-object (alist)
+  (let ((initargs (loop for (name . value) in alist
+                     append (list name value))))
+    (apply 'make-instance 'fluid-object initargs)))
