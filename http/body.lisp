@@ -1,4 +1,4 @@
-(in-package :wt.http)
+(in-package :http)
 
 
-(defclass http-body () ())
+(defclass body () ())

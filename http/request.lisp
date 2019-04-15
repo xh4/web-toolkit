@@ -1,4 +1,4 @@
-(in-package :wt.http)
+(in-package :http)
 
 
 (defgeneric request-method (request))
@@ -21,4 +21,4 @@
 (defgeneric (setf request-body) (body request))
 
 
-(defparameter *http-methods* '(:get :post :put :delete :head))
+(defparameter *methods* '(:get :post :put :delete :head))

@@ -1,6 +1,6 @@
-(in-package :wt.http)
+(in-package :http)
 
-(defclass http-status ()
+(defclass status ()
   ((keyword
     :initarg :keyword
     :reader status-keyword)
@@ -11,7 +11,7 @@
     :initarg :reason-phrase
     :reader status-reason-phrase)))
 
-(defmethod print-object ((status http-status) stream)
+(defmethod print-object ((status status) stream)
   (print-unreadable-object (status stream)
     (format stream "~A ~A"
             (status-code status)

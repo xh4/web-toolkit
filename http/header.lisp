@@ -1,4 +1,4 @@
-(in-package :wt.http)
+(in-package :http)
 
 
 (defgeneric header-fields (header))
@@ -21,28 +21,28 @@
 (defgeneric field-name-match-p (field name))
 
 
-(defclass http-header ()
+(defclass header ()
   ((fields
     :initarg :fields
     :initform '()
     :type list
     :reader header-fields)))
 
-(defmethod print-object ((header http-header) stream)
+(defmethod print-object ((header header) stream)
   (print-unreadable-object (header stream :type t)
     (when (header-fields header)
       (loop for field in (header-fields header)
          do (format stream "~%  ~A" field)))))
 
-(defmethod (setf header-fields) (value (header http-header))
+(defmethod (setf header-fields) (value (header header))
   (setf (slot-value header 'fields) value))
 
-(defmethod header-field ((header http-header) name)
+(defmethod header-field ((header header) name)
   (loop for field in (header-fields header)
      when (field-name-match-p field name)
      return field))
 
-(defmethod (setf header-field) (value (header http-header) name)
+(defmethod (setf header-field) (value (header header) name)
   (let (found)
     (loop for field in (header-fields header)
        when (field-name-match-p field name)
@@ -52,12 +52,12 @@
             (return field))
        finally
          (when (not found)
-           (let ((field (make-instance 'http-header-field :name name :value value)))
+           (let ((field (make-instance 'header-field :name name :value value)))
              (appendf (header-fields header) (list field))
              (return field))))))
 
 
-(defclass http-header-field ()
+(defclass header-field ()
   ((name
     :initarg :name
     :reader field-name)
@@ -65,11 +65,11 @@
     :initarg :value
     :reader field-value)))
 
-(defmethod print-object ((field http-header-field) stream)
+(defmethod print-object ((field header-field) stream)
   (print-unreadable-object (field stream :type t)
     (format stream "~A: ~A" (field-name field) (field-value field))))
 
-(defmethod initialize-instance :after ((field http-header-field) &key)
+(defmethod initialize-instance :after ((field header-field) &key)
   (setf (field-name field) (slot-value field 'name)
         (field-value field) (slot-value field 'value)))
 
