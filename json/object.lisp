@@ -50,7 +50,7 @@
                     (symbol (lisp-name-to-object-key name0))
                     (t (error "Value ~A of type ~A can't be a name of object" name0 (type-of name0))))
        for value = (typecase value0
-                     ((or string symbol
+                     ((or string symbol number
                           sequence object) value0)
                      (t (format nil "~A" value0)))
        do
