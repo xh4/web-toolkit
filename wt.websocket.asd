@@ -5,6 +5,7 @@
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
   :depends-on (:alexandria
+               :quri
                :clack
                :hunchentoot
                :websocket-driver-server)
