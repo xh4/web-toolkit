@@ -7,11 +7,13 @@
            :on-open
            :on-close
            :on-error
+
+           :define-session
+           :close-session
            :on-message
            :send-text
            :send-binary
            :send-ping
-           :send-pong
-           :define-session
-           :close-session
+           ;; :send-pong
+
            :define-server))

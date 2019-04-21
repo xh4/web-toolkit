@@ -21,24 +21,9 @@
 (defmacro define-endpoint (name &key path session-class)
   `(progn
      (defclass ,name (endpoint) ())
-     (unless (boundp ',name)
-       (setf ,name (make-instance ',name
-                                  :path ,path
-                                  :session-class ,session-class)))))
-
-(define-session my-session () ())
-
-(define-endpoint my-endpoint
-    :path "/"
-    :session-class 'my-session)
-
-
-(defclass remote-endpoint () ())
-
-(defgeneric send-text (remote-endpoint text))
-
-(defgeneric send-binary (remote-endpoint data))
-
-(defgeneric send-ping (remote-endpoint data))
-
-(defgeneric send-pong (remote-endpoint data))
+     (if (boundp ',name)
+         (setf (endpoint-path ,name) ,path
+               (endpoint-session-class ,name) ,session-class)
+       (defvar ,name (make-instance ',name
+                                    :path ,path
+                                    :session-class ,session-class)))))
