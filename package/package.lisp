@@ -1,146 +1,66 @@
 (in-package :package)
 
-(defclass maintainer ()
-  ((name
-    :initarg :name
-    :initform nil
-    :accessor maintainer-name)
-   (email
-    :initarg :email
-    :initform nil
-    :accessor maintainer-email)))
-
-(defmethod print-object ((maintainer maintainer) stream)
-  (print-unreadable-object (maintainer stream :type t)
-    (format stream "~A <~A>"
-            (maintainer-name maintainer)
-            (maintainer-email maintainer))))
-
-(defclass script ()
-  ((name
-    :initarg :name
-    :initform nil
-    :accessor script-name)
-   (command
-    :initarg :command
-    :initform nil
-    :accessor script-command)))
-
-(defmethod print-object ((script script) stream)
-  (print-unreadable-object (script stream :type t)
-    (format stream "~A" (script-name script))))
-
-(defclass distribution-tag ()
-  ((version
-    :initarg :version
-    :initform nil
-    :accessor distribution-tag-version)))
-
-(defclass beta (distribution-tag) ())
-
-(defclass latest (distribution-tag) ())
-
-(defclass repository () ())
-
-(defclass git-repository (repository)
-  ((url
-    :initarg :url
-    :initform nil
-    :accessor repository-url)))
-
-(defmethod print-object ((repository git-repository) stream)
-  (print-unreadable-object (repository stream :type t)
-    (format stream "~A~%" (repository-url repository))))
-
-(defclass distribution ()
-  ((name
-    :initarg :name
-    :initform nil
-    :accessor distribution-name)
-   (version
-    :initarg :version
-    :initform nil
-    :accessor distribution-version)
-   (shasum
-    :initarg :version
-    :initform nil
-    :accessor distribution-shasum)
-   (tarball
-    :initarg :tarball
-    :initform nil
-    :accessor distribution-tarball)))
-
-(defclass dependency ()
-  ((name
-    :initarg :name
-    :initform nil
-    :accessor dependency-name)
-   (version
-    :initarg :version
-    :initform nil
-    :accessor dependency-version)))
-
 (defclass package ()
-  ((version
-    :initarg :version
-    :initform nil
-    :accessor package-version)
-   (name
+  ((name
     :initarg :name
     :initform nil
-    :accessor package-name)
-   (title
-    :initarg :title
+    :reader package-name)
+   (version
+    :initarg :version
     :initform nil
-    :accessor package-title)
+    :reader package-version)
    (description
     :initarg :description
     :initform nil
-    :accessor package-description)
+    :reader package-description)
    (homepage
     :initarg :homepage
     :initform nil
-    :accessor package-homepage)
+    :reader package-homepage)
    (main
     :initarg :main
     :initform nil
-    :accessor package-main)
+    :reader package-main)
    (readme
     :initarg :readme
     :initform nil
-    :accessor package-readme)
+    :reader package-readme)
    (readme-filename
     :initarg :readme-filename
     :initform nil
-    :accessor package-readme-filename)
+    :reader package-readme-filename)
    (keywords
     :initarg :keywords
     :initform nil
-    :accessor package-keywords)
+    :reader package-keywords)
    (license
     :initarg :license
     :initform nil
-    :accessor package-license)
+    :reader package-license)
    (scripts
     :initarg :scripts
     :initform nil
-    :accessor package-scripts)
+    :reader package-scripts)
    (repository
     :initarg :repository
     :initform nil
-    :accessor package-repository)
+    :reader package-repository)
    (dependencies
     :initarg :dependencies
     :initform nil
-    :accessor package-dependencies)
+    :reader package-dependencies)
    (development-dependencies
     :initarg :development-dependencies
     :initform nil
-    :accessor package-development-dependencies)
+    :reader package-development-dependencies)
+   (author
+    :initarg :author
+    :initform nil
+    :reader package-author)
    (maintainers
     :initarg :maintainers
     :initform nil
-    :accessor package-maintainers)))
+    :reader package-maintainers)))
 
 (defmethod print-object ((package package) stream)
   (print-unreadable-object (package stream :type t)
@@ -148,43 +68,58 @@
     (when-let (version (package-version package))
       (format stream " ~A" (package-version package)))))
 
-(defun make-package-from-object (object)
+(defun make-package-from-metadata (metadata version)
   (let ((package (make-instance 'package)))
-    (with-slots (name description title main readme readme-filename
-                      homepage scripts keywords license repository
-                      maintainers) package
-      (setf name (json:get object "name")
-            description (json:get object "description")
-            title (json:get object "title")
-            main (json:get object "main")
-            readme (json:get object "readme")
-            readme-filename (json:get object "readmeFilename")
-            homepage (json:get object "homepage")
-            keywords (json:get object "keywords")
-            license (json:get object "license"))
-      (setf repository
-            (switch ((json:get object "repository" "type") :test 'equal)
-              ("git" (make-instance 'git-repository
-                                    :url (json:get object "repository" "url")))))
-      (loop for object in (json:get object "maintainers")
-         do (appendf maintainers
+    (flet ((get-metadata (&rest accessors)
+             (or (apply 'json:get metadata "versions" version accessors)
+                 (apply 'json:get metadata accessors))))
+      (with-slots (name version description readme readme-filename
+                        homepage keywords license repository main scripts
+                        dependencies development-dependencies
+                        author maintainers) package
+        (setf name (get-metadata "name")
+              version (get-metadata "version")
+              description (get-metadata "description")
+              readme (get-metadata "readme")
+              readme-filename (get-metadata "readmeFilename")
+              homepage (get-metadata "homepage")
+              keywords (get-metadata "keywords")
+              license (get-metadata "license")
+              main (get-metadata "main"))
+        (setf repository
+              (switch ((get-metadata "repository" "type") :test 'equal)
+                ("git" (make-instance 'git-repository
+                                      :url (get-metadata "repository" "url")))))
+        (when-let (object (get-metadata "author"))
+          (setf author (make-instance 'author
+                                      :name (json:get object "name")
+                                      :email (json:get object "email")
+                                      :url (json:get object "url"))))
+        (loop for object in (get-metadata "maintainers")
+           do (appendf maintainers
+                       (list
+                        (make-instance 'maintainer
+                                       :name (json:get object "name")
+                                       :email (json:get object "email")
+                                       :url (json:get object "url")))))
+        (when-let (object (get-metadata "scripts"))
+          (json:do-object (name command object)
+            (appendf scripts
                      (list
-                      (make-instance 'maintainer
-                                     :name (json:get object "name")
-                                     :email (json:get object "email")))))
-      (when-let (scripts (json:get object "scripts"))
-        (json:do-object (name command scripts)
-          (appendf scripts
-                   (list
-                    (make-instance 'script
-                                   :name name
-                                   :command command))))))
+                      (make-instance 'script
+                                     :name name
+                                     :command command)))))
+        (when-let (object (get-metadata "dependencies"))
+          (json:do-object (name version object)
+            (appendf dependencies
+                     (list (cons name version)))))
+        (when-let (object (get-metadata "devDependencies"))
+          (json:do-object (name version object)
+            (appendf development-dependencies
+                     (list (cons name version)))))))
     package))
 
-;; NAME is case-sensitive
-(defun package (name &optional version)
-  (check-type name string)
-  (check-type version (or string null))
+(defun fetch-package-metadata (name)
   (let ((url (format nil "~A/~A"
                      (registry-endpoint *registry*)
                      name)))
@@ -196,7 +131,20 @@
       (unwind-protect
            (progn
              (when (not (= status 200))
-               (error "Registry responsed with status code ~A" status))
+               (error "Registry ~A responsed with status code ~A while fetching metadata for package ~S"
+                      *registry* status name))
              (let ((object (json:decode-json stream)))
-               (make-package-from-object object)))
+               (setf (gethash name (registry-metadata *registry*)) object)))
         (close stream)))))
+
+;; NAME is case-sensitive
+(defun package (name &optional (version "latest"))
+  (check-type name string)
+  (check-type version string)
+  (multiple-value-bind (metadata present-p)
+      (gethash name (registry-metadata *registry*))
+    (when (not present-p)
+      (setf metadata (fetch-package-metadata name)))
+    (let ((version (or (json:get metadata "dist-tags" version)
+                       version)))
+      (make-package-from-metadata metadata version))))

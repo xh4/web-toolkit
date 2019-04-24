@@ -1,5 +1,10 @@
 (in-package :json)
 
+(defun accumulator-add-key (key)
+  "Add a cons whose CAR is KEY to the end of the list accumulator."
+  (setq cl-json::*accumulator-last*
+        (setf (cdr cl-json::*accumulator-last*) (cons (cons key nil) nil))))
+
 (defun accumulator-get-object ()
   "Return a CLOS object, using keys and values accumulated so far in
 the list accumulator as slot names and values, respectively. Create a OBJECT with slots interned in *JSON-SYMBOLS-PACKAGE*."
@@ -24,7 +29,7 @@ OBJECT is constructed whose slot names are interned in
    :end-of-array #'cl-json::accumulator-get-sequence
    :array-type 'list
    :beginning-of-object #'cl-json::init-accumulator
-   :object-key #'cl-json::accumulator-add-key
+   :object-key #'accumulator-add-key
    :object-value #'cl-json::accumulator-add-value
    :end-of-object #'accumulator-get-object
    :beginning-of-string #'cl-json::init-string-stream-accumulator

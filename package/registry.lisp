@@ -4,7 +4,10 @@
   ((endpoint
     :initarg :endpoint
     :initform "https://registry.npmjs.org"
-    :accessor registry-endpoint)))
+    :accessor registry-endpoint)
+   (metadata
+    :initarg :metadata
+    :initform (make-hash-table :test 'equal)
+    :accessor registry-metadata)))
 
-(defparameter *registry*
-  (make-instance 'registry))
+(defvar *registry* (make-instance 'registry))

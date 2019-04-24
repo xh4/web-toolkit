@@ -12,4 +12,9 @@
                         :serial t
                         :components ((:file "package0")
                                      (:file "registry")
+                                     (:file "human")
+                                     (:file "script")
+                                     (:file "tag")
+                                     (:file "distribution")
+                                     (:file "repository")
                                      (:file "package")))))
