@@ -13,7 +13,8 @@
                                      (:file "object")
                                      (:file "access")
                                      (:file "encode")
-                                     (:file "decode")))))
+                                     (:file "decode")
+                                     (:file "access")))))
 
 (push
  (merge-pathnames

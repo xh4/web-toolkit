@@ -8,4 +8,5 @@
            :decode-json
            :object
            :alist-object
-           :get))
+           :get
+           :do-object))

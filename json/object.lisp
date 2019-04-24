@@ -5,12 +5,12 @@
     :initarg :pairs
     :initform (make-hash-table :test 'equal))))
 
-(defun pprint-object (list &optional *standard-output*)
+(defun pprint-object (list &optional (stream *standard-output*))
   (let ((*print-case* :downcase)
         (*print-pretty* t))
     (pprint-logical-block (nil list :prefix "(" :suffix ")")
       (write (first list))
-      (loop for (key value) on (rest list) by 'cddr
+      (loop for (key value) on (rest list) by #'cddr
          do
            (write-char #\space)
            (pprint-newline :mandatory)
@@ -19,7 +19,7 @@
            (cond
              ((and (listp value)
                    (eq (car value) 'object))
-              (pprint-object value))
+              (pprint-object value stream))
              (t (write value)))))))
 
 (defmethod print-object ((object object) stream)

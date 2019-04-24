@@ -4,8 +4,12 @@
   :version "0.0.0"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
-  :depends-on ()
+  :depends-on (:wt.json
+               :alexandria
+               :drakma)
   :serial t
   :components ((:module "package"
                         :serial t
-                        :components ((:file "package")))))
+                        :components ((:file "package0")
+                                     (:file "registry")
+                                     (:file "package")))))
