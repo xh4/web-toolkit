@@ -17,4 +17,5 @@
                                      (:file "tag")
                                      (:file "distribution")
                                      (:file "repository")
-                                     (:file "package")))))
+                                     (:file "package")
+                                     (:file "asdf")))))

@@ -53,6 +53,10 @@
     :initarg :development-dependencies
     :initform nil
     :reader package-development-dependencies)
+   (distribution
+    :initarg :distribution
+    :initform nil
+    :reader package-distribution)
    (author
     :initarg :author
     :initform nil
@@ -75,7 +79,7 @@
                  (apply 'json:get metadata accessors))))
       (with-slots (name version description readme readme-filename
                         homepage keywords license repository main scripts
-                        dependencies development-dependencies
+                        dependencies development-dependencies distribution
                         author maintainers) package
         (setf name (get-metadata "name")
               version (get-metadata "version")
@@ -86,10 +90,11 @@
               keywords (get-metadata "keywords")
               license (get-metadata "license")
               main (get-metadata "main"))
-        (setf repository
-              (switch ((get-metadata "repository" "type") :test 'equal)
-                ("git" (make-instance 'git-repository
-                                      :url (get-metadata "repository" "url")))))
+        (when-let (object (get-metadata "repository"))
+          (setf repository
+                (switch ((json:get object "type") :test 'equal)
+                  ("git" (make-instance 'git-repository
+                                        :url (json:get object "url"))))))
         (when-let (object (get-metadata "author"))
           (setf author (make-instance 'author
                                       :name (json:get object "name")
@@ -116,7 +121,13 @@
         (when-let (object (get-metadata "devDependencies"))
           (json:do-object (name version object)
             (appendf development-dependencies
-                     (list (cons name version)))))))
+                     (list (cons name version)))))
+        (when-let (object (get-metadata "dist"))
+          (setf distribution (make-instance 'distribution
+                                            :name name
+                                            :version version
+                                            :shasum (json:get object "shasum")
+                                            :tarball (json:get object "tarball"))))))
     package))
 
 (defun fetch-package-metadata (name)
