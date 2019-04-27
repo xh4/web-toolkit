@@ -10,4 +10,5 @@
   :components ((:module "style"
                         :serial t
                         :components ((:file "package")
-                                     ))))
+                                     (:file "color")
+                                     (:file "syntax")))))

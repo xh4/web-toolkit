@@ -9,4 +9,9 @@
   :components ((:module "component"
                         :serial t
                         :components ((:file "package")
-                                     ))))
+                                     (:file "expand")
+                                     (:file "render")
+                                     (:file "component")
+                                     (:file "text")
+                                     (:file "icon")
+                                     (:file "button")))))

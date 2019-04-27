@@ -16,4 +16,6 @@
            :send-ping
            ;; :send-pong
 
-           :define-server))
+           :define-server
+           :start-server
+           :stop-server))

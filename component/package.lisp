@@ -2,4 +2,4 @@
 
 (defpackage :component
   (:nicknames :com :wt.com :wt.component)
-  (:use :cl))
+  (:use :cl :alexandria))

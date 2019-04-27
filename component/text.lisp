@@ -1,4 +1,4 @@
 (in-package :component)
 
-(define-component icon ()
+(define-component text ()
   ())
