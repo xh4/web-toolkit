@@ -25,7 +25,7 @@
     (write-string name (sink-stream sink))
     (dolist (a attributes)
       (let* ((aname (hax:attribute-name a))
-	     (akey (find-symbol (string-upcase (string-rod aname)) :keyword))
+	     (akey (find-symbol (string-upcase aname) :keyword))
 	     (att (and akey (assoc akey attlist)))
 	     (values (second att)))
 	(write-char #\space (sink-stream sink))
@@ -36,7 +36,7 @@
 	  (let ((value (hax:attribute-value a)))
 	    (when (uri-attribute-p name aname)
 	      (setf value (escape-uri-attribute value)))
-	    (unparse-attribute-string value sink))
+	    (write-attribute-string value sink))
 	  (write-char #\" (sink-stream sink)))))
     (write-char #/> (sink-stream sink))))
 
@@ -90,6 +90,21 @@
     (if (find (caar (stack sink)) '("script" "style") :test 'equalp)
 	(write-string data (sink-stream sink))
 	(loop for c across data do (write-datachar-readable c (sink-stream sink))))))
+
+(defun write-attribute-string (str sink)
+  (let ((stream (sink-stream sink)))
+    (loop
+       for i from 1
+       for c across str
+       do
+	 (cond ((char= c #/&)
+		(if (and (< i (length str)) (char= (char str i) #/{))
+		    (write-char c stream)
+                    (write-string '#.(string "&amp;") stream)))
+	       ((char= c #/\") (write-string '#.(string "&quot;") stream))
+	       ((char= c #/U+000A) (write-string '#.(string "&#10;") stream))
+	       ((char= c #/U+000D) (write-string '#.(string "&#13;") stream))
+	       (t (write-char c stream))))))
 
 (defun write-datachar (char stream)
   (cond ((char= char #/&) (write-string '#.(string "&amp;") stream))
@@ -148,6 +163,6 @@
       (push
        (hax:make-attribute (dom:name a)
                            (dom:value a)
-                           :specified-p (dom:specified a))
+                           (dom:specified a))
        results))
     (reverse results)))
