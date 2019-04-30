@@ -5,7 +5,8 @@
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
   :depends-on (:alexandria
-               :cxml-dom)
+               :cxml-dom
+               :closure-html)
   :serial t
   :components ((:module "html"
                         :serial t
