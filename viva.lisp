@@ -2,6 +2,7 @@
 
 (ql:quickload :hunchentoot)
 (ql:quickload :wt.websocket)
+(ql:quickload :wt.json)
 (ql:quickload :cl-who)
 
 (setf (cl-who:html-mode) :html5)
@@ -32,6 +33,8 @@
        (:head
         (:meta :charset "utf-8"))
        (:body
+        (:script :src "/static/jquery-3.4.0.js")
+        (:script :src "/static/wt.js")
         (:script :src "/static/index.js")))))
 
 (push
@@ -45,9 +48,35 @@
 
 (ws:define-session session ())
 
+(defun read-object-value (object)
+  (let ((type (json:get object "type")))
+    (alexandria:switch (type :test 'equal)
+      ("symbol"
+       (let ((name (json:get object "name"))
+             (package (json:get object "package")))
+         (find-symbol name))))))
+
+(defun read-value (value)
+  (typecase value
+    ((or string number) value)
+    (json:object (read-object-value value))
+    (t nil)))
+
+(defun handle-call (symbol))
+
 (defmethod ws:on-message ((session session) message)
-  (format t "Received: ~A~%" message)
-  (ws:send-text session message))
+  (format t "Receive: ~A~%" message)
+  (handler-case
+      (let ((message (json:decode-json message)))
+        (let ((name (first message)))
+          (alexandria:switch (name :test 'equal)
+            ("call"
+             (let ((symbol (read-value (second message)))
+                   (arguments (mapcar 'read-value (cddr message))))
+               (let ((result (apply symbol arguments)))
+                 (format t "~A~%" result)))))))
+    (error (e)
+      (format t "~A~%" e))))
 
 (ws:define-endpoint endpoint
     :path "/"

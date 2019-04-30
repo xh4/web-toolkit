@@ -10,4 +10,5 @@
   :components ((:module "html"
                         :serial t
                         :components ((:file "package")
-                                     (:file "html")))))
+                                     (:file "html")
+                                     (:file "serialize")))))

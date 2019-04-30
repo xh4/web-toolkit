@@ -4,7 +4,8 @@
   :version "0.0.0"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
-  :depends-on (:alexandria)
+  :depends-on (:wt.html
+               :alexandria)
   :serial t
   :components ((:module "component"
                         :serial t

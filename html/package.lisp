@@ -3,5 +3,7 @@
 (defpackage :html
   (:nicknames :wt.html)
   (:use :cl :alexandria)
-  (:export )
-  )
+  (:shadow :time :map)
+  (:export :document
+           :text
+           :serialize))

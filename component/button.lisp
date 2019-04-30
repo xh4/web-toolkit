@@ -4,5 +4,5 @@
   ())
 
 (defmethod expand ((button button))
-  `(button
-    ,@(component-children button)))
+  `(html:button
+    ))
