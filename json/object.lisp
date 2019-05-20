@@ -32,19 +32,22 @@
                      append (list key (value-expr value)) into body
                      finally (return `(object ,@body)))))
                (t value))))
-    (pprint-object (value-expr object) stream)))
+    (if *print-pretty*
+      (pprint-object (value-expr object) stream)
+      (let ((*print-case* :downcase))
+        (print (value-expr object) stream)))))
 
 (defun lisp-name-to-object-key (name)
   (typecase name
     (string name)
     (symbol (cl-json::lisp-to-camel-case (symbol-name name)))))
 
-(defun object (&rest args)
-  (when (oddp (length args))
-    (error "Expect even arguments when initialize object, got ~D" (length args)))
+(defun object (&rest arguments)
+  (when (oddp (length arguments))
+    (error "Expect even arguments when initialize object, got ~D" (length arguments)))
   (let* ((object (make-instance 'object))
          (pairs (slot-value object 'pairs)))
-    (loop for (name0 value0) on args by 'cddr
+    (loop for (name0 value0) on arguments by 'cddr
        for name = (typecase name0
                     (string name0)
                     (symbol (lisp-name-to-object-key name0))
@@ -60,4 +63,9 @@
 (defun alist-object (alist)
   (let ((values (loop for (name . value) in alist
                      append (list name value))))
+    (apply 'object values)))
+
+(defun plist-object (plist)
+  (let ((values (loop for (name value) on plist by #'cddr
+                   append (list name value))))
     (apply 'object values)))

@@ -8,5 +8,6 @@
            :decode-json
            :object
            :alist-object
+           :plist-object
            :get
            :do-object))

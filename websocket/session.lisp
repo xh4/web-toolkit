@@ -21,8 +21,8 @@ give a reason for the closure, otherwise close with a normal status code and no 
   (:method ((session session) data &key)
     (wsd:send-binary (session-ws session) data)))
 
-(defgeneric send-ping (session data &key)
-  (:method ((session session) data &key)
+(defgeneric ping (session &optional data &key)
+  (:method ((session session) &optional data &key)
     (wsd:send-ping (session-ws session) data)))
 
 (defgeneric send-pong (session data &key)
@@ -33,6 +33,6 @@ give a reason for the closure, otherwise close with a normal status code and no 
 (defgeneric on-message (session message))
 
 
-(defmacro define-session (name &rest args)
+(defmacro define-session (name &rest arguments)
   `(defclass ,name (session)
-     ,@args))
+     ,@arguments))

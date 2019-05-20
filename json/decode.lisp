@@ -55,4 +55,5 @@ is such as set by SET-DECODER-WT-CLOS-SEMANTICS."
       (pathname (with-open-file (stream source)
                   (cl-json:decode-json-from-source stream)))
       (stream (cl-json:decode-json-from-source source))
+      (null nil)
       (t (error "unknown source")))))

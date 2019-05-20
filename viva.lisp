@@ -11,7 +11,7 @@
 
 (defun start ()
   (when (null *acceptor*)
-    (setf *acceptor* (make-instance 'hunchentoot:easy-acceptor :port 4000))
+    (setf *acceptor* (make-instance 'hunchentoot:easy-acceptor :port 4001))
     (handler-case
         (hunchentoot:start *acceptor*)
       (error (e)

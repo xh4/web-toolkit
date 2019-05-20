@@ -29,8 +29,9 @@
                    (get2 (get1 value (car accessors)) (cdr accessors)))))
       (get2 value (alexandria:flatten accessors)))))
 
-(defmacro do-object ((name value object) &body body)
+(defmacro do-object ((name value object &optional result-form) &body body)
   `(loop :for ,name :being :the :hash-keys :of (slot-value ,object 'pairs)
       :using (hash-value ,value)
       :do
-        ,@body))
+        ,@body
+      :finally (return ,result-form)))

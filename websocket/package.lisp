@@ -13,8 +13,7 @@
            :on-message
            :send-text
            :send-binary
-           :send-ping
-           ;; :send-pong
+           :ping
 
            :define-server
            :start-server
