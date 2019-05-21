@@ -3,7 +3,10 @@
 (ql:quickload :hunchentoot)
 (ql:quickload :wt.websocket)
 (ql:quickload :wt.json)
+(ql:quickload :wt.component)
+(ql:quickload :wt.bootstrap)
 (ql:quickload :cl-who)
+(ql:quickload :parenscript)
 
 (setf (cl-who:html-mode) :html5)
 
@@ -82,8 +85,32 @@
     :path "/"
     :session-class 'session)
 
+(style:define-css-source-file bootstrap-4.3.1.css
+    "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css")
+
+(defmacro ps-load-css (href)
+  `(let ((link (ps:chain document (create-element "link"))))
+     (ps:chain link (set-attribute "rel" "stylesheet"))
+     (ps:chain link (set-attribute "type" "text/css"))
+     (ps:chain link (set-attribute "href" ,href))
+     (ps:chain document
+               (get-elements-by-tag-name "head")
+               0
+               (append-child link))))
+
 (defmethod ws:on-open ((endpoint endpoint) session)
-  (ws:send-text session "[\"eval\", \"console.log('haha')\"]"))
+  (let* ((button (bs:button :style :danger
+                            :outline-p t
+                            :size :large
+                            :block-p t
+                            (com:text "foo")))
+         (code (ps:ps
+                (progn
+                   (ps-load-css "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css")
+                   (ps:chain ($ "body") (html ,(html:serialize
+                                                (eval (com:expand-all button))))))))
+         (message (list "eval" code)))
+    (ws:send-text session (json:encode-json message))))
 
 (defmethod ws:on-close ((endpoint endpoint) &optional reason)
   (format t "Close: ~A~%" reason))
@@ -92,7 +119,7 @@
   (format t "Error: ~A~%" error))
 
 (ws:define-server websocket-server
-    :port 4001
+    :port 4002
     :endpoints (list endpoint))
 
 ;; (start)

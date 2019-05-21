@@ -30,13 +30,13 @@
          (attributes (ldiff form body)))
     (values attributes body)))
 
-(defmacro define-component (name direct-superclasses direct-slots)
+(defmacro define-component (name super-components slots &rest options)
   `(progn
-     (defclass ,name (,@direct-superclasses component)
-       ,direct-slots)
-     (defun ,name (&rest attributes-and-children)
+     (defclass ,name (,@super-components component)
+       ,slots)
+     (defun ,name (&rest arguments)
        (multiple-value-bind (attributes children)
-           (segment-attributes-children attributes-and-children)
+           (segment-attributes-children arguments)
          (let ((component (apply 'make-instance ',name attributes)))
            (loop for child in children
               do (append-child component child))

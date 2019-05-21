@@ -5,7 +5,7 @@
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
   :depends-on (:alexandria
-               )
+               :quri)
   :serial t
   :components ((:module "style"
                         :serial t

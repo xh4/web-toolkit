@@ -124,7 +124,7 @@
         ((char= char #\U+000D) (write-string '#.(string "&#13;") stream))
         (t (write-char char stream))))
 
-(defun serialize (root &optional (stream t))
+(defun serialize (root &optional (stream nil))
   (let ((handler nil))
     (labels ((serialize-to-stream (root stream)
                (setf handler (make-instance 'sink :stream stream))
