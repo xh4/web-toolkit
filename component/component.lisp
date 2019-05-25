@@ -4,22 +4,22 @@
   ((id
     :initarg :id
     :initform nil
-    :accessor component-id)
+    :accessor id)
    (children
     :initarg :children
     :initform nil
-    :accessor component-children)))
+    :accessor children)))
 
 (defmethod print-object ((component component) stream)
   (print-unreadable-object (component stream :type t)
-    (format stream "#~D" (component-id component))))
+    (format stream "#~D" (id component))))
 
 (defmethod initialize-instance :after ((component component) &key)
   (let ((id (parse-integer (subseq (symbol-name (gensym "G")) 1))))
-    (setf (component-id component) id)))
+    (setf (id component) id)))
 
 (defun append-child (parent child)
-  (appendf (component-children parent) (list child)))
+  (appendf (children parent) (list child)))
 
 ;; attributes => plist
 ;; body => list

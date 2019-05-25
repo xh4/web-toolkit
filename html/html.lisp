@@ -71,7 +71,7 @@
                        (string _value)
                        (t (format nil "~A" _value)))
          do (dom:set-attribute element name value))
-      (loop for child in children
+      (loop for child in (flatten children)
          do (dom:append-child element child)))
     element))
 

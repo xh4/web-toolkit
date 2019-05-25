@@ -4,8 +4,9 @@
   (:nicknames :com :wt.com :wt.component)
   (:use :cl :alexandria)
   (:export :define-component
-           :component-children
+           :children
            :expand
+           :render
            :expand-1
            :expand-all
            :button

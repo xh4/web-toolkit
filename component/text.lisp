@@ -10,6 +10,12 @@
 (defun text (content)
   (make-instance 'text :content content))
 
-(defmethod expand ((text text))
-  `(html:text
-    ,(text-content text)))
+(defmethod render ((text text))
+  (html:text
+   (text-content text)))
+
+(defmethod render ((string string))
+  (html:text string))
+
+(defmethod render ((thing T))
+  (html:text (format nil "~A~%" thing)))

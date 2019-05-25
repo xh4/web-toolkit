@@ -1,6 +1,6 @@
 (in-package :bootstrap)
 
-(com:define-component button (com:button)
+(define-component button ()
   (;; :PRIMARY, :SECONDARY, :SUCCESS, :DANGER, :WARNING, :INFO, :LIGHT, :DARK
    ;; :LINK
    (style
@@ -35,7 +35,7 @@
     :initform nil
     :accessor button-disabled-p)))
 
-(defmethod com:expand ((button button))
+(defmethod render ((button button))
   (let (tag
         (class '("btn"))
         (other-attrs '()))
@@ -44,7 +44,7 @@
       (if link
           (progn
             (setf tag 'html:a)
-            (alexandria:appendf other-attrs (list :href (format nil "~A" link)
+            (appendf other-attrs (list :href (format nil "~A" link)
                                                   :role "button")))
           (setf tag 'html:button))
       ;; style & outline-p
@@ -56,21 +56,22 @@
           (setf style-class (concatenate 'string style-class "-" (string-downcase
                                                                   (symbol-name style)))))
         (unless (equal style-class "btn")
-          (alexandria:appendf class (list style-class))))
+          (appendf class (list style-class))))
       ;; size
       (cond
-        ((eq size :large) (alexandria:appendf class (list "btn-lg"))))
+        ((eq size :large) (appendf class (list "btn-lg"))))
       (cond
-        ((eq size :small) (alexandria:appendf class (list "btn-sm"))))
+        ((eq size :small) (appendf class (list "btn-sm"))))
       ;; block-p
       (when block-p
-        (alexandria:appendf class (list "btn-block")))
+        (appendf class (list "btn-block")))
       ;; active-p
       (when active-p
-        (alexandria:appendf class (list "active")))
+        (appendf class (list "active")))
       ;; disabled-p
       (when disabled-p
-        (alexandria:appendf other-attrs (list :disabled t)))
-      `(,tag :class ,(format nil "~{~A~^ ~}" class)
-             ,@other-attrs
-             ,@(com:component-children button)))))
+        (appendf other-attrs (list :disabled t)))
+      (eval
+       `(,tag :class ,(format nil "~{~A~^ ~}" class)
+              ,@other-attrs
+              ,@(mapcar 'render (children button)))))))

@@ -85,30 +85,35 @@
     :path "/"
     :session-class 'session)
 
-(style:define-css-source-file bootstrap-4.3.1.css
-    "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css")
+(defparameter *nav*
+  (bs:nav
+   (bs:nav-item
+    (bs:nav-link (com:text "Link")))
+   (bs:nav-item
+    (bs:nav-link (com:text "Link")))
+   (bs:nav-item
+    (bs:nav-link :disabled-p t (com:text "Link")))))
 
-(defmacro ps-load-css (href)
-  `(let ((link (ps:chain document (create-element "link"))))
-     (ps:chain link (set-attribute "rel" "stylesheet"))
-     (ps:chain link (set-attribute "type" "text/css"))
-     (ps:chain link (set-attribute "href" ,href))
-     (ps:chain document
-               (get-elements-by-tag-name "head")
-               0
-               (append-child link))))
+(defparameter *button*
+  (bs:button :style :danger
+             :outline-p t
+             :size :large
+             :block-p t
+             (com:text "foo")))
 
 (defmethod ws:on-open ((endpoint endpoint) session)
-  (let* ((button (bs:button :style :danger
-                            :outline-p t
-                            :size :large
-                            :block-p t
-                            (com:text "foo")))
-         (code (ps:ps
-                (progn
-                   (ps-load-css "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css")
-                   (ps:chain ($ "body") (html ,(html:serialize
-                                                (eval (com:expand-all button))))))))
+  (let* ((root *nav*)
+         (code (ps:ps*
+                `(progn
+                   (let ((link (ps:chain document (create-element "link"))))
+                     (ps:chain link (set-attribute "rel" "stylesheet"))
+                     (ps:chain link (set-attribute "type" "text/css"))
+                     (ps:chain link (set-attribute "href" "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"))
+                     (ps:chain document
+                               (get-elements-by-tag-name "head")
+                               0
+                               (append-child link)))
+                   (ps:chain ($ "body") (html ,(html:serialize (com:render root)))))))
          (message (list "eval" code)))
     (ws:send-text session (json:encode-json message))))
 
