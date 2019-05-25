@@ -2,7 +2,7 @@
 
 
 ## DOM
-WT.DOM is a fork of [Closure XML](https://common-lisp.net/project/cxml/)'s DOM implementation, and updates it to comply with the latest standard.
+WT.DOM is a fork of [Closure XML](https://common-lisp.net/project/cxml/)'s DOM implementation, and updates it to comply with the [latest standard](https://dom.spec.whatwg.org/).
 
 ## HTML
 WT.HTML implements HTML constructors and serializer.
