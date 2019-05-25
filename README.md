@@ -1,7 +1,7 @@
 <h3 align="center">Lisp Web Toolkit</h3>
 
 <p align="center">
-    <a href="https://web-toolkit-.org">web-toolkit.org</a>
+    <a href="http://web-toolkit.org">web-toolkit.org</a>
 </p>
 
 
