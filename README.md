@@ -5,9 +5,6 @@
 </p>
 
 
-## DOM
-WT.DOM is a fork of [Closure XML](https://common-lisp.net/project/cxml/)'s DOM implementation, and updates it to comply with the [latest standard](https://dom.spec.whatwg.org/).
-
 ## HTML
 WT.HTML implements HTML constructors and serializer.
 
@@ -25,6 +22,9 @@ WT.COMPONENT provides component abstraction.
 
 ## Bootstrap
 WT.BOOTSTRAP provides integration with [Bootstrap](https://getbootstrap.com/) framework.
+
+## DOM
+WT.DOM is a fork of [Closure XML](https://common-lisp.net/project/cxml/)'s DOM implementation, and updates it to comply with the [latest standard](https://dom.spec.whatwg.org/).
 
 ## TodoMVC
 WT.TODOMVC gives example of using WT to build [TodoMVC](http://todomvc.com/) sample application.
