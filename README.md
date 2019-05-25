@@ -1,24 +1,24 @@
-Lisp Web Toolkit
-================
+<h3 align="center">Lisp Web Toolkit</h3>
 
-# DOM
+
+## DOM
 WT.DOM is a fork of [https://common-lisp.net/project/cxml/](Closure XML)'s DOM implementation, and updates it to comply with the latest standard.
 
-# HTML
+## HTML
 WT.HTML implements HTML constructors and serializer.
 
-# JSON
+## JSON
 WT.JSON is based on [CL-JSON](https://common-lisp.net/project/cl-json/cl-json.html).
 
-# HTTP
+## HTTP
 
-# WebSocket
+## WebSocket
 WT.WEBSOCKET is 
 
-# Component
+## Component
 WT.COMPONENT provides component abstraction.
 
-# Bootstrap
+## Bootstrap
 WT.BOOTSTRAP provides integration with [Bootstrap](https://getbootstrap.com/) framework.
 
 
