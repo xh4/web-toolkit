@@ -13,12 +13,15 @@ WT.JSON is based on [CL-JSON](https://common-lisp.net/project/cl-json/cl-json.ht
 ## HTTP
 
 ## WebSocket
-WT.WEBSOCKET is 
+WT.WEBSOCKET provides WebSocket interfaces inspired by [JSR 356, Java API for WebSocket](https://www.oracle.com/technetwork/articles/java/jsr356-1937161.html).
 
 ## Component
 WT.COMPONENT provides component abstraction.
 
 ## Bootstrap
 WT.BOOTSTRAP provides integration with [Bootstrap](https://getbootstrap.com/) framework.
+
+## TodoMVC
+WT.TODOMVC gives example of using WT to build [TodoMVC](http://todomvc.com/) sample application.
 
 
