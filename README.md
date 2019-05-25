@@ -11,6 +11,7 @@ WT.HTML implements HTML constructors and serializer.
 WT.JSON is based on [CL-JSON](https://common-lisp.net/project/cl-json/cl-json.html).
 
 ## HTTP
+WT.HTTP provides HTTP construct as is defined in [RFC 2616 Hypertext Transfer Protocol -- HTTP/1.1](https://www.ietf.org/rfc/rfc2616.txt).
 
 ## WebSocket
 WT.WEBSOCKET provides WebSocket interfaces inspired by [JSR 356, Java API for WebSocket](https://www.oracle.com/technetwork/articles/java/jsr356-1937161.html).
