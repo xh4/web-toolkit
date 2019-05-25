@@ -30,4 +30,4 @@ WT.BOOTSTRAP provides integration with [Bootstrap](https://getbootstrap.com/) fr
 WT.TODOMVC gives example of using WT to build [TodoMVC](http://todomvc.com/) sample application.
 
 ## Website
-WT.WEBSITE powers [](http://web-toolkit.org).
+WT.WEBSITE powers [web-toolkit.org](http://web-toolkit.org).
