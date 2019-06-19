@@ -1,7 +1,7 @@
 <h3 align="center">Lisp Web Toolkit</h3>
 
 <p align="center">
-    <a href="http://web-toolkit.org">web-toolkit.org</a>
+    <a href="https://web-toolkit.org">web-toolkit.org</a>
 </p>
 
 
@@ -27,7 +27,7 @@ WT.BOOTSTRAP provides integration with [Bootstrap](https://getbootstrap.com/) fr
 WT.DOM is a fork of [Closure XML](https://common-lisp.net/project/cxml/)'s DOM implementation, and updates it to comply with the [latest standard](https://dom.spec.whatwg.org/).
 
 ## TodoMVC
-WT.TODOMVC gives example of using WT to build [TodoMVC](http://todomvc.com/) sample application.
+WT.TODOMVC gives example of using WT to build the [TodoMVC](http://todomvc.com/) sample application.
 
 ## Website
 WT.WEBSITE powers [web-toolkit.org](http://web-toolkit.org).
