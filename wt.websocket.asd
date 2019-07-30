@@ -4,11 +4,13 @@
   :version "0.0.0"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
-  :depends-on (:alexandria
-               :quri
-               :clack
-               :hunchentoot
-               :websocket-driver-server)
+  :depends-on (:wt.http
+               :alexandria
+               ;; :quri
+               ;; :clack
+               ;; :hunchentoot
+               ;; :websocket-driver-server
+               )
   :serial t
   :components ((:module "websocket"
                         :serial t
@@ -16,5 +18,6 @@
                                      (:file "session")
                                      (:file "endpoint")
                                      (:file "message")
-                                     (:file "server")
-                                     (:file "client")))))
+                                     ;; (:file "server")
+                                     ;; (:file "client")
+                                     ))))

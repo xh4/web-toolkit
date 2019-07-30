@@ -2,4 +2,6 @@
 
 (defpackage :http
   (:nicknames :wt.http)
-  (:use :cl))
+  (:use :cl :alexandria)
+  (:import-from :cl-change-case
+                :header-case))

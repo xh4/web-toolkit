@@ -4,7 +4,9 @@
   :version "0.0.0"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
-  :depends-on (:hunchentoot)
+  :depends-on (:hunchentoot
+               :alexandria
+               :cl-change-case)
   :serial t
   :components ((:module "http"
                         :serial t
@@ -15,7 +17,7 @@
                                      (:file "status")
                                      (:file "version")
                                      (:file "response")
-                                     (:file "listener")
                                      (:file "handler")
                                      (:file "router")
+                                     (:file "listener")
                                      (:file "server")))))
