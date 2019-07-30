@@ -17,4 +17,7 @@
            :button-disabled-p
            :nav
            :nav-item
-           :nav-link))
+           :nav-link
+           :navbar
+           :navbar-brand
+           :navbar-nav))

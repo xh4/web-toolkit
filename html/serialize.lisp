@@ -134,9 +134,9 @@
                   (dom:do-node-list (child (dom:child-nodes root))
                     (visit child))
                   (hax:end-document handler))
-                 (element
+                 ((or element text)
                   (visit root))
-                 (t (error "..."))))
+                 (t (error "Can't serialize ~A of type ~A" root (type-of root)))))
              (visit (node)
                (ecase (dom:node-type node)
                  (:element

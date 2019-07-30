@@ -1,6 +1,5 @@
 (in-package :http)
 
-
 (defgeneric header-fields (header))
 
 (defgeneric (setf header-fields) (value header))

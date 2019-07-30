@@ -101,8 +101,18 @@
              :block-p t
              (com:text "foo")))
 
+(defparameter *navbar*
+  (bs:navbar
+   (bs:navbar-brand
+    "Web Toolkit")
+   (bs:navbar-nav
+    (bs:nav-item
+     (bs:nav-link :href "#" "Hah")))))
+
+;; (html:serialize (html:span (html:text "Foo")))
+
 (defmethod ws:on-open ((endpoint endpoint) session)
-  (let* ((root *nav*)
+  (let* ((root *navbar*)
          (code (ps:ps*
                 `(progn
                    (let ((link (ps:chain document (create-element "link"))))

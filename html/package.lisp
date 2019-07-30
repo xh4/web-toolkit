@@ -5,5 +5,6 @@
   (:use :cl :alexandria)
   (:shadow :time :map)
   (:export :document
+           :element
            :text
            :serialize))

@@ -1,5 +1,7 @@
 (in-package :http)
 
+(defclass request ()
+  ())
 
 (defgeneric request-method (request))
 
