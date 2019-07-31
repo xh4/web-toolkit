@@ -1,6 +1,20 @@
 (in-package :http)
 
-(defclass response () ())
+(defclass response ()
+  ((status
+    :initarg :status
+    :initform nil
+    :accessor response-status)
+   (header
+    :initarg :header
+    :initform nil
+    :accessor response-header)
+   (body
+    :initarg :body
+    :initform nil
+    :accessor response-body)))
+
+(defvar *response* nil)
 
 (defgeneric response-status (response))
 

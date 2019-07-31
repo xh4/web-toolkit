@@ -1,20 +1,41 @@
 (in-package :http)
 
+;; (setf hunchentoot:*catch-errors-p* nil)
+
 (defclass acceptor (hunchentoot:acceptor)
   ((server
     :initarg :server
     :initform nil
     :accessor acceptor-server)))
 
-(defmethod hunchentoot:handle-request ((acceptor acceptor) request)
+(defmethod hunchentoot:handle-request ((acceptor acceptor) request0)
   (let ((server (acceptor-server acceptor)))
     (let ((handler (server-handler server)))
-      ))
-  (format t "~A~%" request)
-  (setf (hunchentoot:content-type*) "text/html")
-  (setf (hunchentoot:return-code*) hunchentoot:+http-ok+)
+      (let ((request (make-instance 'request
+                                    :method (hunchentoot:request-method request0)
+                                    :uri (hunchentoot:request-uri request0))))
+        (loop for (name . value) in (hunchentoot:headers-in request0)
+           for field = (make-instance 'header-field
+                                      :name name
+                                      :value value)
+           do (push field (request-header request))
+           finally (reversef (request-header request)))
+        (let ((response (invoke-handler handler request)))
+          (handle-response response))))))
+
+(defun handle-response (response)
+  (setf (hunchentoot:return-code*) (or (response-status response) 200))
+  (loop for field in (response-header response)
+     for name = (field-name field)
+     for value = (field-value field)
+     do (setf (hunchentoot:header-out name) value))
   (let ((stream (hunchentoot:send-headers)))
-    (format stream "Hello, world!")))
+    (let ((body (response-body response)))
+      (typecase body
+        (string
+         (let ((octets (flexi-streams:string-to-octets body
+                                                       :external-format :utf-8)))
+           (write-sequence octets stream)))))))
 
 (defclass listener ()
   ((port
@@ -41,7 +62,9 @@
 
 (defmethod print-object ((listener listener) stream)
   (print-unreadable-object (listener stream :type t :identity t)
-    ))
+    (with-slots (port address) listener
+      (let ((started-p (listener-started-p listener)))
+        (format stream "Address: ~A, Port: ~A, Started: ~A" address port started-p)))))
 
 (defmethod initialize-instance :after ((listener listener) &key)
   (with-slots (port address acceptor server) listener
@@ -52,15 +75,6 @@
                                   :address address
                                   :server server))
     listener))
-
-(defmacro define-listener (name &key port address)
-  `(if (boundp ',name)
-       (setf (listener-port ,name) ,port
-             (listener-address ,name) ,address)
-       (defvar ,name
-         (make-instance 'listener
-                        :port ,port
-                        :address ,address))))
 
 (defmacro listener (&key port address)
   `(make-instance 'listener
@@ -83,3 +97,8 @@
 
 (defmethod stop-listener ((listener listener) &key)
   (hunchentoot:stop (slot-value listener 'acceptor)))
+
+(defgeneric listener-started-p (listener))
+
+(defmethod listener-started-p ((listener listener))
+  (hunchentoot:started-p (slot-value listener 'acceptor)))
