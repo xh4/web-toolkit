@@ -5,6 +5,9 @@
 
 (defclass handler () ())
 
+(defmethod handle ((handler handler) (request request))
+  (call-next-handler))
+
 (defparameter handler (make-instance 'handler))
 
 (setf (gethash 'handler *handler-mapping-table* ) handler)
@@ -51,23 +54,51 @@
 
 ;; (compute-handler-precedence-list your-handler)
 
-(defun invoke-handler (handler request)
-  (let ((handlers (reverse (compute-handler-precedence-list handler)))
-        (*response* (make-instance 'response)))
-    (loop for handler in handlers
-       do
-         (let ((method (find-method #'handle
-                                    '()
-                                    (list (class-of handler) (find-class 'request))
-                                    nil)))
-           (when method
-             (let ((result (handle handler request)))
-               (when (typep result 'response)
-                 (setf *response* result))))))
-    *response*))
+(define-condition next-handler () ())
 
 (defmacro next-handler ()
-  )
+  `(restart-case (signal 'next-handler)
+     (%next-handler (handler) handler)))
+
+(define-condition call-next-handler () ())
 
 (defmacro call-next-handler ()
-  )
+  `(restart-case (signal 'call-next-handler)
+     (%call-next-handler (response) response)))
+
+(defun invoke-handler (handler request)
+  (let ((next-handlers (reverse (compute-handler-precedence-list handler)))
+        (*response* (make-instance 'response)))
+    (labels ((next-handler ()
+               (first next-handlers))
+
+             (call-next-handler ()
+               (let ((handler (next-handler)))
+                 (when handler
+                   (call-handler handler))))
+
+             (call-handler (handler)
+               (let ((method (find-method #'handle
+                                          '()
+                                          (list (class-of handler) (find-class 'request))
+                                          nil)))
+                 (when method
+                   (call-handler-method handler))))
+
+             (call-handler-method (handler)
+               (setf next-handlers (rest next-handlers))
+               (handler-bind ((next-handler (lambda (c)
+                                              (declare (ignore c))
+                                              (let ((next-handler (next-handler)))
+                                                (break)
+                                                (invoke-restart '%next-handler next-handler))))
+                              (call-next-handler (lambda (c)
+                                                   (declare (ignore c))
+                                                   (call-next-handler)
+                                                   (invoke-restart '%call-next-handler *response*))))
+                 (let ((result (handle handler request)))
+                   (when (typep result 'response)
+                     (setf *response* result))))))
+
+      (call-next-handler))
+    *response*))

@@ -8,7 +8,9 @@
            (list (make-instance 'header-field
                                 :name "Content-Type"
                                 :value "text/plain")))
-  (setf (response-body *response*) "my handler "))
+  (setf (response-body *response*) "my handler ")
+
+  (call-next-handler))
 
 (define-handler your-handler (my-handler) ())
 
