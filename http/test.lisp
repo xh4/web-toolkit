@@ -10,7 +10,12 @@
                                 :value "text/plain")))
   (setf (response-body *response*) "my handler ")
 
-  (call-next-handler))
+  (let ((response (call-next-handler)))
+    (setf (response-body response)
+          (format nil "~A ~A"
+                  (response-body response)
+                  " my handler2"))
+    response))
 
 (define-handler your-handler (my-handler) ())
 
