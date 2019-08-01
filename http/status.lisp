@@ -23,13 +23,17 @@
 
   (defmacro define-response-status (keyword code reason-phrase)
     `(eval-when (:compile-toplevel :execute :load-toplevel)
-       (when (not (find ,keyword *statuses* :key 'status-keyword))
-         (setf *statuses*
-               (nconc *statuses*
-                      (list (make-instance 'status
-                                           :keyword ,keyword
-                                           :code ,code
-                                           :reason-phrase ,reason-phrase))))))))
+       (let ((status (find ,keyword *statuses* :key 'status-keyword)))
+         (if status
+             status
+             (let ((status (make-instance 'status
+                                          :keyword ,keyword
+                                          :code ,code
+                                          :reason-phrase ,reason-phrase)))
+               (setf *statuses*
+                     (nconc *statuses*
+                            (list status)))
+               status))))))
 
 ;; https://tools.ietf.org/html/rfc7231#section-6.1
 
