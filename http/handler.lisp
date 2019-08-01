@@ -68,7 +68,8 @@
 
 (defun invoke-handler (handler request)
   (let ((next-handlers (reverse (compute-handler-precedence-list handler)))
-        (*response* (make-instance 'response)))
+        (*response* (make-instance 'response
+                                   :header (make-instance 'header))))
     (labels ((next-handler ()
                (first next-handlers))
 

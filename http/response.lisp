@@ -27,3 +27,15 @@
 (defgeneric response-body (response))
 
 (defgeneric (setf response-body) (value response))
+
+(defmethod (setf header-fields) (value (response response))
+  (let ((header (response-header response)))
+    (setf (header-fields header) value)))
+
+(defmethod header-field ((response response) name)
+  (let ((header (response-header response)))
+    (header-field header name)))
+
+(defmethod (setf header-field) (value (response response) name)
+  (let ((header (response-header response)))
+    (setf (header-field header name) value)))

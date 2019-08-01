@@ -1,13 +1,12 @@
 (in-package :http)
 
+(setf hunchentoot:*catch-errors-p* nil)
+
 (define-handler my-handler () ())
 
 (defmethod handle ((handler my-handler) (request request))
   (setf (response-status *response*) 200)
-  (appendf (response-header *response*)
-           (list (make-instance 'header-field
-                                :name "Content-Type"
-                                :value "text/plain")))
+  (setf (header-field *response* "Content-Type") "text/plain")
   (setf (response-body *response*) "my handler ")
 
   (let ((response (call-next-handler)))

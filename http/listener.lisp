@@ -25,10 +25,11 @@
 
 (defun handle-response (response)
   (setf (hunchentoot:return-code*) (or (response-status response) 200))
-  (loop for field in (response-header response)
-     for name = (field-name field)
-     for value = (field-value field)
-     do (setf (hunchentoot:header-out name) value))
+  (let ((header (response-header response)))
+    (loop for field in (header-fields header)
+       for name = (field-name field)
+       for value = (field-value field)
+       do (setf (hunchentoot:header-out name) value)))
   (let ((stream (hunchentoot:send-headers)))
     (let ((body (response-body response)))
       (typecase body
