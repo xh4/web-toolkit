@@ -30,4 +30,4 @@ WT.DOM is a fork of [Closure XML](https://common-lisp.net/project/cxml/)'s DOM i
 WT.TODOMVC gives example of using WT to build the [TodoMVC](http://todomvc.com/) sample application.
 
 ## Website
-WT.WEBSITE powers [web-toolkit.org](http://web-toolkit.org).
+WT.WEBSITE powers [web-toolkit.org](https://web-toolkit.org).
