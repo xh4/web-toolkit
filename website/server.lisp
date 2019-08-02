@@ -14,7 +14,7 @@
                 (listener :port 8004)))
 
 (defun start-server ()
-  (start-server website-server))
+  (http:start-server website-server))
 
 (defun stop-server ()
-  (stop-server website-server))
+  (http:stop-server website-server))
