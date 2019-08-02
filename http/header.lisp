@@ -1,23 +1,23 @@
 (in-package :http)
 
-(defgeneric header-fields (header))
+(defgeneric header-fields (object))
 
-(defgeneric (setf header-fields) (value header))
+(defgeneric (setf header-fields) (value object))
 
-(defgeneric header-field (header name))
+(defgeneric header-field (object name))
 
-(defgeneric (setf header-field) (value header name))
+(defgeneric (setf header-field) (value object name))
 
 
-(defgeneric field-name (field))
+(defgeneric header-field-name (header-field))
 
-(defgeneric (setf field-name) (name field))
+(defgeneric (setf header-field-name) (name header-field))
 
-(defgeneric field-value (field))
+(defgeneric header-field-value (header-field))
 
-(defgeneric (setf field-value) (value field))
+(defgeneric (setf header-field-value) (value header-field))
 
-(defgeneric field-name-match-p (field name))
+(defgeneric header-field-name-match-p (header-field name))
 
 
 (defclass header ()
@@ -38,13 +38,13 @@
 
 (defmethod header-field ((header header) name)
   (loop for field in (header-fields header)
-     when (field-name-match-p field name)
+     when (header-field-name-match-p field name)
      return field))
 
 (defmethod (setf header-field) (value (header header) name)
   (let (found)
     (loop for field in (header-fields header)
-       when (field-name-match-p field name)
+       when (header-field-name-match-p field name)
        do (progn
             (setf (field-value field) value
                   found t)
@@ -59,18 +59,18 @@
 (defclass header-field ()
   ((name
     :initarg :name
-    :reader field-name)
+    :reader header-field-name)
    (value
     :initarg :value
-    :reader field-value)))
+    :reader header-field-value)))
 
 (defmethod print-object ((field header-field) stream)
   (print-unreadable-object (field stream :type t)
-    (format stream "~A: ~A" (field-name field) (field-value field))))
+    (format stream "~A: ~A" (header-field-name field) (header-field-value field))))
 
 (defmethod initialize-instance :after ((field header-field) &key)
-  (setf (field-name field) (slot-value field 'name)
-        (field-value field) (slot-value field 'value)))
+  (setf (header-field-name field) (slot-value field 'name)
+        (header-field-value field) (slot-value field 'value)))
 
 (defmethod (setf field-name) (name field)
   (let ((name (typecase name
@@ -84,8 +84,8 @@
                  (t (format nil "~A" value)))))
     (setf (slot-value field 'value) value)))
 
-(defmethod field-name-match-p (field name)
+(defmethod header-field-name-match-p (header-field name)
   (let ((name (typecase name
                 (string name)
                 (t (format nil "~A" name)))))
-    (string-equal name (field-name field))))
+    (string-equal name (header-field-name field))))

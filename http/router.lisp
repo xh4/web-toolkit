@@ -79,10 +79,7 @@
 (defun handle-missing (request)
   (declare (ignore request))
   (setf (response-status *response*) 404)
-  (appendf (response-header *response*)
-           (list (make-instance 'header-field
-                                :name "Content-Type"
-                                :value "text/plain")))
+  (setf (header-field *response* "Content-Type") "text/plain")
   (setf (response-body *response*) "not found"))
 
 (defmethod handle ((router router) (request request))

@@ -1,23 +1,20 @@
 (in-package :website)
 
-(defvar *acceptor* nil)
+(define-handler website-handler () ())
+
+(defmethod handle ((handler website-handler) (request request))
+  (declare (ignore handler request))
+  (setf (response-status *response*) 200)
+  (setf (header-field *response* "Content-Type") "text/html")
+  (setf (response-body *response*) "Lisp Web Toolkit"))
+
+(define-server website-server
+    :handler website-handler
+    :listeners (list
+                (listener :port 8004)))
 
 (defun start-server ()
-  (when (not *acceptor*)
-    (handler-case
-        (let ((acceptor (make-instance 'hunchentoot:easy-acceptor :port 8080)))
-          (setf *acceptor* acceptor)
-          (hunchentoot:start *acceptor*)
-          *acceptor*)
-      (error (e)
-        (format t "~A~%" e)
-        (setf *acceptor* nil)))))
+  (start-server website-server))
 
 (defun stop-server ()
-  (when *acceptor*
-    (handler-case
-        (hunchentoot:stop *acceptor*)
-      (error (e)
-        (format t "~A~%" e)))
-    (setf *acceptor* nil)
-    t))
+  (stop-server website-server))

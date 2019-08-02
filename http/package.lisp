@@ -6,8 +6,8 @@
   (:export :header
            :header-fields
            :header-field
-           :field-name
-           :field-value
+           :header-field-name
+           :header-field-value
            :body
            :request
            :request-method
@@ -19,6 +19,7 @@
            :status-code
            :status-reason-phrase
            :response
+           :*response*
            :response-status
            :response-header
            :response-body
