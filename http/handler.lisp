@@ -1,16 +1,16 @@
 (in-package :http)
 
-(define-condition next-handler () ())
+(define-condition condition/next-handler () ())
 
 (defmacro next-handler ()
-  `(restart-case (signal 'next-handler)
-     (%next-handler (handler) handler)))
+  `(restart-case (signal 'condition/next-handler)
+     (restart/next-handler (handler) handler)))
 
-(define-condition call-next-handler () ())
+(define-condition condition/call-next-handler () ())
 
 (defmacro call-next-handler ()
-  `(restart-case (signal 'call-next-handler)
-     (%call-next-handler (response) response)))
+  `(restart-case (signal 'condition/call-next-handler)
+     (restart/call-next-handler (response) response)))
 
 ;; Mapping from handler names (class names of handlers) to handler instances
 (defvar *handler-mapping-table* (make-hash-table))
@@ -88,18 +88,19 @@
 
              (%call-handler-method (handler)
                (setf next-handlers (rest next-handlers))
-               (handler-bind ((next-handler (lambda (c)
-                                              (declare (ignore c))
-                                              (let ((next-handler (next-handler)))
-                                                (break)
-                                                (invoke-restart '%next-handler next-handler))))
-                              (call-next-handler (lambda (c)
-                                                   (declare (ignore c))
-                                                   (call-next-handler)
-                                                   (invoke-restart '%call-next-handler *response*))))
+               (handler-bind ((condition/next-handler
+                               (lambda (c)
+                                 (declare (ignore c))
+                                 (let ((next-handler (%next-handler)))
+                                   (invoke-restart 'restart/next-handler next-handler))))
+                              (condition/call-next-handler
+                               (lambda (c)
+                                 (declare (ignore c))
+                                 (%call-next-handler)
+                                 (invoke-restart 'restart/call-next-handler *response*))))
                  (let ((result (handle handler request)))
                    (when (typep result 'response)
                      (setf *response* result))))))
 
-      (call-next-handler))
+      (%call-next-handler))
     *response*))
