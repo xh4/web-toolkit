@@ -1,5 +1,17 @@
 (in-package :http)
 
+(define-condition next-handler () ())
+
+(defmacro next-handler ()
+  `(restart-case (signal 'next-handler)
+     (%next-handler (handler) handler)))
+
+(define-condition call-next-handler () ())
+
+(defmacro call-next-handler ()
+  `(restart-case (signal 'call-next-handler)
+     (%call-next-handler (response) response)))
+
 ;; Mapping from handler names (class names of handlers) to handler instances
 (defvar *handler-mapping-table* (make-hash-table))
 
@@ -53,18 +65,6 @@
       (t handlers))))
 
 ;; (compute-handler-precedence-list your-handler)
-
-(define-condition next-handler () ())
-
-(defmacro next-handler ()
-  `(restart-case (signal 'next-handler)
-     (%next-handler (handler) handler)))
-
-(define-condition call-next-handler () ())
-
-(defmacro call-next-handler ()
-  `(restart-case (signal 'call-next-handler)
-     (%call-next-handler (response) response)))
 
 (defun invoke-handler (handler request)
   (let ((next-handlers (reverse (compute-handler-precedence-list handler)))
