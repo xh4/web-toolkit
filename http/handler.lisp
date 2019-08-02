@@ -70,23 +70,23 @@
   (let ((next-handlers (reverse (compute-handler-precedence-list handler)))
         (*response* (make-instance 'response
                                    :header (make-instance 'header))))
-    (labels ((next-handler ()
+    (labels ((%next-handler ()
                (first next-handlers))
 
-             (call-next-handler ()
-               (let ((handler (next-handler)))
+             (%call-next-handler ()
+               (let ((handler (%next-handler)))
                  (when handler
-                   (call-handler handler))))
+                   (%call-handler handler))))
 
-             (call-handler (handler)
+             (%call-handler (handler)
                (let ((method (find-method #'handle
                                           '()
                                           (list (class-of handler) (find-class 'request))
                                           nil)))
                  (when method
-                   (call-handler-method handler))))
+                   (%call-handler-method handler))))
 
-             (call-handler-method (handler)
+             (%call-handler-method (handler)
                (setf next-handlers (rest next-handlers))
                (handler-bind ((next-handler (lambda (c)
                                               (declare (ignore c))
