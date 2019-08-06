@@ -1,7 +1,5 @@
 (in-package :http)
 
-;; (setf hunchentoot:*catch-errors-p* nil)
-
 (defclass acceptor (hunchentoot:acceptor)
   ((server
     :initarg :server
@@ -20,23 +18,82 @@
                                       :value value)
            do (push field (request-header request))
            finally (reversef (request-header request)))
-        (let ((response (invoke-handler handler request)))
-          (handle-response response))))))
+        (handler-bind ((error (lambda (c)
+                                (invoke-debugger c))))
+          (let ((response (invoke-handler handler request)))
+            (handle-response response)))))))
 
-(defun handle-response (response)
-  (setf (hunchentoot:return-code*) (or (response-status response) 200))
+(defun handle-response-header (response)
   (let ((header (response-header response)))
     (loop for field in (header-fields header)
        for name = (header-field-name field)
        for value = (header-field-value field)
        do (setf (hunchentoot:header-out name) value)))
-  (let ((stream (hunchentoot:send-headers)))
+  (hunchentoot:send-headers))
+
+(defun handle-response (response)
+  (when (pathnamep (response-body response))
+    (return-from handle-response (handle-pathname-response response)))
+
+  (setf (hunchentoot:return-code*) (or (response-status response) 200))
+
+  (let ((stream (handle-response-header response)))
     (let ((body (response-body response)))
       (typecase body
         (string
          (let ((octets (flexi-streams:string-to-octets body
                                                        :external-format :utf-8)))
            (write-sequence octets stream)))))))
+
+(defun handle-pathname-response (response)
+  (let ((pathname (response-body response)))
+
+    (when (or (wild-pathname-p pathname)
+              (not (fad:file-exists-p pathname))
+              (fad:directory-exists-p pathname))
+      ;; Missing
+      (setf (response-status response) 404)
+      (setf (header-field response "Content-Type") "text/plain")
+      (setf (response-body response) "static handler: not found")
+      (return-from handle-pathname-response))
+
+    ;; Content type
+    (let ((content-type (or (header-field-value
+                             (header-field response "Content-Type"))
+                            (mime-type pathname)
+                            "application/octet-stream")))
+      ;; Charset
+      (if (and (cl-ppcre:scan "(?i)^text" content-type)
+               (not (cl-ppcre:scan "(?i);\\s*charset=" content-type)))
+          (setf content-type
+                (format nil "~A; charset=~(~A~)" content-type
+                        (flex:external-format-name
+                         (flex:make-external-format :utf8 :eol-style :lf)))))
+      (setf (header-field response "Content-Type") content-type))
+
+    ;; Last modified
+    (let ((time (or (file-write-date pathname)
+                    (get-universal-time))))
+      (setf (header-field response "Last-Modified")
+            (rfc-1123-date time)))
+
+    (with-open-file (input-stream pathname
+                          :direction :input
+                          :element-type '(unsigned-byte 8))
+      (let* ((bytes-to-send (file-length input-stream))
+             (buffer-size 8192)
+             (buffer (make-array buffer-size :element-type '(unsigned-byte 8))))
+        (let ((output-stream (handle-response-header response)))
+          (loop
+             (when (zerop bytes-to-send)
+               (return))
+             (let* ((chunk-size (min buffer-size bytes-to-send)))
+               (unless (eql chunk-size (read-sequence buffer input-stream
+                                                      :end chunk-size))
+                 (error "can't read from input file"))
+               (write-sequence buffer output-stream :end chunk-size)
+               (decf bytes-to-send chunk-size)))
+          (finish-output output-stream))))))
 
 (defclass listener ()
   ((port

@@ -37,4 +37,6 @@
                 :compute-class-precedence-list
                 :subclassp)
   (:import-from :cl-change-case
-                :header-case))
+                :header-case)
+  (:import-from :split-sequence
+                :split-sequence))

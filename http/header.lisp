@@ -78,14 +78,20 @@
                 (t (header-case (format nil "~A" name))))))
     (setf (slot-value field 'name) name)))
 
+(defmethod header-field-name ((field null))
+  nil)
+
 (defmethod (setf header-field-value) (value field)
   (let ((value (typecase value
                  (string value)
                  (t (format nil "~A" value)))))
     (setf (slot-value field 'value) value)))
 
+(defmethod header-field-value ((field null))
+  nil)
+
 (defmethod header-field-name-match-p (header-field name)
   (let ((name (typecase name
                 (string name)
                 (t (format nil "~A" name)))))
-    (string-equal name (header-field-name field))))
+    (string-equal name (header-field-name header-field))))

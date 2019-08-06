@@ -7,7 +7,9 @@
   :depends-on (:hunchentoot
                :alexandria
                :closer-mop
-               :cl-change-case)
+               :cl-change-case
+               :split-sequence
+               :cl-fad)
   :serial t
   :components ((:module "http"
                         :serial t

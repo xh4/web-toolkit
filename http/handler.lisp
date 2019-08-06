@@ -12,6 +12,11 @@
   `(restart-case (signal 'condition/call-next-handler)
      (restart/call-next-handler (response) response)))
 
+(define-condition condition/abort-handler () ())
+
+(defmacro abort-handler ()
+  `(signal 'condition/abort-handler))
+
 ;; Mapping from handler names (class names of handlers) to handler instances
 (defvar *handler-mapping-table* (make-hash-table))
 
@@ -70,37 +75,42 @@
   (let ((next-handlers (reverse (compute-handler-precedence-list handler)))
         (*response* (make-instance 'response
                                    :header (make-instance 'header))))
-    (labels ((%next-handler ()
-               (first next-handlers))
+    (block finish-handling
+      (labels ((%next-handler ()
+                 (first next-handlers))
 
-             (%call-next-handler ()
-               (let ((handler (%next-handler)))
-                 (when handler
-                   (%call-handler handler))))
+               (%call-next-handler ()
+                 (let ((handler (%next-handler)))
+                   (when handler
+                     (%call-handler handler))))
 
-             (%call-handler (handler)
-               (let ((method (find-method #'handle
-                                          '()
-                                          (list (class-of handler) (find-class 'request))
-                                          nil)))
-                 (when method
-                   (%call-handler-method handler))))
+               (%call-handler (handler)
+                 (let ((method (find-method #'handle
+                                            '()
+                                            (list (class-of handler) (find-class 'request))
+                                            nil)))
+                   (when method
+                     (%call-handler-method handler))))
 
-             (%call-handler-method (handler)
-               (setf next-handlers (rest next-handlers))
-               (handler-bind ((condition/next-handler
-                               (lambda (c)
-                                 (declare (ignore c))
-                                 (let ((next-handler (%next-handler)))
-                                   (invoke-restart 'restart/next-handler next-handler))))
-                              (condition/call-next-handler
-                               (lambda (c)
-                                 (declare (ignore c))
-                                 (%call-next-handler)
-                                 (invoke-restart 'restart/call-next-handler *response*))))
-                 (let ((result (handle handler request)))
-                   (when (typep result 'response)
-                     (setf *response* result))))))
+               (%call-handler-method (handler)
+                 (setf next-handlers (rest next-handlers))
+                 (handler-bind ((condition/next-handler
+                                 (lambda (c)
+                                   (declare (ignore c))
+                                   (let ((next-handler (%next-handler)))
+                                     (invoke-restart 'restart/next-handler next-handler))))
+                                (condition/call-next-handler
+                                 (lambda (c)
+                                   (declare (ignore c))
+                                   (%call-next-handler)
+                                   (invoke-restart 'restart/call-next-handler *response*)))
+                                (condition/abort-handler
+                                 (lambda (c)
+                                   (declare (ignore c))
+                                   (return-from finish-handling))))
+                   (let ((result (handle handler request)))
+                     (when (typep result 'response)
+                       (setf *response* result))))))
 
-      (%call-next-handler))
+        (%call-next-handler)))
     *response*))
