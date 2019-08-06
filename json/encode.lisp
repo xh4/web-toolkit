@@ -4,7 +4,7 @@
   (let ((pairs (slot-value object 'pairs)))
     (cl-json:encode-json pairs stream)))
 
-(defun encode-json (value &optional target &key)
+(defun encode (value &optional target &key)
   (typecase target
     (null (cl-json:encode-json-to-string value))
     (stream (cl-json:encode-json value target))
@@ -15,3 +15,6 @@
                              :if-does-not-exist :create)
        (cl-json:encode-json value stream)))
     (t (error "unknown target"))))
+
+(defun encode-json (&rest args)
+  (apply #'encode args))

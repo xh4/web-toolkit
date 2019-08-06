@@ -48,7 +48,7 @@ is such as set by SET-DECODER-WT-CLOS-SEMANTICS."
      (set-decoder-clos-semantics)
      ,@body))
 
-(defun decode-json (source &key)
+(defun decode (source &key)
   (with-decoder-clos-semantics
     (typecase source
       (string (cl-json:decode-json-from-string source))
@@ -57,3 +57,6 @@ is such as set by SET-DECODER-WT-CLOS-SEMANTICS."
       (stream (cl-json:decode-json-from-source source))
       (null nil)
       (t (error "unknown source")))))
+
+(defun decode-json (&rest args)
+  (apply #'decode args))

@@ -4,7 +4,9 @@
   (:nicknames :wt.json)
   (:use :cl)
   (:shadow :get)
-  (:export :encode-json
+  (:export :encode
+           :encode-json
+           :decode
            :decode-json
            :object
            :alist-object
