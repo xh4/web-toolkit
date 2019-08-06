@@ -12,4 +12,12 @@
                 :header-field
                 :response-status
                 :response-header
-                :response-body))
+                :response-body)
+  (:import-from :html
+                :document
+                :html
+                :head
+                :body
+                :title
+                :div
+                :h1))

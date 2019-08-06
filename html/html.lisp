@@ -72,7 +72,10 @@
                        (t (format nil "~A" _value)))
          do (dom:set-attribute element name value))
       (loop for child in (flatten children)
-         do (dom:append-child element child)))
+         do
+           (when (stringp child)
+             (setf child (text child)))
+           (dom:append-child element child)))
     element))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

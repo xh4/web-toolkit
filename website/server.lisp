@@ -8,12 +8,12 @@
   (setf (header-field *response* "Content-Type") "text/html")
   (setf (response-body *response*)
         (html:serialize
-         (html:document
-          (html:html
-           (html:head
-            (html:title (html:text "Lisp Web Toolkit")))
-           (html:body
-            (html:h1 (html:text "Lisp Web Toolkit"))))))))
+         (document
+          (html
+           (head
+            (title "Lisp Web Toolkit"))
+           (body
+            (h1 "Lisp Web Toolkit")))))))
 
 (define-server website-server
     :handler website-handler
