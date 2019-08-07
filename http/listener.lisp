@@ -57,7 +57,7 @@
       (setf (response-body response) "static handler: not found")
       (return-from handle-pathname-response))
 
-    ;; Content type
+    ;; Content-Type
     (let ((content-type (or (header-field-value
                              (header-field response "Content-Type"))
                             (mime-type pathname)
@@ -71,7 +71,7 @@
                          (flex:make-external-format :utf8 :eol-style :lf)))))
       (setf (header-field response "Content-Type") content-type))
 
-    ;; Last modified
+    ;; Last-Modified
     (let ((time (or (file-write-date pathname)
                     (get-universal-time))))
       (setf (header-field response "Last-Modified")
