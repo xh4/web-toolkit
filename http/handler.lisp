@@ -61,13 +61,16 @@
 ;; (compute-handler-class-precedence-list your-handler)
 
 (defun compute-handler-precedence-list (handler)
-  (let ((handlers (loop for handler-class in (compute-handler-class-precedence-list handler)
-                     for handler-instance = (gethash (class-name handler-class) *handler-mapping-table*)
-                     when handler-instance
-                     collect handler-instance)))
-    (typecase handler
-      (handler (cons handler (rest handlers)))
-      (t handlers))))
+  (let ((handler-classes (compute-handler-class-precedence-list handler)))
+    (let ((handlers (loop for handler-class in handler-classes
+                       for handler-instance = (gethash (class-name handler-class) *handler-mapping-table*)
+                       when handler-instance
+                       collect handler-instance
+                       unless handler-instance
+                       do (format t "Handler class ~A has no instance~%" handler-class))))
+      (typecase handler
+        (handler (cons handler (rest handlers)))
+        (t handlers)))))
 
 ;; (compute-handler-precedence-list your-handler)
 
@@ -85,14 +88,13 @@
                      (%call-handler handler))))
 
                (%call-handler (handler)
-                 (let ((method (find-method #'handle
-                                            '()
-                                            (list (class-of handler) (find-class 'request))
-                                            nil)))
-                   (when method
-                     (%call-handler-method handler))))
+                 (when (find-method #'handle
+                                    '()
+                                    (list (class-of handler) (find-class 'request))
+                                    nil)
+                   (%call-handler-with-request handler)))
 
-               (%call-handler-method (handler)
+               (%call-handler-with-request (handler)
                  (setf next-handlers (rest next-handlers))
                  (handler-bind ((condition/next-handler
                                  (lambda (c)

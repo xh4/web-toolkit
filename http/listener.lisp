@@ -11,17 +11,24 @@
     (let ((handler (server-handler server)))
       (let ((request (make-instance 'request
                                     :method (hunchentoot:request-method request0)
-                                    :uri (hunchentoot:request-uri request0))))
+                                    :uri (hunchentoot:request-uri request0)
+                                    :stream (hunchentoot::content-stream request0)))
+            (header (make-instance 'header)))
         (loop for (name . value) in (hunchentoot:headers-in request0)
            for field = (make-instance 'header-field
                                       :name name
                                       :value value)
-           do (push field (request-header request))
-           finally (reversef (request-header request)))
+           do (push field (header-fields header))
+           finally
+             (reversef (header-fields header))
+             (setf (request-header request) header))
         (handler-bind ((error (lambda (c)
                                 (invoke-debugger c))))
           (let ((response (invoke-handler handler request)))
-            (handle-response response)))))))
+            (unless (eq (response-status response) 101)
+              (handle-response response))
+            ;; Prevent hunchentoot send the response
+            (setf hunchentoot::*headers-sent* t)))))))
 
 (defun handle-response-header (response)
   (let ((header (response-header response)))

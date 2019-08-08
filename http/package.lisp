@@ -30,6 +30,7 @@
            :listener
            :listener-port
            :listener-address
+           :router
            :define-server
            :start-server
            :stop-server)

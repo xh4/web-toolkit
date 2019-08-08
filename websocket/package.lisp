@@ -17,4 +17,18 @@
 
            :define-server
            :start-server
-           :stop-server))
+           :stop-server)
+  (:import-from :http
+                :define-handler
+                :handler
+                :handle
+                :request
+                :request-uri
+                :request-header
+                :header-field
+                :header-fields
+                :header-field-name
+                :header-field-value
+                :response-status
+                :response-body
+                :*response*))

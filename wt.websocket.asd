@@ -6,17 +6,22 @@
   :mailto "xh@coobii.com"
   :depends-on (:wt.http
                :alexandria
-               ;; :quri
+               :cl-ppcre
+               :ironclad
+               :quri
                ;; :clack
                ;; :hunchentoot
                ;; :websocket-driver-server
-               )
+               :bordeaux-threads)
   :serial t
   :components ((:module "websocket"
                         :serial t
                         :components ((:file "package")
                                      (:file "session")
                                      (:file "endpoint")
+                                     (:file "frame")
+                                     (:file "protocol")
+                                     (:file "connection")
                                      (:file "message")
                                      ;; (:file "server")
                                      ;; (:file "client")

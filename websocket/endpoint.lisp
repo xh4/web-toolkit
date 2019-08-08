@@ -1,6 +1,6 @@
 (in-package :websocket)
 
-(defclass endpoint ()
+(define-handler endpoint ()
   ((path
     :initarg :path
     :initform nil
@@ -20,7 +20,7 @@
 
 (defmacro define-endpoint (name &key path session-class)
   `(progn
-     (defclass ,name (endpoint) ())
+     (define-handler ,name (endpoint) ())
      (if (boundp ',name)
          (setf (endpoint-path ,name) ,path
                (endpoint-session-class ,name) ,session-class)

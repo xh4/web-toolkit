@@ -46,7 +46,7 @@
     (loop for field in (header-fields header)
        when (header-field-name-match-p field name)
        do (progn
-            (setf (field-value field) value
+            (setf (header-field-value field) value
                   found t)
             (return field))
        finally
