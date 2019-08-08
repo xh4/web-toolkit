@@ -13,11 +13,7 @@
            :on-message
            :send-text
            :send-binary
-           :ping
-
-           :define-server
-           :start-server
-           :stop-server)
+           :ping)
   (:import-from :http
                 :define-handler
                 :handler
