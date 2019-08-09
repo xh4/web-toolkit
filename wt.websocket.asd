@@ -9,9 +9,6 @@
                :cl-ppcre
                :ironclad
                :quri
-               ;; :clack
-               ;; :hunchentoot
-               ;; :websocket-driver-server
                :bordeaux-threads)
   :serial t
   :components ((:module "websocket"
@@ -20,8 +17,8 @@
                                      (:file "session")
                                      (:file "endpoint")
                                      (:file "frame")
-                                     (:file "protocol")
                                      (:file "connection")
+                                     (:file "protocol")
                                      (:file "message")
                                      ;; (:file "server")
                                      ;; (:file "client")

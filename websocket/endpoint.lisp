@@ -10,17 +10,14 @@
     :initform 'session
     :accessor endpoint-session-class)))
 
-
 (defmethod handle ((endpoint endpoint) (request request))
   (call-next-handler))
 
-
 (defgeneric on-open (endpoint session))
 
-(defgeneric on-close (endpoint &optional reason))
+(defgeneric on-close (endpoint session &optional reason))
 
-(defgeneric on-error (endpoint error))
-
+(defgeneric on-error (endpoint session error))
 
 (defmacro define-endpoint (name &key path session-class)
   `(progn

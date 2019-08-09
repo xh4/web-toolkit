@@ -2,9 +2,9 @@
 
 (defclass connection ()
   ((input-stream     :initarg :input-stream
-                     :initform (error "Must make clients with input streams"))
+                     :initform (error "Must make connection with input stream"))
    (output-stream    :initarg :output-stream
-                     :initform (error "Must make clients with output streams"))
+                     :initform (error "Must make connection with output streams"))
    ;; (request    :initarg :request
    ;;             :reader connection-request
    ;;             :initform (error "Must make clients with requests"))
@@ -12,6 +12,15 @@
    (state      :initform :disconnected)
    (pending-fragments :initform nil)
    (pending-opcode    :initform nil)))
+
+(defun send-frame (connection opcode &optional data)
+  (with-slots (write-lock output-stream) connection
+    (bt:with-lock-held (write-lock)
+      (write-frame output-stream opcode data))))
+
+(defun receive-frame (connection)
+  (with-slots (input-stream) connection
+    (read-frame input-stream)))
 
 (defun close-connection (connection &key (data nil data-supplied-p)
                                       (status 1000)
@@ -27,13 +36,3 @@
                                (flexi-streams:string-to-octets
                                 reason
                                 :external-format :utf-8)))))
-
-
-(defun send-frame (connection opcode data)
-  (with-slots (write-lock output-stream) connection
-    (bt:with-lock-held (write-lock)
-      (write-frame output-stream opcode data))))
-
-(defun read-frame-from-connection (connection)
-  (with-slots (input-stream) connection
-        (read-frame input-stream)))

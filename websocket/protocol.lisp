@@ -72,7 +72,7 @@ format control and arguments."
                             (on-message session (slot-value c 'data)))))
             (with-slots (state) connection
               (loop do (handle-frame connection
-                                     (read-frame-from-connection connection))
+                                     (receive-frame connection))
                  while (not (eq :closed state))))))))))
 
 (defun websocket-uri (path host &optional ssl)

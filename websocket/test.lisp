@@ -13,10 +13,10 @@
   (format t "Open: ~A~%" session)
   (send-text session "Hello from server"))
 
-(defmethod on-close ((endpoint test-endpoint) &optional reason)
+(defmethod on-close ((endpoint test-endpoint) session &optional reason)
   (format t "Close: ~A~%" reason))
 
-(defmethod on-error ((endpoint test-endpoint) error)
+(defmethod on-error ((endpoint test-endpoint) session error)
   (format t "Error: ~A~%" error))
 
 (http:define-handler test-handler () ())

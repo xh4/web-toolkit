@@ -25,15 +25,9 @@
 (defgeneric ping (session &optional data &key)
   (:method ((session session) &optional data &key)
     (with-slots (connection) session
-      (send-frame connection +ping+ nil))))
-
-(defgeneric send-pong (session data &key)
-  (:method ((session session) data &key)
-    (error "unimplemented")))
-
+      (send-frame connection +ping+))))
 
 (defgeneric on-message (session message))
-
 
 (defmacro define-session (name &rest arguments)
   `(defclass ,name (session)
