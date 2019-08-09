@@ -23,7 +23,8 @@
 
 (defmethod print-object ((router router) stream)
   (print-unreadable-object (router stream :type t :identity t)
-    (pprint-router router stream)))
+    (if *print-pretty*
+        (pprint-router router stream))))
 
 (defmacro define-router (name)
   `(if (boundp ',name)

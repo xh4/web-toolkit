@@ -79,10 +79,10 @@
 
 (defmethod print-object ((server server) stream)
   (print-unreadable-object (server stream :type t :identity t)
-    (pprint-server server stream)))
+    (if *print-pretty*
+        (pprint-server server stream))))
 
-(defmethod initialize-instance :after ((server server) &key)
-  )
+(defmethod initialize-instance :after ((server server) &key))
 
 (defgeneric start-server (server &key))
 
