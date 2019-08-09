@@ -112,7 +112,6 @@
 ;; (path-trim-prefix nil "/foo/bar/")
 
 (defun build-static-routing-rule (&key prefix location)
-
   (check-type location (or string pathname))
   (when (stringp location)
     (setf location (pathname location)))
@@ -133,9 +132,21 @@
 
 (defmacro router (&rest rule-forms)
   (let ((rules (loop for rule-form in rule-forms
-                  collect (build-routing-rule
-                           (make-keyword (car rule-form))
-                           rule-form))))
+                  collect
+                    (progn
+                      (unless (listp rule-form)
+                        (error "Illformed rule form: ~A, expect a list" rule-form))
+                      (let ((type (car rule-form)))
+                        (unless (symbolp type)
+                          (error "Illformed rule form: ~A, expect a symbol at the head" rule-form))
+                        (setf type (make-keyword type))
+                        (unless (find-method #'build-routing-rule
+                                             '()
+                                             (list `(eql ,type)
+                                                   (find-class t))
+                                             nil)
+                          (error "No method to build routing rule for form ~A" rule-form))
+                        (build-routing-rule type rule-form))))))
     (make-instance 'router :rules rules)))
 
 (defun handle-missing (request)

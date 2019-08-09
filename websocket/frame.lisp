@@ -215,7 +215,9 @@
               (send-frame connection +pong+ (frame-data frame)))
              ((eq +connection-close+ opcode)
               ;; Reply to close with a close with the same data
-              (close-connection connection :data (frame-data frame))
+              (let ((reason (frame-data frame)))
+                (close-connection connection :data reason)
+                (signal 'close-received :reason reason))
               (setq state :closed))
              ((eq +pong+ opcode)
               ;; Probably just a heartbeat, don't do anything.

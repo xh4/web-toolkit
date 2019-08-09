@@ -27,6 +27,11 @@ format control and arguments."
     :initarg :data
     :initform nil)))
 
+(define-condition close-received ()
+  ((reason
+    :initarg :reason
+    :initform nil)))
+
 (defun handle-user-endpoint-request (endpoint request)
   (handler-bind ((error (lambda (c)
                           (invoke-debugger c))))
@@ -39,37 +44,72 @@ format control and arguments."
                                'session)))
         (let ((session (make-instance session-class :connection connection)))
 
-          (let ((result (on-open endpoint session)))
-            (when (typep result 'session)
-              (setf session result)))
+          (when (find-method #'on-open '()
+                             `(,(class-of endpoint) ,(find-class t))
+                             nil)
+            (let ((result (on-open endpoint session)))
+              (when (typep result 'session)
+                (setf session result))))
 
           (handler-bind ((websocket-error
                           (lambda (e)
-                            (with-slots (status format-control format-arguments)
-                                e
+                            (with-slots (status) e
                               (close-connection connection
                                                 :status status
-                                                :reason (princ-to-string e)))))
+                                                :reason (princ-to-string e))
+                              (when (find-method #'on-error '()
+                                                 `( ,(class-of endpoint)
+                                                     ,(find-class t)
+                                                     ,(find-class t) )
+                                                 nil)
+                                (on-error endpoint session e)))))
                          (flex:external-format-error
                           (lambda (e)
-                            (declare (ignore e))
                             (close-connection connection
                                               :status 1007
-                                              :reason "Bad UTF-8")))
+                                              :reason "Bad UTF-8")
+                            (when (find-method #'on-error '()
+                                               `( ,(class-of endpoint)
+                                                   ,(find-class t)
+                                                   ,(find-class t) )
+                                               nil)
+                              (on-error endpoint session e))))
                          (error
                           (lambda (e)
-                            (declare (ignore e))
                             (close-connection connection
                                               :status 1011
-                                              :reason "Internal error")))
+                                              :reason "Internal error")
+                            (when (find-method #'on-error '()
+                                               `( ,(class-of endpoint)
+                                                   ,(find-class t)
+                                                   ,(find-class t) )
+                                               nil)
+                              (on-error endpoint session e))))
 
                          (text-received
                           (lambda (c)
-                            (on-message session (slot-value c 'text))))
+                            (when (find-method #'on-message '()
+                                               `( ,(class-of session)
+                                                   ,(find-class t) )
+                                               nil)
+                              (on-message session (slot-value c 'text)))))
 
                          (binary-received
                           (lambda (c)
-                            (on-message session (slot-value c 'data)))))
+                            (when (find-method #'on-message '()
+                                               `( ,(class-of session)
+                                                   ,(find-class t) )
+                                               nil)
+                              (on-message session (slot-value c 'data)))))
+
+                         (close-received
+                          (lambda (c)
+                            (when (find-method #'on-close '()
+                                               `( ,(class-of endpoint)
+                                                   ,(find-class t) )
+                                               nil)
+                              (let ((reason (slot-value c 'reason)))
+                                (on-close endpoint session reason))))))
             (with-slots (state) connection
               (loop do (handle-frame connection
                                      (receive-frame connection))
