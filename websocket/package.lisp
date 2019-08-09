@@ -18,6 +18,7 @@
                 :define-handler
                 :handler
                 :handle
+                :call-next-handler
                 :request
                 :request-uri
                 :request-header

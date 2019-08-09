@@ -1,13 +1,13 @@
 (in-package :websocket)
 
 (defclass connection ()
-  ((input-stream     :initarg input-stream
+  ((input-stream     :initarg :input-stream
                      :initform (error "Must make clients with input streams"))
-   (output-stream    :initarg output-stream
+   (output-stream    :initarg :output-stream
                      :initform (error "Must make clients with output streams"))
-   (request    :initarg request
-               :reader client-request
-               :initform (error "Must make clients with requests"))
+   ;; (request    :initarg :request
+   ;;             :reader connection-request
+   ;;             :initform (error "Must make clients with requests"))
    (write-lock :initform (bt:make-lock))
    (state      :initform :disconnected)
    (pending-fragments :initform nil)
@@ -30,8 +30,8 @@
 
 
 (defun send-frame (connection opcode data)
-  (with-slots (write-lock output-stream) client
-    (with-lock-held (write-lock)
+  (with-slots (write-lock output-stream) connection
+    (bt:with-lock-held (write-lock)
       (write-frame output-stream opcode data))))
 
 (defun read-frame-from-connection (connection)

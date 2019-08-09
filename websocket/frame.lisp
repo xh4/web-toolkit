@@ -160,7 +160,6 @@
                  (t
                   ;; A data frame, is either initiaing a new fragment sequence
                   ;; or continuing one
-                  ;;
                   (maybe-accept-data-frame)
                   (cond ((= opcode +continuation-frame+)
                          (push frame pending-fragments))
@@ -172,19 +171,16 @@
                          (= opcode +continuation-frame+))))
            ;; This is a FIN fragment and (1) there are pending fragments and (2)
            ;; this isn't a control or continuation frame. Error out.
-           ;;
            (websocket-error
             1002 "Only control frames can interleave fragment sequences."))
           (t
            ;; This is a final, FIN fragment. So first read the fragment's data
            ;; into the `data' slot.
-           ;;
            (cond
              ((not (control-frame-p opcode))
               ;; This is either a single-fragment data frame or a continuation
               ;; frame. Join the fragments and keep on processing. Join any
               ;; outstanding fragments and process the message.
-              ;;
               (maybe-accept-data-frame)
               (unless pending-opcode
                 (setq pending-opcode opcode))
@@ -192,18 +188,14 @@
                      (reverse (cons frame pending-fragments))))
                 (cond ((eq +text-frame+ pending-opcode)
                        ;; A text message was received
-                       ;;
-                       ;; (text-message-received
-                       ;;  resource client
-                       ;;  (flexi-streams:octets-to-string
-                       ;;   (apply #'concatenate 'vector
-                       ;;          (mapcar #'frame-data
-                       ;;                  ordered-frames))
-                       ;;   :external-format :utf-8))
-                       )
+                       (signal 'text-received
+                               :text (flexi-streams:octets-to-string
+                                      (apply #'concatenate 'vector
+                                             (mapcar #'frame-data
+                                                     ordered-frames))
+                                      :external-format :utf-8)))
                       ((eq +binary-frame+ pending-opcode)
                        ;; A binary message was received
-                       ;;
                        (let ((temp-file
                               (fad:with-output-to-temporary-file
                                   (fstream :element-type '(unsigned-byte 8))
@@ -211,8 +203,8 @@
                                    do (write-sequence (frame-data frame)
                                                       fstream)))))
                          (unwind-protect
-                              ;; (binary-message-received resource client
-                              ;;                          temp-file)
+                              (signal :binary-received
+                                      :data temp-file)
                               (delete-file temp-file))))
                       (t
                        (websocket-error
@@ -223,7 +215,6 @@
               (send-frame connection +pong+ (frame-data frame)))
              ((eq +connection-close+ opcode)
               ;; Reply to close with a close with the same data
-              ;;
               (close-connection connection :data (frame-data frame))
               (setq state :closed))
              ((eq +pong+ opcode)

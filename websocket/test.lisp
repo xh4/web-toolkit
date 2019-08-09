@@ -7,11 +7,11 @@
   (send-text session message))
 
 (define-endpoint test-endpoint
-    :path "/foo"
     :session-class 'test-session)
 
 (defmethod on-open ((endpoint test-endpoint) session)
-  (format t "Open: ~A~%" session))
+  (format t "Open: ~A~%" session)
+  (send-text session "Hello from server"))
 
 (defmethod on-close ((endpoint test-endpoint) &optional reason)
   (format t "Close: ~A~%" reason))
