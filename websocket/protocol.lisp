@@ -138,5 +138,6 @@ format control and arguments."
        for value = (header-field-value header-field)
        do (hunchentoot::write-header-line name value stream))
     (format stream "~C~C" #\Return #\Linefeed)
-    (force-output stream)
-    stream))
+    (force-output stream))
+
+  (http::request-stream request))
