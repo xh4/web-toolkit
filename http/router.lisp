@@ -6,10 +6,24 @@
     :initform nil
     :accessor router-rules)))
 
+(defun pprint-router (router stream)
+  (let ((*print-pretty* t))
+    (pprint-logical-block (stream nil)
+      (pprint-indent :block (indent-relative-to-object-name router 1) stream)
+      (pprint-newline :mandatory stream)
+      (write-string "Rules:" stream)
+      (loop for rule in (router-rules router)
+         do
+           (pprint-indent :block (indent-relative-to-object-name router 3) stream)
+           (pprint-newline :mandatory stream)
+           (format stream "~A" rule)
+         finally
+           (pprint-indent :block (indent-relative-to-object-name router -2) stream)
+           (pprint-newline :mandatory stream)))))
+
 (defmethod print-object ((router router) stream)
   (print-unreadable-object (router stream :type t :identity t)
-    (loop for rule in (router-rules router)
-         do (format stream "~%  ~A" rule))))
+    (pprint-router router stream)))
 
 (defmacro define-router (name)
   `(if (boundp ',name)

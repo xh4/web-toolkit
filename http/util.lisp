@@ -25,3 +25,8 @@ HANDLE-IF-MODIFIED-SINCE."
             hour
             minute
             second)))
+
+(defun indent-relative-to-object-name (object n)
+  (- n
+     1
+     (length (symbol-name (class-name (class-of object))))))
