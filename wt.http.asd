@@ -22,5 +22,6 @@
                                      (:file "response")
                                      (:file "handler")
                                      (:file "router")
+                                     (:file "websocket")
                                      (:file "listener")
                                      (:file "server")))))
