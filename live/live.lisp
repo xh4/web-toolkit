@@ -1,55 +1,6 @@
-(in-package :cl-user)
+(in-package :live)
 
-(ql:quickload :hunchentoot)
-(ql:quickload :wt.websocket)
-(ql:quickload :wt.json)
-(ql:quickload :wt.component)
-(ql:quickload :wt.bootstrap)
-(ql:quickload :cl-who)
-(ql:quickload :parenscript)
 
-(setf (cl-who:html-mode) :html5)
-
-(defvar *acceptor* nil)
-
-(defun start ()
-  (when (null *acceptor*)
-    (setf *acceptor* (make-instance 'hunchentoot:easy-acceptor :port 4001))
-    (handler-case
-        (hunchentoot:start *acceptor*)
-      (error (e)
-        (setf *acceptor* nil)
-        (format t "~A~%" e)))))
-
-(defun stop ()
-  (when *acceptor*
-    (handler-case
-        (hunchentoot:stop *acceptor*)
-      (error (e)
-        (format t "~A~%" e)))
-    (setf *acceptor* nil)))
-
-(hunchentoot:define-easy-handler (index :uri "/") ()
-    (setf (hunchentoot:content-type*) "text/html")
-    (cl-who:with-html-output-to-string (html nil :prologue t :indent t)
-      (:html
-       (:head
-        (:meta :charset "utf-8"))
-       (:body
-        (:script :src "/static/jquery-3.4.0.js")
-        (:script :src "/static/wt.js")
-        (:script :src "/static/index.js")))))
-
-(push
- (hunchentoot:create-folder-dispatcher-and-handler
-  "/static/"
-  (merge-pathnames
-   "viva/"
-   (asdf/system:system-source-directory
-    (asdf/system:find-system "wt.websocket"))))
- hunchentoot:*dispatch-table*)
-
-(ws:define-session session ())
 
 (defun read-object-value (object)
   (let ((type (json:get object "type")))
@@ -67,23 +18,7 @@
 
 (defun handle-call (symbol))
 
-(defmethod ws:on-message ((session session) message)
-  (format t "Receive: ~A~%" message)
-  (handler-case
-      (let ((message (json:decode-json message)))
-        (let ((name (first message)))
-          (alexandria:switch (name :test 'equal)
-            ("call"
-             (let ((symbol (read-value (second message)))
-                   (arguments (mapcar 'read-value (cddr message))))
-               (let ((result (apply symbol arguments)))
-                 (format t "~A~%" result)))))))
-    (error (e)
-      (format t "~A~%" e))))
 
-(ws:define-endpoint endpoint
-    :path "/"
-    :session-class 'session)
 
 (defparameter *nav*
   (bs:nav
@@ -109,9 +44,50 @@
     (bs:nav-item
      (bs:nav-link :href "#" "Hah")))))
 
-;; (html:serialize (html:span (html:text "Foo")))
+(define-handler live-handler () ())
 
-(defmethod ws:on-open ((endpoint endpoint) session)
+(defmethod handle ((handler live-handler) (request request))
+  (setf (response-status *response*) 200)
+  (setf (header-field *response* "Content-Type") "text/html")
+  (setf (response-body *response*)
+        (html:serialize
+         (html:document
+          (html:html
+           (html:head
+            (html:meta :charset "utf-8"))
+           (html:body
+            (html:h1 "Live")
+            (html:script :src "/static/jquery-3.4.0.js")
+            (html:script :src "/static/wt.live.js")
+            (html:script :src "/static/index.js")))))))
+
+(define-session live-session ())
+
+(define-endpoint live-endpoint :session-class 'live-session)
+
+(define-server live-server
+    :handler (router
+              (:get "/" live-handler)
+              (:get "/live" live-endpoint)
+              (:static :prefix "/static" :location #p"/home/xh/wt/live/"))
+    :listeners (list
+                (listener :port 8003)))
+
+(defmethod on-message ((session live-session) message)
+  (format t "Receive: ~A~%" message)
+  (handler-case
+      (let ((message (json:decode-json message)))
+        (let ((name (first message)))
+          (alexandria:switch (name :test 'equal)
+            ("call"
+             (let ((symbol (read-value (second message)))
+                   (arguments (mapcar 'read-value (cddr message))))
+               (let ((result (apply symbol arguments)))
+                 (format t "~A~%" result)))))))
+    (error (e)
+      (format t "~A~%" e))))
+
+(defmethod on-open ((endpoint live-endpoint) session)
   (let* ((root *navbar*)
          (code (ps:ps*
                 `(progn
@@ -125,20 +101,12 @@
                                (append-child link)))
                    (ps:chain ($ "body") (html ,(html:serialize (com:render root)))))))
          (message (list "eval" code)))
-    (ws:send-text session (json:encode-json message))))
+    (send-text session (json:encode-json message))))
 
-(defmethod ws:on-close ((endpoint endpoint) &optional reason)
+(defmethod on-close ((endpoint live-endpoint) session &optional reason)
   (format t "Close: ~A~%" reason))
 
-(defmethod ws:on-error ((endpoint endpoint) error)
+(defmethod on-error ((endpoint live-endpoint) session error)
   (format t "Error: ~A~%" error))
 
-(ws:define-server websocket-server
-    :port 4002
-    :endpoints (list endpoint))
-
-;; (start)
-;; (ws:start-server websocket-server)
-
-;; (stop)
-;; (ws:stop-server websocket-server)
+;; http://118.190.145.4:8003
