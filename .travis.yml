@@ -25,6 +25,9 @@ script:
                    (declare (ignore c h))
                    (uiop:quit -1)))'
        -e '(ql:quickload :wt.html)'
+       -e '(ql:quickload :wt.json)'
+       -e '(ql:quickload :wt.http)'
+       -e '(ql:quickload :wt.websocket)'
 
 notifications:
   email:
