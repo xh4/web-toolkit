@@ -22,7 +22,8 @@ script:
                  fiveam:*debug-on-failure* t)'
        -e '(setf *debugger-hook*
                  (lambda (c h)
-                   (declare (ignore c h))
+                   (declare (ignore h))
+                   (trivial-backtrace:print-backtrace c :output *standard-output*)
                    (uiop:quit -1)))'
        -e '(ql:quickload :wt.html)'
        -e '(ql:quickload :wt.json)'
