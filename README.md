@@ -4,6 +4,7 @@
     <a href="https://web-toolkit.org">web-toolkit.org</a>
 </p>
 
+[![Build Status](https://travis-ci.org/xh4/web-toolkit.svg?branch=master)](https://travis-ci.org/xh4/web-toolkit)
 
 ## HTML
 WT.HTML implements HTML constructors and serializer.
