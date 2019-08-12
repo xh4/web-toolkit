@@ -16,12 +16,7 @@
    (body
     :initarg :body
     :initform nil
-    :accessor request-body)
-   ;; Private
-   (stream
-    :initarg :stream
-    :initform nil
-    :accessor request-stream)))
+    :accessor request-body)))
 
 (defgeneric request-method (request))
 
@@ -57,3 +52,9 @@
     (setf (header-field header name) value)))
 
 (defparameter *methods* '(:get :post :put :delete :head))
+
+(defvar *request-stream-mapping-table*
+  (trivial-garbage:make-weak-hash-table :weakness :key-and-value))
+
+(defun request-stream (request)
+  (gethash request *request-stream-mapping-table*))

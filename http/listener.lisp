@@ -11,9 +11,10 @@
     (let ((handler (server-handler server)))
       (let ((request (make-instance 'request
                                     :method (hunchentoot:request-method request0)
-                                    :uri (hunchentoot:request-uri request0)
-                                    :stream (hunchentoot::content-stream request0)))
+                                    :uri (hunchentoot:request-uri request0)))
             (header (make-instance 'header)))
+        (setf (gethash request *request-stream-mapping-table*)
+              (hunchentoot::content-stream request0))
         (loop for (name . value) in (hunchentoot:headers-in request0)
            for field = (make-instance 'header-field
                                       :name name

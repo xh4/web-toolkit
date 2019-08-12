@@ -9,7 +9,8 @@
                :closer-mop
                :cl-change-case
                :split-sequence
-               :cl-fad)
+               :cl-fad
+               :trivial-garbage)
   :serial t
   :components ((:module "http"
                         :serial t
