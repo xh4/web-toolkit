@@ -28,3 +28,12 @@
                                      (:file "listener")
                                      (:file "server")
                                      (:file "client")))))
+
+(defsystem wt.http/test
+  :depends-on (:wt.http
+               :nst)
+  :serial t
+  :components ((:module "test"
+                        :components ((:module "http"
+                                              :components ((:file "package")
+                                                           (:file "static")))))))
