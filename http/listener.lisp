@@ -15,21 +15,24 @@
             (header (make-instance 'header)))
         (setf (gethash request *request-stream-mapping-table*)
               (hunchentoot::content-stream request0))
-        (loop for (name . value) in (hunchentoot:headers-in request0)
-           for field = (make-instance 'header-field
-                                      :name name
-                                      :value value)
-           do (push field (header-fields header))
-           finally
-             (reversef (header-fields header))
-             (setf (request-header request) header))
-        (handler-bind ((error (lambda (c)
-                                (invoke-debugger c))))
-          (let ((response (invoke-handler handler request)))
-            (unless (eq (response-status response) 101)
-              (handle-response response))
-            ;; Prevent hunchentoot send the response
-            (setf hunchentoot::*headers-sent* t)))))))
+        (unwind-protect
+             (progn
+               (loop for (name . value) in (hunchentoot:headers-in request0)
+                  for field = (make-instance 'header-field
+                                             :name name
+                                             :value value)
+                  do (push field (header-fields header))
+                  finally
+                    (reversef (header-fields header))
+                    (setf (request-header request) header))
+               (handler-bind ((error (lambda (c)
+                                       (invoke-debugger c))))
+                 (let ((response (invoke-handler handler request)))
+                   (unless (eq (response-status response) 101)
+                     (handle-response response))
+                   ;; Prevent hunchentoot send the response
+                   (setf hunchentoot::*headers-sent* t))))
+             (remhash request *request-stream-mapping-table*))))))
 
 (defun handle-response-header (response)
   (let ((header (response-header response)))

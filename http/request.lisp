@@ -54,7 +54,7 @@
 (defparameter *methods* '(:get :post :put :delete :head))
 
 (defvar *request-stream-mapping-table*
-  (trivial-garbage:make-weak-hash-table :weakness :key-and-value))
+  (trivial-garbage:make-weak-hash-table :weakness :key))
 
 (defun request-stream (request)
   (gethash request *request-stream-mapping-table*))
