@@ -3,6 +3,7 @@
 (defpackage :http
   (:nicknames :wt.http)
   (:use :cl :alexandria)
+  (:shadow :get :delete)
   (:export :header
            :header-fields
            :header-field
@@ -33,7 +34,11 @@
            :router
            :define-server
            :start-server
-           :stop-server)
+           :stop-server
+           :put
+           :post
+           :delete
+           :head)
   (:import-from :closer-mop
                 :compute-class-precedence-list
                 :subclassp)

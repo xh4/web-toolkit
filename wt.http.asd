@@ -10,7 +10,8 @@
                :cl-change-case
                :split-sequence
                :cl-fad
-               :trivial-garbage)
+               :trivial-garbage
+               :drakma)
   :serial t
   :components ((:module "http"
                         :serial t
@@ -25,4 +26,5 @@
                                      (:file "router")
                                      (:file "websocket")
                                      (:file "listener")
-                                     (:file "server")))))
+                                     (:file "server")
+                                     (:file "client")))))
