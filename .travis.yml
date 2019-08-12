@@ -29,7 +29,7 @@ script:
        -e '(ql:quickload :wt.json)'
        -e '(ql:quickload :wt.http)'
        -e '(ql:quickload :wt.http/test)'
-       -e '(nst-cmd :run-package :http-test)'
+       -e '(nst:nst-cmd :run-package :http-test)'
        -e '(ql:quickload :wt.websocket)'
 
 notifications:
