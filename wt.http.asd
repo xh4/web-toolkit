@@ -31,7 +31,7 @@
 
 (defsystem wt.http/test
   :depends-on (:wt.http
-               :nst)
+               :fiveam)
   :serial t
   :components ((:module "test"
                         :components ((:module "http"

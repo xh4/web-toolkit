@@ -2,5 +2,6 @@
 
 (defpackage :http-test
   (:nicknames :wt.http-test)
-  (:use :cl :http :nst)
-  (:shadow :get :delete))
+  (:use :cl :http :fiveam)
+  (:shadow :get :delete)
+  (:export :run!))

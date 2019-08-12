@@ -17,8 +17,7 @@ install:
     fi
 
 script:
-  - cl -l fiveam
-       -e '(setf fiveam:*debug-on-error* t
+  - cl -e '(setf fiveam:*debug-on-error* t
                  fiveam:*debug-on-failure* t)'
        -e '(setf *debugger-hook*
                  (lambda (c h)
@@ -29,7 +28,7 @@ script:
        -e '(ql:quickload :wt.json)'
        -e '(ql:quickload :wt.http)'
        -e '(ql:quickload :wt.http/test)'
-       -e '(nst:nst-cmd :run-package :http-test)'
+       -e '(http-test:run!)'
        -e '(ql:quickload :wt.websocket)'
 
 notifications:
