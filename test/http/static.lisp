@@ -1,5 +1,3 @@
-(def-suite :http-test)
-
 (in-suite :http-test)
 
 (test path-trim-prefix

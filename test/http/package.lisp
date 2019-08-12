@@ -5,3 +5,7 @@
   (:use :cl :http :fiveam)
   (:shadow :get :delete)
   (:export :run!))
+
+(in-package :http-test)
+
+(def-suite :http-test)
