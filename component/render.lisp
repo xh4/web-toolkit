@@ -7,3 +7,5 @@
 
 (defmethod render ((text html:text))
   text)
+
+(defmacro define-render ())

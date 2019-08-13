@@ -5,9 +5,5 @@
   (:use :cl :alexandria)
   (:export :define-component
            :children
-           :expand
            :render
-           :expand-1
-           :expand-all
-           :button
-           :text))
+           :define-render))

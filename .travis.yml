@@ -31,6 +31,9 @@ script:
        -e '(ql:quickload :wt.http/test)'
        -e '(http-test:run!)'
        -e '(ql:quickload :wt.websocket)'
+       -e '(ql:quickload :wt.component)'
+       -e '(ql:quickload :wt.component/test)'
+       -e '(component-test:run!)'
 
 notifications:
   email:

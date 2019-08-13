@@ -11,9 +11,14 @@
   :components ((:module "component"
                         :serial t
                         :components ((:file "package")
-                                     (:file "expand")
-                                     (:file "render")
                                      (:file "component")
-                                     (:file "text")
-                                     (:file "icon")
-                                     (:file "button")))))
+                                     (:file "render")))))
+
+(defsystem wt.component/test
+  :depends-on (:wt.component
+               :fiveam)
+  :serial t
+  :components ((:module "test"
+                        :components ((:module "component"
+                                              :components ((:file "package")
+                                                           (:file "component")))))))
