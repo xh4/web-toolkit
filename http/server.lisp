@@ -95,7 +95,8 @@
            (stop-server server)
            (error e)))
      finally
-       (setf (server-started-p server) t)))
+       (setf (server-started-p server) t))
+  server)
 
 (defgeneric stop-server (server &key))
 
@@ -104,7 +105,8 @@
      do
        (stop-listener listener)
      finally
-       (setf (server-started-p server) nil)))
+       (setf (server-started-p server) nil))
+  server)
 
 (defgeneric add-listener (server listener))
 
