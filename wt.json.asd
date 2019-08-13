@@ -15,6 +15,15 @@
                                      (:file "encode")
                                      (:file "decode")))))
 
+(defsystem wt.json/test
+  :depends-on (:wt.json
+               :fiveam)
+  :serial t
+  :components ((:module "test"
+                        :components ((:module "json"
+                                              :components ((:file "package")
+                                                           ))))))
+
 (push
  (merge-pathnames
   "json/cl-json-20141217-git/"

@@ -27,6 +27,8 @@ script:
                    (uiop:quit -1)))'
        -e '(ql:quickload :wt.html)'
        -e '(ql:quickload :wt.json)'
+       # -e '(ql:quickload :wt.json/test)'
+       # -e '(json-test:run!)'
        -e '(ql:quickload :wt.http)'
        -e '(ql:quickload :wt.http/test)'
        -e '(http-test:run!)'
