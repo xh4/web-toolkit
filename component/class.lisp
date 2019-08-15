@@ -10,6 +10,8 @@
      :initform nil
      :accessor component-class-class-options)))
 
+(defmethod validate-superclass ((class component-class) (super-class standard-class))
+  t)
 
 (defun direct-slot-definition->initargs (slot-definition)
   (list :name (closer-mop:slot-definition-name slot-definition)
