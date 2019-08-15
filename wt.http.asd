@@ -16,7 +16,9 @@
   :components ((:module "http"
                         :serial t
                         :components ((:file "package")
+                                     (:file "util")
                                      (:file "header")
+                                     (:file "mime")
                                      (:file "body")
                                      (:file "request")
                                      (:file "status")
