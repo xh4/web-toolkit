@@ -16,7 +16,8 @@
                                      (:file "class")
                                      (:file "component")
                                      (:file "tag-option")
-                                     (:file "render")))))
+                                     (:file "render")
+                                     (:file "element")))))
 
 (defsystem wt.component/test
   :depends-on (:wt.component

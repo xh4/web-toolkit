@@ -19,8 +19,11 @@
   (let ((id (parse-integer (subseq (symbol-name (gensym "G")) 1))))
     (setf (id component) id)))
 
-(defun append-child (parent child)
-  (appendf (children parent) (list child)))
+(defgeneric append-child (parent child)
+  (:method (parent child)
+    (appendf (children parent) (list child)))
+  (:method (parent (child dom:element))
+    (error "Add DOM:ELEMENT to COMPONENT is not implemented")))
 
 ;; attributes => plist
 ;; body => list
@@ -52,7 +55,7 @@
          (loop for child in children
             do (append-child component
                              (typecase child
-                               (component child)
+                               ((or component dom:node) child)
                                (string (html:text child))
                                (t (error "Can't add ~A of type ~A as a child of component"
                                          child (type-of child))))))
