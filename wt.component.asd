@@ -6,12 +6,16 @@
   :mailto "xh@coobii.com"
   :depends-on (:wt.html
                :alexandria
-               :serapeum)
+               :serapeum
+               :closer-mop
+               :group-by)
   :serial t
   :components ((:module "component"
                         :serial t
                         :components ((:file "package")
+                                     (:file "class")
                                      (:file "component")
+                                     (:file "tag-option")
                                      (:file "render")))))
 
 (defsystem wt.component/test
