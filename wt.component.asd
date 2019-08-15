@@ -16,6 +16,7 @@
                                      (:file "class")
                                      (:file "component")
                                      (:file "tag-option")
+                                     (:file "class-option")
                                      (:file "render")
                                      (:file "element")))))
 
