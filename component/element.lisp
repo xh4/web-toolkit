@@ -11,7 +11,8 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defmacro define-html-element-component (tag-name)
     `(progn
-       (define-component ,tag-name (html-element) ())
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+         (define-component ,tag-name (html-element) ()))
        (define-render ,tag-name (tag attributes children)
          (apply (ensure-symbol (symbol-name tag) :html)
                 (append attributes @children)))
@@ -26,7 +27,6 @@
              html-element)))
        (export ',tag-name)
        ',tag-name)))
-
 
 ;; Content sectioning
 (define-html-element-component address)
