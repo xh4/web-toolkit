@@ -10,6 +10,7 @@
   :components ((:module "bootstrap"
                         :serial t
                         :components ((:file "package")
+                                     (:File "layout")
                                      (:file "typography")
                                      (:file "code")
                                      (:file "image")

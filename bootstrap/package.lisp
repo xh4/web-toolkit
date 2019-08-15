@@ -6,6 +6,7 @@
   (:import-from :component
                 :define-component
                 :render
+                :define-render
                 :children)
   (:export :button
            :button-style
