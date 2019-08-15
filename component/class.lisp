@@ -14,7 +14,7 @@
                                            (super-class standard-class))
   t)
 
-(defun direct-slot-definition->initargs (slot-definition)
+(defun slot-definition->initargs (slot-definition)
   (list :name (closer-mop:slot-definition-name slot-definition)
         :readers (closer-mop:slot-definition-readers slot-definition)
         :writers (closer-mop:slot-definition-writers slot-definition)
@@ -41,7 +41,7 @@
                                :initargs initargs
                                :initfunction initfunction))))
     (dolist (current-slot (closer-mop:class-direct-slots class))
-      (push (direct-slot-definition->initargs current-slot)
+      (push (slot-definition->initargs current-slot)
             new-slots))
     (closer-mop:ensure-class
      (class-name class)
