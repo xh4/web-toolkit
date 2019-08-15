@@ -160,9 +160,10 @@
 (defun compute-attributes (element)
   (let ((results '()))
     (dom:do-node-list (a (dom:attributes element))
-      (push
-       (hax:make-attribute (dom:name a)
-                           (dom:value a)
-                           (dom:specified a))
-       results))
+      (when (dom:value a)
+        (push
+         (hax:make-attribute (dom:name a)
+                             (dom:value a)
+                             (dom:specified a))
+         results)))
     (reverse results)))
