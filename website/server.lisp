@@ -1,5 +1,9 @@
 (in-package :website)
 
+(defparameter *navbar*
+  (navbar :class "navbar-expand-lg navbar-light bg-light"
+          (navbar-brand "Lisp Web Toolkit")))
+
 (define-handler website-handler () ())
 
 (defmethod handle ((handler website-handler) (request request))
@@ -11,9 +15,12 @@
          (document
           (html
            (head
-            (title "Lisp Web Toolkit"))
+            (meta :charset "utf-8")
+            (title "Lisp Web Toolkit")
+            (link :rel "stylesheet"
+                  :href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"))
            (body
-            (h1 "Lisp Web Toolkit")))))))
+            (render *navbar*)))))))
 
 (define-server website-server
     :handler website-handler

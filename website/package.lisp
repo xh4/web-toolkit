@@ -15,9 +15,10 @@
                 :response-body)
   (:import-from :html
                 :document
-                :html
-                :head
-                :body
-                :title
-                :div
-                :h1))
+                :html :head :meta :body
+                :title :div :h1 :link :script)
+  (:import-from :component
+                :render)
+  (:import-from :bootstrap
+                :navbar
+                :navbar-brand))
