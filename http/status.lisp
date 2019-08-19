@@ -1,7 +1,6 @@
 (in-package :http)
 
 (eval-when (:compile-toplevel :execute :load-toplevel)
-
   (defclass status ()
     ((keyword
       :initarg :keyword
@@ -14,17 +13,16 @@
       :reader status-reason-phrase)))
 
   (defvar *status-code-mapping-table* (make-hash-table))
-  (defvar *status-keyword-mapping-table* (make-hash-table))
+  (defvar *status-keyword-mapping-table* (make-hash-table)))
 
-  (defmacro define-response-status (keyword code reason-phrase)
-    `(eval-when (:compile-toplevel :execute :load-toplevel)
-       (let ((status (make-instance 'status
-                                    :keyword ,keyword
-                                    :code ,code
-                                    :reason-phrase ,reason-phrase)))
-         (setf (gethash ,code *status-code-mapping-table*) status)
-         (setf (gethash ,keyword *status-keyword-mapping-table*) status)
-         status))))
+(defmacro define-response-status (keyword code reason-phrase)
+  `(let ((status (make-instance 'status
+                                :keyword ,keyword
+                                :code ,code
+                                :reason-phrase ,reason-phrase)))
+     (setf (gethash ,code *status-code-mapping-table*) status)
+     (setf (gethash ,keyword *status-keyword-mapping-table*) status)
+     status))
 
 (defmethod print-object ((status status) stream)
   (print-unreadable-object (status stream)
