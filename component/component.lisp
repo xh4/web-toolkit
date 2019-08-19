@@ -20,10 +20,12 @@
     (setf (id component) id)))
 
 (defgeneric append-child (parent child)
-  (:method (parent child)
+  (:method ((parent component) child)
     (appendf (children parent) (list child)))
-  (:method (parent (child dom:element))
-    (error "Add DOM:ELEMENT to COMPONENT is not implemented")))
+  (:method ((parent component) (child string))
+    (append-child parent (html:text child)))
+  (:method ((parent component) (child dom:element))
+    (append-child parent child)))
 
 ;; attributes => plist
 ;; body => list
@@ -36,8 +38,9 @@
 
 (defmacro define-component (name super-components slots &rest options)
   `(progn
-     (define-component-class ,name ,super-components ,slots)
-     (process-component-class-options (find-class ',name) ',options)
+     (eval-when (:compile-toplevel :load-toplevel :execute)
+       (define-component-class ,name ,super-components ,slots)
+       (process-component-class-options (find-class ',name) ',options))
      (define-component-constructor ,name)
      (find-class ',name)))
 
@@ -67,9 +70,9 @@
        for group-name = (car option-group)
        for group-options = (cdr option-group)
        do (process-component-class-option-group
-            class
-            group-name
-            group-options))))
+           class
+           group-name
+           group-options))))
 
 (defgeneric process-component-class-option-group (component-class group-name options)
   (:method (component-class group-name options)

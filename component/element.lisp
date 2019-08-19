@@ -8,25 +8,23 @@
     :initarg :attributes
     :initform nil)))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defmacro define-html-element-component (tag-name)
-    `(progn
-       (eval-when (:compile-toplevel :load-toplevel :execute)
-         (define-component ,tag-name (html-element) ()))
-       (define-render ,tag-name (tag attributes children)
-         (apply (ensure-symbol (symbol-name tag) :html)
-                (append attributes @children)))
-       (defun ,tag-name (&rest attributes-and-children)
-         (multiple-value-bind (attributes children)
-             (html::segment-attributes-children attributes-and-children)
-           (let ((html-element (make-instance ',tag-name
-                                              :tag ,(make-keyword tag-name)
-                                              :attributes attributes)))
-             (loop for child in children
-                do (append-child html-element child))
-             html-element)))
-       (export ',tag-name)
-       ',tag-name)))
+(defmacro define-html-element-component (tag-name)
+  `(progn
+     (define-component ,tag-name (html-element) ())
+     (define-render ,tag-name (tag attributes children)
+                    (apply (ensure-symbol (symbol-name tag) :html)
+                           (append attributes @children)))
+     (defun ,tag-name (&rest attributes-and-children)
+       (multiple-value-bind (attributes children)
+           (html::segment-attributes-children attributes-and-children)
+         (let ((html-element (make-instance ',tag-name
+                                            :tag ,(make-keyword tag-name)
+                                            :attributes attributes)))
+           (loop for child in children
+                 do (append-child html-element child))
+           html-element)))
+     (export ',tag-name)
+     ',tag-name))
 
 ;; Content sectioning
 (define-html-element-component address)
