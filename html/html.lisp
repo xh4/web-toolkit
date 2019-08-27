@@ -67,11 +67,13 @@
         (segment-attributes-children arguments)
       (loop for (_name _value) on attributes by #'cddr
          for name = (string-downcase (symbol-name _name))
-         for value = (typecase _value
-                       (null nil)
-                       (string _value)
-                       (list (format nil "~{~A~^ ~}" _value))
-                       (t (format nil "~A" _value)))
+         for value = (if (eq _value t)
+                       ""
+                       (typecase _value
+                         (null nil)
+                         (string _value)
+                         (list (format nil "~{~A~^ ~}" _value))
+                         (t (format nil "~A" _value))))
          when value
          do (dom:set-attribute element name value))
       (loop for child in (flatten children)
