@@ -23,3 +23,12 @@
                                      ;; (:file "server")
                                      ;; (:file "client")
                                      ))))
+
+(defsystem wt.websocket/test
+  :depends-on (:wt.websocket
+               :fiveam)
+  :serial t
+  :components ((:module "test"
+                        :components ((:module "websocket"
+                                              :components ((:file "package")
+                                                           (:file "websocket")))))))
