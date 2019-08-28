@@ -13,3 +13,12 @@
                         :components ((:file "package")
                                      (:file "html")
                                      (:file "serialize")))))
+
+(defsystem wt.html/test
+  :depends-on (:wt.html
+               :fiveam)
+  :serial t
+  :components ((:module "test"
+                        :components ((:module "html"
+                                              :components ((:file "package")
+                                                           (:file "html")))))))
