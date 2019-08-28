@@ -28,10 +28,13 @@
            :handle
            :next-handler
            :call-next-handler
+           :redirect
            :listener
            :listener-port
            :listener-address
            :router
+           :routing-rule
+           :build-routing-rule
            :define-server
            :start-server
            :stop-server

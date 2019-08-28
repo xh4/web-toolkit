@@ -11,7 +11,10 @@
     (let ((handler (server-handler server)))
       (let ((request (make-instance 'request
                                     :method (hunchentoot:request-method request0)
-                                    :uri (hunchentoot:request-uri request0)))
+                                    :uri (hunchentoot:request-uri request0)
+                                    :body (hunchentoot:raw-post-data
+                                           :request request0
+                                           :want-stream t)))
             (header (make-instance 'header)))
         (setf (gethash request *request-stream-mapping-table*)
               (hunchentoot::content-stream request0))
@@ -46,7 +49,17 @@
   (when (pathnamep (response-body response))
     (return-from handle-response (handle-pathname-response response)))
 
-  (setf (hunchentoot:return-code*) (or (response-status response) 200))
+  (let ((status (response-status response)))
+    (let ((status-code (typecase status
+                         (status (status-code status))
+                         (integer status)
+                         (symbol (let ((status (gethash (make-keyword status)
+                                                        *status-keyword-mapping-table*)))
+                                   ;; TODO: handle status missing
+                                   (status-code status)))
+                         (t (error "When handle-response, don't know how to handle response status ~A" status)))))
+      ;; TODO: Handle if no status code
+      (setf (hunchentoot:return-code*) (or status-code 200))))
 
   (let ((stream (handle-response-header response)))
     (let ((body (response-body response)))

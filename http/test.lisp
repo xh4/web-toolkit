@@ -31,13 +31,3 @@
                 (listener :port 8001)))
 
 ;; http://118.190.145.4:8001
-
-(hunchentoot:process-connection)
-
-(hunchentoot:process-request)
-
-(hunchentoot:handle-request)
-
-(hunchentoot:acceptor-dispatch-request)
-
-(setf (hunchentoot:header-out))

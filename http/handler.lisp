@@ -92,6 +92,11 @@
                                     '()
                                     (list (class-of handler) (find-class 'request))
                                     nil)
+                   (%call-handler-with-request handler))
+                 (when (find-method #'handle
+                                    '()
+                                    (list (class-of handler) (find-class t))
+                                    nil)
                    (%call-handler-with-request handler)))
 
                (%call-handler-with-request (handler)
@@ -109,6 +114,15 @@
                                 (condition/abort-handler
                                  (lambda (c)
                                    (declare (ignore c))
+                                   (return-from finish-handling)))
+
+                                (condition/redirect
+                                 (lambda (c)
+                                   (with-slots (location status) c
+                                     (setf (header-field *response* "Location")
+                                           location
+                                           (response-status *response*)
+                                           status))
                                    (return-from finish-handling))))
                    (let ((result (handle handler request)))
                      (when (typep result 'response)

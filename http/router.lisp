@@ -86,7 +86,7 @@
 
 (defmacro router (&rest rule-forms)
   (let ((rules (loop for rule-form in rule-forms
-                  collect
+                  append
                     (progn
                       (unless (listp rule-form)
                         (error "Illformed rule form: ~A, expect a list" rule-form))
@@ -100,7 +100,7 @@
                                                    (find-class t))
                                              nil)
                           (error "No method to build routing rule for form ~A" rule-form))
-                        (build-routing-rule type rule-form))))))
+                        (ensure-list (build-routing-rule type rule-form)))))))
     (make-instance 'router :rules rules)))
 
 (defun handle-missing (request)

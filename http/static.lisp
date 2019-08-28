@@ -22,6 +22,21 @@
 (defun path-segments (path)
   (split-sequence #\/ (subseq path 1)))
 
+(defun path-prefix-p (prefix path)
+  (if (or (null prefix)
+          (equal prefix "")
+          (equal prefix "/"))
+      t
+      (let ((path-segments (path-segments path))
+            (prefix-segments (split-sequence #\/ (string-trim "/" prefix))))
+        (loop for pos upto (1- (min (length prefix-segments)
+                                    (length path-segments)))
+           for prefix-segment = (nth pos prefix-segments)
+           for path-segment = (nth pos path-segments)
+           unless (equal prefix-segment path-segment)
+           do (return nil)
+           finally (return t)))))
+
 (defun path-trim-prefix (prefix path)
   (if (or (null prefix)
           (equal prefix "")
@@ -41,21 +56,6 @@
           (if (null suffix-segments)
               ""
               (format nil "~{~A~^/~}" suffix-segments))))))
-
-;; (path-trim-prefix "foo" "/foo")
-;; (path-trim-prefix "foo" "/foo/")
-;; (path-trim-prefix "foo" "/foo/bar")
-;; (path-trim-prefix "/foo" "/foo/bar")
-;; (path-trim-prefix "foo/" "/foo/bar")
-;; (path-trim-prefix "/foo/" "/foo/bar")
-;; (path-trim-prefix "/foo/bar" "/foo/bar")
-;; (path-trim-prefix "/foo/bar" "/foo/bar/")
-;; (path-trim-prefix "/foo/bar/" "/foo/bar")
-;; (path-trim-prefix "/foo/bar/" "/foo/bar/")
-;; (path-trim-prefix "goo" "/foo/bar/")
-;; (path-trim-prefix "/" "/foo/bar/")
-;; (path-trim-prefix "" "/foo/bar")
-;; (path-trim-prefix nil "/foo/bar/")
 
 (defun build-static-routing-rule (&key prefix location)
   (check-type location (or string pathname))

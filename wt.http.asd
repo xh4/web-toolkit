@@ -4,7 +4,8 @@
   :version "0.0.0"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
-  :depends-on (:hunchentoot
+  :depends-on (:wt.uri
+               :hunchentoot
                :alexandria
                :closer-mop
                :cl-change-case
@@ -24,6 +25,7 @@
                                      (:file "status")
                                      (:file "version")
                                      (:file "response")
+                                     (:file "redirect")
                                      (:file "handler")
                                      (:file "router")
                                      (:file "websocket")

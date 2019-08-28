@@ -28,6 +28,19 @@
 
 (defgeneric (setf response-body) (value response))
 
+(defmethod (setf response-status) ((value integer) response)
+  (let ((status (gethash value
+                         *status-code-mapping-table*)))
+    (setf (response-status response) status)))
+
+(defmethod (setf response-status) ((value symbol) response)
+  (let ((status (gethash (make-keyword value)
+                         *status-keyword-mapping-table*)))
+    (setf (response-status response) status)))
+
+(defmethod (setf response-status) ((value status) response)
+  (setf (slot-value response 'status) value))
+
 (defmethod header-fields ((response response))
   (let ((header (response-header response)))
     (header-fields header)))
