@@ -4,9 +4,7 @@
   :version "0.0.0"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
-  :depends-on (:wt.http
-               :wt.component
-               :wt.bootstrap)
+  :depends-on (:wt.http)
   :serial t
   :components ((:module "website"
                         :serial t
