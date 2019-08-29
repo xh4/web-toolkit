@@ -2,14 +2,13 @@
 
 (in-suite :component-test)
 
+(define-component button ()
+  ((size
+    :initarg :size))
+  (:tag-option tag)
+  (:class-option class :default "btn"))
+
 (test render
-
-  (define-component button ()
-    ((size
-      :initarg :size))
-    (:tag-option tag)
-    (:class-option class :default "btn"))
-
 
   (define-render button (tag)
     tag)
