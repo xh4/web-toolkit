@@ -1,3 +1,13 @@
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
 .svn
 trash
 node_modules
