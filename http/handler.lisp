@@ -120,7 +120,10 @@
                                  (lambda (c)
                                    (with-slots (location status) c
                                      (setf (header-field *response* "Location")
-                                           location
+                                           (case location
+                                             (:back (header-field-value
+                                                     (header-field request "Referer")))
+                                             (t location))
                                            (response-status *response*)
                                            status))
                                    (return-from finish-handling))))
