@@ -18,22 +18,13 @@ install:
 
 script:
   - cl -l fiveam
-       -e '(setf fiveam:*on-error* :debug
-                 fiveam:*on-failure* :debug)'
        -e '(setf *debugger-hook*
                  (lambda (c h)
                    (declare (ignore h))
                    (trivial-backtrace:print-backtrace c :output *standard-output*)
                    (uiop:quit -1)))'
-       -e '(ql:quickload :wt.html)'
-       -e '(ql:quickload :wt.json)'
-       -e '(ql:quickload :wt.http)'
-       -e '(ql:quickload :wt.http/test)'
-       -e '(http-test:run!)'
-       -e '(ql:quickload :wt.websocket)'
-       -e '(ql:quickload :wt.component)'
-       -e '(ql:quickload :wt.component/test)'
-       -e '(component-test:run!)'
+       -e '(ql:quickload :wt)'
+       -e '(asdf:test-system :wt)'
 
 notifications:
   email:
