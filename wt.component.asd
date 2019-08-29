@@ -27,4 +27,5 @@
   :components ((:module "test"
                         :components ((:module "component"
                                               :components ((:file "package")
-                                                           (:file "component")))))))
+                                                           (:file "component")
+                                                           (:file "render")))))))
