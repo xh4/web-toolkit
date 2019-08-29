@@ -3,7 +3,8 @@
 (defpackage :component
   (:nicknames :com :wt.com :wt.component)
   (:use :cl :alexandria)
-  (:export :define-component
+  (:export :id
+           :define-component
            :children
            :render
            :define-render))

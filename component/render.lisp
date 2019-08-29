@@ -70,8 +70,10 @@
                                ',default-class
                                (ensure-list
                                 (slot-value ,component-variable ',symbol)))))))
+      ((equal "ID" (symbol-name symbol))
+       `((:variable ,symbol (slot-value ,component-variable '%id))))
       ((equal "CHILDREN" (symbol-name symbol))
-       `((:variable ,symbol (slot-value ,component-variable ',symbol))
+       `((:variable ,symbol (slot-value ,component-variable '%children))
          (:symbol ,(ensure-symbol "@CHILDREN")
                   (mapcar 'render ,symbol))))
       ;; slot

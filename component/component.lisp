@@ -1,11 +1,11 @@
 (in-package :component)
 
 (defclass component ()
-  ((id
+  ((%id
     :initarg :id
     :initform nil
     :accessor id)
-   (children
+   (%children
     :initarg :children
     :initform nil
     :accessor children))
@@ -24,8 +24,9 @@
     (appendf (children parent) (list child)))
   (:method ((parent component) (child string))
     (append-child parent (html:text child)))
-  (:method ((parent component) (child dom:element))
-    (append-child parent child)))
+  ;; (:method ((parent component) (child dom:element))
+  ;;   (append-child parent child))
+  )
 
 ;; attributes => plist
 ;; body => list
