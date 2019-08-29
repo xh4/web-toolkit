@@ -47,9 +47,11 @@
 
 (defmacro define-component-class (name super-components slots &rest options)
   (declare (ignore options))
-  `(defclass ,name (,@super-components component)
-     ,slots
-     (:metaclass component-class)))
+  `(progn
+     (defclass ,name (,@super-components component)
+       ,slots
+       (:metaclass component-class))
+     (closer-mop:ensure-finalized (find-class ',name))))
 
 (defmacro define-component-constructor (name)
   `(defun ,name (&rest arguments)
