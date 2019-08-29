@@ -28,6 +28,7 @@
                                      (:file "redirect")
                                      (:file "handler")
                                      (:file "router")
+                                     (:file "static")
                                      (:file "websocket")
                                      (:file "listener")
                                      (:file "server")
