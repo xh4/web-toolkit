@@ -1,6 +1,7 @@
 (defpackage :json-test
   (:nicknames :wt.json-test)
   (:use :cl :json :fiveam)
+  (:shadow :get)
   (:export :run!)
   #+cl-json-clos
   (:import-from #+(or mcl openmcl) #:ccl
