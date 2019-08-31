@@ -9,6 +9,9 @@ tramp
 .\#*
 
 .svn
+
+*.64ofasl
+
 trash
 node_modules
-*.64ofasl
+dist
