@@ -15,3 +15,6 @@ tramp
 trash
 node_modules
 dist
+
+book
+wt.book.asd
