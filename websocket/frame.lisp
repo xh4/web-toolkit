@@ -114,12 +114,15 @@
     (force-output stream)))
 
 (defun check-message (opcode fragment-length total-length)
-  (cond ((> fragment-length #xffff) ; 65KiB
-         (websocket-error 1009 "Message fragment too big"))
-        ((> total-length #xfffff) ; 1 MiB
-         (websocket-error 1009 "Total message too big")))
-  (when (eql opcode +binary-frame+)
-    (websocket-error 1003 "Binaries not accepted")))
+  ;; TODO: 为什么加这个限制？导致 1.1.7, 1.1.8 失败
+  ;; (cond ((> fragment-length #xffff) ; 65KiB
+  ;;        (websocket-error 1009 "Message fragment too big"))
+  ;;       ((> total-length #xfffff) ; 1 MiB
+  ;;        (websocket-error 1009 "Total message too big")))
+  ;; TODO: WHY???
+  ;; (when (eql opcode +binary-frame+)
+  ;;   (websocket-error 1003 "Binaries not accepted"))
+  )
 
 (defun handle-frame (connection frame)
   (with-slots (state pending-fragments pending-opcode input-stream) connection
@@ -203,7 +206,7 @@
                                    do (write-sequence (frame-data frame)
                                                       fstream)))))
                          (unwind-protect
-                              (signal :binary-received
+                              (signal 'binary-received
                                       :data temp-file)
                               (delete-file temp-file))))
                       (t

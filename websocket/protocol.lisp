@@ -6,7 +6,7 @@
   :documentation "Fixed magic WebSocket UUIDv4 key use in handshakes")
 
 (define-condition websocket-error (simple-error)
-  ((error-status :initarg :status :reader websocket-error-status))
+  ((status :initarg :status :reader websocket-error-status))
   (:documentation "Superclass for all errors related to WebSocket."))
 
 (defun websocket-error (status format-control &rest format-arguments)
@@ -34,6 +34,7 @@ format control and arguments."
 
 (defun handle-user-endpoint-request (endpoint request)
   (handler-bind ((error (lambda (c)
+
                           (invoke-debugger c))))
     (handle-handshake request *response*)
     (let* ((stream (http::request-stream request))
@@ -62,7 +63,8 @@ format control and arguments."
                                                      ,(find-class t)
                                                      ,(find-class t) )
                                                  nil)
-                                (on-error endpoint session e)))))
+                                (on-error endpoint session e))
+                              (return-from handle-user-endpoint-request))))
                          (flex:external-format-error
                           (lambda (e)
                             (close-connection connection
@@ -73,7 +75,8 @@ format control and arguments."
                                                    ,(find-class t)
                                                    ,(find-class t) )
                                                nil)
-                              (on-error endpoint session e))))
+                              (on-error endpoint session e))
+                            (return-from handle-user-endpoint-request)))
                          (error
                           (lambda (e)
                             (close-connection connection
@@ -84,7 +87,8 @@ format control and arguments."
                                                    ,(find-class t)
                                                    ,(find-class t) )
                                                nil)
-                              (on-error endpoint session e))))
+                              (on-error endpoint session e))
+                            (return-from handle-user-endpoint-request)))
 
                          (text-received
                           (lambda (c)
