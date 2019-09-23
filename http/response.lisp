@@ -7,7 +7,7 @@
     :accessor response-status)
    (header
     :initarg :header
-    :initform nil
+    :initform (make-instance 'header)
     :accessor response-header)
    (body
     :initarg :body

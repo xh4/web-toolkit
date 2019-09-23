@@ -12,6 +12,7 @@
                :split-sequence
                :cl-fad
                :trivial-garbage
+               :trivial-backtrace
                :drakma)
   :serial t
   :components ((:module "http"

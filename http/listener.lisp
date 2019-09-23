@@ -29,11 +29,11 @@
                     (reversef (header-fields header))
                     (setf (request-header request) header))
                (handler-bind ((error (lambda (c)
-                                       (invoke-debugger c))))
+                                       (trivial-backtrace:print-backtrace c))))
                  (let ((response (invoke-handler handler request)))
-                   (unless (eq (response-status response) 101)
+                   (unless (= (status-code (response-status response)) 101)
                      (handle-response response))
-                   ;; Prevent hunchentoot send the response
+                   ;; Handle the response ourself, prevent hunchentoot sending the response
                    (setf hunchentoot::*headers-sent* t))))
              (remhash request *request-stream-mapping-table*))))))
 
