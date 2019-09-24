@@ -24,4 +24,4 @@
 
 (push *wt-home* asdf:*central-registry*)
 
-(qu:quickload "wt")
+(ql:quickload "wt")
