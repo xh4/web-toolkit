@@ -33,3 +33,6 @@
         (quit -1)))
 
 (ql:quickload "wt")
+
+#+(or ccl lispworks)
+(quit)
