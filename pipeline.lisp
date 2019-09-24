@@ -24,6 +24,4 @@
 
 (push *wt-home* asdf:*central-registry*)
 
-(format t "1~%")
-
 (ql:quickload "wt")
