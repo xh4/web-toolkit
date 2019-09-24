@@ -5,6 +5,7 @@
 
 (ql:quickload :cxml)
 (ql:quickload :drakma)
+(ql:quickload :trivial-backtrace)
 
 (defparameter *output-stream* (make-string-output-stream))
 
@@ -23,5 +24,12 @@
                  :defaults *load-truename*))
 
 (push *wt-home* asdf:*central-registry*)
+
+#+ccl
+(setf *debugger-hook*
+      (lambda (error hook)
+        (declare (ignore hook))
+        (trivial-backtrace:print-backtrace error)
+        (quit -1)))
 
 (ql:quickload "wt")
