@@ -1,7 +1,7 @@
 (in-package :cl-user)
 
-;; sbcl --quit --disable-debugger --load website/pipeline.lisp
-;; wx86cl64 --load website/pipeline.lisp
+;; sbcl --quit --disable-debugger --load pipeline.lisp
+;; wx86cl64 --load pipeline.lisp
 
 (ql:quickload :cxml)
 (ql:quickload :drakma)
@@ -15,4 +15,13 @@
                       *error-output*
                       *output-stream*))
 
-(format t "Hello, world")
+(unless *load-truename*
+  (error "This file must be LOADed to execute this pipeline."))
+
+(defvar *wt-home*
+  (make-pathname :name nil :type nil
+                 :defaults *load-truename*))
+
+(push *wt-home* asdf:*central-registry*)
+
+(asdf:load-system "wt")
