@@ -6,11 +6,7 @@
 (ql:quickload :cxml)
 (ql:quickload :drakma)
 
-(defparameter *output-stream*
-  (open "c:/users/xh/output.txt"
-        :direction :output
-        :if-exists :supersede
-        :external-format :utf-8))
+(defparameter *output-stream* (make-string-output-stream))
 
 (setf *standard-output* (make-broadcast-stream
                          *standard-output*
