@@ -77,9 +77,9 @@
              do
                (setf (field-value field) value))))
 
-      (when (find-method #'process-form nil
-                         (list (class-of form)) nil)
-        (process-form form))
+      ;; (when (find-method #'process-form nil
+      ;;                    (list (class-of form)) nil)
+      ;;   (process-form form))
 
       (setf (response-status *response*) 200
             (header-field *response* "Content-Type") "text/html")
