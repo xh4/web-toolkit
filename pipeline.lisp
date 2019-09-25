@@ -1,8 +1,5 @@
 (in-package :cl-user)
 
-;; sbcl --quit --disable-debugger --load pipeline.lisp
-;; wx86cl64 --load pipeline.lisp
-
 (ql:quickload :cxml)
 (ql:quickload :drakma)
 (ql:quickload :trivial-backtrace)
