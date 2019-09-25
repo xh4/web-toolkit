@@ -1,7 +1,7 @@
 <h3 align="center">Lisp Web Toolkit</h3>
 
 <p align="center">
-    <a href="http://web-toolkit.org">web-toolkit.org</a>
+    <a href="https://web-toolkit.org">web-toolkit.org</a>
 </p>
 
 [![Build Status](https://travis-ci.org/xh4/web-toolkit.svg?branch=master)](https://travis-ci.org/xh4/web-toolkit)
@@ -31,4 +31,4 @@ WT.DOM is a fork of [Closure XML](https://common-lisp.net/project/cxml/)'s DOM i
 WT.TODOMVC gives example of using WT to build the [TodoMVC](http://todomvc.com/) sample application.
 
 ## Website
-WT.WEBSITE powers [web-toolkit.org](http://web-toolkit.org).
+WT.WEBSITE powers [web-toolkit.org](https://web-toolkit.org).
