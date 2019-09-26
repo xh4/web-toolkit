@@ -19,6 +19,7 @@
                         :serial t
                         :components ((:file "package")
                                      (:file "util")
+                                     (:file "header-field")
                                      (:file "header")
                                      (:file "mime")
                                      (:file "body")
@@ -26,6 +27,7 @@
                                      (:file "status")
                                      (:file "version")
                                      (:file "response")
+                                     (:file "reply")
                                      (:file "redirect")
                                      (:file "handler")
                                      (:file "router")

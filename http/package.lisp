@@ -24,6 +24,7 @@
            :response-status
            :response-header
            :response-body
+           :reply
            :define-handler
            :handle
            :next-handler

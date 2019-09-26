@@ -30,6 +30,12 @@
             (status-code status)
             (status-reason-phrase status))))
 
+(defun status (status)
+  (typecase status
+    (status status)
+    (integer (gethash status *status-code-mapping-table*))
+    (keyword (gethash status *status-keyword-mapping-table*))))
+
 ;; https://tools.ietf.org/html/rfc7231#section-6.1
 
 (define-response-status :continue                        100 "Continue")
