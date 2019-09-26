@@ -31,7 +31,8 @@
                (handler-bind ((error (lambda (c)
                                        (trivial-backtrace:print-backtrace c))))
                  (let ((response (invoke-handler handler request)))
-                   (unless (= (status-code (response-status response)) 101)
+                   (when (or (null (response-status response))
+                             (not (= (status-code (response-status response)) 101)))
                      (handle-response response))
                    ;; Handle the response ourself, prevent hunchentoot sending the response
                    (setf hunchentoot::*headers-sent* t))))
@@ -51,6 +52,7 @@
 
   (let ((status (response-status response)))
     (let ((status-code (typecase status
+                         (null nil)
                          (status (status-code status))
                          (integer status)
                          (symbol (let ((status (gethash (make-keyword status)
@@ -58,8 +60,11 @@
                                    ;; TODO: handle status missing
                                    (status-code status)))
                          (t (error "When handle-response, don't know how to handle response status ~A" status)))))
-      ;; TODO: Handle if no status code
-      (setf (hunchentoot:return-code*) (or status-code 200))))
+      (unless status-code
+        (if (response-body response)
+            (setf status-code 200)   ;; OK
+            (setf status-code 204))) ;; No Content
+      (setf (hunchentoot:return-code*) status-code)))
 
   (let ((stream (handle-response-header response)))
     (let ((body (response-body response)))
