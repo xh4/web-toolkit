@@ -43,14 +43,6 @@
   (let ((header (request-header request)))
     (header-fields header)))
 
-(defmethod header-field ((request request) name)
-  (let ((header (request-header request)))
-    (header-field header name)))
-
-(defmethod (setf header-field) (value (request request) name)
-  (let ((header (request-header request)))
-    (setf (header-field header name) value)))
-
 (defparameter *methods* '(:get :post :put :delete :head))
 
 (defvar *request-stream-mapping-table*
