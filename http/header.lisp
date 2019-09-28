@@ -20,6 +20,27 @@
 (defmethod (setf header-fields) (value (header header))
   (setf (slot-value header 'fields) value))
 
+(defmacro header (&rest forms)
+  `(let ((header (make-instance 'header)))
+     (labels ((handle-header-forms (forms)
+                (if forms
+                    (let ((object (eval (first forms))))
+                      (typecase object
+                        (header-field
+                         (appendf (header-fields header)
+                                  (list object))
+                         (handle-header-forms (rest forms)))
+                        ((or string keyword)
+                         (if (second forms)
+                             (let ((value (eval (second forms))))
+                               (appendf (header-fields header)
+                                        (list (header-field object value)))
+                               (handle-header-forms (cddr forms)))
+                             (error "Missing header field value for name ~S" object)))
+                        (t (error "Unable to use ~A as a name of header field" object))))
+                    header)))
+       (handle-header-forms ',forms))))
+
 (defgeneric find-header-field (object name)
   (:method ((header header) name)
     (find name (header-fields header)
