@@ -20,26 +20,29 @@
 (defmethod (setf header-fields) (value (header header))
   (setf (slot-value header 'fields) value))
 
+(defun process-header-objects (header objects)
+  (if objects
+      (let ((object (first objects)))
+        (typecase object
+          (header-field
+           (appendf (header-fields header)
+                    (list object))
+           (process-header-objects header (rest objects)))
+          ((or string keyword)
+           (if (second objects)
+               (let ((value (second objects)))
+                 (appendf (header-fields header)
+                          (list (header-field object value)))
+                 (process-header-objects header (cddr objects)))
+               (error "Missing header field value for name ~S" object)))
+          (t (error "Unable to use ~A as a name of header field" object))))
+      header))
+
 (defmacro header (&rest forms)
-  `(let ((header (make-instance 'header)))
-     (labels ((handle-header-forms (forms)
-                (if forms
-                    (let ((object (eval (first forms))))
-                      (typecase object
-                        (header-field
-                         (appendf (header-fields header)
-                                  (list object))
-                         (handle-header-forms (rest forms)))
-                        ((or string keyword)
-                         (if (second forms)
-                             (let ((value (eval (second forms))))
-                               (appendf (header-fields header)
-                                        (list (header-field object value)))
-                               (handle-header-forms (cddr forms)))
-                             (error "Missing header field value for name ~S" object)))
-                        (t (error "Unable to use ~A as a name of header field" object))))
-                    header)))
-       (handle-header-forms ',forms))))
+  (with-gensyms (header objects)
+    `(let ((,header (make-instance 'header)))
+       (let ((,objects (list ,@forms)))
+         (process-header-objects ,header ,objects)))))
 
 (defgeneric find-header-field (object name)
   (:method ((header header) name)
