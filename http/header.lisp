@@ -19,3 +19,14 @@
 
 (defmethod (setf header-fields) (value (header header))
   (setf (slot-value header 'fields) value))
+
+(defgeneric find-header-field (object name)
+  (:method ((request request) name)
+    (find-header-field (request-header request) name))
+  (:method ((response response) name)
+    (find-header-field (response-header response) name))
+  (:method ((header header) name)
+    (find name (header-fields header)
+          :test (lambda (name header-field)
+                  (header-field-name-match-p header-field
+                                             name)))))

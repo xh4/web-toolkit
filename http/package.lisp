@@ -9,6 +9,7 @@
            :header-field
            :header-field-name
            :header-field-value
+           :find-header-field
            :body
            :request
            :request-method
