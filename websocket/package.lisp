@@ -22,10 +22,12 @@
                 :request
                 :request-uri
                 :request-header
+                :header
                 :header-field
                 :header-fields
                 :header-field-name
                 :header-field-value
-                :response-status
-                :response-body
+                :find-header-field
+                :reply
+                :status
                 :*response*))
