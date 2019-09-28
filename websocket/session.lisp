@@ -31,7 +31,7 @@
 
 (defgeneric on-message (session message))
 
-(defmacro define-session (name &rest arguments)
+(defmacro define-session (name superclasses &rest arguments)
   `(defclass ,name (session)
      ,@arguments))
 
