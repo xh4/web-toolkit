@@ -26,6 +26,7 @@
            :response-header
            :response-body
            :reply
+           :reply-object
            :define-handler
            :handle
            :next-handler
