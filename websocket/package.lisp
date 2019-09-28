@@ -10,6 +10,8 @@
 
            :define-session
            :close-session
+           :*session*
+           :in-session
            :on-message
            :send-text
            :send-binary
