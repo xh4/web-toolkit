@@ -48,3 +48,6 @@
 (defmethod (setf header-fields) (value (response response))
   (let ((header (response-header response)))
     (setf (header-fields header) value)))
+
+(defmethod find-header-field ((response response) name)
+  (find-header-field (response-header response) name))
