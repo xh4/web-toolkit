@@ -97,9 +97,10 @@
 
 (defun handle-missing (request)
   (declare (ignore request))
-  (setf (response-status *response*) 404)
-  (setf (header-field *response* "Content-Type") "text/plain")
-  (setf (response-body *response*) "not found"))
+  (reply
+   (status 404)
+   (header :content-type "text/plain")
+   "not found"))
 
 (defmethod handle ((router router) (request request))
   (let ((target-rule nil))
