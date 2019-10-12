@@ -78,23 +78,24 @@
     rule))
 
 (defmacro router (&rest rule-forms)
-  (let ((rules (loop for rule-form in rule-forms
-                  append
-                    (progn
-                      (unless (listp rule-form)
-                        (error "Illformed rule form: ~A, expect a list" rule-form))
-                      (let ((type (car rule-form)))
-                        (unless (symbolp type)
-                          (error "Illformed rule form: ~A, expect a symbol at the head" rule-form))
-                        (setf type (make-keyword type))
-                        (unless (find-method #'build-routing-rule
-                                             '()
-                                             (list `(eql ,type)
-                                                   (find-class t))
-                                             nil)
-                          (error "No method to build routing rule for form ~A" rule-form))
-                        (ensure-list (build-routing-rule type rule-form)))))))
-    (make-instance 'router :rules rules)))
+  (let ((rule-making-forms
+         (loop for rule-form in rule-forms
+            collect
+              (progn
+                (unless (listp rule-form)
+                  (error "Illformed rule form: ~A, expect a list" rule-form))
+                (let ((type (car rule-form)))
+                  (unless (symbolp type)
+                    (error "Illformed rule form: ~A, expect a symbol at the head" rule-form))
+                  (setf type (make-keyword type))
+                  (unless (find-method #'build-routing-rule
+                                       '()
+                                       (list `(eql ,type)
+                                             (find-class t))
+                                       nil)
+                    (error "No method to build routing rule for form ~A" rule-form))
+                  `(build-routing-rule ,type ',rule-form))))))
+    `(make-instance 'router :rules (list ,@rule-making-forms))))
 
 (defun handle-missing (request)
   (declare (ignore request))
