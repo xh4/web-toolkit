@@ -33,13 +33,18 @@
   (unless (find 'handler super-handlers)
     (appendf super-handlers '(handler)))
   `(progn
-     (defclass ,name ,super-handlers
-       ,slots
-       ,@handler-options)
-     (if (boundp ',name)
-         (setf ,name (make-instance ',name))
-         (defvar ,name
-           (make-instance ',name)))
+     (eval-when (:compile-toplevel :load-toplevel :execute)
+       (defclass ,name ,super-handlers
+         ,slots
+         ,@handler-options))
+     (eval-when (:compile-toplevel)
+       (defvar ,name
+         (make-instance ',name)))
+     (eval-when (:load-toplevel :execute)
+       (if (boundp ',name)
+           (setf ,name (make-instance ',name))
+           (defvar ,name
+             (make-instance ',name))))
      (setf (gethash ',name *handler-mapping-table* ) ,name)))
 
 (defgeneric handle (handler thing))
