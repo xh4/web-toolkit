@@ -69,3 +69,9 @@
   (let ((values (loop for (name value) on plist by #'cddr
                    append (list name value))))
     (apply 'object values)))
+
+(defun object-alist (object)
+  (let ((list '()))
+    (do-object (name value object list)
+      (push (cons name value) list))
+    (reverse list)))
