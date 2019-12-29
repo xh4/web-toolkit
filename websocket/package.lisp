@@ -12,6 +12,7 @@
            :close-session
            :*session*
            :in-session
+           :session-open-p
            :on-message
            :send-text
            :send-binary

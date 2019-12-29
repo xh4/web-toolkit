@@ -31,6 +31,12 @@
 
 (defgeneric on-message (session message))
 
+(defun session-open-p (session)
+  (let ((connection (session-connection session)))
+    ;; fixme: Connection 的 state 有问题
+    (let ((output-stream (slot-value connection 'output-stream)))
+      (open-stream-p output-stream))))
+
 (defmacro define-session (name superclasses &rest arguments)
   `(defclass ,name (session)
      ,@arguments))
