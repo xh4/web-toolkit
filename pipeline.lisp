@@ -6,7 +6,6 @@
 
 (use-package :cxml)
 (use-package :drakma)
-(use-package :trivial-backtrace)
 
 (defparameter *output-stream* (make-string-output-stream))
 
@@ -30,7 +29,7 @@
 (setf *debugger-hook*
       (lambda (error hook)
         (declare (ignore hook))
-        (print-backtrace error)
+        (trivial-backtrace:print-backtrace error)
         (quit -1)))
 
 (defvar *git-branch* (uiop:getenv "GIT_BRANCH"))
