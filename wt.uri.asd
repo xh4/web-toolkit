@@ -32,5 +32,5 @@
                                               :components ((:file "package")
                                                            (:file "uri")
                                                            (:file "decode"))))))
-  :perform (test-op (o s)
-                    (uiop:symbol-call :uri-test :run!)))
+  :perform (test-op (o c)
+                    (symbol-call :fiveam '#:run! :uri-test)))

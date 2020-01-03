@@ -28,9 +28,7 @@
                            (when port
                              (format nil "~A" port))
                            (when path
-                             (if encode
-                                 (url-encode path)
-                                 path))
+                             path)
                            (when query
                              "?")
                            (when query

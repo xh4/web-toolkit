@@ -4,7 +4,12 @@
   (:nicknames :wt.uri)
   (:use :cl :alexandria)
   (:export :uri
-           )
+           :uri-scheme
+           :uri-userinfo
+           :uri-host
+           :uri-path
+           :uri-query
+           :uri-fragment)
   (:import-from :maxpc
                 :=element
                 :?satisfies

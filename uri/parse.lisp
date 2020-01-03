@@ -191,6 +191,9 @@
              (.port (setf (uri-port uri) value))))
       uri)))
 
+(defmacro uri (thing)
+  )
+
 ;; (parse-uri "https://xh@coobii.com:80/foo/bar?abc=def#goo")
 ;; (parse-uri "/foo/bar?abc=def#goo")
 ;; (parse-uri "///foo/bar?abc=def#goo")
