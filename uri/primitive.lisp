@@ -28,11 +28,12 @@
        and
        return (values rest value match-p))))
 
-(defmacro .test ((test &rest arguments) &optional (parser '(.element))
-                 &aux (value-sym (gensym "value")))
-  `(.satisfies (lambda (,value-sym)
-                 (funcall ,test ,value-sym ,@arguments))
-               ,parser))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defmacro .test ((test &rest arguments) &optional (parser '(.element))
+                   &aux (value-sym (gensym "value")))
+    `(.satisfies (lambda (,value-sym)
+                   (funcall ,test ,value-sym ,@arguments))
+                 ,parser)))
 
 (define-parser .eq (x &optional (parser (.element)))
   (.test ('eq x) parser))
