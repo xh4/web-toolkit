@@ -82,7 +82,8 @@
               (fad:directory-exists-p pathname))
       ;; Missing
       (setf (response-status response) 404)
-      (setf (header-field response "Content-Type") "text/plain")
+      (add-header-field (response-header response)
+                        (header-field "Content-Type" "text/plain"))
       (setf (response-body response) "static handler: not found")
       (return-from handle-pathname-response))
 
@@ -98,13 +99,14 @@
                 (format nil "~A; charset=~(~A~)" content-type
                         (flex:external-format-name
                          (flex:make-external-format :utf8 :eol-style :lf)))))
-      (setf (header-field response "Content-Type") content-type))
+      (add-header-field (response-header response)
+                        (header-field "Content-Type" content-type)))
 
     ;; Last-Modified
     (let ((time (or (file-write-date pathname)
                     (get-universal-time))))
-      (setf (header-field response "Last-Modified")
-            (rfc-1123-date time)))
+      (add-header-field (response-header response)
+                        (header-field "Last-Modified" (rfc-1123-date time))))
 
     (with-open-file (input-stream pathname
                           :direction :input

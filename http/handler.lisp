@@ -124,13 +124,11 @@
                                 (condition/redirect
                                  (lambda (c)
                                    (with-slots (location status) c
-                                     (setf (header-field *response* "Location")
-                                           (case location
-                                             (:back (header-field-value
-                                                     (header-field request "Referer")))
-                                             (t location))
-                                           (response-status *response*)
-                                           status))
+                                     (reply (header "Location" (case location
+                                                                 (:back (header-field-value
+                                                                         (header-field request "Referer")))
+                                                                 (t location))))
+                                     (reply (status status)))
                                    (return-from finish-handling))))
                    (let ((result (handle handler request)))
                      (when (typep result 'response)

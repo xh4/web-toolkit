@@ -71,8 +71,8 @@
                              :path path
                              :handler (gethash handler *handler-mapping-table*))))
     (let ((matcher (lambda (request)
-                     (let ((uri (quri:uri (request-uri request))))
-                       (and (equal (routing-rule-path rule) (quri:uri-path uri))
+                     (let ((uri (uri (request-uri request))))
+                       (and (equal (routing-rule-path rule) (uri-path uri))
                             (eq (routing-rule-method rule) (request-method request)))))))
       (setf (routing-rule-matcher rule) matcher))
     rule))

@@ -45,6 +45,9 @@
            :post
            :delete
            :head)
+  (:import-from :uri
+                :uri
+                :uri-path)
   (:import-from :closer-mop
                 :compute-class-precedence-list
                 :subclassp)

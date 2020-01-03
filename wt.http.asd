@@ -35,7 +35,8 @@
                                      (:file "websocket")
                                      (:file "listener")
                                      (:file "server")
-                                     (:file "client")))))
+                                     (:file "client"))))
+  :in-order-to ((test-op (test-op "wt.http/test"))))
 
 (defsystem wt.http/test
   :depends-on (:wt.http
@@ -44,4 +45,6 @@
   :components ((:module "test"
                         :components ((:module "http"
                                               :components ((:file "package")
-                                                           (:file "static")))))))
+                                                           (:file "static"))))))
+  :perform (test-op (o c)
+                    (symbol-call :fiveam '#:run! :http-test)))
