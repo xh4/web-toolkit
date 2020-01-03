@@ -9,7 +9,8 @@
                :cl-ppcre
                :ironclad
                :quri
-               :bordeaux-threads)
+               :bordeaux-threads
+               :trivial-backtrace)
   :serial t
   :components ((:module "websocket"
                         :serial t
