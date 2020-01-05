@@ -18,7 +18,7 @@
 (defun check-host (host)
   (typecase host
     (null nil)
-    (string host)
+    (string (string-downcase host))
     (t (error "URI host must be string or null"))))
 
 (defun check-port (port)
