@@ -14,13 +14,15 @@
                                      (:file "util")
                                      (:file "error")
                                      (:file "check")
-                                     (:file "uri")
+                                     (:file "class")
                                      (:file "parser")
                                      (:file "primitive")
                                      (:file "normalize")
                                      (:file "parse")
                                      (:file "resolve")
-                                     (:file "render"))))
+                                     (:file "render")
+                                     (:file "uri")
+                                     (:file "accessor"))))
   :in-order-to ((test-op (test-op "wt.uri/test"))))
 
 (defsystem wt.uri/test
@@ -31,6 +33,7 @@
                         :components ((:module "uri"
                                               :components ((:file "package")
                                                            (:file "uri")
-                                                           (:file "decode"))))))
+                                                           (:file "decode")
+                                                           (:file "check"))))))
   :perform (test-op (o c)
                     (symbol-call :fiveam '#:run! :uri-test)))

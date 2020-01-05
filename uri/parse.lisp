@@ -23,7 +23,7 @@
   (.satisfies 'hexdig-p))
 
 (define-parser .pct-encoded ()
-  (.seq (.eq #\%) (.hexdig) (.hexdig)))
+  (.seq/s (.eq #\%) (.hexdig) (.hexdig)))
 
 (defun gen-delim-p (char)
   (member char '(#\: #\/ #\? #\# #\[ #\] #\@)))
@@ -38,14 +38,14 @@
 (define-parser .sub-delims ()
   (.satisfies 'sub-delim-p))
 
-(defun reserved-char-p (char)
+(defun reserved-p (char)
   (or (gen-delim-p char)
       (sub-delim-p char)))
 
 (define-parser .reserved ()
-  (.satisfies 'reserved-char-p))
+  (.satisfies 'reserved-p))
 
-(defun unreserved-char-p (char)
+(defun unreserved-p (char)
   (or (alpha-p char)
       (digit-p char)
       (eq char #\=)
@@ -54,7 +54,7 @@
       (eq char #\~)))
 
 (define-parser .unreserved ()
-  (.satisfies 'unreserved-char-p))
+  (.satisfies 'unreserved-p))
 
 (define-parser .scheme ()
   (.seq/s (.alpha) (.maybe (.any/s (.or (.alpha) (.digit) (.eq #\+) (.eq #\-) (.eq #\.))))))
@@ -139,10 +139,10 @@
   (.end))
 
 (define-parser .query ()
-  (.maybe (.any/s (.or (.pchar) (.eq #\/) (.eq #\.)))))
+  (.maybe (.any/s (.or (.pchar) (.eq #\/) (.eq #\?)))))
 
 (define-parser .fragment ()
-  (.maybe (.any/s (.or (.pchar) (.eq #\/) (.eq #\.)))))
+  (.maybe (.any/s (.or (.pchar) (.eq #\/) (.eq #\?)))))
 
 (define-parser .relative-part ()
   (.or (.seq (.eq #\/) (.eq #\/) (.authority) (.path-abempty))
@@ -175,7 +175,7 @@
 
 (defun parse-uri (uri-string)
   (with-parser-stack (stack :trace '(.scheme
-                                     .authority .userinfo .host .port
+                                     .userinfo .host .port
                                      .path-abempty .path-absolute
                                      .path-noscheme .path-empty
                                      .query .fragment))
@@ -186,13 +186,27 @@
          do
            (typecase parser
              (.scheme (setf (uri-scheme uri) value))
-             (.userinfo (setf (uri-userinfo uri) value))
-             (.host (setf (uri-host uri) value))
-             (.port (setf (uri-port uri) value))))
+             (.userinfo (setf (uri-userinfo uri)
+                              (when value
+                                (percent-decode-string value))))
+             (.host (setf (uri-host uri)
+                          (when value
+                            (percent-decode-string value))))
+             (.port (setf (uri-port uri)
+                          (parse-integer value)))
+             ((or .path-abempty
+                  .path-noscheme
+                  .path-absolute)
+              (setf (uri-path uri)
+                    (when value
+                      (percent-decode-string value))))
+             (.query (setf (uri-query uri)
+                           (when value
+                             (percent-decode-string value))))
+             (.fragment (setf (uri-fragment uri)
+                              (when value
+                                (percent-decode-string value))))))
       uri)))
-
-(defmacro uri (thing)
-  )
 
 ;; (parse-uri "https://xh@coobii.com:80/foo/bar?abc=def#goo")
 ;; (parse-uri "/foo/bar?abc=def#goo")

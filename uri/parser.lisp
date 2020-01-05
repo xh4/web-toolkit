@@ -40,7 +40,9 @@
           (setf (parser-match-p parser) match-p
                 (parser-value parser) value)
           (values input value match-p))
-      (maybe-trace-parser parser))))
+      (maybe-trace-parser parser)))
+  (:method (parser (input string))
+    (parse parser (maxpc.input:make-input input))))
 
 (defmacro define-parser (name arguments &body body)
   (with-gensyms (parser bindings)
@@ -85,3 +87,10 @@
 (defun maybe-trace-parser (parser)
   (when (find (class-name (class-of parser)) *parser-tracing-names*)
     (push parser *parser-stack*)))
+
+(defun parser-match-all-p (parser input)
+  (multiple-value-bind (input value match-p)
+      (parse parser input)
+    (declare (ignore value))
+    (and match-p
+         (maxpc.input:input-empty-p input))))
