@@ -6,7 +6,8 @@
   :mailto "xh@coobii.com"
   :depends-on (:alexandria
                :babel
-               :maxpc)
+               :maxpc
+               :split-sequence)
   :serial t
   :components ((:module "uri"
                         :serial t
@@ -22,7 +23,8 @@
                                      (:file "resolve")
                                      (:file "render")
                                      (:file "uri")
-                                     (:file "accessor"))))
+                                     (:file "accessor")
+                                     (:file "query"))))
   :in-order-to ((test-op (test-op "wt.uri/test"))))
 
 (defsystem wt.uri/test
@@ -36,6 +38,8 @@
                                                            (:file "encode")
                                                            (:file "check")
                                                            (:file "parse")
+                                                           (:file "construct")
+                                                           (:file "query")
                                                            (:file "uri"))))))
   :perform (test-op (o c)
                     (symbol-call :fiveam '#:run! :uri-test)))

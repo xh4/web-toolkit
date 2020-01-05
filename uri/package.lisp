@@ -10,4 +10,10 @@
            :uri-port
            :uri-path
            :uri-query
-           :uri-fragment))
+           :uri-fragment
+           :uri-string
+           :uri-query-alist
+           :uri-query-plist
+           :uri-query-hash-table)
+  (:import-from :split-sequence
+                :split-sequence))

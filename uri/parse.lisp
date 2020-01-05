@@ -200,12 +200,8 @@
               (setf (uri-path uri)
                     (when value
                       (percent-decode-string value))))
-             (.query (setf (uri-query uri)
-                           (when value
-                             (percent-decode-string value))))
-             (.fragment (setf (uri-fragment uri)
-                              (when value
-                                (percent-decode-string value))))))
+             (.query (setf (uri-query uri) value))
+             (.fragment (setf (uri-fragment uri) value))))
       uri)))
 
 ;; (parse-uri "https://xh@coobii.com:80/foo/bar?abc=def#goo")
