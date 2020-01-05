@@ -185,13 +185,16 @@
          for value = (parser-value parser)
          do
            (typecase parser
-             (.scheme (setf (uri-scheme uri) value))
+             (.scheme (setf (uri-scheme uri)
+                            (when value
+                              (string-downcase value))))
              (.userinfo (setf (uri-userinfo uri)
                               (when value
                                 (percent-decode-string value))))
              (.host (setf (uri-host uri)
                           (when value
-                            (percent-decode-string value))))
+                            (string-downcase
+                             (percent-decode-string value)))))
              (.port (setf (uri-port uri)
                           (parse-integer value)))
              ((or .path-abempty
