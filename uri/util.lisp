@@ -1,26 +1,48 @@
 (in-package :uri)
 
-(declaim (ftype (function (character) (unsigned-byte 4)) hexdigit-to-integer))
-(defun hexdigit-to-integer (char)
-  (declare (type character char)
-           (optimize (speed 3) (safety 0)))
-  (let ((code (char-code char)))
-    (declare (type fixnum code))
-    (cond
-      ((<= #.(char-code #\0) code #.(char-code #\9))
-       (- code #.(char-code #\0)))
-      ((<= #.(char-code #\A) code #.(char-code #\F))
-       (- code #.(- (char-code #\A) 10)))
-      ((<= #.(char-code #\a) code #.(char-code #\f))
-       (- code #.(- (char-code #\a) 10)))
-      (T (error "url-decoding-error")))))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar no-break-space
+    #-(or abcl lispworks) #\No-break_space
+    #+(or abcl lispworks) (code-char 160)))
 
-(defun percent-encode (string)
-  )
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar whitespace
+    #.(remove-duplicates
+       (coerce (list #\Space #\Tab #\Linefeed #\Return #\Newline #\Page
+                     #\Vt                 ;Vertical tab.
+                     no-break-space)
+               'string))))
 
-(defun percent-decode (string)
-  (check-type string string)
-  (let ((buffer (make-array 10 :element-type '(unsigned-byte 8) :adjustable t :fill-pointer 0)))
+(declaim (inline whitespacep))
+(defun whitespacep (char)
+  (case (char-code char)
+    (#.(map 'list #'char-code whitespace) t)))
+
+(declaim (inline blankp))
+(defun blankp (seq)
+  "SEQ is either empty, or consists entirely of characters that
+satisfy `whitespacep'."
+  (every #'whitespacep seq))
+
+(defun percent-encode-character (char)
+  (let ((octets (babel:string-to-octets (string char))))
+    (let ((pct-encoded (mapcar
+                        (lambda (n) (format nil "%~X" n))
+                        (coerce octets 'list))))
+      (apply #'concatenate 'string pct-encoded))))
+
+(defun percent-encode-string (string &key reserve)
+  (let ((pct-encoded (mapcar
+                      (lambda (char)
+                        (if (and reserve (funcall reserve char))
+                            (string char)
+                            (percent-encode-character char)))
+                      (coerce string 'list))))
+    (apply #'concatenate 'string pct-encoded)))
+
+(defun percent-decode-string (string)
+  (let ((buffer (make-array 10 :element-type '(unsigned-byte 8)
+                            :adjustable t :fill-pointer 0)))
     (do ((i 0 (1+ i)))
         ((>= i (length string)) buffer)
       (let* ((x (char string i)))
