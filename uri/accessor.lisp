@@ -15,6 +15,8 @@
            (setf (uri-string uri) nil)
            (setf (slot-value uri ',component) value))))))
 
+(define-uri-accessor scheme)
+
 (define-uri-accessor userinfo)
 
 (define-uri-accessor host)
