@@ -5,5 +5,5 @@
 (test uri-parsing
   )
 
-(test uri-constracting
+(test uri-constructing
   )
