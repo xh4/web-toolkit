@@ -35,6 +35,7 @@
                                                            (:file "decode")
                                                            (:file "encode")
                                                            (:file "check")
+                                                           (:file "parse")
                                                            (:file "uri"))))))
   :perform (test-op (o c)
                     (symbol-call :fiveam '#:run! :uri-test)))
