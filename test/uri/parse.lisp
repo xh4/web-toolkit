@@ -7,8 +7,14 @@
     (is (equal (uri-scheme uri) "http"))
     (is (equal (uri-host uri) "coobii.com")))
 
+  (let ((uri (uri::parse-uri "HTTP://coobii.com")))
+    (is (equal (uri-scheme uri) "http")))
+
   (let ((uri (uri::parse-uri "http://xh@coobii.com")))
     (is (equal (uri-userinfo uri) "xh")))
+
+  (let ((uri (uri::parse-uri "http://Coobii.com")))
+    (is (equal (uri-host uri) "coobii.com")))
 
   (let ((uri (uri::parse-uri "http://coobii.com:80")))
     (is (equal (uri-port uri) 80)))
