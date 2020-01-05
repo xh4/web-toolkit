@@ -7,7 +7,7 @@
            :uri-scheme
            :uri-userinfo
            :uri-host
-           :uri-post
+           :uri-port
            :uri-path
            :uri-query
            :uri-fragment)
