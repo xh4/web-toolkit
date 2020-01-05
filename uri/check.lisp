@@ -5,7 +5,7 @@
     (null nil)
     (symbol (check-scheme (string-downcase (symbol-name scheme))))
     (string (if (parser-match-all-p (.scheme) scheme)
-                scheme
+                (string-downcase scheme)
                 (error "Invalid URI scheme")))
     (t (error "URI scheme must be string or symbol or null"))))
 
@@ -18,9 +18,7 @@
 (defun check-host (host)
   (typecase host
     (null nil)
-    (string (if (parser-match-all-p (.host) host)
-                host
-                (error "Invalid URI host")))
+    (string host)
     (t (error "URI host must be string or null"))))
 
 (defun check-port (port)
