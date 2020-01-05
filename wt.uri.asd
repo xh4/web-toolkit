@@ -32,8 +32,9 @@
   :components ((:module "test"
                         :components ((:module "uri"
                                               :components ((:file "package")
-                                                           (:file "uri")
                                                            (:file "decode")
-                                                           (:file "check"))))))
+                                                           (:file "encode")
+                                                           (:file "check")
+                                                           (:file "uri"))))))
   :perform (test-op (o c)
                     (symbol-call :fiveam '#:run! :uri-test)))
