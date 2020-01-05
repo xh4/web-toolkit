@@ -1,8 +1,9 @@
 (in-package :uri)
 
-(defgeneric render-uri (uri)
+(defgeneric uri-string (uri)
   (:method ((uri uri))
-    (when (null (uri-string uri))
+    (if-let ((uri-string (slot-value uri 'string)))
+      uri-string
       (let ((scheme (uri-scheme uri))
             (host (uri-host uri))
             (userinfo (uri-userinfo uri))
@@ -69,9 +70,8 @@
                                               (eq c #\@)
                                               (eq c #\/)
                                               (eq c #\?))))))))
-          (setf (uri-string uri) uri-string))))
-    (uri-string uri)))
+          (setf (slot-value uri 'string) uri-string))))))
 
 (defmethod print-object ((uri uri) stream)
   (print-unreadable-object (uri stream :type t :identity t)
-    (format stream "~S" (render-uri uri))))
+    (format stream "~S" (uri-string uri))))
