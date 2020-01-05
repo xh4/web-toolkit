@@ -10,6 +10,4 @@
            :uri-port
            :uri-path
            :uri-query
-           :uri-fragment)
-  (:import-from :maxpc
-                :=element))
+           :uri-fragment))
