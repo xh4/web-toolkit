@@ -12,16 +12,4 @@
            :uri-query
            :uri-fragment)
   (:import-from :maxpc
-                :=element
-                :?satisfies
-                :?eq
-                :?test
-                :%and
-                :%or
-                :%any
-                :%some
-                :?seq
-                :?not
-                :=subseq
-                :%maybe
-                :?end))
+                :=element))
