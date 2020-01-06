@@ -1,11 +1,12 @@
 (in-package :uri)
 
-(defun parse-lambda-list-keywords (lambda-list)
-  (let ((keyword-specs (fourth
-                        (multiple-value-list
-                         (parse-ordinary-lambda-list lambda-list)))))
-    (loop for ((keyword-name name)) in keyword-specs
-         collect keyword-name)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun parse-lambda-list-keywords (lambda-list)
+    (let ((keyword-specs (fourth
+                          (multiple-value-list
+                           (parse-ordinary-lambda-list lambda-list)))))
+      (loop for ((keyword-name name)) in keyword-specs
+         collect keyword-name))))
 
 (defmacro define-uri-reader (component &body body)
   (let* ((component-symbol (or (and (listp component) (car component))
