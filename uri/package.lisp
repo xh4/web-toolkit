@@ -11,9 +11,6 @@
            :uri-path
            :uri-query
            :uri-fragment
-           :uri-string
-           :uri-query-alist
-           :uri-query-plist
-           :uri-query-hash-table)
+           :uri-string)
   (:import-from :split-sequence
                 :split-sequence))

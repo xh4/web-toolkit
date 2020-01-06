@@ -3,32 +3,25 @@
 (defclass uri ()
   ((scheme
     :initarg :scheme
-    :initform nil
-    :accessor uri-scheme)
+    :initform nil)
    (userinfo
     :initarg :userinfo
-    :initform nil
-    :accessor uri-userinfo)
+    :initform nil)
    (host
     :initarg :host
-    :initform nil
-    :accessor uri-host)
+    :initform nil)
    (port
     :initarg :port
-    :initform nil
-    :accessor uri-port)
+    :initform nil)
    (path
     :initarg :path
-    :initform nil
-    :accessor uri-path)
+    :initform nil)
    (query
     :initarg :query
-    :initform nil
-    :accessor uri-query)
+    :initform nil)
    (fragment
     :initarg :fragment
-    :initform nil
-    :accessor uri-fragment)
+    :initform nil)
 
    ;; the cached printable representation of the URI
    ;; It might be different than the original string, because of percent
@@ -36,8 +29,7 @@
    ;; causing it to be recomputed when needed.
    (string
     :initarg :string
-    :initform nil
-    :accessor uri-string)))
+    :initform nil)))
 
 (defmethod initialize-instance :after ((uri uri) &key)
   )

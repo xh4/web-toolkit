@@ -19,7 +19,7 @@
                             (when host
                               "//")
                             (when userinfo
-                              (percent-encode-string
+                              (percent-encode
                                userinfo
                                :reserve (lambda (c)
                                           (or (unreserved-p c)
@@ -28,7 +28,7 @@
                             (when userinfo
                               "@")
                             (when host
-                              (percent-encode-string
+                              (percent-encode
                                host
                                :reserve (lambda (c)
                                           (or (unreserved-p c)
@@ -38,7 +38,7 @@
                             (when port
                               (format nil "~A" port))
                             (when path
-                              (percent-encode-string
+                              (percent-encode
                                path
                                :reserve (lambda (c)
                                           (or (unreserved-p c)
@@ -49,7 +49,7 @@
                             (when query
                               "?")
                             (when query
-                              (percent-encode-string
+                              (percent-encode
                                query
                                :reserve (lambda (c)
                                           (or (unreserved-p c)
@@ -61,7 +61,7 @@
                             (when fragment
                               "#")
                             (when fragment
-                              (percent-encode-string
+                              (percent-encode
                                fragment
                                :reserve (lambda (c)
                                           (or (unreserved-p c)

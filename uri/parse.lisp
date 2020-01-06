@@ -186,23 +186,16 @@
          do
            (typecase parser
              (.scheme (setf (uri-scheme uri)
-                            (when value
-                              (string-downcase value))))
-             (.userinfo (setf (uri-userinfo uri)
-                              (when value
-                                (percent-decode-string value))))
+                            (when value (string-downcase value))))
+             (.userinfo (setf (uri-userinfo uri) value))
              (.host (setf (uri-host uri)
-                          (when value
-                            (string-downcase
-                             (percent-decode-string value)))))
+                          (when value (string-downcase value))))
              (.port (setf (uri-port uri)
                           (parse-integer value)))
              ((or .path-abempty
                   .path-noscheme
                   .path-absolute)
-              (setf (uri-path uri)
-                    (when value
-                      (percent-decode-string value))))
+              (setf (uri-path uri) value))
              (.query (setf (uri-query uri) value))
              (.fragment (setf (uri-fragment uri) value))))
       uri)))
