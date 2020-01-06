@@ -5,10 +5,10 @@
       (drakma:http-request url :method method
                            :want-stream t)
     (let ((header (make-instance 'header))
-          (status (gethash status-code *status-code-mapping-table*)))
+          (status (status status-code)))
       (loop for (name . value) in headers
          do
-           (setf (header-field header name) value))
+           (add-header-field header (header-field name value)))
       (let ((response (make-instance 'response
                                      :status status
                                      :header header
