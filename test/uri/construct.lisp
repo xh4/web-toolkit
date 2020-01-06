@@ -7,6 +7,8 @@
     (is (typep uri 'uri))
     (is (equal (uri-string uri) "http://coobii.com")))
 
+  (signals error (uri::make-uri :scheme "3ww" :host "coobii.com"))
+
   (let ((uri (uri::make-uri :scheme "HTTP" :host "Coobii.com")))
     (is (equal (uri-string uri) "http://coobii.com")))
 
