@@ -13,9 +13,14 @@
 
 (defmethod print-object ((header header) stream)
   (print-unreadable-object (header stream :type t)
-    (when (header-fields header)
-      (loop for field in (header-fields header)
-         do (format stream "~%  ~A" field)))))
+    (let ((*print-pretty* t))
+      (pprint-logical-block (stream nil)
+        (when (header-fields header)
+          (loop for field in (header-fields header)
+             do
+               (pprint-indent :block -7 stream)
+               (pprint-newline :mandatory stream)
+               (format stream "~A" field)))))))
 
 (defmethod (setf header-fields) (value (header header))
   (setf (slot-value header 'fields) value))

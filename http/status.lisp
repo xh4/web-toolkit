@@ -25,7 +25,7 @@
      status))
 
 (defmethod print-object ((status status) stream)
-  (print-unreadable-object (status stream)
+  (print-unreadable-object (status stream :type t)
     (format stream "~A ~A"
             (status-code status)
             (status-reason-phrase status))))
