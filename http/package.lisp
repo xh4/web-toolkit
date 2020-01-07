@@ -47,7 +47,10 @@
            :head)
   (:import-from :uri
                 :uri
-                :uri-path)
+                :uri-scheme
+                :uri-host
+                :uri-path
+                :uri-string)
   (:import-from :closer-mop
                 :compute-class-precedence-list
                 :subclassp)
