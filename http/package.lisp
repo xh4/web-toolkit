@@ -41,6 +41,7 @@
            :define-server
            :start-server
            :stop-server
+           :get
            :put
            :post
            :delete
