@@ -9,6 +9,6 @@
           (typecase (second ,values)
             (null (typecase (first ,values)
                     (uri (first ,values))
-                    (string (apply 'parse-uri (first ,values) (rest ,values)))))
+                    (string (parse-uri (first ,values)))))
             ((or string uri) (merge-uri (first ,values) (second ,values)))))
          (keyword (apply 'make-instance 'uri ,values))))))
