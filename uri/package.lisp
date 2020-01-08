@@ -12,6 +12,8 @@
            :uri-query
            :uri-fragment
            :uri-string
-           :merge-uri)
+           :merge-uri
+           :percent-encode
+           :percent-decode)
   (:import-from :split-sequence
                 :split-sequence))
