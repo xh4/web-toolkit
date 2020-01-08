@@ -48,7 +48,7 @@
 (defun unreserved-p (char)
   (or (alpha-p char)
       (digit-p char)
-      (eq char #\=)
+      (eq char #\-)
       (eq char #\.)
       (eq char #\_)
       (eq char #\~)))
