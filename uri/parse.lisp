@@ -136,7 +136,7 @@
 
 ;; path-empty = 0<pchar>
 (define-parser .path-empty ()
-  (.end))
+  (.not (.pchar)))
 
 (define-parser .query ()
   (.maybe (.any/s (.or (.pchar) (.eq #\/) (.eq #\?)))))
@@ -177,7 +177,8 @@
   (with-parser-stack (stack :trace '(.scheme
                                      .userinfo .host .port
                                      .path-abempty .path-absolute
-                                     .path-noscheme .path-empty
+                                     .path-rootless .path-noscheme
+                                     .path-empty
                                      .query .fragment))
     (parse (.uri-reference) (maxpc::make-input uri-string))
     (let ((uri (make-instance 'uri)))
@@ -194,12 +195,9 @@
                           (parse-integer value)))
              ((or .path-abempty
                   .path-noscheme
+                  .path-rootless
                   .path-absolute)
               (setf (uri-path uri) value))
              (.query (setf (uri-query uri) value))
              (.fragment (setf (uri-fragment uri) value))))
       uri)))
-
-;; (parse-uri "https://xh@coobii.com:80/foo/bar?abc=def#goo")
-;; (parse-uri "/foo/bar?abc=def#goo")
-;; (parse-uri "///foo/bar?abc=def#goo")

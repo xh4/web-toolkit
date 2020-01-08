@@ -24,6 +24,7 @@
                                      (:file "render")
                                      (:file "uri")
                                      (:file "accessor")
+                                     (:file "merge")
                                      (:file "query"))))
   :in-order-to ((test-op (test-op "wt.uri/test"))))
 
@@ -41,6 +42,7 @@
                                                            (:file "query")
                                                            (:file "construct")
                                                            (:file "update")
+                                                           (:file "merge")
                                                            (:file "uri"))))))
   :perform (test-op (o c)
                     (symbol-call :fiveam '#:run! :uri-test)))

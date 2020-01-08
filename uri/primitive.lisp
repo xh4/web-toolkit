@@ -119,3 +119,10 @@
     (if (maxpc::input-empty-p input)
         (values input nil t)
         (values input nil nil))))
+
+(define-parser .not (parser)
+  (lambda (input)
+    (let ((result (parse parser input)))
+      (if (third result)
+          (values input nil nil)
+          (values input t t)))))

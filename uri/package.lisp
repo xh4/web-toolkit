@@ -11,6 +11,7 @@
            :uri-path
            :uri-query
            :uri-fragment
-           :uri-string)
+           :uri-string
+           :merge-uri)
   (:import-from :split-sequence
                 :split-sequence))
