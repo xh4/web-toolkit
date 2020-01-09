@@ -24,7 +24,8 @@
                                      (:file "file")
                                      (:file "avatar")
                                      (:file "form")
-                                     (:file "handler")))))
+                                     (:file "handler"))))
+  :in-order-to ((test-op (test-op :wt.form/test))))
 
 (defsystem wt.form/test
   :depends-on (:wt.form
@@ -33,4 +34,6 @@
   :components ((:module "test"
                         :components ((:module "form"
                                               :components ((:file "package")
-                                                           (:file "form")))))))
+                                                           (:file "form"))))))
+  :perform (test-op (o c)
+                    (symbol-call :fiveam :run! :form-test)))
