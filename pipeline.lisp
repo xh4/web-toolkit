@@ -6,7 +6,7 @@
 (ql:quickload :trivial-backtrace)
 
 (defpackage :pipeline
-  (:use :cl :cxml :drakma)
+  (:use :cl :alexandria :cxml :drakma)
   (:shadow :compile-system :load-system :test-system))
 
 (in-package :pipeline)
@@ -84,6 +84,27 @@
         (text (uiop:implementation-identifier)))
       (with-element "current-working-directory"
         (text (namestring (uiop:getcwd)))))))
+
+(defun system-dependencies ()
+  (labels ((system-dependencies/1 (system)
+             (asdf:system-depends-on (asdf:find-system system)))
+           (system-dependencies/all (system)
+             (let ((dependencies '()))
+               (loop for dp in (system-dependencies/1 system)
+                  do
+                    (when (listp dp)
+                      (if (eq (first dp) :version)
+                          (setf dp (second dp))
+                          (setf dp nil)))
+                    (when dp
+                      (appendf dependencies (list dp))
+                      (appendf dependencies (system-dependencies/all dp))))
+               (remove-duplicates dependencies :test 'equal))))
+    (let ((dependencies (system-dependencies/all "wt")))
+      (loop for dp in dependencies
+         unless (let ((pos (search "wt." dp :test 'equal)))
+                  (and pos (= pos 0)))
+         collect dp))))
 
 (defvar *systems* '(:wt.uri :wt.html :wt.json
                     :wt.http :wt.websocket
@@ -169,6 +190,11 @@
 (defun process-systems ()
   (loop for system in *systems*
      do (process-system system)))
+
+
+
+(let ((ds (system-dependencies)))
+  (ql:quickload ds))
 
 (process-systems)
 
