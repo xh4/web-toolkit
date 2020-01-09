@@ -86,8 +86,13 @@
         (text (namestring (uiop:getcwd)))))))
 
 (defun system-dependencies ()
-  (labels ((system-dependencies/1 (system)
-             (asdf:system-depends-on (asdf:find-system system)))
+  (labels ((wt-system-p (system)
+             (let ((pos (search "wt" system :test 'equal)))
+               (and pos (= pos 0))))
+           (system-dependencies/1 (system)
+             (when (wt-system-p system)
+               (when-let ((system (asdf:find-system system)))
+                 (asdf:system-depends-on system))))
            (system-dependencies/all (system)
              (let ((dependencies '()))
                (loop for dp in (system-dependencies/1 system)
@@ -102,8 +107,7 @@
                (remove-duplicates dependencies :test 'equal))))
     (let ((dependencies (system-dependencies/all "wt/test")))
       (loop for dp in dependencies
-         unless (let ((pos (search "wt." dp :test 'equal)))
-                  (and pos (= pos 0)))
+         unless (wt-system-p dp)
          collect dp))))
 
 (defvar *systems* '(:wt.uri :wt.html :wt.json
@@ -196,7 +200,7 @@
 (let ((ds (system-dependencies)))
   (ql:quickload ds))
 
-(process-systems)
+;; (process-systems)
 
 #+(or ccl lispworks)
 (quit)
