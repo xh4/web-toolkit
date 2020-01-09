@@ -139,7 +139,7 @@
     (tagbody
      :compile
        (report-compile-starting system)
-       (handler-bind ((error (lambda (system condition)
+       (handler-bind ((error (lambda (condition)
                                (report-compile-condition system condition)
                                (go :done))))
          (compile-system system))
@@ -147,7 +147,7 @@
 
      :load
        (setf start-load t)
-       (handler-bind ((error (lambda (system condition)
+       (handler-bind ((error (lambda (condition)
                                (report-load-condition system condition)
                                (go :done))))
          (load-system system))
@@ -155,7 +155,7 @@
 
      :test
        (setf start-test t)
-       (handler-bind ((error (lambda (system condition)
+       (handler-bind ((error (lambda (condition)
                                (report-test-condition system condition))))
          (test-system system))
        (report-test-completion system)
