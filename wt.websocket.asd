@@ -23,7 +23,8 @@
                                      (:file "message")
                                      ;; (:file "server")
                                      ;; (:file "client")
-                                     ))))
+                                     )))
+  :in-order-to ((test-op (test-op :wt.websocket/test))))
 
 (defsystem wt.websocket/test
   :depends-on (:wt.websocket
@@ -32,4 +33,6 @@
   :components ((:module "test"
                         :components ((:module "websocket"
                                               :components ((:file "package")
-                                                           (:file "websocket")))))))
+                                                           (:file "websocket"))))))
+  :perform (test-op (o c)
+                    (symbol-call :fiveam :run! :websocket-test)))
