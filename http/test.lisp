@@ -29,5 +29,3 @@
               (:static :prefix "static" :location "/home/xh/"))
     :listeners (list
                 (listener :port 8001)))
-
-;; http://118.190.145.4:8001
