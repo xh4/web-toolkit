@@ -5,10 +5,10 @@
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
   :depends-on (:wt.http
+               :wt.uri
                :alexandria
                :cl-ppcre
                :ironclad
-               :quri
                :bordeaux-threads
                :trivial-backtrace)
   :serial t

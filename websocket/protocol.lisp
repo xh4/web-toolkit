@@ -156,7 +156,7 @@ format control and arguments."
   (let* ((host (header-field-value
                 (find-header-field request "Host")))
          (uri (request-uri request))
-         (path (quri:uri-path (quri:uri uri))))
+         (path (uri:uri-path uri)))
     (reply (header "Sec-WebSocket-Location"
                    (websocket-uri path host nil))))
   (let ((protocol (header-field-value
