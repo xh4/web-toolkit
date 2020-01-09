@@ -7,7 +7,7 @@
 
 (defpackage :pipeline
   (:use :cl :cxml :drakma)
-  (:shadow :compile-system :load-system))
+  (:shadow :compile-system :load-system :test-system))
 
 (in-package :pipeline)
 
@@ -167,8 +167,8 @@
          (report-test-abortion system)))))
 
 (defun process-systems ()
-  (loop for name in *systems*
-     do (process-system name)))
+  (loop for system in *systems*
+     do (process-system system)))
 
 (process-systems)
 
