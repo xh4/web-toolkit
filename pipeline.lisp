@@ -100,7 +100,7 @@
                       (appendf dependencies (list dp))
                       (appendf dependencies (system-dependencies/all dp))))
                (remove-duplicates dependencies :test 'equal))))
-    (let ((dependencies (system-dependencies/all "wt")))
+    (let ((dependencies (system-dependencies/all "wt/test")))
       (loop for dp in dependencies
          unless (let ((pos (search "wt." dp :test 'equal)))
                   (and pos (= pos 0)))
