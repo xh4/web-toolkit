@@ -6,10 +6,10 @@
   :mailto "xh@coobii.com"
   :depends-on (:wt.component
                :wt.http
+               :wt.uri
                :alexandria
                :trivia.ppcre
-               :cl-change-case
-               :quri)
+               :cl-change-case)
   :serial t
   :components ((:module "form"
                         :serial t

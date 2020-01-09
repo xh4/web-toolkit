@@ -32,10 +32,7 @@
 
 
 (defun request-query-params (request)
-  (let ((uri (quri:uri (request-uri request))))
-    (let ((query (quri:uri-query uri)))
-      (when query
-        (quri:url-decode-params query)))))
+  (uri:uri-query (request-uri request) :type 'alist))
 
 (defun request-content-type (request)
   (let ((header (request-header request)))
@@ -51,7 +48,7 @@
                   :test 'string-equal)
       (let ((body (read-request-body-to-string request)))
         (when body
-          (quri:url-decode-params body))))))
+          (uri:uri-query (uri:uri :query body) :type :alist))))))
 
 ;; hunchentoot request.lisp parse-multipart-form-data
 
