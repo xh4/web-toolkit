@@ -21,12 +21,12 @@
 (defclass remote-css-source-file (css-source-file remote-source-file) ())
 
 (defmacro define-css-source-file (name location)
-  (let ((uri (quri:uri location)))
+  (let ((uri (uri:uri location)))
     (cond
-      ((member (quri:uri-scheme uri) '("http" "https") :test 'equal)
+      ((member (uri:uri-scheme uri) '("http" "https") :test 'equal)
        `(defparameter ,name (make-instance 'remote-css-source-file
                                            :url ,location)))
-      ((null (quri:uri-scheme uri))
+      ((null (uri:uri-scheme uri))
        `(defparameter ,name (make-instance 'local-css-source-file
                                            :path ,location)))
       (t (error "Unable to handle location ~A" location)))))

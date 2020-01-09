@@ -4,8 +4,8 @@
   :version "0.0.0"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
-  :depends-on (:alexandria
-               :quri)
+  :depends-on (:wt.uri
+               :alexandria)
   :serial t
   :components ((:module "style"
                         :serial t
