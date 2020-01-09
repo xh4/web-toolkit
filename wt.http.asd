@@ -36,7 +36,7 @@
                                      (:file "listener")
                                      (:file "server")
                                      (:file "client"))))
-  :in-order-to ((test-op (test-op "wt.http/test"))))
+  :in-order-to ((test-op (test-op :wt.http/test))))
 
 (defsystem wt.http/test
   :depends-on (:wt.http
@@ -47,4 +47,4 @@
                                               :components ((:file "package")
                                                            (:file "static"))))))
   :perform (test-op (o c)
-                    (symbol-call :fiveam '#:run! :http-test)))
+                    (symbol-call :fiveam :run! :http-test)))
