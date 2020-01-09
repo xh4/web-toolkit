@@ -18,7 +18,6 @@
                                      (:file "class")
                                      (:file "parser")
                                      (:file "primitive")
-                                     (:file "normalize")
                                      (:file "parse")
                                      (:file "resolve")
                                      (:file "render")
@@ -26,7 +25,7 @@
                                      (:file "accessor")
                                      (:file "merge")
                                      (:file "query"))))
-  :in-order-to ((test-op (test-op "wt.uri/test"))))
+  :in-order-to ((test-op (test-op :wt.uri/test))))
 
 (defsystem wt.uri/test
   :depends-on (:wt.uri
@@ -45,4 +44,4 @@
                                                            (:file "merge")
                                                            (:file "uri"))))))
   :perform (test-op (o c)
-                    (symbol-call :fiveam '#:run! :uri-test)))
+                    (symbol-call :fiveam :run! :uri-test)))
