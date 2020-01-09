@@ -12,7 +12,8 @@
                         :serial t
                         :components ((:file "package")
                                      (:file "html")
-                                     (:file "serialize")))))
+                                     (:file "serialize"))))
+  :in-order-to ((test-op (test-op :wt.html/test))))
 
 (defsystem wt.html/test
   :depends-on (:wt.html
@@ -21,4 +22,6 @@
   :components ((:module "test"
                         :components ((:module "html"
                                               :components ((:file "package")
-                                                           (:file "html")))))))
+                                                           (:file "html"))))))
+  :perform (test-op (o c)
+                    (symbol-call :fiveam :run! :html-test)))
