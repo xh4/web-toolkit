@@ -71,20 +71,20 @@
 
 (define-uri-writer path)
 
-(define-uri-reader (query &key (type) (decode nil))
-    (case type
-      (:alist (uri-query-alist query))
-      (:plist (uri-query-plist query))
-      (:hash-table (uri-query-hash-table query))
-      (t (if decode
-             (percent-decode query)
-             query))))
+(define-uri-reader (query &key type (decode nil))
+  (case type
+    (:alist (uri-query-alist query))
+    (:plist (uri-query-plist query))
+    (:hash-table (uri-query-hash-table query))
+    (t (if decode
+           (percent-decode query)
+           query))))
 
 (define-uri-writer query)
 
 (define-uri-reader (fragment &key (decode t))
-    (if decode
-        (percent-decode fragment)
-        fragment))
+  (if decode
+      (percent-decode fragment)
+      fragment))
 
 (define-uri-writer fragment)
