@@ -18,7 +18,8 @@
                                      (:file "tag-option")
                                      (:file "class-option")
                                      (:file "render")
-                                     (:file "element")))))
+                                     (:file "element"))))
+  :in-order-to ((test-op (test-op :wt.component/test))))
 
 (defsystem wt.component/test
   :depends-on (:wt.component
@@ -28,4 +29,6 @@
                         :components ((:module "component"
                                               :components ((:file "package")
                                                            (:file "component")
-                                                           (:file "render")))))))
+                                                           (:file "render"))))))
+  :perform (test-op (o c)
+                    (symbol-call :fiveam :run! :component-test)))
