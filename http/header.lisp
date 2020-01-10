@@ -44,7 +44,7 @@
 (defmacro header (&rest forms)
   (with-gensyms (header objects)
     `(let ((,header (make-instance 'header)))
-       (let ((,objects (list ,@forms)))
+       (let ((,objects (flatten (list ,@forms))))
          (process-header-objects ,header ,objects)))))
 
 (defgeneric find-header-field (object name)
