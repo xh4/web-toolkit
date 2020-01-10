@@ -17,7 +17,7 @@
 
 (defparameter document (make-instance 'document-constructor))
 
-(defun document (child)
+(defun document (&optional child)
   (let ((document (rune-dom:create-document child)))
     (change-class document 'document)))
 
@@ -29,7 +29,7 @@
 
 (defparameter text (make-instance 'text-constructor))
 
-(defun text (data)
+(defun text (&optional data)
   (construct text data))
 
 (defmethod construct ((constructor text-constructor) &rest arguments)

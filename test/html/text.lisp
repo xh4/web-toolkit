@@ -3,5 +3,5 @@
 (in-suite :html-test)
 
 (test text
-  (signals error (text))
+  (is (typep (text) 'text))
   (is (typep (text "foo") 'text)))
