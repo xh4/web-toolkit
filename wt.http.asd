@@ -45,6 +45,9 @@
   :components ((:module "test"
                         :components ((:module "http"
                                               :components ((:file "package")
+                                                           (:file "status")
+                                                           (:file "header")
+                                                           (:file "redirect")
                                                            (:file "static"))))))
   :perform (test-op (o c)
                     (symbol-call :fiveam :run! :http-test)))
