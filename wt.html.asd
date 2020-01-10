@@ -22,6 +22,8 @@
   :components ((:module "test"
                         :components ((:module "html"
                                               :components ((:file "package")
-                                                           (:file "html"))))))
+                                                           (:file "text")
+                                                           (:file "element")
+                                                           (:file "serialize"))))))
   :perform (test-op (o c)
                     (symbol-call :fiveam :run! :html-test)))
