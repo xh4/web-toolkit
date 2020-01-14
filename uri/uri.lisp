@@ -11,4 +11,4 @@
                     (uri (first ,values))
                     (string (parse-uri (first ,values)))))
             ((or string uri) (merge-uri (first ,values) (second ,values)))))
-         (keyword (apply 'make-instance 'uri ,values))))))
+         (keyword (apply 'make-uri ,values))))))
