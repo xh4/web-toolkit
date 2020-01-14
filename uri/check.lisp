@@ -38,11 +38,29 @@
     (string path)
     (t (error "URI path must be string or null"))))
 
+(defun alist-query (alist)
+  (flet ((reserve-char (char)
+           (or (unreserved-p char))))
+    (loop for (name . value) in alist
+       collect (format nil "~A=~A"
+                       (percent-encode name :reserve #'reserve-char)
+                       (percent-encode value :reserve #'reserve-char))
+       into pairs
+       finally (return (format nil "~{~A~^&~}" pairs)))))
+
+(defun plist-query (plist)
+  (loop for (name value) on plist by #'cddr
+     unless value do (error "Missing value for name ~S" name)
+     collect (cons name value) into alist
+     finally (return (alist-query alist))))
+
 (defun check-query (query)
   (typecase query
     (null nil)
     (string query)
-    (list query)
+    (list (typecase (first query)
+            (cons (alist-query query))
+            (t (plist-query query))))
     (t (error "URI query must be string or list or null"))))
 
 (defun check-fragment (fragment)
