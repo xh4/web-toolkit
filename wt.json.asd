@@ -24,8 +24,8 @@
   :components ((:module "test"
                         :components ((:module "json"
                                               :components ((:file "package")
-                                                           (:file "object")
                                                            (:file "decode")
-                                                           (:file "encode"))))))
+                                                           (:file "encode")
+                                                           (:file "object"))))))
   :perform (test-op (o c)
                     (symbol-call :fiveam :run! :json-test)))

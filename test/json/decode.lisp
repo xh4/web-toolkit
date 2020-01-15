@@ -39,10 +39,11 @@ returned!"
                        \"hi\" : \"tjena\" ,
                        \"start_XPos\" : 98
                   }"))
-    (is (equalp '(("hello" . "hej") ("hi" . "tjena") ("start_XPos" . 98))
-                (decode input)))
-    (is-false (decode " {  } "))
-    (is-false (decode "{}"))))
+    ;; (is (equalp '(("hello" . "hej") ("hi" . "tjena") ("start_XPos" . 98))
+    ;;             (decode input)))
+    ;; (is-false (decode " {  } "))
+    ;; (is-false (decode "{}"))
+    ))
 
 (defmacro with-fp-overflow-handler (handler-expr &body body)
   (let ((err (gensym)))
@@ -134,48 +135,6 @@ returned!"
      (let ((s (make-string (file-length stream))))
       (read-sequence s stream)
       s)))
-
-(test decoder-performance
-  (let* ((json-string (contents-of-file (test-file "pass1")))
-         (chars (length json-string))
-         (count 1000))
-    (format t "Decoding ~a varying chars from memory ~a times." chars count)
-    (time
-     (dotimes (x count)
-       (let ((discard-soon
-              (with-fp-overflow-handler (invoke-restart 'placeholder :infty)
-                (with-no-char-handler (invoke-restart 'substitute-char #\?)
-                  (decode json-string)))))
-         (funcall #'identity discard-soon))))));Do something so the compiler don't optimize too much
-
-(test decoder-performance-with-simplified-camel-case
-  (let* ((json-string (contents-of-file (test-file "pass1")))
-         (chars (length json-string))
-         (count 1000))
-    (format t "Decoding ~a varying chars from memory ~a times." chars count)
-    (time
-     (with-shadowed-custom-vars
-       (let ((json::*json-identifier-name-to-lisp* #'simplified-camel-case-to-lisp))
-           (dotimes (x count)
-             (let ((discard-soon
-                    (with-fp-overflow-handler (invoke-restart 'placeholder :infty)
-                      (with-no-char-handler (invoke-restart 'substitute-char #\?)
-                        (decode json-string)))))
-               (funcall #'identity discard-soon)))))))) ;Do something so the compiler don't optimize too much
-
-;;#+when-u-want-profiling
-;;(defun profile-decoder-performance()
-;;  #+sbcl
-;;  (progn
-;;    (let ((json-string (contents-of-file (test-file "pass1")))
-;;          (count 10))
-;;      (format t "Parsing test-file pass1 from memory ~a times." count)
-;;      (sb-sprof:with-profiling ()
-;;        (dotimes (x count)
-;;          (let ((discard-soon (decode json-string)))
-;;            (funcall #'identity discard-soon))))
-;;      (sb-sprof:report)
-;;      nil)))
 
 (test non-strict-json
    (let ((not-strictly-valid "\"right\\'s of man\""))

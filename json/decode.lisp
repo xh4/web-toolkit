@@ -474,9 +474,8 @@ double quote, calling string handlers as it goes."
 
 (defun accumulator-add-key (key)
   "Add a cons whose CAR is KEY to the end of the list accumulator."
-  (let ((key (funcall *identifier-name-to-key* (funcall *json-identifier-name-to-lisp* key))))
-    (setq *accumulator-last*
-          (setf (cdr *accumulator-last*) (cons (cons key nil) nil)))))
+  (setq *accumulator-last*
+        (setf (cdr *accumulator-last*) (cons (cons key nil) nil))))
 
 (defun accumulator-add-value (value)
   "Set the CDR of the most recently accumulated cons to VALUE."
@@ -498,6 +497,12 @@ double quote, calling string handlers as it goes."
 list."
   (cdr *accumulator*))
 
+(defun accumulator-get-object ()
+  "Return a CLOS object, using keys and values accumulated so far in
+the list accumulator as slot names and values, respectively. Create a OBJECT with slots interned in *JSON-SYMBOLS-PACKAGE*."
+  (let ((bindings (cdr *accumulator*)))
+    (alist-object bindings)))
+
 (defun init-string-stream-accumulator ()
   "Initialize a string-stream accumulator."
   (setq *accumulator* (make-string-output-stream)))
@@ -513,7 +518,7 @@ accumulator and close the stream."
   (prog1 (get-output-stream-string *accumulator*)
     (close *accumulator*)))
 
-(defun set-decoder-simple-list-semantics ()
+(defun set-decoder-semantics ()
   "Set the decoder semantics to the following:
   * Strings and Numbers are decoded naturally, reals becoming floats.
   * The literal name true is decoded to T, false and null to NIL.
@@ -532,7 +537,7 @@ package *JSON-SYMBOLS-PACKAGE*."
    :beginning-of-object #'init-accumulator
    :object-key #'accumulator-add-key
    :object-value #'accumulator-add-value
-   :end-of-object #'accumulator-get
+   :end-of-object #'accumulator-get-object
    :beginning-of-string #'init-string-stream-accumulator
    :string-char #'string-stream-accumulator-add
    :end-of-string #'string-stream-accumulator-get
@@ -540,14 +545,14 @@ package *JSON-SYMBOLS-PACKAGE*."
                            '(*accumulator* *accumulator-last*))
    :internal-decoder #'decode-json-from-stream))
 
-(defmacro with-decoder-simple-list-semantics (&body body)
+(defmacro with-decoder-semantics (&body body)
   "Execute BODY in a dynamic environement where the decoder semantics
-is such as set by SET-DECODER-SIMPLE-LIST-SEMANTICS."
+is such as set by SET-DECODER-SEMANTICS."
   `(with-shadowed-custom-vars
-     (set-decoder-simple-list-semantics)
+     (set-decoder-semantics)
      ,@body))
 
-(set-decoder-simple-list-semantics)
+(set-decoder-semantics)
 
 (defun decode (source &key)
   (typecase source

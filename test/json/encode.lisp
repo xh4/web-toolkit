@@ -45,11 +45,6 @@
       (is (string= (normalize json)
                    (normalize encoded))))))
 
-(test test-encode-json-nathan-hawkins
-  (let ((foo '((a . 1) (b . 2) (c . 3))))
-    (is (string= (encode foo)
-                 "{\"a\":1,\"b\":2,\"c\":3}"))))
-
 (test encode-pass-2
   (decode-then-encode "[[[[[[[[[[[[[[[[[[[\"Not too deep\"]]]]]]]]]]]]]]]]]]]"))
 
@@ -104,13 +99,9 @@
   (decode-then-encode "[null]"))
 
 (test array
-  (with-decoder-simple-list-semantics
-    ;;Since empty lists becomes nil in lisp, they are converted back to null
-    (is (string= (encode (decode "[  ]"))
-                 "null")))
-  ;;But you can use vectors
-  (is (string= (encode (vector 1 2))
-               "[1,2]")))
+  ;;Since empty lists becomes nil in lisp, they are converted back to null
+  (is (string= (encode (decode "[  ]"))
+               "null")))
 
 (test character
   ;;Characters are encoded to strings, but when decoded back to string
