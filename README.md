@@ -18,5 +18,5 @@ WT.HTML implements HTML constructors and serializer.
 ## JSON
 WT.JSON is based on [CL-JSON](https://common-lisp.net/project/cl-json/cl-json.html).
 
-## Component
-WT.COMPONENT provides component abstraction.
+## URI
+
