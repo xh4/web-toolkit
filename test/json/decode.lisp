@@ -73,12 +73,12 @@ returned!"
   #-(or (and sbcl darwin) (and allegro macosx))
   (is (equalp "BIG:2e444"
               (with-fp-overflow-handler
-                  (invoke-restart 'bignumber-string "BIG:")
+                  (invoke-restart 'json::bignumber-string "BIG:")
                 (decode "2e444"))))
   #-(or (and sbcl darwin) (and allegro macosx))
   (is (= (* 2 (expt 10 444))
          (with-fp-overflow-handler
-             (invoke-restart 'rational-approximation)
+             (invoke-restart 'json::rational-approximation)
            (decode "2e444"))))
   ;; In SBCL on Darwin, constructing the float from parts by explicit
   ;; operations yields #.SB-EXT:SINGLE-FLOAT-POSITIVE-INFINITY.
@@ -95,8 +95,8 @@ returned!"
 
 (defun decode-file (path)
   (with-open-file (stream path :direction :input)
-    (with-fp-overflow-handler (invoke-restart 'placeholder :infty)
-      (with-no-char-handler (invoke-restart 'substitute-char #\?)
+    (with-fp-overflow-handler (invoke-restart 'json::placeholder :infty)
+      (with-no-char-handler (invoke-restart 'json::substitute-char #\?)
         (json::decode-json-strict stream)))))
 
 ;; All test files are taken from http://www.crockford.com/JSON/JSON_checker/test/
