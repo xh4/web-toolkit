@@ -5,9 +5,7 @@
   (:use :cl)
   (:shadow :get)
   (:export :encode
-           :encode-json
            :decode
-           :decode-json
            :object
            :alist-object
            :plist-object

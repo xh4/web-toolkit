@@ -1,8 +1,4 @@
-;;;; Copyright (c) 2006-2008 Henrik Hjelte
-;;;; All rights reserved.
-;;;; See the file LICENSE for terms of use and distribution.
-
-(in-package :cl-json)
+(in-package :json)
 
 ;;; First a simpler version, see testcase json-object-simplified-camel-case
 ;;; for difference with the ordinary came-case-to-lisp

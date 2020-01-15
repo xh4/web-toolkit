@@ -40,7 +40,7 @@
 (defun lisp-name-to-object-key (name)
   (typecase name
     (string name)
-    (symbol (cl-json::lisp-to-camel-case (symbol-name name)))))
+    (symbol (lisp-to-camel-case (symbol-name name)))))
 
 (defun object (&rest arguments)
   (when (oddp (length arguments))
