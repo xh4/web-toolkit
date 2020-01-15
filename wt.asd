@@ -8,10 +8,7 @@
                :wt.json
                :wt.uri
                :wt.http
-               :wt.websocket
-               :wt.component
-               :wt.form
-               :wt.sql)
+               :wt.websocket)
   :serial t
   :in-order-to ((test-op (test-op :wt/test))))
 
@@ -20,10 +17,7 @@
                :wt.json/test
                :wt.uri/test
                :wt.http/test
-               :wt.websocket/test
-               :wt.component/test
-               :wt.form/test
-               :wt.sql/test)
+               :wt.websocket/test)
   :perform (test-op (o s)
                     (uiop:eval-input "(setf fiveam:*on-error* :debug)")
                     (uiop:eval-input "(setf fiveam:*on-failure* :debug)")
@@ -31,7 +25,4 @@
                     (uiop:symbol-call :fiveam :run! :json-test)
                     (uiop:symbol-call :fiveam :run! :uri-test)
                     (uiop:symbol-call :fiveam :run! :http-test)
-                    (uiop:symbol-call :fiveam :run! :websocket-test)
-                    (uiop:symbol-call :fiveam :run! :component-test)
-                    (uiop:symbol-call :fiveam :run! :form-test)
-                    (uiop:symbol-call :fiveam :run! :sql-test)))
+                    (uiop:symbol-call :fiveam :run! :websocket-test)))
