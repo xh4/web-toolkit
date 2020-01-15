@@ -23,7 +23,7 @@ WT.HTML implements HTML parser, serializer and constructors.
 WT.JSON is based on [CL-JSON](https://common-lisp.net/project/cl-json/cl-json.html).
 
 ## URI
-WT.URI provides URI parser and constructor, with support of UTF-8 characters, IPv6 address and query parameters handling.
+WT.URI provides URI parser and constructor, with support of UTF-8 characters, IPv6 addresses and query parameters handling. It utilize recursive descent [parser combinators](https://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf) to provide a concise implementation that is close to the definition in [RFC 3986 Uniform Resource Identifier (URI): Generic Syntax](https://tools.ietf.org/html/rfc3986).
 
 # Author
 [Xiangyu He](https://xh.coobii.com) <[xh@coobii.com](mailto:xh@coobii.com)>
