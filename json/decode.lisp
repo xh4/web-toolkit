@@ -286,7 +286,7 @@ file that it names; otherwise, a stream is expected as SOURCE."
   "Same as DECODE-JSON, but allow only Objects or Arrays on the top
 level, no junk afterwards."
   (assert (member (peek-char t stream) '(#\{ #\[)))
-  (let ((object (decode-json stream)))
+  (let ((object (decode-json-from-stream stream)))
     (assert (eq :no-junk (peek-char t stream nil :no-junk)))
     object))
 
