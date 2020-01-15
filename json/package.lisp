@@ -10,4 +10,5 @@
            :alist-object
            :plist-object
            :get
-           :do-object))
+           :do-object
+           :json-syntax-error))
