@@ -1,7 +1,7 @@
 <h3 align="center">Lisp Web Toolkit</h3>
 
 <p align="center">
-    <a href="https://web-toolkit.org">web-toolkit.org</a>
+    <a href="https://lisp-web-toolkit.com">lisp-web-toolkit.com</a>
 </p>
 
 [![Build Status](https://travis-ci.org/xh4/web-toolkit.svg?branch=master)](https://travis-ci.org/xh4/web-toolkit)
