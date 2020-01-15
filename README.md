@@ -20,3 +20,5 @@ WT.JSON is based on [CL-JSON](https://common-lisp.net/project/cl-json/cl-json.ht
 
 ## URI
 
+# Author
+[Xiangyu He](https://xh.coobii.com) <[xh@coobii.com](mailto:xh@coobii.com)>
