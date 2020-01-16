@@ -28,7 +28,10 @@ format control and arguments."
     :initform nil)))
 
 (define-condition close-received ()
-  ((reason
+  ((code
+    :initarg :code
+    :initform nil)
+   (reason
     :initarg :reason
     :initform nil)))
 
@@ -109,10 +112,12 @@ format control and arguments."
                           (lambda (c)
                             (when (find-method #'on-close '()
                                                `( ,(class-of endpoint)
+                                                   ,(find-class t)
                                                    ,(find-class t) )
                                                nil)
-                              (let ((reason (slot-value c 'reason)))
-                                (on-close endpoint session reason))))))
+                              (let ((code (slot-value c 'code))
+                                    (reason (slot-value c 'reason)))
+                                (on-close endpoint session code reason))))))
             (with-slots (state) connection
               (loop do (handle-frame connection
                                      (receive-frame connection))

@@ -11,7 +11,7 @@
 
 (defgeneric on-open (endpoint session))
 
-(defgeneric on-close (endpoint session &optional reason))
+(defgeneric on-close (endpoint session code &optional reason))
 
 (defgeneric on-error (endpoint session error))
 
