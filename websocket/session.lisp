@@ -5,7 +5,13 @@
 (defclass session ()
   ((connection
     :initarg :connection
-    :reader session-connection)))
+    :reader session-connection)
+   (opening-uri
+    :initarg :opening-uri
+    :reader session-opening-uri)
+   (opening-header
+    :initarg :opening-header
+    :reader session-opening-header)))
 
 (defgeneric close-session (session &optional reason)
   (:method ((session session) &optional reason)

@@ -13,6 +13,9 @@
            :*session*
            :in-session
            :session-open-p
+           :session-opening-uri
+           :session-opening-header
+
            :on-message
            :send-text
            :send-binary

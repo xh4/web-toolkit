@@ -45,7 +45,10 @@ format control and arguments."
                                       :output-stream stream)))
       (let ((session-class (or (endpoint-session-class endpoint)
                                'session)))
-        (let ((session (make-instance session-class :connection connection)))
+        (let ((session (make-instance session-class
+                                      :connection connection
+                                      :opening-uri (request-uri request)
+                                      :opening-header (request-header request))))
 
           (when (find-method #'on-open '()
                              `(,(class-of endpoint) ,(find-class t))
