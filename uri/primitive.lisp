@@ -126,3 +126,35 @@
       (if (third result)
           (values input nil nil)
           (values input t t)))))
+
+(define-parser .n (n parser)
+  (if (equal n 0)
+      (.not parser)
+      (lambda (original-input)
+        (let ((input original-input))
+          (loop repeat n
+             for (rest value match-p) = (multiple-value-list
+                                         (parse parser input))
+             if match-p
+             collect value into values
+             and do (setf input rest)
+             else do (return (values original-input nil nil))
+             finally (return (values rest values t)))))))
+
+(define-parser .n/s (n parser)
+  (lambda (input)
+    (multiple-value-bind (rest values match-p)
+        (parse (.n n parser) input)
+      (if match-p
+          (values rest (format nil "~{~A~}" values) t)
+          (values input nil nil)))))
+
+(define-parser .s (string)
+  (lambda (original-input)
+    (let ((input original-input))
+      (loop for char across string
+         for element = (maxpc.input:input-first input)
+         if (equal char element)
+         do (setf input (maxpc.input:input-rest input))
+         else do (return (values original-input nil nil))
+         finally (return (values input string t))))))

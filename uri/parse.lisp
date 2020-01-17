@@ -92,13 +92,49 @@
           (.dec-octet) (.eq #\.)
           (.dec-octet)))
 
+(define-parser .ip-literal ()
+  (.seq/s (.eq #\[) (.ipv6-address) (.eq #\])))
+
+(define-parser .ipv6-address ()
+  (.or (.seq/s (.n/s 6 (.seq/s (.h16) (.eq #\:))) (.ls32))
+       (.seq/s (.s "::") (.n/s 5 (.seq/s (.h16) (.eq #\:))) (.ls32))
+       (.seq/s (.maybe (.h16)) (.s "::") (.n/s 4 (.seq/s (.h16) (.eq #\:)))
+               (.ls32))
+       (.seq/s (.maybe (.seq/s (.h16) (.eq #\:) (.h16)))
+               (.s "::")
+               (.n/s 3 (.seq/s (.h16) (.eq #\:))) (.ls32))
+       (.seq/s (.maybe (.seq/s (.n/s 2 (.seq/s (.h16) (.eq #\:))) (.h16)))
+               (.s "::")
+               (.n/s 2 (.seq/s (.h16) (.eq #\:))) (.ls32))
+       (.seq/s (.maybe (.seq/s (.n/s 3 (.seq/s (.h16) (.eq #\:))) (.h16)))
+               (.s "::")
+               (.seq/s (.h16) (.eq #\:)) (.ls32))
+       (.seq/s (.maybe (.seq/s (.n/s 4 (.seq/s (.h16) (.eq #\:))) (.h16)))
+               (.s "::")
+               (.ls32))
+       (.seq/s (.maybe (.seq/s (.n/s 5 (.seq/s (.h16) (.eq #\:))) (.h16)))
+               (.s "::")
+               (.h16))
+       (.seq/s (.maybe (.seq/s (.n/s 6 (.seq/s (.h16) (.eq #\:))) (.h16)))
+               (.s "::"))))
+
+(define-parser .ls32 ()
+  (.or (.seq/s (.h16) (.eq #\:) (.h16))
+       (.ipv4-address)))
+
+(define-parser .h16 ()
+  (or (.n/s 4 (.hexdig))
+      (.n/s 3 (.hexdig))
+      (.n/s 2 (.hexdig))
+      (.hexdig)))
+
 ;; 这部分比我想象的宽松
 ;; URL 对这部分的定义好像更宽松
 (define-parser .reg-name ()
   (.maybe (.any/s (.or (.unreserved) (.pct-encoded) (.sub-delims)))))
 
 (define-parser .host ()
-  (.or (.ipv4-address) (.reg-name)))
+  (.or (.ip-literal) (.ipv4-address) (.reg-name)))
 
 (define-parser .port ()
   (.maybe (.any/s (.digit))))
