@@ -92,8 +92,15 @@
           (.dec-octet) (.eq #\.)
           (.dec-octet)))
 
-(define-parser .ip-literal ()
-  (.seq/s (.eq #\[) (.ipv6-address) (.eq #\])))
+(define-parser .h16 ()
+  (or (.n/s 4 (.hexdig))
+      (.n/s 3 (.hexdig))
+      (.n/s 2 (.hexdig))
+      (.hexdig)))
+
+(define-parser .ls32 ()
+  (.or (.seq/s (.h16) (.eq #\:) (.h16))
+       (.ipv4-address)))
 
 (define-parser .ipv6-address ()
   (.or (.seq/s (.n/s 6 (.seq/s (.h16) (.eq #\:))) (.ls32))
@@ -118,15 +125,8 @@
        (.seq/s (.maybe (.seq/s (.n/s 6 (.seq/s (.h16) (.eq #\:))) (.h16)))
                (.s "::"))))
 
-(define-parser .ls32 ()
-  (.or (.seq/s (.h16) (.eq #\:) (.h16))
-       (.ipv4-address)))
-
-(define-parser .h16 ()
-  (or (.n/s 4 (.hexdig))
-      (.n/s 3 (.hexdig))
-      (.n/s 2 (.hexdig))
-      (.hexdig)))
+(define-parser .ip-literal ()
+  (.seq/s (.eq #\[) (.ipv6-address) (.eq #\])))
 
 ;; 这部分比我想象的宽松
 ;; URL 对这部分的定义好像更宽松
