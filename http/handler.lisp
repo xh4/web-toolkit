@@ -29,23 +29,23 @@
 
 (setf (gethash 'handler *handler-mapping-table* ) handler)
 
-(defmacro define-handler (name super-handlers slots &rest handler-options)
+(defmacro define-handler (handler-name super-handlers slots &rest handler-options)
   (unless (find 'handler super-handlers)
     (appendf super-handlers '(handler)))
   `(progn
      (eval-when (:compile-toplevel :load-toplevel :execute)
-       (defclass ,name ,super-handlers
+       (defclass ,handler-name ,super-handlers
          ,slots
          ,@handler-options))
      (eval-when (:compile-toplevel)
-       (defvar ,name
-         (make-instance ',name)))
+       (defvar ,handler-name
+         (make-instance ',handler-name)))
      (eval-when (:load-toplevel :execute)
-       (if (boundp ',name)
-           (setf ,name (make-instance ',name))
-           (defvar ,name
-             (make-instance ',name))))
-     (setf (gethash ',name *handler-mapping-table* ) ,name)))
+       (if (boundp ',handler-name)
+           (setf ,handler-name (make-instance ',handler-name))
+           (defvar ,handler-name
+             (make-instance ',handler-name))))
+     (setf (gethash ',handler-name *handler-mapping-table* ) ,handler-name)))
 
 (defgeneric handle (handler thing))
 
