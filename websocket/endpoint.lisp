@@ -15,14 +15,18 @@
 
 (defgeneric on-error (endpoint session error))
 
-(defmacro define-endpoint (name &key session-class)
-  `(progn
-     (if (boundp ',name)
-         (setf (endpoint-session-class ,name) ,session-class)
-         (progn
-           (defvar ,name (make-instance ',name
-                                        :session-class ,session-class))
-           (define-handler ,name (endpoint) ())
-           (defmethod http:handle ((endpoint ,name) (request request))
-             (handle-user-endpoint-request endpoint request))))
-     ,name))
+(defmacro define-endpoint (endpoint-name superclasses slots &rest options)
+  (let ((superclasses (if (find 'endpoint superclasses)
+                          superclasses
+                          (appendf superclasses (list 'endpoint)))))
+    (let ((session-class (second (find 'session-class options :key 'car))))
+      `(progn
+         (if (boundp ',endpoint-name)
+             (setf (endpoint-session-class ,endpoint-name) ,session-class)
+             (progn
+               (defvar ,endpoint-name (make-instance ',endpoint-name
+                                            :session-class ,session-class))
+               (define-handler ,endpoint-name ,superclasses ,slots)
+               (defmethod http:handle ((endpoint ,endpoint-name) (request request))
+                 (handle-user-endpoint-request endpoint request))))
+         ,endpoint-name))))
