@@ -43,9 +43,13 @@
     (let ((output-stream (slot-value connection 'output-stream)))
       (open-stream-p output-stream))))
 
-(defmacro define-session (name superclasses &rest arguments)
-  `(defclass ,name (session)
-     ,@arguments))
+(defmacro define-session (name superclasses slots &rest options)
+  (let ((superclasses (if (find 'session superclasses)
+                          superclasses
+                          (append superclasses (list 'session)))))
+    `(defclass ,name ,superclasses
+       ,slots
+       ,@options)))
 
 ;; TODO: 处理 session 关闭的情况
 ;; TODO: 处理抛出异常的情况
