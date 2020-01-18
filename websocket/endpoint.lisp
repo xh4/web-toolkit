@@ -17,11 +17,12 @@
 
 (defmacro define-endpoint (name &key session-class)
   `(progn
-     (define-handler ,name (endpoint) ())
-     (defmethod http:handle ((endpoint ,name) (request request))
-       (handle-user-endpoint-request endpoint request))
      (if (boundp ',name)
          (setf (endpoint-session-class ,name) ,session-class)
-       (defvar ,name (make-instance ',name
-                                    :session-class ,session-class)))
+         (progn
+           (defvar ,name (make-instance ',name
+                                        :session-class ,session-class))
+           (define-handler ,name (endpoint) ())
+           (defmethod http:handle ((endpoint ,name) (request request))
+             (handle-user-endpoint-request endpoint request))))
      ,name))
