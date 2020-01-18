@@ -35,6 +35,22 @@ format control and arguments."
     :initarg :reason
     :initform nil)))
 
+(defun decide-endpoint-session-class (endpoint request)
+  (let ((object (endpoint-session-class endpoint)))
+    (typecase object
+      (symbol object)
+      (function (let ((value (funcall object request)))
+                  (typecase value
+                    (symbol value)
+                    (t (error "Expect symbol")))))
+      (null 'session))))
+
+(defun make-session-instance (session-class connection request)
+  (make-instance session-class
+                 :connection connection
+                 :opening-uri (request-uri request)
+                 :opening-header (request-header request)))
+
 (defun handle-user-endpoint-request (endpoint request)
   (handler-bind ((error (lambda (c)
                           (trivial-backtrace:print-backtrace c))))
@@ -43,13 +59,8 @@ format control and arguments."
            (connection (make-instance 'connection
                                       :input-stream stream
                                       :output-stream stream)))
-      (let ((session-class (or (endpoint-session-class endpoint)
-                               'session)))
-        (let ((session (make-instance session-class
-                                      :connection connection
-                                      :opening-uri (request-uri request)
-                                      :opening-header (request-header request))))
-
+      (let ((session-class (decide-endpoint-session-class endpoint request)))
+        (let ((session (make-session-instance session-class connection request)))
           (when (find-method #'on-open '()
                              `(,(class-of endpoint) ,(find-class t))
                              nil)
