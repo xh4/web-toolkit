@@ -77,16 +77,11 @@ format control and arguments."
                               (on-error endpoint session error)
                               (return-from handle-user-endpoint-request))))
                          (flex:external-format-error
-                          (lambda (e)
+                          (lambda (error)
                             (close-connection connection
                                               :status 1007
                                               :reason "Bad UTF-8")
-                            (when (find-method #'on-error '()
-                                               `( ,(class-of endpoint)
-                                                   ,(find-class t)
-                                                   ,(find-class t) )
-                                               nil)
-                              (on-error endpoint session e))
+                            (on-error endpoint session error)
                             (return-from handle-user-endpoint-request)))
                          (error
                           (lambda (error)
