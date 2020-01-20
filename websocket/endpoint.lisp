@@ -9,25 +9,28 @@
 (defmethod handle ((endpoint endpoint) (request request))
   (call-next-handler))
 
-(defgeneric on-open (endpoint session))
+(defgeneric on-open (endpoint session)
+  (:method (endpoint session)))
 
-(defgeneric on-close (endpoint session code &optional reason))
+(defgeneric on-close (endpoint session code &optional reason)
+  (:method (endpoint session code &optional reason)))
 
-(defgeneric on-error (endpoint session error))
+(defgeneric on-error (endpoint session error)
+  (:method (endpoint session error)))
 
 (defmacro define-endpoint (endpoint-name superclasses slots &rest options)
   (let ((superclasses (if (find 'endpoint superclasses)
                           superclasses
-                          (appendf superclasses (list 'endpoint)))))
+                          (append superclasses (list 'endpoint)))))
     (let ((session-class (or (second (find :session-class options :key 'car))
                              'session)))
       `(progn
          (define-handler ,endpoint-name ,superclasses ,slots)
-         (if (boundp ',endpoint-name)
-             (setf (endpoint-session-class ,endpoint-name) ,session-class)
-             (progn
-               (defvar ,endpoint-name (make-instance ',endpoint-name
-                                            :session-class ,session-class))
-               (defmethod http:handle ((endpoint ,endpoint-name) (request request))
-                 (handle-user-endpoint-request endpoint request))))
-         ,endpoint-name))))
+         (defvar ,endpoint-name (make-instance ',endpoint-name
+                                               :session-class ,session-class))
+         (eval-when (:load-toplevel :execute)
+           (setf (endpoint-session-class ,endpoint-name) ,session-class))
+         (defmethod http:handle ((endpoint ,endpoint-name) (request request))
+           (handle-user-endpoint-request endpoint request))
+         (eval-when (:execute)
+           ,endpoint-name)))))

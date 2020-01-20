@@ -17,6 +17,7 @@
                         :components ((:file "package")
                                      (:file "session")
                                      (:file "endpoint")
+                                     (:file "pool")
                                      (:file "frame")
                                      (:file "connection")
                                      (:file "protocol")

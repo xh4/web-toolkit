@@ -16,6 +16,10 @@
            :session-opening-uri
            :session-opening-header
 
+           :define-session-pool
+           :add-session
+           :remove-session
+
            :on-message
            :send-text
            :send-binary

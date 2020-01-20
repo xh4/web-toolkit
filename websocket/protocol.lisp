@@ -69,17 +69,12 @@ format control and arguments."
                 (setf session result))))
 
           (handler-bind ((websocket-error
-                          (lambda (e)
-                            (with-slots (status) e
+                          (lambda (error)
+                            (with-slots (status) error
                               (close-connection connection
                                                 :status status
-                                                :reason (princ-to-string e))
-                              (when (find-method #'on-error '()
-                                                 `( ,(class-of endpoint)
-                                                     ,(find-class t)
-                                                     ,(find-class t) )
-                                                 nil)
-                                (on-error endpoint session e))
+                                                :reason (princ-to-string error))
+                              (on-error endpoint session error)
                               (return-from handle-user-endpoint-request))))
                          (flex:external-format-error
                           (lambda (e)
@@ -94,44 +89,26 @@ format control and arguments."
                               (on-error endpoint session e))
                             (return-from handle-user-endpoint-request)))
                          (error
-                          (lambda (e)
+                          (lambda (error)
                             (close-connection connection
                                               :status 1011
                                               :reason "Internal error")
-                            (when (find-method #'on-error '()
-                                               `( ,(class-of endpoint)
-                                                   ,(find-class t)
-                                                   ,(find-class t) )
-                                               nil)
-                              (on-error endpoint session e))
+                            (on-error endpoint session error)
                             (return-from handle-user-endpoint-request)))
 
                          (text-received
                           (lambda (c)
-                            (when (find-method #'on-message '()
-                                               `( ,(class-of session)
-                                                   ,(find-class t) )
-                                               nil)
-                              (on-message session (slot-value c 'text)))))
+                            (on-message session (slot-value c 'text))))
 
                          (binary-received
                           (lambda (c)
-                            (when (find-method #'on-message '()
-                                               `( ,(class-of session)
-                                                   ,(find-class t) )
-                                               nil)
-                              (on-message session (slot-value c 'data)))))
+                            (on-message session (slot-value c 'data))))
 
                          (close-received
                           (lambda (c)
-                            (when (find-method #'on-close '()
-                                               `( ,(class-of endpoint)
-                                                   ,(find-class t)
-                                                   ,(find-class t) )
-                                               nil)
-                              (let ((code (slot-value c 'code))
-                                    (reason (slot-value c 'reason)))
-                                (on-close endpoint session code reason))))))
+                            (let ((code (slot-value c 'code))
+                                  (reason (slot-value c 'reason)))
+                              (on-close endpoint session code reason)))))
             (with-slots (state) connection
               (loop do (handle-frame connection
                                      (receive-frame connection))

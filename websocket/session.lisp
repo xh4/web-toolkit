@@ -5,18 +5,26 @@
 (defclass session ()
   ((connection
     :initarg :connection
+    :initform nil
     :reader session-connection)
    (opening-uri
     :initarg :opening-uri
+    :initform nil
     :reader session-opening-uri)
    (opening-header
     :initarg :opening-header
-    :reader session-opening-header)))
+    :initform nil
+    :reader session-opening-header)
+   (pool
+    :initform nil
+    :allocation :class)))
 
-(defgeneric close-session (session &optional reason)
-  (:method ((session session) &optional reason)
-    (with-slots (connection) session
-      (close-connection connection reason))))
+(defgeneric close-session  (session &optional reason)
+  (:method ((session session) &optional reason)))
+
+(defmethod close-session :after (session &optional reason)
+  (with-slots (connection) session
+    (close-connection connection reason)))
 
 (defgeneric send-text (session text &key)
   (:method ((session session) text &key)
@@ -35,7 +43,8 @@
     (with-slots (connection) session
       (send-frame connection +ping+))))
 
-(defgeneric on-message (session message))
+(defgeneric on-message (session message)
+  (:method (session message)))
 
 (defun session-open-p (session)
   (let ((connection (session-connection session)))
@@ -43,13 +52,20 @@
     (let ((output-stream (slot-value connection 'output-stream)))
       (open-stream-p output-stream))))
 
-(defmacro define-session (name superclasses slots &rest options)
+(defmacro define-session (session-name superclasses slots &rest options)
   (let ((superclasses (if (find 'session superclasses)
                           superclasses
-                          (append superclasses (list 'session)))))
-    `(defclass ,name ,superclasses
-       ,slots
-       ,@options)))
+                          (append superclasses (list 'session))))
+        (pool (second (find :pool options :key 'first)))
+        (options (remove-if (lambda (option)
+                              (member (first option) '(:pool)))
+                            options)))
+    `(progn
+       (defclass ,session-name ,superclasses
+         ,slots
+         ,@options)
+       (let ((session (make-instance ',session-name)))
+         (setf (slot-value session 'pool) ,pool)))))
 
 ;; TODO: 处理 session 关闭的情况
 ;; TODO: 处理抛出异常的情况
