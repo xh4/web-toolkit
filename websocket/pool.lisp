@@ -26,7 +26,7 @@
         (options (remove-if (lambda (option)
                               (member (first option) '(:instance)))
                             options)))
-    `(progn
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
        (defclass ,session-pool-name ,superclasses
          ,slots
          ,@options)
@@ -43,3 +43,11 @@
 (defmethod on-error :after (endpoint session error)
   (when-let ((pool (slot-value session 'pool)))
     (remove-session pool session)))
+
+(defmethod send-text ((session-pool session-pool) text &key)
+  (loop for session in (session-pool-sessions session-pool)
+     do (send-text session text)))
+
+(defmethod send-binary ((session-pool session-pool) data &key)
+  (loop for session in (session-pool-sessions session-pool)
+     do (send-binary session data)))

@@ -17,7 +17,8 @@
     :reader session-opening-header)
    (pool
     :initform nil
-    :allocation :class)))
+    :allocation :class
+    :reader session-pool)))
 
 (defgeneric close-session  (session &optional reason)
   (:method ((session session) &optional reason)))
@@ -53,20 +54,27 @@
       (open-stream-p output-stream))))
 
 (defmacro define-session (session-name superclasses slots &rest options)
-  (let ((superclasses (if (find 'session superclasses)
-                          superclasses
-                          (append superclasses (list 'session))))
-        (pool (second (find :pool options :key 'first)))
-        (options (remove-if (lambda (option)
-                              (member (first option) '(:pool)))
-                            options)))
+  (let* ((superclasses (if (find 'session superclasses)
+                           superclasses
+                           (append superclasses (list 'session))))
+         (pool (second (find :pool options :key 'first)))
+         (pool-slot `(pool
+                      :initform ,pool
+                      :allocation :class
+                      :reader session-pool))
+         (slots (append slots (list pool-slot)))
+         (options (remove-if (lambda (option)
+                               (member (first option) '(:pool)))
+                             options)))
     `(progn
-       (defclass ,session-name ,superclasses
-         ,slots
-         ,@options)
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+         (defclass ,session-name ,superclasses
+           ,slots
+           ,@options))
        (eval-when (:load-toplevel :execute)
          (let ((session (make-instance ',session-name)))
-           (setf (slot-value session 'pool) ,pool))))))
+           (setf (slot-value session 'pool) ,pool))
+         (find-class ',session-name)))))
 
 ;; TODO: 处理 session 关闭的情况
 ;; TODO: 处理抛出异常的情况

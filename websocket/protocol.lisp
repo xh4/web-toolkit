@@ -35,10 +35,23 @@ format control and arguments."
     :initarg :reason
     :initform nil)))
 
+(defun symbol-function-p (symbol)
+  (if (and (fboundp symbol)
+           (not (macro-function symbol))
+           (not (special-operator-p symbol)))
+      (symbol-function symbol)
+      nil))
+
 (defun decide-endpoint-session-class (endpoint request)
   (let ((object (endpoint-session-class endpoint)))
     (typecase object
-      (symbol object)
+      (symbol (cond
+                ((find-class object nil) object)
+                ((symbol-function-p object)
+                 (let ((value (funcall object request)))
+                   (typecase value
+                     (symbol value)
+                     (t (error "Expect symbol")))))))
       (function (let ((value (funcall object request)))
                   (typecase value
                     (symbol value)
@@ -61,12 +74,9 @@ format control and arguments."
                                       :output-stream stream)))
       (let ((session-class (decide-endpoint-session-class endpoint request)))
         (let ((session (make-session-instance session-class connection request)))
-          (when (find-method #'on-open '()
-                             `(,(class-of endpoint) ,(find-class t))
-                             nil)
-            (let ((result (on-open endpoint session)))
-              (when (typep result 'session)
-                (setf session result))))
+          (let ((result (on-open endpoint session)))
+            (when (typep result 'session)
+              (setf session result)))
 
           (handler-bind ((websocket-error
                           (lambda (error)

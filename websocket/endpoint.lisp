@@ -1,16 +1,13 @@
 (in-package :websocket)
 
-(define-handler endpoint ()
+(defclass endpoint ()
   ((session-class
     :initarg :session-class
     :initform 'session
     :accessor endpoint-session-class)))
 
-(defmethod handle ((endpoint endpoint) (request request))
-  (call-next-handler))
-
 (defgeneric on-open (endpoint session)
-  (:method (endpoint session)))
+  (:method (endpoint session) session))
 
 (defgeneric on-close (endpoint session code &optional reason)
   (:method (endpoint session code &optional reason)))
@@ -24,13 +21,15 @@
                           (append superclasses (list 'endpoint)))))
     (let ((session-class (or (second (find :session-class options :key 'car))
                              'session)))
-      `(progn
-         (define-handler ,endpoint-name ,superclasses ,slots)
-         (defvar ,endpoint-name (make-instance ',endpoint-name
-                                               :session-class ,session-class))
-         (eval-when (:load-toplevel :execute)
-           (setf (endpoint-session-class ,endpoint-name) ,session-class))
-         (defmethod http:handle ((endpoint ,endpoint-name) (request request))
-           (handle-user-endpoint-request endpoint request))
-         (eval-when (:execute)
-           ,endpoint-name)))))
+      (with-gensyms (s/endpoint s/request)
+        `(progn
+           (eval-when (:compile-toplevel :load-toplevel :execute)
+             (defclass ,endpoint-name ,superclasses ,slots)
+             (defvar ,endpoint-name (make-instance ',endpoint-name
+                                                   :session-class ,session-class)))
+           (eval-when (:load-toplevel :execute)
+             (setf (endpoint-session-class ,endpoint-name) ,session-class))
+           (defmethod http:handle ((,s/endpoint ,endpoint-name) (,s/request request))
+             (handle-user-endpoint-request ,s/endpoint ,s/request))
+           (eval-when (:execute)
+             ,endpoint-name))))))

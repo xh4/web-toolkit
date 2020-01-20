@@ -17,8 +17,10 @@
            :session-opening-header
 
            :define-session-pool
+           :session-pool
            :add-session
            :remove-session
+           :session-pool-sessions
 
            :on-message
            :send-text
