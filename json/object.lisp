@@ -70,6 +70,13 @@
                    append (list name value))))
     (apply 'object values)))
 
+(defmacro do-object ((name value object &optional result-form) &body body)
+  `(loop :for ,name :being :the :hash-keys :of (slot-value ,object 'pairs)
+      :using (hash-value ,value)
+      :do
+        ,@body
+      :finally (return ,result-form)))
+
 (defun object-alist (object)
   (let ((list '()))
     (do-object (name value object list)
