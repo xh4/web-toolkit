@@ -64,8 +64,9 @@
        (defclass ,session-name ,superclasses
          ,slots
          ,@options)
-       (let ((session (make-instance ',session-name)))
-         (setf (slot-value session 'pool) ,pool)))))
+       (eval-when (:load-toplevel :execute)
+         (let ((session (make-instance ',session-name)))
+           (setf (slot-value session 'pool) ,pool))))))
 
 ;; TODO: 处理 session 关闭的情况
 ;; TODO: 处理抛出异常的情况
