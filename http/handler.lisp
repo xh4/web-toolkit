@@ -18,7 +18,7 @@
   `(signal 'condition/abort-handler))
 
 ;; Mapping from handler names (class names of handlers) to handler instances
-(defvar *handler-mapping-table* (make-hash-table))
+(defvar *static-handlers* (make-hash-table))
 
 (defclass handler () ())
 
@@ -27,25 +27,26 @@
 
 (defparameter handler (make-instance 'handler))
 
-(setf (gethash 'handler *handler-mapping-table* ) handler)
+(setf (gethash 'handler *static-handlers*) handler)
 
-(defmacro define-handler (handler-name super-handlers slots &rest handler-options)
+(defmacro define-handler (handler-name super-handlers slots &rest options)
   (unless (find 'handler super-handlers)
     (appendf super-handlers '(handler)))
-  `(progn
-     (eval-when (:compile-toplevel :load-toplevel :execute)
-       (defclass ,handler-name ,super-handlers
-         ,slots
-         ,@handler-options))
-     (eval-when (:compile-toplevel)
-       (defvar ,handler-name
-         (make-instance ',handler-name)))
-     (eval-when (:load-toplevel :execute)
-       (if (boundp ',handler-name)
-           (setf ,handler-name (make-instance ',handler-name))
-           (defvar ,handler-name
-             (make-instance ',handler-name))))
-     (setf (gethash ',handler-name *handler-mapping-table* ) ,handler-name)))
+  (let ((instanize (if-let ((option (find :instanize options :key 'first)))
+                     (second option)
+                     t)))
+    (let ((options (remove-if (lambda (options)
+                                (member (first options) '(:instanize)))
+                              options)))
+      `(progn
+         (eval-when (:compile-toplevel :load-toplevel :execute)
+           (defclass ,handler-name ,super-handlers
+             ,slots
+             ,@options)
+           ,@(when instanize
+               `((defvar ,handler-name
+                   (make-instance ',handler-name))
+                 (setf (gethash ',handler-name *static-handlers*) ,handler-name))))))))
 
 (defgeneric handle (handler thing))
 
@@ -68,11 +69,12 @@
 (defun compute-handler-precedence-list (handler)
   (let ((handler-classes (compute-handler-class-precedence-list handler)))
     (let ((handlers (loop for handler-class in handler-classes
-                       for handler-instance = (gethash (class-name handler-class) *handler-mapping-table*)
+                       for handler-instance = (gethash (class-name handler-class)
+                                                       *static-handlers*)
                        when handler-instance
                        collect handler-instance
-                       unless handler-instance
-                       do (format t "Handler class ~A has no instance~%" handler-class))))
+                       else
+                       collect (make-instance handler-class))))
       (typecase handler
         (handler (cons handler (rest handlers)))
         (t handlers)))))

@@ -4,7 +4,8 @@
   ((rules
     :initarg :rules
     :initform nil
-    :accessor router-rules)))
+    :accessor router-rules))
+  (:instanize nil))
 
 (defun pprint-router (router stream)
   (let ((*print-pretty* t))
@@ -69,7 +70,7 @@
   (let ((rule (make-instance 'verbose-routing-rule
                              :method method
                              :path path
-                             :handler (gethash handler *handler-mapping-table*))))
+                             :handler handler)))
     (let ((matcher (lambda (request)
                      (let ((uri (uri (request-uri request))))
                        (and (equal (routing-rule-path rule) (uri-path uri))
@@ -113,6 +114,8 @@
          (setf target-rule rule)
          (return))
     (if target-rule
-        (let ((handler (routing-rule-handler target-rule)))
-          (invoke-handler handler request))
+        (let ((handler (symbol-value (routing-rule-handler target-rule))))
+          (typecase handler
+            (handler (invoke-handler handler request))
+            (t (handle handler request))))
         (handle-missing request))))
