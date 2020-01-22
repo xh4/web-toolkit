@@ -7,13 +7,16 @@
     :accessor endpoint-session-class)))
 
 (defgeneric on-open (endpoint session)
-  (:method (endpoint session) session))
+  (:method (endpoint session) session)
+  (:method :after (endpoint session) session))
 
 (defgeneric on-close (endpoint session code &optional reason)
-  (:method (endpoint session code &optional reason)))
+  (:method (endpoint session code &optional reason))
+  (:method :before (endpoint session code &optional reason)))
 
 (defgeneric on-error (endpoint session error)
-  (:method (endpoint session error)))
+  (:method (endpoint session error))
+  (:method :before (endpoint session error)))
 
 (defmacro define-endpoint (endpoint-name superclasses slots &rest options)
   (let ((superclasses (if (find 'endpoint superclasses)
