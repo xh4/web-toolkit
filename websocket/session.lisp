@@ -45,7 +45,9 @@
       (send-frame connection +ping+))))
 
 (defgeneric on-message (session message)
-  (:method (session message)))
+  (:method (session message))
+  (:method :before (session message))
+  (:method :after (session message)))
 
 (defun session-open-p (session)
   (let ((connection (session-connection session)))
