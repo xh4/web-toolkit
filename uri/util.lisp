@@ -42,8 +42,8 @@ satisfy `whitespacep'."
         (apply #'concatenate 'string pct-encoded))))
   (:method ((o null) &key reserve) (declare (ignore reserve))))
 
-(defgeneric percent-decode (object &key errorp)
-  (:method ((string string) &key errorp)
+(defgeneric percent-decode (object &key error-p)
+  (:method ((string string) &key error-p)
     (let ((buffer (make-array 10 :element-type '(unsigned-byte 8)
                               :adjustable t :fill-pointer 0)))
       (do ((i 0 (1+ i)))
@@ -63,5 +63,5 @@ satisfy `whitespacep'."
                        do (vector-push-extend octet buffer)))))))
       (babel:octets-to-string buffer
                               :encoding :utf-8
-                              :errorp errorp)))
-  (:method ((o null) &key errorp) (declare (ignore o errorp))))
+                              :errorp error-p)))
+  (:method ((o null) &key error-p) (declare (ignore o error-p))))
