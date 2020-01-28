@@ -14,7 +14,18 @@
    (opening-header
     :initarg :opening-header
     :initform nil
-    :reader session-opening-header)
+    :reader session-opening-header
+    :allocation :class)
+   (message-handler
+    :initarg :message-handler
+    :initform nil
+    :accessor session-message-handler
+    :allocation :class)
+   (message-handler-code
+    :initarg :message-handler-code
+    :initform nil
+    :accessor session-message-handler-code
+    :allocation :class)
    (pool
     :initform nil
     :allocation :class
@@ -55,18 +66,25 @@
     (let ((output-stream (slot-value connection 'output-stream)))
       (open-stream-p output-stream))))
 
+(defun make-pool-slot-definition (pool)
+  `(pool
+    :initform ,pool
+    :allocation :class
+    :reader session-pool))
+
 (defmacro define-session (session-name superclasses slots &rest options)
   (let* ((superclasses (if (find 'session superclasses)
                            superclasses
                            (append superclasses (list 'session))))
          (pool (second (find :pool options :key 'first)))
-         (pool-slot `(pool
-                      :initform ,pool
-                      :allocation :class
-                      :reader session-pool))
-         (slots (append slots (list pool-slot)))
+         (on-message (rest (find :on-message options :key 'first)))
+         (slots (append slots
+                        (list (make-pool-slot-definition pool))
+                        (make-handler-slot-definitions :message
+                                                       (first on-message)
+                                                       (rest on-message))))
          (options (remove-if (lambda (option)
-                               (member (first option) '(:pool)))
+                               (member (first option) '(:pool :on-message)))
                              options)))
     `(progn
        (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -75,7 +93,11 @@
            ,@options))
        (eval-when (:load-toplevel :execute)
          (let ((session (make-instance ',session-name)))
-           (setf (slot-value session 'pool) ,pool))
+           (setf (slot-value session 'pool) ,pool
+                 (slot-value session 'message-handler)
+                 (make-handler ,(first on-message) ,@(rest on-message))
+                 (slot-value session 'message-handler-code)
+                 '(,(first on-message) ,@(rest on-message))))
          (find-class ',session-name)))))
 
 ;; TODO: 处理 session 关闭的情况

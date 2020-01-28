@@ -10,11 +10,13 @@
                :cl-ppcre
                :ironclad
                :bordeaux-threads
-               :trivial-backtrace)
+               :trivial-backtrace
+               :cl-cont)
   :serial t
   :components ((:module "websocket"
                         :serial t
                         :components ((:file "package")
+                                     (:file "handler")
                                      (:file "session")
                                      (:file "endpoint")
                                      (:file "pool")

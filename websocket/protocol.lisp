@@ -72,52 +72,67 @@ format control and arguments."
            (connection (make-instance 'connection
                                       :input-stream stream
                                       :output-stream stream)))
-      (let ((session-class (decide-endpoint-session-class endpoint request)))
-        (let ((session (make-session-instance session-class connection request)))
-          (let ((result (on-open endpoint session)))
-            (when (typep result 'session)
-              (setf session result)))
 
-          (handler-bind ((websocket-error
-                          (lambda (error)
-                            (with-slots (status) error
-                              (close-connection connection
-                                                :status status
-                                                :reason (princ-to-string error))
-                              (on-error endpoint session error)
-                              (return-from handle-user-endpoint-request))))
-                         (flex:external-format-error
-                          (lambda (error)
-                            (close-connection connection
-                                              :status 1007
-                                              :reason "Bad UTF-8")
-                            (on-error endpoint session error)
-                            (return-from handle-user-endpoint-request)))
-                         (error
-                          (lambda (error)
-                            (close-connection connection
-                                              :status 1011
-                                              :reason "Internal error")
-                            (on-error endpoint session error)
-                            (return-from handle-user-endpoint-request)))
+      (with-slots (open-handler close-handler error-handler) endpoint
 
-                         (text-received
-                          (lambda (c)
-                            (on-message session (slot-value c 'text))))
+        (let ((session-class (decide-endpoint-session-class endpoint request)))
+          (let ((session (make-session-instance session-class connection request)))
 
-                         (binary-received
-                          (lambda (c)
-                            (on-message session (slot-value c 'data))))
+            (with-slots (message-handler) session
 
-                         (close-received
-                          (lambda (c)
-                            (let ((code (slot-value c 'code))
-                                  (reason (slot-value c 'reason)))
-                              (on-close endpoint session code reason)))))
-            (with-slots (state) connection
-              (loop do (handle-frame connection
-                                     (receive-frame connection))
-                 while (not (eq :closed state))))))))))
+              (let ((result (funcall open-handler session)))
+                (when (typep result 'session)
+                  (setf session result)))
+
+              (handler-bind ((websocket-error
+                              (lambda (error)
+                                (with-slots (status) error
+                                  (close-connection connection
+                                                    :status status
+                                                    :reason (princ-to-string error))
+                                  ;; (on-error endpoint session error)
+                                  ;; (funcall error-handler session error)
+                                  (return-from handle-user-endpoint-request))))
+                             (flex:external-format-error
+                              (lambda (error)
+                                (close-connection connection
+                                                  :status 1007
+                                                  :reason "Bad UTF-8")
+                                ;; (on-error endpoint session error)
+                                ;; (funcall error-handler session error)
+                                (return-from handle-user-endpoint-request)))
+                             (error
+                              (lambda (error)
+                                (close-connection connection
+                                                  :status 1011
+                                                  :reason "Internal error")
+                                ;; (on-error endpoint session error)
+                                ;; (funcall error-handler session error)
+                                (return-from handle-user-endpoint-request)))
+
+                             (text-received
+                              (lambda (c)
+                                ;; (on-message session (slot-value c 'text))
+                                (let ((message (slot-value c 'text)))
+                                  (funcall message-handler session message))))
+
+                             (binary-received
+                              (lambda (c)
+                                ;; (on-message session (slot-value c 'data))
+                                (let ((message (slot-value c 'data)))
+                                  (funcall message-handler session message))))
+
+                             (close-received
+                              (lambda (c)
+                                (let ((code (slot-value c 'code))
+                                      (reason (slot-value c 'reason)))
+                                  ;; (on-close endpoint session code reason)
+                                  ;; (funcall close-handler session code reason)
+                                  ))))
+                (with-slots (state) connection
+                  (loop do (handle-frame connection
+                                         (receive-frame connection))
+                     while (not (eq :closed state))))))))))))
 
 (defun websocket-uri (path host &optional ssl)
   "Form WebSocket URL (ws:// or wss://) URL."

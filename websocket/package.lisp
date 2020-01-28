@@ -22,6 +22,7 @@
            :remove-session
            :session-pool-sessions
 
+           :define-handler-macro
            :on-message
            :send-text
            :send-binary
@@ -42,4 +43,7 @@
                 :find-header-field
                 :reply
                 :status
-                :*response*))
+                :*response*)
+  (:import-from :cl-cont
+                :call/cc
+                :lambda/cc))
