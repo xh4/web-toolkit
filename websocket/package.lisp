@@ -4,17 +4,17 @@
   (:nicknames :ws :wt.ws :wt.websocket)
   (:use :cl :alexandria)
   (:export :define-endpoint
-           :on-open
-           :on-close
-           :on-error
 
            :define-session
-           :close-session
+
            :*session*
-           :in-session
-           :session-open-p
            :session-opening-uri
            :session-opening-header
+           :session-open-p
+           :send-text
+           :send-binary
+           :ping
+           :close-session
 
            :define-session-pool
            :session-pool
@@ -23,10 +23,7 @@
            :session-pool-sessions
 
            :define-handler-macro
-           :on-message
-           :send-text
-           :send-binary
-           :ping)
+           :*handler-macros*)
   (:import-from :http
                 :define-handler
                 :handler

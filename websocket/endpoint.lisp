@@ -4,7 +4,8 @@
   ((session-class
     :initarg :session-class
     :initform 'session
-    :accessor endpoint-session-class)
+    :accessor endpoint-session-class
+    :allocation :class)
    (open-handler
     :initarg :open-handler
     :initform nil
@@ -36,17 +37,12 @@
     :accessor endpoint-error-handler-code
     :allocation :class)))
 
-(defgeneric on-open (endpoint session)
-  (:method (endpoint session) session)
-  (:method :after (endpoint session) session))
-
-(defgeneric on-close (endpoint session code &optional reason)
-  (:method (endpoint session code &optional reason))
-  (:method :before (endpoint session code &optional reason)))
-
-(defgeneric on-error (endpoint session error)
-  (:method (endpoint session error))
-  (:method :before (endpoint session error)))
+(defun make-session-class-slot-definition (session-class)
+  `(session-class
+    :initarg :session-class
+    :initform ,session-class
+    :accessor endpoint-session-class
+    :allocation :class))
 
 (defmacro define-endpoint (endpoint-name superclasses slots &rest options)
   (let ((superclasses (if (find 'endpoint superclasses)
@@ -58,6 +54,7 @@
           (on-close (rest (find :on-close options :key 'car)))
           (on-error (rest (find :on-error options :key 'car))))
       (let ((slots (append slots
+                           (list (make-session-class-slot-definition session-class))
                            (make-handler-slot-definitions
                             :open
                             (first on-open)
@@ -80,8 +77,7 @@
           `(progn
              (eval-when (:compile-toplevel :load-toplevel :execute)
                (defclass ,endpoint-name ,superclasses ,slots ,@options)
-               (defvar ,endpoint-name (make-instance ',endpoint-name
-                                                     :session-class ,session-class)))
+               (defvar ,endpoint-name (make-instance ',endpoint-name)))
              (eval-when (:load-toplevel :execute)
                (setf (endpoint-session-class ,endpoint-name) ,session-class
                      (endpoint-open-handler ,endpoint-name) (make-handler
