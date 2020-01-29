@@ -37,8 +37,8 @@
                                         &allow-other-keys)
   (declare (ignore slot-names))
   (when on-message
-    (setf (slot-value class 'message-handler) (eval (first on-message))
-          (slot-value class 'message-handler-code) (rest (first on-message)))))
+    (setf (slot-value class 'message-handler) (eval (car on-message))
+          (slot-value class 'message-handler-code) (cdadar on-message)))))
 
 (defgeneric close-session  (session &optional reason)
   (:method ((session session) &optional reason)))
@@ -81,7 +81,7 @@
                            superclasses
                            (append superclasses (list 'session))))
          (pool (second (find :pool options :key 'first)))
-         (on-message (rest (find :on-message options :key 'first)))
+         (message-handler-form (second (find :on-message options :key 'first)))
          (slots (append slots
                         (list (make-pool-slot-definition pool))))
          (options (remove-if (lambda (option)
@@ -89,7 +89,7 @@
                              (append options
                                      `((:metaclass session-class))))))
     (replace-class-option options :on-message
-                          `(make-handler ,(first on-message) ,@(rest on-message)))
+                          `(make-handler ,message-handler-form))
     `(progn
        (eval-when (:compile-toplevel :load-toplevel :execute)
          (defclass ,session-name ,superclasses

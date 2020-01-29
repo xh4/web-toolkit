@@ -39,14 +39,14 @@
                                         &allow-other-keys)
   (declare (ignore slot-names))
   (when on-open
-    (setf (slot-value class 'open-handler) (eval (first on-open))
-          (slot-value class 'open-handler-code) (rest (first on-open))))
+    (setf (slot-value class 'open-handler) (eval (car on-open))
+          (slot-value class 'open-handler-code) (cdadar on-open)))
   (when on-close
-    (setf (slot-value class 'close-handler) (eval (first on-close))
-          (slot-value class 'close-handler-code) (rest (first on-close))))
+    (setf (slot-value class 'close-handler) (eval (car on-close))
+          (slot-value class 'close-handler-code) (cdadar on-close)))
   (when on-error
-    (setf (slot-value class 'error-handler) (eval (first on-error))
-          (slot-value class 'error-handler-code) (rest (first on-error)))))
+    (setf (slot-value class 'error-handler) (eval (car on-error))
+          (slot-value class 'error-handler-code) (cdadar on-error))))
 
 (defmethod shared-initialize :after ((class endpoint-class) slot-names
                                       &key session-class
@@ -65,17 +65,17 @@
   (let ((superclasses (if (find 'endpoint superclasses)
                           superclasses
                           (append superclasses (list 'endpoint)))))
-    (let ((on-open (rest (find :on-open options :key 'car)))
-          (on-close (rest (find :on-close options :key 'car)))
-          (on-error (rest (find :on-error options :key 'car))))
+    (let ((open-handler-form (second (find :on-open options :key 'car)))
+          (close-handler-form (second (find :on-close options :key 'car)))
+          (error-handler-form (second (find :on-error options :key 'car))))
       (let ((options (append options
                              `((:metaclass endpoint-class)))))
         (replace-class-option options :on-open
-                              `(make-handler ,(first on-open) ,@(rest on-open)))
+                              `(make-handler ,open-handler-form))
         (replace-class-option options :on-close
-                              `(make-handler ,(first on-close) ,@(rest on-close)))
+                              `(make-handler ,close-handler-form))
         (replace-class-option options :on-error
-                              `(make-handler ,(first on-error) ,@(rest on-error)))
+                              `(make-handler ,error-handler-form))
         (with-gensyms (s/endpoint s/request)
           `(progn
              (eval-when (:compile-toplevel :load-toplevel :execute)

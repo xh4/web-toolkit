@@ -9,10 +9,12 @@
          (setf (nth pos *handler-macros*) ',macro)
          (appendf *handler-macros* (list ',macro))))))
 
-(defmacro make-handler (lambda-list &body body)
-  `(lambda/cc ,lambda-list
-     (macrolet (,@*handler-macros*)
-       ,@body)))
+(defmacro make-handler (form)
+  (when form
+    (unless (member (first form) '(lambda lambda/cc))
+      (error "Malformed handler form ~A, expect LAMBDA or LAMBDA/CC expression" form)))
+  `(macrolet (,@*handler-macros*)
+     ,form))
 
 (defun compute-class-precedence-list/0 (instance-or-class)
   (let ((class (cond
