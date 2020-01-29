@@ -11,7 +11,8 @@
                :ironclad
                :bordeaux-threads
                :trivial-backtrace
-               :cl-cont)
+               :cl-cont
+               :closer-mop)
   :serial t
   :components ((:module "websocket"
                         :serial t

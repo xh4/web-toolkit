@@ -1,5 +1,15 @@
 (in-package :websocket)
 
+(defclass session-class (standard-class)
+  ((message-handler
+    :initarg :message-handler
+    :initform nil
+    :accessor session-message-handler)
+   (message-handler-code
+    :initarg :message-handler-code
+    :initform nil
+    :accessor session-message-handler-code)))
+
 (defvar *session* nil)
 
 (defclass session ()
@@ -16,20 +26,19 @@
     :initform nil
     :reader session-opening-header
     :allocation :class)
-   (message-handler
-    :initarg :message-handler
-    :initform nil
-    :accessor session-message-handler
-    :allocation :class)
-   (message-handler-code
-    :initarg :message-handler-code
-    :initform nil
-    :accessor session-message-handler-code
-    :allocation :class)
    (pool
     :initform nil
     :allocation :class
-    :reader session-pool)))
+    :reader session-pool))
+  (:metaclass session-class))
+
+(defmethod shared-initialize :before ((class session-class) slot-names
+                                      &key on-message
+                                        &allow-other-keys)
+  (declare (ignore slot-names))
+  (when on-message
+    (setf (slot-value class 'message-handler) (eval (first on-message))
+          (slot-value class 'message-handler-code) (rest (first on-message)))))
 
 (defgeneric close-session  (session &optional reason)
   (:method ((session session) &optional reason)))
@@ -74,13 +83,13 @@
          (pool (second (find :pool options :key 'first)))
          (on-message (rest (find :on-message options :key 'first)))
          (slots (append slots
-                        (list (make-pool-slot-definition pool))
-                        (make-handler-slot-definitions :message
-                                                       (first on-message)
-                                                       (rest on-message))))
+                        (list (make-pool-slot-definition pool))))
          (options (remove-if (lambda (option)
-                               (member (first option) '(:pool :on-message)))
-                             options)))
+                               (member (first option) '(:pool)))
+                             (append options
+                                     `((:metaclass session-class))))))
+    (replace-class-option options :on-message
+                          `(make-handler ,(first on-message) ,@(rest on-message)))
     `(progn
        (eval-when (:compile-toplevel :load-toplevel :execute)
          (defclass ,session-name ,superclasses
@@ -88,11 +97,7 @@
            ,@options))
        (eval-when (:load-toplevel :execute)
          (let ((session (make-instance ',session-name)))
-           (setf (slot-value session 'pool) ,pool
-                 (slot-value session 'message-handler)
-                 (make-handler ,(first on-message) ,@(rest on-message))
-                 (slot-value session 'message-handler-code)
-                 '(,(first on-message) ,@(rest on-message))))
+           (setf (slot-value session 'pool) ,pool))
          (find-class ',session-name)))))
 
 ;; TODO: 处理 session 关闭的情况

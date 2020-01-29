@@ -41,6 +41,9 @@
                 :reply
                 :status
                 :*response*)
+  (:import-from :closer-mop
+                :compute-class-precedence-list
+                :shared-initialize)
   (:import-from :cl-cont
                 :call/cc
                 :lambda/cc))
