@@ -55,12 +55,6 @@
   (when session-class
     (setf (slot-value class 'session-class) (eval (first session-class)))))
 
-(defmacro replace-class-option (name key &rest values)
-  (with-gensyms (pos)
-    `(if-let ((,pos (position ,key ,name :key 'first)))
-       (setf (nth ,pos ,name) (list ,key ,@values))
-       (appendf ,name (list (list ,key ,@values))))))
-
 (defmacro define-endpoint (endpoint-name superclasses slots &rest options)
   (let ((superclasses (if (find 'endpoint superclasses)
                           superclasses

@@ -38,7 +38,7 @@
   (declare (ignore slot-names))
   (when on-message
     (setf (slot-value class 'message-handler) (eval (car on-message))
-          (slot-value class 'message-handler-code) (cdadar on-message)))))
+          (slot-value class 'message-handler-code) (cdadar on-message))))
 
 (defgeneric close-session  (session &optional reason)
   (:method ((session session) &optional reason)))
@@ -75,6 +75,12 @@
     :initform ,pool
     :allocation :class
     :reader session-pool))
+
+(defmacro replace-class-option (name key &rest values)
+  (with-gensyms (pos)
+    `(if-let ((,pos (position ,key ,name :key 'first)))
+       (setf (nth ,pos ,name) (list ,key ,@values))
+       (appendf ,name (list (list ,key ,@values))))))
 
 (defmacro define-session (session-name superclasses slots &rest options)
   (let* ((superclasses (if (find 'session superclasses)
