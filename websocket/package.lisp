@@ -6,8 +6,6 @@
   (:export :define-endpoint
 
            :define-session
-
-           :*session*
            :session-opening-uri
            :session-opening-header
            :session-open-p
@@ -16,14 +14,7 @@
            :ping
            :close-session
 
-           :define-session-pool
-           :session-pool
-           :add-session
-           :remove-session
-           :session-pool-sessions
-
-           :define-handler-macro
-           :*handler-macros*)
+           :define-handler-macro)
   (:import-from :http
                 :define-handler
                 :handler

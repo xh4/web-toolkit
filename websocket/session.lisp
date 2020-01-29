@@ -68,12 +68,6 @@
     (let ((output-stream (slot-value connection 'output-stream)))
       (open-stream-p output-stream))))
 
-(defun make-pool-slot-definition (pool)
-  `(pool
-    :initform ,pool
-    :allocation :class
-    :reader session-pool))
-
 (defmacro define-session (session-name superclasses slots &rest options)
   (let* ((superclasses (if (find 'session superclasses)
                            superclasses
