@@ -17,10 +17,11 @@
   :components ((:module "websocket"
                         :serial t
                         :components ((:file "package")
+                                     (:file "util")
                                      (:file "handler")
+                                     (:file "channel")
                                      (:file "session")
                                      (:file "endpoint")
-                                     (:file "pool")
                                      (:file "frame")
                                      (:file "connection")
                                      (:file "protocol")

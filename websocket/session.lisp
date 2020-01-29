@@ -76,24 +76,12 @@
     :allocation :class
     :reader session-pool))
 
-(defmacro replace-class-option (name key &rest values)
-  (with-gensyms (pos)
-    `(if-let ((,pos (position ,key ,name :key 'first)))
-       (setf (nth ,pos ,name) (list ,key ,@values))
-       (appendf ,name (list (list ,key ,@values))))))
-
 (defmacro define-session (session-name superclasses slots &rest options)
   (let* ((superclasses (if (find 'session superclasses)
                            superclasses
                            (append superclasses (list 'session))))
-         (pool (second (find :pool options :key 'first)))
-         (message-handler-form (second (find :on-message options :key 'first)))
-         (slots (append slots
-                        (list (make-pool-slot-definition pool))))
-         (options (remove-if (lambda (option)
-                               (member (first option) '(:pool)))
-                             (append options
-                                     `((:metaclass session-class))))))
+         (message-handler-form (second (find :on-message options :key 'first))))
+    (rewrite-class-option options :metaclass session-class)
     (replace-class-option options :on-message
                           `(make-handler ,message-handler-form))
     `(progn
@@ -102,8 +90,6 @@
            ,slots
            ,@options))
        (eval-when (:load-toplevel :execute)
-         (let ((session (make-instance ',session-name)))
-           (setf (slot-value session 'pool) ,pool))
          (find-class ',session-name)))))
 
 ;; TODO: 处理 session 关闭的情况
