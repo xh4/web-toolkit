@@ -35,6 +35,7 @@
                                         &allow-other-keys)
   (declare (ignore slot-names))
   (when on-message
+    (check-message-handler-lambda-list (car (cdadar on-message)))
     (setf (slot-value class 'message-handler) (eval (car on-message))
           (slot-value class 'message-handler-code) (cdadar on-message))))
 
