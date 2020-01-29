@@ -1,5 +1,7 @@
 (in-package :websocket)
 
+(defvar *session* nil)
+
 ;; TODO: 处理 session 关闭的情况
 ;; TODO: 处理抛出异常的情况
 (defun in-session (session)

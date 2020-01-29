@@ -10,8 +10,6 @@
     :initform nil
     :accessor session-message-handler-code)))
 
-(defvar *session* nil)
-
 (defclass session ()
   ((connection
     :initarg :connection
