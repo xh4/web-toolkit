@@ -39,12 +39,15 @@
                                         &allow-other-keys)
   (declare (ignore slot-names))
   (when on-open
+    (check-open-handler-lambda-list (car (cdadar on-open)))
     (setf (slot-value class 'open-handler) (eval (car on-open))
           (slot-value class 'open-handler-code) (cdadar on-open)))
   (when on-close
+    (check-close-handler-lambda-list (car (cdadar on-close)))
     (setf (slot-value class 'close-handler) (eval (car on-close))
           (slot-value class 'close-handler-code) (cdadar on-close)))
   (when on-error
+    (check-error-handler-lambda-list (car (cdadar on-error)))
     (setf (slot-value class 'error-handler) (eval (car on-error))
           (slot-value class 'error-handler-code) (cdadar on-error))))
 
