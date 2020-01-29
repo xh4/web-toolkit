@@ -65,23 +65,22 @@
     (let ((open-handler-form (second (find :on-open options :key 'car)))
           (close-handler-form (second (find :on-close options :key 'car)))
           (error-handler-form (second (find :on-error options :key 'car))))
-      (let ((options (append options
-                             `((:metaclass endpoint-class)))))
-        (replace-class-option options :on-open
-                              `(make-handler ,open-handler-form))
-        (replace-class-option options :on-close
-                              `(make-handler ,close-handler-form))
-        (replace-class-option options :on-error
-                              `(make-handler ,error-handler-form))
-        (with-gensyms (s/endpoint s/request)
-          `(progn
-             (eval-when (:compile-toplevel :load-toplevel :execute)
-               (defclass ,endpoint-name ,superclasses ,slots ,@options)
-               (defvar ,endpoint-name (make-instance ',endpoint-name)))
-             (defmethod http:handle ((,s/endpoint ,endpoint-name) (,s/request request))
-               (handle-user-endpoint-request ,s/endpoint ,s/request))
-             (eval-when (:execute)
-               ,endpoint-name)))))))
+      (rewrite-class-option options :metaclass endpoint-class)
+      (replace-class-option options :on-open
+                            `(make-handler ,open-handler-form))
+      (replace-class-option options :on-close
+                            `(make-handler ,close-handler-form))
+      (replace-class-option options :on-error
+                            `(make-handler ,error-handler-form))
+      (with-gensyms (endpoint/s request/s)
+        `(progn
+           (eval-when (:compile-toplevel :load-toplevel :execute)
+             (defclass ,endpoint-name ,superclasses ,slots ,@options)
+             (defvar ,endpoint-name (make-instance ',endpoint-name)))
+           (defmethod http:handle ((,endpoint/s ,endpoint-name) (,request/s request))
+             (handle-user-endpoint-request ,endpoint/s ,request/s))
+           (eval-when (:execute)
+             ,endpoint-name))))))
 
 (defmethod endpoint-session-class ((endpoint endpoint))
   (endpoint-session-class (class-of endpoint)))
