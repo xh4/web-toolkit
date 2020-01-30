@@ -33,11 +33,16 @@
 
 (defsystem wt.websocket/test
   :depends-on (:wt.websocket
-               :fiveam)
+               :wt.json
+               :fiveam
+               :find-port
+               :cl-ppcre
+               :split-sequence)
   :serial t
   :components ((:module "test"
                         :components ((:module "websocket"
                                               :components ((:file "package")
+                                                           (:file "autobahn")
                                                            (:file "websocket"))))))
   :perform (test-op (o c)
                     (symbol-call :fiveam :run! :websocket-test)))
