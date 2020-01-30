@@ -62,10 +62,8 @@
                                           (listener-address target-listener))))
                             target-listeners)
             do (appendf listeners-to-remove (list listener)))
-         (format t "Listeners to add: ~A~%" listeners-to-add)
          (loop for listener in listeners-to-add
             do (add-listener server listener))
-         (format t "Listeners to remove: ~A~%" listeners-to-remove)
          (loop for listener in listeners-to-remove
             do (remove-listener server listener))))
      ,name))
