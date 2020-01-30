@@ -191,3 +191,7 @@
 
 (defmethod listener-started-p ((listener listener))
   (hunchentoot:started-p (slot-value listener 'acceptor)))
+
+(defmethod (setf listener-port) (port (listener listener))
+  (let ((acceptor (slot-value listener 'acceptor)))
+    (setf (slot-value acceptor 'hunchentoot::port) port)))
