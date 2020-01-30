@@ -1,14 +1,51 @@
 (in-package :websocket)
 
-(define-constant +continuation-frame+    #x0)
-(define-constant +text-frame+            #x1)
-(define-constant +binary-frame+          #x2)
-(define-constant +connection-close+      #x8)
-(define-constant +ping+                  #x9)
-(define-constant +pong+                  #xA)
+(defstruct frame
+  fin
+  opcode
+  data
+  payload-length
+  masking-key)
 
-(defun control-frame-p (opcode)
-  (plusp (logand #x8 opcode)))
+(defun frame-fin-p (frame)
+  (plusp (frame-fin frame)))
+
+(define-constant +opcode-continuation+    #x0)
+(define-constant +opcode-text+            #x1)
+(define-constant +opcode-binary+          #x2)
+(define-constant +opcode-close+           #x8)
+(define-constant +opcode-ping+            #x9)
+(define-constant +opcode-pong+            #xA)
+
+(defun control-frame-p (frame)
+  (plusp (logand #x8 (frame-opcode frame))))
+
+(defun reserved-non-control-frame-p (frame)
+  (<= 3 (frame-opcode frame) 7))
+
+(defun reserved-control-frame-p (frame)
+  (<= #xB (frame-opcode frame) #xF))
+
+(defun non-control-frame-p (frame)
+  (not (control-frame-p frame)))
+
+(defun continuation-frame-p (frame)
+  (= (frame-opcode frame) +opcode-continuation+))
+
+(defun text-frame-p (frame)
+  (= (frame-opcode frame) +opcode-text+))
+
+(defun binary-frame-p (frame)
+  (= (frame-opcode frame) +opcode-binary+))
+
+(defun close-frame-p (frame)
+  (= (frame-opcode frame) +opcode-close+))
+
+(defun ping-frame-p (frame)
+  (= (frame-opcode frame) +opcode-ping+))
+
+(defun pong-frame-p (frame)
+  (= (frame-opcode frame) +opcode-pong+))
 
 (defun read-unsigned-big-endian (stream n)
   "Read N bytes from stream and return the big-endian number"
@@ -22,13 +59,6 @@
     (assert (= read n) nil
             "Expected to read ~a bytes, but read ~a" n read)
     array))
-
-(defclass frame ()
-  ((opcode          :initarg :opcode :accessor frame-opcode)
-   (data                             :accessor frame-data)
-   (finp            :initarg :finp)
-   (payload-length  :initarg :payload-length :accessor frame-payload-length)
-   (masking-key     :initarg :masking-key)))
 
 (defun read-frame (stream &key read-payload-p)
   (let* ((first-byte       (read-byte stream))
@@ -48,19 +78,18 @@
          (masking-key      (if mask-p (read-n-bytes-into-sequence stream 4)))
          (extension-data   nil))
     (declare (ignore extension-data))
-    (when (and (control-frame-p opcode)
-               (> payload-length 125))
-      (websocket-error
-       1002 "Control frame is too large" extensions))
-    (when (plusp extensions)
-      (websocket-error
-       1002 "No extensions negotiated, but client sends ~a!" extensions))
-    (let ((frame
-           (make-instance 'frame :opcode opcode
-                          :finp (plusp fin)
-                          :masking-key masking-key
-                          :payload-length payload-length)))
-      (when (or (control-frame-p opcode)
+    (let ((frame (make-frame :fin fin
+                             :opcode opcode
+                             :masking-key masking-key
+                             :payload-length payload-length)))
+      (when (and (control-frame-p frame)
+                 (> payload-length 125))
+        (websocket-error
+         1002 "Control frame is too large" extensions))
+      (when (plusp extensions)
+        (websocket-error
+         1002 "No extensions negotiated, but client sends ~a!" extensions))
+      (when (or (control-frame-p frame)
                 read-payload-p)
         (read-payload stream frame))
       frame)))
@@ -112,128 +141,3 @@
     ;;     (error "sending masked messages not implemented yet"))
     (if data (write-sequence data stream))
     (force-output stream)))
-
-(defun check-message (opcode fragment-length total-length)
-  ;; TODO: 为什么加这个限制？导致 1.1.7, 1.1.8 失败
-  ;; (cond ((> fragment-length #xffff) ; 65KiB
-  ;;        (websocket-error 1009 "Message fragment too big"))
-  ;;       ((> total-length #xfffff) ; 1 MiB
-  ;;        (websocket-error 1009 "Total message too big")))
-  ;; TODO: WHY???
-  ;; (when (eql opcode +binary-frame+)
-  ;;   (websocket-error 1003 "Binaries not accepted"))
-  )
-
-(defun handle-frame (connection frame)
-  (with-slots (state pending-fragments pending-opcode input-stream) connection
-    (with-slots (opcode finp payload-length masking-key) frame
-      (flet ((maybe-accept-data-frame ()
-               (check-message (or pending-opcode
-                                  opcode)
-                              payload-length
-                              (+ payload-length
-                                 (reduce #'+ (mapcar
-                                              #'frame-payload-length
-                                              pending-fragments))))
-               (read-payload input-stream frame)))
-        (cond
-          ((eq :awaiting-close state)
-           ;; We're waiting a close because we explicitly sent one to the
-           ;; connection. Error out if the next message is not a close.
-           ;;
-           (unless (eq opcode +connection-close+)
-             (websocket-error
-              1002 "Expected connection close from connection, got 0x~x" opcode))
-           (setq state :closed))
-          ((not finp)
-           ;; This is a non-FIN fragment Check opcode, append to connection's
-           ;; fragments.
-           ;;
-           (cond ((and (= opcode +continuation-frame+)
-                       (not pending-fragments))
-                  (websocket-error
-                   1002 "Unexpected continuation frame"))
-                 ((control-frame-p opcode)
-                  (websocket-error
-                   1002 "Control frames can't be fragmented"))
-                 ((and pending-fragments
-                       (/= opcode +continuation-frame+))
-                  (websocket-error
-                   1002 "Not discarding initiated fragment sequence"))
-                 (t
-                  ;; A data frame, is either initiaing a new fragment sequence
-                  ;; or continuing one
-                  (maybe-accept-data-frame)
-                  (cond ((= opcode +continuation-frame+)
-                         (push frame pending-fragments))
-                        (t
-                         (setq pending-opcode opcode
-                               pending-fragments (list frame)))))))
-          ((and pending-fragments
-                (not (or (control-frame-p opcode)
-                         (= opcode +continuation-frame+))))
-           ;; This is a FIN fragment and (1) there are pending fragments and (2)
-           ;; this isn't a control or continuation frame. Error out.
-           (websocket-error
-            1002 "Only control frames can interleave fragment sequences."))
-          (t
-           ;; This is a final, FIN fragment. So first read the fragment's data
-           ;; into the `data' slot.
-           (cond
-             ((not (control-frame-p opcode))
-              ;; This is either a single-fragment data frame or a continuation
-              ;; frame. Join the fragments and keep on processing. Join any
-              ;; outstanding fragments and process the message.
-              (maybe-accept-data-frame)
-              (unless pending-opcode
-                (setq pending-opcode opcode))
-              (let ((ordered-frames
-                     (reverse (cons frame pending-fragments))))
-                (cond ((eq +text-frame+ pending-opcode)
-                       ;; A text message was received
-                       (signal 'text-received
-                               :text (flexi-streams:octets-to-string
-                                      (apply #'concatenate 'vector
-                                             (mapcar #'frame-data
-                                                     ordered-frames))
-                                      :external-format :utf-8)))
-                      ((eq +binary-frame+ pending-opcode)
-                       ;; A binary message was received
-                       (let ((temp-file
-                              (fad:with-output-to-temporary-file
-                                  (fstream :element-type '(unsigned-byte 8))
-                                (loop for frame in ordered-frames
-                                   do (write-sequence (frame-data frame)
-                                                      fstream)))))
-                         (unwind-protect
-                              (signal 'binary-received
-                                      :data temp-file)
-                              (delete-file temp-file))))
-                      (t
-                       (websocket-error
-                        1002 "Unknown opcode ~a" opcode))))
-              (setf pending-fragments nil))
-             ((eq +ping+ opcode)
-              ;; Reply to ping with a pong with the same data
-              (send-frame connection +pong+ (frame-data frame)))
-             ((eq +connection-close+ opcode)
-              ;; Reply to close with a close with the same data
-              (let ((body (frame-data frame)))
-                (when (< (length body) 2)
-                  (websocket-error
-                   1002 "Malformed close body"))
-                (close-connection connection :data body)
-                (let ((code (+ (* 256 (aref body 0)) (aref body 1)))
-                      (reason))
-                  (let ((reason-bytes (subseq body 2)))
-                    (when (> (length reason-bytes) 0)
-                      (let ((reason-string (babel:octets-to-string reason-bytes)))
-                        (setf reason reason-string))))
-                  (signal 'close-received :code code :reason reason)))
-              (setq state :closed))
-             ((eq +pong+ opcode)
-              ;; Probably just a heartbeat, don't do anything.
-              )
-             (t
-              (websocket-error
-               1002 "Unknown opcode ~a" opcode)))))))))

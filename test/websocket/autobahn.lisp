@@ -4,7 +4,8 @@
 
 (defparameter *wstest-complete* nil)
 
-(defvar *wstest-cases* nil)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *wstest-cases* nil))
 
 (defun make-test-spec (&key url outdir cases)
   (uiop:with-temporary-file (:stream stream :pathname pathname

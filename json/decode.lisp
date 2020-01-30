@@ -378,11 +378,14 @@ closing brace, calling object handlers as it goes."
 double quote, calling string handlers as it goes."
   (aggregate-scope-progv *string-scope-variables*
     (aggregate-scope-progv *aggregate-scope-variables*
-      (loop initially (funcall *beginning-of-string-handler*)
-         for c = (read-json-string-char stream)
-         while c
-         do (funcall *string-char-handler* c)
-         finally (return (funcall *end-of-string-handler*))))))
+      (handler-bind ((no-char-for-code (lambda (c)
+                                         (declare (ignore c))
+                                         (invoke-restart 'substitute-char #\?))))
+        (loop initially (funcall *beginning-of-string-handler*)
+           for c = (read-json-string-char stream)
+           while c
+           do (funcall *string-char-handler* c)
+           finally (return (funcall *end-of-string-handler*)))))))
 
 ;;; handling numerical read errors in ACL
 #+allegro
