@@ -168,6 +168,7 @@
                                           :error-output *standard-output*))
                       (unless (probe-file outpath)
                         (error "Missing test case report"))
+                      (delete-file spec-path)
                       (let ((test-case (read-test-case-report outpath)))
                         (when (eq (test-case-status test-case) :fail)
                           (error 'test-case-failure
