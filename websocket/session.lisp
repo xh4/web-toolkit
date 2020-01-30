@@ -54,6 +54,10 @@
                                          :external-format :utf-8)))))
 
 (defgeneric send-binary (session data &key)
+  (:method ((session session) (pathname pathname) &key)
+    (with-slots (connection) session
+      (let ((data (alexandria::read-file-into-byte-vector pathname)))
+        (send-frame connection +binary-frame+ data))))
   (:method ((session session) data &key)
     (with-slots (connection) session
       (send-frame connection +binary-frame+ data))))
