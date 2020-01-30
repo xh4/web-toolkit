@@ -29,6 +29,9 @@
 (defun non-control-frame-p (frame)
   (not (control-frame-p frame)))
 
+(defun data-frame-p (frame)
+  (non-control-frame-p frame))
+
 (defun continuation-frame-p (frame)
   (= (frame-opcode frame) +opcode-continuation+))
 

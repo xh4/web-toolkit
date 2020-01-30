@@ -6,14 +6,12 @@
   :documentation "Fixed magic WebSocket UUIDv4 key use in handshakes")
 
 (define-condition websocket-error (simple-error)
-  ((status :initarg :status :reader websocket-error-status))
+  ((code :initarg :code :reader websocket-error-code))
   (:documentation "Superclass for all errors related to WebSocket."))
 
-(defun websocket-error (status format-control &rest format-arguments)
-  "Signals an error of type HUNCHENTOOT-SIMPLE-ERROR with the provided
-format control and arguments."
+(defun websocket-error (code format-control &rest format-arguments)
   (error 'websocket-error
-         :status status
+         :code code
          :format-control format-control
          :format-arguments format-arguments))
 
@@ -70,6 +68,7 @@ format control and arguments."
     (handle-handshake request)
     (let* ((stream (http::request-stream request))
            (connection (make-instance 'connection
+                                      :state :open
                                       :input-stream stream
                                       :output-stream stream)))
 
@@ -82,23 +81,23 @@ format control and arguments."
 
           (handler-bind ((websocket-error
                           (lambda (error)
-                            (with-slots (status) error
-                              (close-connection connection
-                                                :status status
-                                                :reason (princ-to-string error))
+                            (with-slots (code) error
+                              ;; (close-connection connection
+                              ;;                   :status status
+                              ;;                   :reason (princ-to-string error))
                               (invoke-error-handler endpoint session error)
                               (return-from handle-user-endpoint-request))))
                          (flex:external-format-error
                           (lambda (error)
-                            (close-connection connection
-                                              :status 1007
-                                              :reason "Bad UTF-8")
+                            ;; (close-connection connection
+                            ;;                   :status 1007
+                            ;;                   :reason "Bad UTF-8")
                             (invoke-error-handler endpoint session error)
                             (return-from handle-user-endpoint-request)))
                          (error
                           (lambda (error)
                             (close-connection connection
-                                              :status 1011
+                                              :code 1011
                                               :reason "Internal error")
                             (invoke-error-handler endpoint session error)
                             (return-from handle-user-endpoint-request)))
@@ -121,7 +120,8 @@ format control and arguments."
             (with-slots (state) connection
               (loop do (handle-frame connection
                                      (receive-frame connection))
-                 while (not (eq :closed state))))))))))
+                 while (not (or (eq state :closed)
+                                (eq state :closing)))))))))))
 
 (defun websocket-uri (path host &optional ssl)
   "Form WebSocket URL (ws:// or wss://) URL."

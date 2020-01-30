@@ -40,16 +40,14 @@
           (slot-value class 'message-handler-code) (cdadar on-message))))
 
 (defgeneric close-session  (session &optional reason)
-  (:method ((session session) &optional reason)))
-
-(defmethod close-session :after (session &optional reason)
-  (with-slots (connection) session
-    (close-connection connection reason)))
+  (:method ((session session) &optional reason)
+    (with-slots (connection) session
+      (close-connection connection reason))))
 
 (defgeneric send-text (session text &key)
   (:method ((session session) text &key)
     (with-slots (connection) session
-      (send-frame connection +text-frame+
+      (send-frame connection +opcode-text+
                   (flex:string-to-octets text
                                          :external-format :utf-8)))))
 
@@ -57,15 +55,15 @@
   (:method ((session session) (pathname pathname) &key)
     (with-slots (connection) session
       (let ((data (alexandria::read-file-into-byte-vector pathname)))
-        (send-frame connection +binary-frame+ data))))
+        (send-frame connection +opcode-binary+ data))))
   (:method ((session session) data &key)
     (with-slots (connection) session
-      (send-frame connection +binary-frame+ data))))
+      (send-frame connection +opcode-binary+ data))))
 
 (defgeneric ping (session &optional data &key)
   (:method ((session session) &optional data &key)
     (with-slots (connection) session
-      (send-frame connection +ping+))))
+      (send-frame connection +opcode-ping+))))
 
 (defun session-open-p (session)
   (let ((connection (session-connection session)))
