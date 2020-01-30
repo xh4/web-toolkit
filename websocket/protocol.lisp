@@ -45,6 +45,7 @@ format control and arguments."
 (defun decide-endpoint-session-class (endpoint request)
   (let ((object (endpoint-session-class endpoint)))
     (typecase object
+      (null 'session)
       (symbol (cond
                 ((find-class object nil) object)
                 ((symbol-function-p object)
@@ -55,8 +56,7 @@ format control and arguments."
       (function (let ((value (funcall object request)))
                   (typecase value
                     (symbol value)
-                    (t (error "Expect symbol")))))
-      (null 'session))))
+                    (t (error "Expect symbol"))))))))
 
 (defun make-session-instance (session-class connection request)
   (make-instance session-class
