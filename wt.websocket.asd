@@ -37,7 +37,8 @@
                :fiveam
                :find-port
                :cl-ppcre
-               :split-sequence)
+               :split-sequence
+               :serapeum)
   :serial t
   :components ((:module "test"
                         :components ((:module "websocket"

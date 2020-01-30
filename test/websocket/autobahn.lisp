@@ -2,6 +2,10 @@
 
 (defparameter *wstest-executable-path* "C:\\Python27amd64\\Scripts\\wstest.exe")
 
+(defparameter *wstest-complete* nil)
+
+(defvar *wstest-cases* nil)
+
 (defun make-test-spec (&key url outdir cases)
   (uiop:with-temporary-file (:stream stream :pathname pathname
                                      :keep t
@@ -143,43 +147,61 @@
                  (format stream "Closing Behavior: ~A~%" (test-case-closing-behavior test-case))
                  (format stream "Closing Status: ~A~%" (test-case-closing-status test-case)))))))
 
+(defun run-wstest ()
+  (unless (probe-file *wstest-executable-path*)
+    (error "Missing wstest execuable (~A)" *wstest-executable-path*))
+  (let* ((port (find-port:find-port))
+         (url (format nil "ws://127.0.0.1:~A" port))
+         (outdir (namestring (uiop:default-temporary-directory)))
+         (cases (sort (set-difference *wstest-cases* *wstest-complete*) 'string<))
+         (spec-path (make-test-spec
+                     :url url
+                     :outdir outdir
+                     :cases cases)))
+    (when cases
+      (let ((command (format nil "~A --mode fuzzingclient --spec ~A"
+                             *wstest-executable-path*
+                             spec-path)))
+        (with-test-server port
+          (uiop:run-program command
+                            :output *standard-output*
+                            :error-output *standard-output*))
+        (delete-file spec-path)
+        (appendf *wstest-complete* cases)
+        (merge-pathnames "index.html" (uiop:default-temporary-directory))))))
+
 (defmacro test-case (id)
   (let ((test-function-name (intern (format nil "TEST-CASE-~A" (id-string id #\-))))
         (test-name (intern (format nil "CASE-~A" (id-string id #\-)))))
-    (let ((body `((let* ((port (find-port:find-port))
-                         (url (format nil "ws://127.0.0.1:~A" port))
-                         (outdir (namestring (uiop:default-temporary-directory)))
-                         (outpath (merge-pathnames
-                                   (format nil "wt_websocket_case_~A.json" (id-string ,id #\_))
-                                   (uiop:default-temporary-directory)))
-                         (spec-path (make-test-spec
-                                     :url url
-                                     :outdir outdir
-                                     :cases (list (id-string ,id)))))
-                    (delete-file outpath)
-                    (unless (probe-file *wstest-executable-path*)
-                      (error "Missing wstest execuable (~A)" *wstest-executable-path*))
-                    (let ((command (format nil "~A --mode fuzzingclient --spec ~A"
-                                           *wstest-executable-path*
-                                           spec-path)))
-                      (with-test-server port
-                        (uiop:run-program command
-                                          :output *standard-output*
-                                          :error-output *standard-output*))
-                      (unless (probe-file outpath)
-                        (error "Missing test case report"))
-                      (delete-file spec-path)
-                      (let ((test-case (read-test-case-report outpath)))
-                        (when (eq (test-case-status test-case) :fail)
-                          (error 'test-case-failure
-                                 :test-case test-case))))))))
-      `(progn
-         (defun ,test-function-name ()
-           ,@body)
-         (test ,test-name
-           (finishes (,test-function-name)))))))
+    `(progn
+       (defun ,test-function-name (&key fresh)
+         (when fresh
+           (setf *wstest-complete* (remove ,id *wstest-complete* :test 'equal)))
+         (unless (find ,id *wstest-complete* :test 'equal)
+           (run-wstest))
+         (let ((report-pathname (merge-pathnames
+                                 (format nil "wt_websocket_case_~A.json" (id-string ,id #\_))
+                                 (uiop:default-temporary-directory))))
+           (unless (probe-file report-pathname)
+             (error "Missing test case report"))
+           (let ((test-case (read-test-case-report report-pathname)))
+             (when (eq (test-case-status test-case) :fail)
+               (error 'test-case-failure
+                      :test-case test-case)))))
+       (test ,test-name
+         (finishes (,test-function-name))))))
 
 (defmacro test-group (title &body body)
+  (declare (ignore title))
+  (serapeum:walk-tree
+   (lambda (form)
+     (when (and (listp form) (eq (first form) 'test-case))
+       (let ((test-case-id (second form)))
+         (unless (find test-case-id *wstest-cases* :test 'equal)
+           (setf *wstest-complete* nil)
+           (push test-case-id *wstest-cases*)))))
+   body)
+  (setf *wstest-cases* (sort *wstest-cases* 'string<))
   `(progn ,@body))
 
 (in-suite :websocket-test)
