@@ -117,13 +117,18 @@
             (let ((ordered-frames
                    (reverse (cons frame pending-fragments))))
               (cond ((eq +opcode-text+ pending-opcode)
-                     ;; A text message was received
-                     (signal 'text-received
-                             :text (octets-to-string
-                                    (apply #'concatenate 'vector
-                                           (mapcar #'frame-payload-data
-                                                   ordered-frames))
-                                    :encoding :utf-8)))
+                     (let ((total-length (loop for frame in ordered-frames
+                                            for data = (frame-payload-data frame)
+                                            sum (length data))))
+                       (let ((octets (make-array total-length :element-type '(unsigned-byte 8))))
+                         (let ((index 0))
+                           (loop for frame in ordered-frames
+                              for data = (frame-payload-data frame)
+                              do (loop for i across data
+                                    do (setf (aref octets index) i)
+                                      (incf index))))
+                         (let ((text (octets-to-string octets :encoding :utf-8)))
+                           (signal 'text-received :text text)))))
                     ((eq +opcode-binary+ pending-opcode)
                      ;; A binary message was received
                      (let ((temp-file
