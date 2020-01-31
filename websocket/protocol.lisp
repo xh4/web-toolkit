@@ -87,11 +87,11 @@
                               ;;                   :reason (princ-to-string error))
                               (invoke-error-handler endpoint session error)
                               (return-from handle-user-endpoint-request))))
-                         (flex:external-format-error
+                         (babel-encodings:character-decoding-error
                           (lambda (error)
-                            ;; (close-connection connection
-                            ;;                   :status 1007
-                            ;;                   :reason "Bad UTF-8")
+                            (close-connection connection
+                                              :code 1007
+                                              :reason "Bad UTF-8")
                             (invoke-error-handler endpoint session error)
                             (return-from handle-user-endpoint-request)))
                          (error

@@ -48,7 +48,7 @@
                                                  (logand code #xff))
                                            'vector)
                                    (when reason
-                                     (babel:string-to-octets reason)))))
+                                     (string-to-octets reason)))))
       (setf state :awaiting-close)
       (signal 'close-received :code code :reason reason))))
 
@@ -119,18 +119,18 @@
               (cond ((eq +opcode-text+ pending-opcode)
                      ;; A text message was received
                      (signal 'text-received
-                             :text (flexi-streams:octets-to-string
+                             :text (octets-to-string
                                     (apply #'concatenate 'vector
-                                           (mapcar #'frame-data
+                                           (mapcar #'frame-payload-data
                                                    ordered-frames))
-                                    :external-format :utf-8)))
+                                    :encoding :utf-8)))
                     ((eq +opcode-binary+ pending-opcode)
                      ;; A binary message was received
                      (let ((temp-file
                             (fad:with-output-to-temporary-file
                                 (fstream :element-type '(unsigned-byte 8))
                               (loop for frame in ordered-frames
-                                 do (write-sequence (frame-data frame)
+                                 do (write-sequence (frame-payload-data frame)
                                                     fstream)))))
                        (unwind-protect
                             (signal 'binary-received
@@ -141,10 +141,10 @@
             (setf pending-fragments nil))
            ((eq +opcode-ping+ opcode)
             ;; Reply to ping with a pong with the same data
-            (send-frame connection +opcode-pong+ (frame-data frame)))
+            (send-frame connection +opcode-pong+ (frame-payload-data frame)))
            ((eq +opcode-close+ opcode)
             ;; Reply to close with a close with the same data
-            (let ((body (frame-data frame)))
+            (let ((body (frame-payload-data frame)))
               (cond
                 ((= (length body) 0)
                  (close-connection connection)
@@ -160,7 +160,7 @@
                      (let ((reason-bytes (subseq body 2)))
                        (when (> (length reason-bytes) 0)
                          (let ((reason-string (handler-case
-                                                  (babel:octets-to-string reason-bytes)
+                                                  (octets-to-string reason-bytes)
                                                 (error (e)
                                                   (declare (ignore e))
                                                   (close-connection-with-error

@@ -48,8 +48,7 @@
   (:method ((session session) text &key)
     (with-slots (connection) session
       (send-frame connection +opcode-text+
-                  (flex:string-to-octets text
-                                         :external-format :utf-8)))))
+                  (string-to-octets text :encoding :utf-8)))))
 
 (defgeneric send-binary (session data &key)
   (:method ((session session) (pathname pathname) &key)
