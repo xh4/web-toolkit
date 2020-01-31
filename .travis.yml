@@ -29,7 +29,7 @@ script:
                    (trivial-backtrace:print-backtrace c :output *standard-output*)
                    (uiop:quit -1)))'
        -e '(ql:quickload :wt/test)'
-       -e '(setf ws-test::*wstest-executable-path* "wstest")'
+       -e '(setf ws-test::*wstest-executable-path* "/usr/local/bin/wstest")'
        -e '(asdf:test-system :wt)'
 
 notifications:
