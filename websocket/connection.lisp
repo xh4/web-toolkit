@@ -123,15 +123,16 @@
                            (let ((total-length (loop for frame in ordered-frames
                                                   for data = (frame-payload-data frame)
                                                   sum (length data))))
-                             (let ((octets (make-array total-length :element-type '(unsigned-byte 8))))
-                               (let ((index 0))
-                                 (loop for frame = (pop ordered-frames)
-                                    for data = (when frame
-                                                 (frame-payload-data frame))
-                                    while frame
-                                    do (loop for i across data
-                                          do (setf (aref octets index) i)
-                                            (incf index)))))))
+                             (setf octets (make-array total-length
+                                                      :element-type '(unsigned-byte 8)))
+                             (loop with index = 0
+                                for frame = (pop ordered-frames)
+                                for data = (when frame
+                                             (frame-payload-data frame))
+                                while frame
+                                do (loop for i across data
+                                      do (setf (aref octets index) i)
+                                        (incf index)))))
                        (let ((text (octets-to-string octets :encoding :utf-8)))
                          (signal 'text-received :text text))))
                     ((eq +opcode-binary+ pending-opcode)
