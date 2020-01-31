@@ -9,7 +9,7 @@ env:
 python:
   - "2.7"
 
-# either use a local install.sh script or install it via curl. Feel
+# Either use a local install.sh script or install it via curl. Feel
 # free to simplify this section in your own .travis.yml file.
 install:
   - pip install -r autobahntestsuite
