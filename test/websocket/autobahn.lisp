@@ -5,7 +5,7 @@
 (defparameter *wstest-port* 54000)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *wstest-cases* nil))
+  (defparameter *wstest-cases* nil))
 
 (defparameter *wstest-complete* nil)
 
