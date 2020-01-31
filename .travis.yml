@@ -6,6 +6,12 @@ env:
     - LISP=sbcl
     - LISP=ccl
 
+python:
+  - "2.7"
+
+install:
+  - pip install -r autobahntestsuite
+
 # either use a local install.sh script or install it via curl. Feel
 # free to simplify this section in your own .travis.yml file.
 install:
@@ -24,6 +30,7 @@ script:
                    (trivial-backtrace:print-backtrace c :output *standard-output*)
                    (uiop:quit -1)))'
        -e '(ql:quickload :wt/test)'
+       -e '(setf ws-test::*wstest-executable-path* "wstest")'
        -e '(asdf:test-system :wt)'
 
 notifications:
