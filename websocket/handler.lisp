@@ -63,10 +63,13 @@
                                  (parse-ordinary-lambda-list
                                   open-handler-lambda-list))))
         (let ((required-parameters (first lambda-list-groups)))
-          (cond
-            ((= 0 (length required-parameters)) (funcall open-handler))
-            ((= 1 (length required-parameters)) (funcall open-handler session))
-            ((= 2 (length required-parameters)) (funcall open-handler endpoint session))))))))
+          (ignore-errors
+            (handler-bind ((error (lambda (e)
+                                    (invoke-error-handler endpoint session e))))
+              (cond
+                ((= 0 (length required-parameters)) (funcall open-handler))
+                ((= 1 (length required-parameters)) (funcall open-handler session))
+                ((= 2 (length required-parameters)) (funcall open-handler endpoint session))))))))))
 
 (defun invoke-open-handler (endpoint session)
   (let ((endpoint-classes (reverse
@@ -96,7 +99,10 @@
               (appendf arguments (list :code code)))
             (when (find :reason keyword-parameters :key 'caar)
               (appendf arguments (list :reason reason)))
-            (apply close-handler arguments)))))))
+            (ignore-errors
+              (handler-bind ((error (lambda (e)
+                                      (invoke-error-handler endpoint session e))))
+                (apply close-handler arguments)))))))))
 
 (defun invoke-close-handler (endpoint session code reason)
   (let ((endpoint-classes (reverse
@@ -115,11 +121,13 @@
                                  (parse-ordinary-lambda-list
                                   error-handler-lambda-list))))
         (let ((required-parameters (first lambda-list-groups)))
-          (cond
-            ((= 0 (length required-parameters)) (funcall error-handler))
-            ((= 1 (length required-parameters)) (funcall error-handler error))
-            ((= 2 (length required-parameters)) (funcall error-handler session error))
-            ((= 3 (length required-parameters)) (funcall error-handler endpoint session error))))))))
+          ;; TODO: add error-fallback-handler
+          (ignore-errors
+            (cond
+              ((= 0 (length required-parameters)) (funcall error-handler))
+              ((= 1 (length required-parameters)) (funcall error-handler error))
+              ((= 2 (length required-parameters)) (funcall error-handler session error))
+              ((= 3 (length required-parameters)) (funcall error-handler endpoint session error)))))))))
 
 (defun invoke-error-handler (endpoint session error)
   (let ((endpoint-classes (reverse
@@ -130,7 +138,7 @@
 (define-handler-lambda-list-checker message-handler
     :max-length 2)
 
-(defun invoke-message-handler/1 (session-class session message)
+(defun invoke-message-handler/1 (endpoint session-class session message)
   (when-let ((message-handler (session-message-handler session-class))
              (message-handler-code (session-message-handler-code session-class)))
     (let ((message-handler-lambda-list (first message-handler-code)))
@@ -138,13 +146,16 @@
                                  (parse-ordinary-lambda-list
                                   message-handler-lambda-list))))
         (let ((required-parameters (first lambda-list-groups)))
-          (cond
-            ((= 0 (length required-parameters)) (funcall message-handler))
-            ((= 1 (length required-parameters)) (funcall message-handler message))
-            ((= 2 (length required-parameters)) (funcall message-handler session message))))))))
+          (ignore-errors
+            (handler-bind ((error (lambda (e)
+                                    (invoke-error-handler endpoint session e))))
+              (cond
+                ((= 0 (length required-parameters)) (funcall message-handler))
+                ((= 1 (length required-parameters)) (funcall message-handler message))
+                ((= 2 (length required-parameters)) (funcall message-handler session message))))))))))
 
-(defun invoke-message-handler (session message)
+(defun invoke-message-handler (endpoint session message)
   (let ((session-classes (reverse
                           (compute-session-class-precedence-list session))))
     (loop for session-class in session-classes
-       do (invoke-message-handler/1 session-class session message))))
+       do (invoke-message-handler/1 endpoint session-class session message))))

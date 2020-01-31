@@ -81,12 +81,8 @@
 
           (handler-bind ((websocket-error
                           (lambda (error)
-                            (with-slots (code) error
-                              ;; (close-connection connection
-                              ;;                   :status status
-                              ;;                   :reason (princ-to-string error))
-                              (invoke-error-handler endpoint session error)
-                              (return-from handle-user-endpoint-request))))
+                            (invoke-error-handler endpoint session error)
+                            (return-from handle-user-endpoint-request)))
                          (babel-encodings:character-decoding-error
                           (lambda (error)
                             (close-connection connection
@@ -105,12 +101,12 @@
                          (text-received
                           (lambda (c)
                             (let ((message (slot-value c 'text)))
-                              (invoke-message-handler session message))))
+                              (invoke-message-handler endpoint session message))))
 
                          (binary-received
                           (lambda (c)
                             (let ((message (slot-value c 'data)))
-                              (invoke-message-handler session message))))
+                              (invoke-message-handler endpoint session message))))
 
                          (close-received
                           (lambda (c)
@@ -118,8 +114,13 @@
                                   (reason (slot-value c 'reason)))
                               (invoke-close-handler endpoint session code reason)))))
             (with-slots (state) connection
-              (loop do (handle-frame connection
-                                     (receive-frame connection))
+              (loop for frame = (handler-bind ((error (lambda (e)
+                                                        (drop-connection connection)
+                                                        (invoke-error-handler endpoint session e)
+                                                        (invoke-close-handler endpoint session 1001 "Peer closed unexpectedly")
+                                                        (return-from handle-user-endpoint-request))))
+                                  (receive-frame connection))
+                 do (handle-frame connection frame)
                  while (not (or (eq state :closed)
                                 (eq state :closing)))))))))))
 
