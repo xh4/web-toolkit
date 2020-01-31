@@ -2,12 +2,12 @@
 
 (defparameter *wstest-executable-path* "C:\\Python27amd64\\Scripts\\wstest.exe")
 
-(defparameter *wstest-port* 54321)
-
-(defparameter *wstest-complete* nil)
+(defparameter *wstest-port* 54000)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *wstest-cases* nil))
+
+(defparameter *wstest-complete* nil)
 
 (defun make-test-spec (&key url outdir cases)
   (uiop:with-temporary-file (:stream stream :pathname pathname
@@ -150,13 +150,12 @@
                  (format stream "Closing Behavior: ~A~%" (test-case-closing-behavior test-case))
                  (format stream "Closing Status: ~A~%" (test-case-closing-status test-case)))))))
 
-(defun run-wstest ()
+(defun run-wstest (&optional (cases *wstest-cases*))
   (unless (probe-file *wstest-executable-path*)
     (error "Missing wstest execuable (~A)" *wstest-executable-path*))
   (let* ((port *wstest-port*)
          (url (format nil "ws://127.0.0.1:~A" port))
          (outdir (namestring (uiop:default-temporary-directory)))
-         (cases (sort (set-difference *wstest-cases* *wstest-complete*) 'string<))
          (spec-path (make-test-spec
                      :url url
                      :outdir outdir
@@ -170,18 +169,15 @@
                             :output *standard-output*
                             :error-output *standard-output*))
         (delete-file spec-path)
-        (appendf *wstest-complete* cases)
         (merge-pathnames "index.html" (uiop:default-temporary-directory))))))
 
 (defmacro test-case (id)
   (let ((test-function-name (intern (format nil "TEST-CASE-~A" (id-string id #\-))))
         (test-name (intern (format nil "CASE-~A" (id-string id #\-)))))
     `(progn
-       (defun ,test-function-name (&key fresh)
-         (when fresh
-           (setf *wstest-complete* (remove ,id *wstest-complete* :test 'equal)))
-         (unless (find ,id *wstest-complete* :test 'equal)
-           (run-wstest))
+       (defun ,test-function-name (&key (run t))
+         (when run
+           (run-wstest (list ,id)))
          (let ((report-pathname (merge-pathnames
                                  (format nil "wt_websocket_case_~A.json" (id-string ,id #\_))
                                  (uiop:default-temporary-directory))))
@@ -192,7 +188,10 @@
                (error 'test-case-failure
                       :test-case test-case)))))
        (test ,test-name
-         (finishes (,test-function-name))))))
+         (unless *wstest-complete*
+           (run-wstest)
+           (setf *wstest-complete* t))
+         (finishes (,test-function-name :run nil))))))
 
 (defmacro test-group (title &body body)
   (declare (ignore title))
@@ -201,7 +200,6 @@
      (when (and (listp form) (eq (first form) 'test-case))
        (let ((test-case-id (second form)))
          (unless (find test-case-id *wstest-cases* :test 'equal)
-           (setf *wstest-complete* nil)
            (push test-case-id *wstest-cases*)))))
    body)
   (setf *wstest-cases* (sort *wstest-cases* 'string<))
@@ -502,69 +500,69 @@
     (test-case "7.13.1")
     (test-case "7.13.2")))
 
-;; (test-group "9 Limits/Performance"
-;;   (test-group "9.1 Text Message (increasing size)"
-;;     (test-case "9.1.1")
-;;     (test-case "9.1.2")
-;;     (test-case "9.1.3")
-;;     (test-case "9.1.4")
-;;     (test-case "9.1.5")
-;;     (test-case "9.1.6"))
-;;   (test-group "9.2 Binary Message (increasing size)"
-;;     (test-case "9.2.1")
-;;     (test-case "9.2.2")
-;;     (test-case "9.2.3")
-;;     (test-case "9.2.4")
-;;     (test-case "9.2.5")
-;;     (test-case "9.2.6"))
-;;   (test-group "9.3 Fragmented Text Message (fixed size, increasing fragment size)"
-;;     (test-case "9.3.1")
-;;     (test-case "9.3.2")
-;;     (test-case "9.3.3")
-;;     (test-case "9.3.4")
-;;     (test-case "9.3.5")
-;;     (test-case "9.3.6")
-;;     (test-case "9.3.7")
-;;     (test-case "9.3.8")
-;;     (test-case "9.3.9"))
-;;   (test-group "9.4 Fragmented Binary Message (fixed size, increasing fragment size)"
-;;     (test-case "9.4.1")
-;;     (test-case "9.4.2")
-;;     (test-case "9.4.3")
-;;     (test-case "9.4.4")
-;;     (test-case "9.4.5")
-;;     (test-case "9.4.6")
-;;     (test-case "9.4.7")
-;;     (test-case "9.4.8")
-;;     (test-case "9.4.9"))
-;;   (test-group "9.5 Text Message (fixed size, increasing chop size)"
-;;     (test-case "9.5.1")
-;;     (test-case "9.5.2")
-;;     (test-case "9.5.3")
-;;     (test-case "9.5.4")
-;;     (test-case "9.5.5")
-;;     (test-case "9.5.6"))
-;;   (test-group "9.6 Binary Text Message (fixed size, increasing chop size)"
-;;     (test-case "9.6.1")
-;;     (test-case "9.6.2")
-;;     (test-case "9.6.3")
-;;     (test-case "9.6.4")
-;;     (test-case "9.6.5")
-;;     (test-case "9.6.6"))
-;;   (test-group "9.7 Text Message Roundtrip Time (fixed number, increasing size)"
-;;     (test-case "9.7.1")
-;;     (test-case "9.7.2")
-;;     (test-case "9.7.3")
-;;     (test-case "9.7.4")
-;;     (test-case "9.7.5")
-;;     (test-case "9.7.6"))
-;;   (test-group "9.8 Binary Message Roundtrip Time (fixed number, increasing size)"
-;;     (test-case "9.8.1")
-;;     (test-case "9.8.2")
-;;     (test-case "9.8.3")
-;;     (test-case "9.8.4")
-;;     (test-case "9.8.5")
-;;     (test-case "9.8.6")))
+(test-group "9 Limits/Performance"
+  (test-group "9.1 Text Message (increasing size)"
+    (test-case "9.1.1")
+    (test-case "9.1.2")
+    (test-case "9.1.3")
+    (test-case "9.1.4")
+    (test-case "9.1.5")
+    (test-case "9.1.6"))
+  (test-group "9.2 Binary Message (increasing size)"
+    (test-case "9.2.1")
+    (test-case "9.2.2")
+    (test-case "9.2.3")
+    (test-case "9.2.4")
+    (test-case "9.2.5")
+    (test-case "9.2.6"))
+  (test-group "9.3 Fragmented Text Message (fixed size, increasing fragment size)"
+    (test-case "9.3.1")
+    (test-case "9.3.2")
+    (test-case "9.3.3")
+    (test-case "9.3.4")
+    (test-case "9.3.5")
+    (test-case "9.3.6")
+    (test-case "9.3.7")
+    (test-case "9.3.8")
+    (test-case "9.3.9"))
+  (test-group "9.4 Fragmented Binary Message (fixed size, increasing fragment size)"
+    (test-case "9.4.1")
+    (test-case "9.4.2")
+    (test-case "9.4.3")
+    (test-case "9.4.4")
+    (test-case "9.4.5")
+    (test-case "9.4.6")
+    (test-case "9.4.7")
+    (test-case "9.4.8")
+    (test-case "9.4.9"))
+  (test-group "9.5 Text Message (fixed size, increasing chop size)"
+    (test-case "9.5.1")
+    (test-case "9.5.2")
+    (test-case "9.5.3")
+    (test-case "9.5.4")
+    (test-case "9.5.5")
+    (test-case "9.5.6"))
+  (test-group "9.6 Binary Text Message (fixed size, increasing chop size)"
+    (test-case "9.6.1")
+    (test-case "9.6.2")
+    (test-case "9.6.3")
+    (test-case "9.6.4")
+    (test-case "9.6.5")
+    (test-case "9.6.6"))
+  (test-group "9.7 Text Message Roundtrip Time (fixed number, increasing size)"
+    (test-case "9.7.1")
+    (test-case "9.7.2")
+    (test-case "9.7.3")
+    (test-case "9.7.4")
+    (test-case "9.7.5")
+    (test-case "9.7.6"))
+  (test-group "9.8 Binary Message Roundtrip Time (fixed number, increasing size)"
+    (test-case "9.8.1")
+    (test-case "9.8.2")
+    (test-case "9.8.3")
+    (test-case "9.8.4")
+    (test-case "9.8.5")
+    (test-case "9.8.6")))
 
 ;; (test-group "10 Misc"
 ;;   (test-group "10.1 Auto-Fragmentation"
