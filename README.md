@@ -14,7 +14,7 @@
 WT.HTTP provides HTTP construct as is defined in [RFC 2616 Hypertext Transfer Protocol -- HTTP/1.1](https://www.ietf.org/rfc/rfc2616.txt), together with implementation of server and client.
 
 ## WebSocket
-WT.WEBSOCKET provides WebSocket functionality with interfaces inspired by [JSR 356, Java API for WebSocket](https://www.oracle.com/technetwork/articles/java/jsr356-1937161.html).
+WT.WEBSOCKET provides WebSocket functionality with interfaces inspired by [JSR 356, Java API for WebSocket](https://www.oracle.com/technetwork/articles/java/jsr356-1937161.html). The system is tested against the [Autobahn WebSocket Testsuite](https://github.com/crossbario/autobahn-testsuite).
 
 ## HTML
 WT.HTML implements HTML parser, serializer and constructors.
