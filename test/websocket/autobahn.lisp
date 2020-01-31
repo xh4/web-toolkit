@@ -564,9 +564,9 @@
     (test-case "9.8.5")
     (test-case "9.8.6")))
 
-;; (test-group "10 Misc"
-;;   (test-group "10.1 Auto-Fragmentation"
-;;     (test-case "10.1.1")))
+(test-group "10 Misc"
+  (test-group "10.1 Auto-Fragmentation"
+    (test-case "10.1.1")))
 
 ;; (test-group "12 WebSocket Compression (different payloads)"
 ;;   (test-group "12.1 Large JSON data file (utf8, 194056 bytes)"
