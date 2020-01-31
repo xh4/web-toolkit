@@ -2,6 +2,8 @@
 
 (defparameter *wstest-executable-path* "C:\\Python27amd64\\Scripts\\wstest.exe")
 
+(defparameter *wstest-port* 54321)
+
 (defparameter *wstest-complete* nil)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -151,7 +153,7 @@
 (defun run-wstest ()
   (unless (probe-file *wstest-executable-path*)
     (error "Missing wstest execuable (~A)" *wstest-executable-path*))
-  (let* ((port (find-port:find-port))
+  (let* ((port *wstest-port*)
          (url (format nil "ws://127.0.0.1:~A" port))
          (outdir (namestring (uiop:default-temporary-directory)))
          (cases (sort (set-difference *wstest-cases* *wstest-complete*) 'string<))

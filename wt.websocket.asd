@@ -35,7 +35,6 @@
   :depends-on (:wt.websocket
                :wt.json
                :fiveam
-               :find-port
                :cl-ppcre
                :split-sequence
                :serapeum)
