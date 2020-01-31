@@ -21,6 +21,7 @@ install:
     fi
 
 script:
+  - echo $(which wstest)
   - cl -l fiveam
        -e '(setf *debugger-hook*
                  (lambda (c h)
