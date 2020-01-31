@@ -3,9 +3,10 @@
 (defstruct frame
   fin
   opcode
-  data
+  masked
   payload-length
-  masking-key)
+  masking-key
+  payload-data)
 
 (defun frame-fin-p (frame)
   (plusp (frame-fin frame)))
@@ -50,6 +51,9 @@
 (defun pong-frame-p (frame)
   (= (frame-opcode frame) +opcode-pong+))
 
+(defun frame-masked-p (frame)
+  (plusp (frame-masked frame)))
+
 (defun read-unsigned-big-endian (stream n)
   "Read N bytes from stream and return the big-endian number"
   (loop for i from (1- n) downto 0
@@ -69,7 +73,7 @@
          (extensions       (ldb (byte 3 4) first-byte))
          (opcode           (ldb (byte 4 0) first-byte))
          (second-byte      (read-byte stream))
-         (mask-p           (plusp (ldb (byte 1 7) second-byte)))
+         (masked           (ldb (byte 1 7) second-byte))
          (payload-length   (ldb (byte 7 0) second-byte))
          (payload-length   (cond ((<= 0 payload-length 125)
                                   payload-length)
@@ -78,11 +82,13 @@
                                    stream (case payload-length
                                             (126 2)
                                             (127 8))))))
-         (masking-key      (if mask-p (read-n-bytes-into-sequence stream 4)))
+         (masking-key      (if (plusp masked)
+                               (read-n-bytes-into-sequence stream 4)))
          (extension-data   nil))
     (declare (ignore extension-data))
     (let ((frame (make-frame :fin fin
                              :opcode opcode
+                             :masked masked
                              :masking-key masking-key
                              :payload-length payload-length)))
       (when (and (control-frame-p frame)
@@ -94,7 +100,7 @@
          1002 "No extensions negotiated, but client sends ~a!" extensions))
       (when (or (control-frame-p frame)
                 read-payload-p)
-        (read-payload stream frame))
+        (read-payload-data stream frame))
       frame)))
 
 (defun mask-unmask (data masking-key)
@@ -112,12 +118,12 @@
                             (mod i 4)))))
   data)
 
-(defun read-payload (stream frame)
-  (with-slots (masking-key payload-length data) frame
-    (setq data (read-n-bytes-into-sequence stream
-                                           payload-length))
+(defun read-payload-data (stream frame)
+  (with-slots (masking-key payload-length payload-data) frame
+    (setq payload-data (read-n-bytes-into-sequence stream
+                                                   payload-length))
     (when masking-key
-      (mask-unmask data masking-key))))
+      (mask-unmask payload-data masking-key))))
 
 (defun write-frame (stream opcode &optional data)
   (let* ((first-byte     #x00)

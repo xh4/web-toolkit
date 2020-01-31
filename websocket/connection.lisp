@@ -67,7 +67,7 @@
 
 (defun handle-frame (connection frame)
   (with-slots (state pending-fragments pending-opcode input-stream) connection
-    (with-slots (opcode payload-length masking-key) frame
+    (with-slots (opcode) frame
       (cond
         ((eq :awaiting-close state)
          ;; We're waiting a close because we explicitly sent one to the
@@ -89,7 +89,7 @@
                (t
                 ;; A data frame, is either initiaing a new fragment sequence
                 ;; or continuing one
-                (read-payload input-stream frame)
+                (read-payload-data input-stream frame)
                 (cond ((continuation-frame-p frame)
                        (push frame pending-fragments))
                       (t
@@ -111,7 +111,7 @@
             ;; This is either a single-fragment data frame or a continuation
             ;; frame. Join the fragments and keep on processing. Join any
             ;; outstanding fragments and process the message.
-            (read-payload input-stream frame)
+            (read-payload-data input-stream frame)
             (unless pending-opcode
               (setq pending-opcode opcode))
             (let ((ordered-frames
