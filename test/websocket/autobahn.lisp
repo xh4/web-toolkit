@@ -203,7 +203,9 @@
            (push test-case-id *wstest-cases*)))))
    body)
   (setf *wstest-cases* (sort *wstest-cases* 'string<))
-  `(progn ,@body))
+  `(progn
+     (setf *wstest-cases* ',*wstest-cases*)
+     ,@body))
 
 (in-suite :websocket-test)
 
