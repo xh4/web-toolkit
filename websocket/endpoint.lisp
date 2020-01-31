@@ -30,6 +30,9 @@
     :initform nil
     :accessor endpoint-error-handler-code)))
 
+(defmethod validate-superclass ((class endpoint-class) (super-class standard-class))
+  t)
+
 (defclass endpoint ()
   ()
   (:metaclass endpoint-class))

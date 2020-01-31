@@ -10,6 +10,9 @@
     :initform nil
     :accessor session-message-handler-code)))
 
+(defmethod validate-superclass ((class session-class) (super-class standard-class))
+  t)
+
 (defclass session ()
   ((connection
     :initarg :connection

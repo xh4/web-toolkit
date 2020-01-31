@@ -34,7 +34,8 @@
                 :*response*)
   (:import-from :closer-mop
                 :compute-class-precedence-list
-                :shared-initialize)
+                :shared-initialize
+                :validate-superclass)
   (:import-from :cl-cont
                 :call/cc
                 :lambda/cc))
