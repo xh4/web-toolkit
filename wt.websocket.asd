@@ -19,7 +19,7 @@
                         :components ((:file "package")
                                      (:file "util")
                                      (:file "handler")
-                                     (:file "channel")
+                                     ;; (:file "channel")
                                      (:file "session")
                                      (:file "endpoint")
                                      (:file "frame")
