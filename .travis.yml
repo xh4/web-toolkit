@@ -23,7 +23,7 @@ script:
                    (declare (ignore h))
                    (trivial-backtrace:print-backtrace c :output *standard-output*)
                    (uiop:quit -1)))'
-       -e '(ql:quickload :wt)'
+       -e '(ql:quickload :wt/test)'
        -e '(asdf:test-system :wt)'
 
 notifications:
