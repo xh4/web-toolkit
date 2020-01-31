@@ -117,18 +117,23 @@
             (let ((ordered-frames
                    (reverse (cons frame pending-fragments))))
               (cond ((eq +opcode-text+ pending-opcode)
-                     (let ((total-length (loop for frame in ordered-frames
-                                            for data = (frame-payload-data frame)
-                                            sum (length data))))
-                       (let ((octets (make-array total-length :element-type '(unsigned-byte 8))))
-                         (let ((index 0))
-                           (loop for frame in ordered-frames
-                              for data = (frame-payload-data frame)
-                              do (loop for i across data
-                                    do (setf (aref octets index) i)
-                                      (incf index))))
-                         (let ((text (octets-to-string octets :encoding :utf-8)))
-                           (signal 'text-received :text text)))))
+                     (let ((octets nil))
+                       (if (= (length ordered-frames) 1)
+                           (setf octets (frame-payload-data (first ordered-frames)))
+                           (let ((total-length (loop for frame in ordered-frames
+                                                  for data = (frame-payload-data frame)
+                                                  sum (length data))))
+                             (let ((octets (make-array total-length :element-type '(unsigned-byte 8))))
+                               (let ((index 0))
+                                 (loop for frame = (pop ordered-frames)
+                                    for data = (when frame
+                                                 (frame-payload-data frame))
+                                    while frame
+                                    do (loop for i across data
+                                          do (setf (aref octets index) i)
+                                            (incf index)))))))
+                       (let ((text (octets-to-string octets :encoding :utf-8)))
+                         (signal 'text-received :text text))))
                     ((eq +opcode-binary+ pending-opcode)
                      ;; A binary message was received
                      (let ((temp-file
