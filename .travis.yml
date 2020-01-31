@@ -12,7 +12,7 @@ python:
 # Either use a local install.sh script or install it via curl. Feel
 # free to simplify this section in your own .travis.yml file.
 install:
-  - pip install -r autobahntestsuite
+  - pip install autobahntestsuite
   - if [ -x ./install.sh ] && head -2 ./install.sh | grep '^# cl-travis' > /dev/null;
     then
       ./install.sh;
