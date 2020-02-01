@@ -12,7 +12,10 @@
                :bordeaux-threads
                :trivial-backtrace
                :cl-cont
-               :closer-mop)
+               :closer-mop
+               #-lispworks
+               :usocket
+               :base64)
   :serial t
   :components ((:module "websocket"
                         :serial t
@@ -27,8 +30,7 @@
                                      (:file "protocol")
                                      (:file "message")
                                      ;; (:file "server")
-                                     ;; (:file "client")
-                                     )))
+                                     (:file "client"))))
   :in-order-to ((test-op (test-op :wt.websocket/test))))
 
 (defsystem wt.websocket/test

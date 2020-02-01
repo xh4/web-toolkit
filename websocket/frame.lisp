@@ -132,7 +132,7 @@
          (payload-length (cond ((<= len 125)        len)
                                ((< len (expt 2 16)) 126)
                                (t                   127)))
-         (mask-p         nil))
+         (mask-p         t))
     (setf (ldb (byte 1 7) first-byte)  1
           (ldb (byte 3 4) first-byte)  0
           (ldb (byte 4 0) first-byte)  opcode
@@ -146,7 +146,13 @@
        downto 0
        for out = (ash len (- (* 8 i)))
        do (write-byte (logand out #xff) stream))
-    ;; (if mask-p
-    ;;     (error "sending masked messages not implemented yet"))
+    (when mask-p
+      (let ((masking-key (make-masking-key)))
+        (write-sequence masking-key stream)
+        (setf data (mask-unmask data masking-key))))
     (if data (write-sequence data stream))
     (force-output stream)))
+
+;; TODO: real masking key
+(defun make-masking-key ()
+  #(42 42 42 42))

@@ -14,7 +14,9 @@
            :ping
            :close-session
 
-           :define-handler-macro)
+           :define-handler-macro
+
+           :connect)
   (:import-from :http
                 :define-handler
                 :handler
@@ -32,10 +34,17 @@
                 :reply
                 :status
                 :*response*)
+  (:import-from :uri
+                :uri-scheme
+                :uri-host
+                :uri-port
+                :uri-path)
   (:import-from :closer-mop
                 :compute-class-precedence-list
                 :shared-initialize
                 :validate-superclass)
   (:import-from :cl-cont
                 :call/cc
-                :lambda/cc))
+                :lambda/cc)
+  (:import-from :base64
+                :base64-encode))
