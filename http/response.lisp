@@ -65,3 +65,42 @@
 
 (defmethod find-header-field ((response response) name)
   (find-header-field (response-header response) name))
+
+(defun read-status-line (stream &key (parse t))
+  (let ((line (read-line stream)))
+    (if parse
+        (parse-status-line line)
+        line)))
+
+(defun parse-status-line (line)
+  (unless (every #'printable-ascii-char-p line)
+    (error "Non-ASCII character in status line"))
+  (destructuring-bind (http-version status-code reason-phase)
+      (cl-ppcre:split "\\s+" line :limit 3)
+    (list http-version (parse-integer status-code) reason-phase)))
+
+(defun write-status-line (stream http-version status-code reason-phase)
+  (check-type http-version string)
+  (check-type status-code (or string integer))
+  (check-type reason-phase string)
+  (let ((line (format nil "~A ~A ~A" http-version status-code reason-phase)))
+    (write-sequence line stream)
+    (write-sequence +crlf+ stream)
+    (+ (length line) (length +crlf+))))
+
+(defun read-response-body (stream)
+  (alexandria::read-stream-content-into-byte-vector stream))
+
+(defun read-response (stream)
+  (let ((status-line (read-status-line stream)))
+    (let ((header (read-header stream)))
+      (let ((body (read-response-body stream)))
+        (let ((status-code (second status-line)))
+          (make-instance 'response
+                         :status status-code
+                         :header header
+                         :body body))))))
+
+(defgeneric write-response (stream response)
+  (:method (stream (response response))
+    ))

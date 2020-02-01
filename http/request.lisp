@@ -57,3 +57,45 @@
 
 (defun request-stream (request)
   (gethash request *request-stream-mapping-table*))
+
+
+(defun read-request-line (stream)
+  (let ((line (handler-case
+                  (read-line stream)
+                ((or end-of-file #-:lispworks usocket:timeout-error) nil))))
+    (parse-request-line line)))
+
+(defun printable-ascii-char-p (char)
+  (<= 32 (char-code char) 126))
+
+(defun parse-request-line (line)
+  (unless (every #'printable-ascii-char-p line)
+    (error "Non-ASCII character in request line"))
+  (cl-ppcre:split "\\s+" line :limit 3))
+
+(defun write-request-line (stream method request-uri http-version)
+  (check-type method (or string symbol))
+  (check-type request-uri string)
+  (check-type http-version string)
+  (when (symbolp method)
+    (setf method (symbol-name method)))
+  (let ((line (format nil "~A ~A ~A" method request-uri http-version)))
+    (write-string line stream)
+    (write-sequence +crlf+ stream)
+    (+ (length line) (length +crlf+))))
+
+(defun write-request-body (stream body)
+  (write-sequence body stream))
+
+(defun read-request (stream)
+  )
+
+(defgeneric write-request (stream request)
+  (:method (stream (request request))
+    (let ((method (request-method request))
+          (uri (request-uri request))
+          (header (request-header request))
+          (body (request-body request)))
+      (write-request-line stream method (or (uri-path uri) "/") "HTTP/1.1")
+      (write-header stream header)
+      (write-request-body stream body))))

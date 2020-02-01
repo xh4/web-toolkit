@@ -53,3 +53,19 @@
           :test (lambda (name header-field)
                   (header-field-name-match-p header-field
                                              name)))))
+
+(defun read-header (stream)
+  (loop for header-field = (read-header-field stream)
+     while header-field
+     collect header-field into fields
+     finally (let ((header (make-instance 'header :fields fields)))
+               (return header))))
+
+(defgeneric write-header (stream header)
+  (:method (stream (header header))
+    (loop for header-field in (header-fields header)
+       for size = (write-header-field stream header-field)
+       sum size into all-size
+       finally
+         (write-sequence +crlf+ stream)
+         (return (+ all-size (length +crlf+))))))

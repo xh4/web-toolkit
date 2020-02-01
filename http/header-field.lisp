@@ -56,3 +56,25 @@
 
 (defmacro header-field (name value)
   `(make-instance 'header-field :name ,name :value ,value))
+
+
+(defun read-header-field (stream &key (parse t))
+  (let ((line (read-line stream)))
+    (when (plusp (length line))
+      (if parse
+          (parse-header-field line)
+          line))))
+
+(defun parse-header-field (line)
+  (let ((list (cl-ppcre:split "\\s+" line :limit 2)))
+    (when (= 2 (length list))
+      (destructuring-bind (name value) list
+        (make-instance 'header-field :name name :value value)))))
+
+(defgeneric write-header-field (stream header-field)
+  (:method (stream (header-field header-field))
+    (with-slots (name value) header-field
+      (let ((line (format nil "~A: ~A" name value)))
+        (write-string line stream)
+        (write-sequence +crlf+ stream)
+        (+ (length line) (length +crlf+))))))

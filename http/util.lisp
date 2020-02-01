@@ -1,5 +1,10 @@
 (in-package :http)
 
+(defconstant +crlf+
+  (make-array 2 :element-type '(unsigned-byte 8)
+              :initial-contents (mapcar 'char-code '(#\Return #\Linefeed)))
+  "A 2-element array consisting of the character codes for a CRLF sequence.")
+
 (defvar +day-names+
   #("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun")
   "The three-character names of the seven days of the week - needed
@@ -30,3 +35,24 @@ HANDLE-IF-MODIFIED-SINCE."
   (- n
      1
      (length (symbol-name (class-name (class-of object))))))
+
+(defun read-char (stream &optional (eof-error-p t) eof-value)
+  (let ((char-code (read-byte stream eof-error-p eof-value)))
+    (and char-code
+         (code-char char-code))))
+
+(defun read-line (stream)
+  (with-output-to-string (line)
+    (loop for char-seen-p = nil then t
+       for char = (read-char stream nil)
+       for is-cr-p = (and char (char= char #\Return))
+       until (or (null char)
+                 is-cr-p)
+       do (write-char char line)
+       finally (cond ((and (not char-seen-p)
+                           (null char))
+                      (return-from read-line nil))
+                     (is-cr-p
+                      (unless (eql (read-char stream) #\Linefeed)
+                        ;; raise error here?
+                        ))))))
