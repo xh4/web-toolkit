@@ -171,8 +171,9 @@
         (delete-file spec-path)
         (merge-pathnames "index.html" (uiop:default-temporary-directory))))))
 
-(defun test-case-function-name (case-id)
-  (intern (format nil "TEST-CASE-~A" (id-string case-id #\-))))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun test-case-function-name (case-id)
+    (intern (format nil "TEST-CASE-~A" (id-string case-id #\-)))))
 
 (defmacro test-case (id)
   (let ((test-function-name (test-case-function-name id))
@@ -196,8 +197,9 @@
            (setf *wstest-complete* t))
          (finishes (,test-function-name :run nil))))))
 
-(defun test-group-function-name (group-id)
-  (intern (format nil "TEST-GROUP-~A" (id-string group-id #\-))))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun test-group-function-name (group-id)
+    (intern (format nil "TEST-GROUP-~A" (id-string group-id #\-)))))
 
 (defmacro test-group (title &body body)
   (let ((test-case-ids '()))
