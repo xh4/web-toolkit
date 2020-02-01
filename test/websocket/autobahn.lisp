@@ -171,8 +171,11 @@
         (delete-file spec-path)
         (merge-pathnames "index.html" (uiop:default-temporary-directory))))))
 
+(defun test-case-function-name (case-id)
+  (intern (format nil "TEST-CASE-~A" (id-string case-id #\-))))
+
 (defmacro test-case (id)
-  (let ((test-function-name (intern (format nil "TEST-CASE-~A" (id-string id #\-))))
+  (let ((test-function-name (test-case-function-name id))
         (test-name (intern (format nil "CASE-~A" (id-string id #\-)))))
     `(progn
        (defun ,test-function-name (&key (run t))
@@ -193,19 +196,33 @@
            (setf *wstest-complete* t))
          (finishes (,test-function-name :run nil))))))
 
+(defun test-group-function-name (group-id)
+  (intern (format nil "TEST-GROUP-~A" (id-string group-id #\-))))
+
 (defmacro test-group (title &body body)
-  (declare (ignore title))
-  (serapeum:walk-tree
-   (lambda (form)
-     (when (and (listp form) (eq (first form) 'test-case))
-       (let ((test-case-id (second form)))
-         (unless (find test-case-id *wstest-cases* :test 'equal)
-           (push test-case-id *wstest-cases*)))))
-   body)
-  (setf *wstest-cases* (sort *wstest-cases* 'string<))
-  `(progn
-     (setf *wstest-cases* ',*wstest-cases*)
-     ,@body))
+  (let ((test-case-ids '()))
+    (serapeum:walk-tree
+     (lambda (form)
+       (when (and (listp form) (eq (first form) 'test-case))
+         (let ((test-case-id (second form)))
+           (unless (find test-case-id test-case-ids :test 'equal)
+             (push test-case-id test-case-ids)))))
+     body)
+    (setf test-case-ids (sort test-case-ids 'string<))
+    (loop for test-case-id in test-case-ids
+       unless (find test-case-id *wstest-cases* :test 'equal)
+       do (push test-case-id *wstest-cases*)
+       finally (setf *wstest-cases* (sort *wstest-cases* 'string<)))
+    (let ((group-id (cl-ppcre:scan-to-strings "[\\d.]+" title)))
+      (let ((test-group-function-name (test-group-function-name group-id)))
+        `(progn
+           (defun ,test-group-function-name ()
+             (setf *wstest-complete* nil)
+             (run-wstest ',test-case-ids)
+             ,@(loop for test-case-id in test-case-ids
+                  collect `(,(test-case-function-name test-case-id) :run nil)))
+           (setf *wstest-cases* ',*wstest-cases*)
+           ,@body)))))
 
 (in-suite :websocket-test)
 
