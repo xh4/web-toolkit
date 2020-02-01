@@ -65,64 +65,65 @@
 (defun handle-user-endpoint-request (endpoint request)
   (handler-bind ((error (lambda (c)
                           (trivial-backtrace:print-backtrace c))))
-    (handle-handshake request)
-    (let* ((stream (http::request-stream request))
-           (connection (make-instance 'connection
-                                      :state :open
-                                      :input-stream stream
-                                      :output-stream stream)))
+    (let ((response (handle-handshake request)))
+      (let* ((stream (http::request-stream request))
+             (connection (make-instance 'connection
+                                        :state :open
+                                        :handshake-request request
+                                        :handshake-response response
+                                        :input-stream stream
+                                        :output-stream stream)))
+        (let ((session-class (decide-endpoint-session-class endpoint request)))
+          (let ((session (make-session-instance session-class connection request)))
 
-      (let ((session-class (decide-endpoint-session-class endpoint request)))
-        (let ((session (make-session-instance session-class connection request)))
+            (let ((result (invoke-open-handler endpoint session)))
+              (when (typep result 'session)
+                (setf session result)))
 
-          (let ((result (invoke-open-handler endpoint session)))
-            (when (typep result 'session)
-              (setf session result)))
+            (handler-bind ((websocket-error
+                            (lambda (error)
+                              (invoke-error-handler endpoint session error)
+                              (return-from handle-user-endpoint-request)))
+                           (babel-encodings:character-decoding-error
+                            (lambda (error)
+                              (close-connection connection
+                                                :code 1007
+                                                :reason "Bad UTF-8")
+                              (invoke-error-handler endpoint session error)
+                              (return-from handle-user-endpoint-request)))
+                           (error
+                            (lambda (error)
+                              (close-connection connection
+                                                :code 1011
+                                                :reason "Internal error")
+                              (invoke-error-handler endpoint session error)
+                              (return-from handle-user-endpoint-request)))
 
-          (handler-bind ((websocket-error
-                          (lambda (error)
-                            (invoke-error-handler endpoint session error)
-                            (return-from handle-user-endpoint-request)))
-                         (babel-encodings:character-decoding-error
-                          (lambda (error)
-                            (close-connection connection
-                                              :code 1007
-                                              :reason "Bad UTF-8")
-                            (invoke-error-handler endpoint session error)
-                            (return-from handle-user-endpoint-request)))
-                         (error
-                          (lambda (error)
-                            (close-connection connection
-                                              :code 1011
-                                              :reason "Internal error")
-                            (invoke-error-handler endpoint session error)
-                            (return-from handle-user-endpoint-request)))
+                           (text-received
+                            (lambda (c)
+                              (let ((message (slot-value c 'text)))
+                                (invoke-message-handler endpoint session message))))
 
-                         (text-received
-                          (lambda (c)
-                            (let ((message (slot-value c 'text)))
-                              (invoke-message-handler endpoint session message))))
+                           (binary-received
+                            (lambda (c)
+                              (let ((message (slot-value c 'data)))
+                                (invoke-message-handler endpoint session message))))
 
-                         (binary-received
-                          (lambda (c)
-                            (let ((message (slot-value c 'data)))
-                              (invoke-message-handler endpoint session message))))
-
-                         (close-received
-                          (lambda (c)
-                            (let ((code (slot-value c 'code))
-                                  (reason (slot-value c 'reason)))
-                              (invoke-close-handler endpoint session code reason)))))
-            (with-slots (state) connection
-              (loop for frame = (handler-bind ((error (lambda (e)
-                                                        (drop-connection connection)
-                                                        (invoke-error-handler endpoint session e)
-                                                        (invoke-close-handler endpoint session 1001 "Peer closed unexpectedly")
-                                                        (return-from handle-user-endpoint-request))))
-                                  (receive-frame connection))
-                 do (handle-frame connection frame)
-                 while (not (or (eq state :closed)
-                                (eq state :closing)))))))))))
+                           (close-received
+                            (lambda (c)
+                              (let ((code (slot-value c 'code))
+                                    (reason (slot-value c 'reason)))
+                                (invoke-close-handler endpoint session code reason)))))
+              (with-slots (state) connection
+                (loop for frame = (handler-bind ((error (lambda (e)
+                                                          (drop-connection connection)
+                                                          (invoke-error-handler endpoint session e)
+                                                          (invoke-close-handler endpoint session 1001 "Peer closed unexpectedly")
+                                                          (return-from handle-user-endpoint-request))))
+                                    (receive-frame connection))
+                   do (handle-frame connection frame)
+                   while (not (or (eq state :closed)
+                                  (eq state :closing))))))))))))
 
 (defun websocket-uri (path host &optional ssl)
   "Form WebSocket URL (ws:// or wss://) URL."
@@ -190,4 +191,4 @@
     (format stream "~C~C" #\Return #\Linefeed)
     (force-output stream))
 
-  (http::request-stream request))
+  *response*)

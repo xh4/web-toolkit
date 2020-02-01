@@ -3,13 +3,16 @@
 (defclass connection ()
   ((input-stream
     :initarg :input-stream
-    :initform (error "Must make connection with input stream"))
+    :initform nil)
    (output-stream
     :initarg :output-stream
-    :initform (error "Must make connection with output streams"))
-   ;; (request    :initarg :request
-   ;;             :reader connection-request
-   ;;             :initform (error "Must make clients with requests"))
+    :initform nil)
+   (handshake-request
+    :initarg :handshake-request
+    :initform nil)
+   (handshake-response
+    :initarg :handshake-response
+    :initform nil)
    (write-lock
     :initform (bt:make-lock))
    (state
