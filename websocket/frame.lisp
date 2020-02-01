@@ -24,6 +24,9 @@
 (defun reserved-non-control-frame-p (frame)
   (<= 3 (frame-opcode frame) 7))
 
+(defun reserved-data-frame-p (frame)
+  (reserved-non-control-frame-p frame))
+
 (defun reserved-control-frame-p (frame)
   (<= #xB (frame-opcode frame) #xF))
 
@@ -98,9 +101,6 @@
       (when (plusp extensions)
         (websocket-error
          1002 "No extensions negotiated, but client sends ~a!" extensions))
-      (when (or (control-frame-p frame)
-                read-payload-p)
-        (read-payload-data stream frame))
       frame)))
 
 (defun mask-unmask (data masking-key)

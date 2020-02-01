@@ -65,120 +65,132 @@
   (websocket-error code reason)
   (drop-connection connection))
 
-(defun handle-frame (connection frame)
-  (with-slots (state pending-fragments pending-opcode input-stream) connection
-    (with-slots (opcode) frame
+(defun handle-last-frame (connection frame)
+  (if (close-frame-p frame)
+      (drop-connection connection)
+      (drop-connection-with-error connection 1002 "Expected a close frame")))
+
+(defun handle-fin-frame (connection frame)
+  (with-slots (pending-fragments pending-opcode) connection
+    (if (continuation-frame-p frame)
+        (handle-continuation-frame connection frame)
+        (progn
+          (when pending-fragments
+            (close-connection-with-error connection 1002 "All data frames after the initial data frame must have opcode 0"))
+          (push frame pending-fragments)
+          (setf pending-opcode (frame-opcode frame))))
+    (handle-fragmentation connection)))
+
+(defun handle-fragmentation (connection)
+  (with-slots (pending-fragments pending-opcode) connection
+    (let ((ordered-frames (reverse pending-fragments)))
+      (cond ((eq +opcode-text+ pending-opcode)
+             (let ((octets nil))
+               (if (= (length ordered-frames) 1)
+                   (setf octets (frame-payload-data (first ordered-frames)))
+                   (let ((total-length (loop for frame in ordered-frames
+                                          for data = (frame-payload-data frame)
+                                          sum (length data))))
+                     (setf octets (make-array total-length
+                                              :element-type '(unsigned-byte 8)))
+                     (loop with index = 0
+                        for frame = (pop ordered-frames)
+                        for data = (when frame
+                                     (frame-payload-data frame))
+                        while frame
+                        do (loop for i across data
+                              do (setf (aref octets index) i)
+                                (incf index)))))
+               (let ((text (octets-to-string octets :encoding :utf-8)))
+                 (signal 'text-received :text text))))
+            ((eq +opcode-binary+ pending-opcode)
+             ;; A binary message was received
+             (let ((temp-file
+                    (fad:with-output-to-temporary-file
+                        (fstream :element-type '(unsigned-byte 8))
+                      (loop for frame in ordered-frames
+                         do (write-sequence (frame-payload-data frame)
+                                            fstream)))))
+               (unwind-protect
+                    (signal 'binary-received
+                            :data temp-file)
+                 (delete-file temp-file))))))
+    (setf pending-fragments nil
+          pending-opcode nil)))
+
+(defun handle-non-fin-frame (connection frame)
+  (with-slots (pending-fragments pending-opcode) connection
+    (if (continuation-frame-p frame)
+        (handle-continuation-frame connection frame)
+        (progn
+          (push frame pending-fragments)
+          (setq pending-opcode (frame-opcode frame))))))
+
+(defun handle-continuation-frame (connection frame)
+  (with-slots (pending-fragments) connection
+    (unless pending-fragments
+      (close-connection-with-error connection 1002 "Unexpected continuation frame"))
+    (push frame pending-fragments)))
+
+(defun handle-control-frame (connection frame)
+  (unless (frame-fin-p frame)
+    (close-connection-with-error connection 1002 "Control frame must fin"))
+  (when (reserved-control-frame-p frame)
+    (close-connection-with-error connection 1002 "Unexpected reserved control frame"))
+  (with-slots (input-stream) connection
+    (cond
+      ;; Ping
+      ((ping-frame-p frame)
+       (read-payload-data input-stream frame)
+       (send-frame connection +opcode-pong+ (frame-payload-data frame)))
+      ;; Pong
+      ((pong-frame-p frame)
+       (read-payload-data input-stream frame))
+      ;; Close
+      ((close-frame-p frame) (handle-close-frame connection frame)))))
+
+(defun handle-close-frame (connection frame)
+  (with-slots (input-stream) connection
+    (read-payload-data input-stream frame)
+    (let ((body (frame-payload-data frame)))
       (cond
-        ((eq :awaiting-close state)
-         ;; We're waiting a close because we explicitly sent one to the
-         ;; connection. Error out if the next message is not a close.
-         (if (close-frame-p frame)
-             (drop-connection connection)
-             (drop-connection-with-error connection 1002 "Expected a close frame")))
-        ((not (frame-fin-p frame))
-         ;; This is a non-FIN fragment Check opcode, append to connection's
-         ;; fragments.
-         (cond ((and (continuation-frame-p frame)
-                     (not pending-fragments))
-                (close-connection-with-error connection 1002 "Unexpected continuation frame"))
-               ((control-frame-p frame)
-                (close-connection-with-error connection 1002 "Control frames can't be fragmented"))
-               ((and pending-fragments
-                     (/= opcode +opcode-continuation+))
-                (close-connection-with-error connection 1002 "Not discarding initiated fragment sequence"))
-               (t
-                ;; A data frame, is either initiaing a new fragment sequence
-                ;; or continuing one
-                (read-payload-data input-stream frame)
-                (cond ((continuation-frame-p frame)
-                       (push frame pending-fragments))
-                      (t
-                       (setq pending-opcode opcode
-                             pending-fragments (list frame)))))))
-        ((and pending-fragments
-              (not (or (control-frame-p frame)
-                       (continuation-frame-p frame))))
-         ;; This is a FIN fragment and (1) there are pending fragments and (2)
-         ;; this isn't a control or continuation frame. Error out.
-         (close-connection-with-error connection 1002 "Only control frames can interleave fragment sequences."))
-        (t
-         ;; This is a final, FIN fragment. So first read the fragment's data
-         ;; into the `data' slot.
-         (cond
-           ((reserved-non-control-frame-p frame)
-            (close-connection-with-error connection 1002 "Unexpected opcode"))
-           ((non-control-frame-p frame)
-            ;; This is either a single-fragment data frame or a continuation
-            ;; frame. Join the fragments and keep on processing. Join any
-            ;; outstanding fragments and process the message.
-            (read-payload-data input-stream frame)
-            (unless pending-opcode
-              (setq pending-opcode opcode))
-            (let ((ordered-frames
-                   (reverse (cons frame pending-fragments))))
-              (cond ((eq +opcode-text+ pending-opcode)
-                     (let ((octets nil))
-                       (if (= (length ordered-frames) 1)
-                           (setf octets (frame-payload-data (first ordered-frames)))
-                           (let ((total-length (loop for frame in ordered-frames
-                                                  for data = (frame-payload-data frame)
-                                                  sum (length data))))
-                             (setf octets (make-array total-length
-                                                      :element-type '(unsigned-byte 8)))
-                             (loop with index = 0
-                                for frame = (pop ordered-frames)
-                                for data = (when frame
-                                             (frame-payload-data frame))
-                                while frame
-                                do (loop for i across data
-                                      do (setf (aref octets index) i)
-                                        (incf index)))))
-                       (let ((text (octets-to-string octets :encoding :utf-8)))
-                         (signal 'text-received :text text))))
-                    ((eq +opcode-binary+ pending-opcode)
-                     ;; A binary message was received
-                     (let ((temp-file
-                            (fad:with-output-to-temporary-file
-                                (fstream :element-type '(unsigned-byte 8))
-                              (loop for frame in ordered-frames
-                                 do (write-sequence (frame-payload-data frame)
-                                                    fstream)))))
-                       (unwind-protect
-                            (signal 'binary-received
-                                    :data temp-file)
-                         (delete-file temp-file))))
-                    (t
-                     (close-connection-with-error connection 1002 "Unknown opcode"))))
-            (setf pending-fragments nil))
-           ((eq +opcode-ping+ opcode)
-            ;; Reply to ping with a pong with the same data
-            (send-frame connection +opcode-pong+ (frame-payload-data frame)))
-           ((eq +opcode-close+ opcode)
-            ;; Reply to close with a close with the same data
-            (let ((body (frame-payload-data frame)))
-              (cond
-                ((= (length body) 0)
-                 (close-connection connection)
-                 (drop-connection connection))
-                ((< (length body) 2) (websocket-error
-                                      1002 "Malformed close body"))
-                (t (let ((code (+ (* 256 (aref body 0)) (aref body 1)))
-                         (reason))
-                     (when (or (<= 0 code 999)
-                               (<= 1004 code 1006)
-                               (<= 1016 code 2999))
-                       (close-connection-with-error connection 1002 "Invalid close code"))
-                     (let ((reason-bytes (subseq body 2)))
-                       (when (> (length reason-bytes) 0)
-                         (let ((reason-string (handler-case
-                                                  (octets-to-string reason-bytes)
-                                                (error (e)
-                                                  (declare (ignore e))
-                                                  (close-connection-with-error
-                                                   connection
-                                                   1002 "Malformed close reason")))))
-                           (setf reason reason-string))))
-                     (close-connection connection :code code :reason reason)
-                     (drop-connection connection))))))
-           ((eq +opcode-pong+ opcode))
-           (t (close-connection-with-error 1002 "Unknown opcode ~a" opcode))))))))
+        ((= (length body) 0)
+         (close-connection connection)
+         (drop-connection connection))
+        ((< (length body) 2) (websocket-error
+                              1002 "Malformed close body"))
+        (t (let ((code (+ (* 256 (aref body 0)) (aref body 1)))
+                 (reason))
+             (when (or (<= 0 code 999)
+                       (<= 1004 code 1006)
+                       (<= 1016 code 2999))
+               (close-connection-with-error connection 1002 "Invalid close code"))
+             (let ((reason-bytes (subseq body 2)))
+               (when (> (length reason-bytes) 0)
+                 (let ((reason-string (handler-case
+                                          (octets-to-string reason-bytes)
+                                        (error (e)
+                                          (declare (ignore e))
+                                          (close-connection-with-error
+                                           connection
+                                           1002 "Malformed close reason")))))
+                   (setf reason reason-string))))
+             (close-connection connection :code code :reason reason)
+             (drop-connection connection)))))))
+
+(defun handle-data-frame (connection frame)
+  (when (reserved-data-frame-p frame)
+    (close-connection-with-error connection 1002 "Unexpected opcode"))
+  (with-slots (input-stream) connection
+    (read-payload-data input-stream frame))
+  (if (frame-fin-p frame)
+      (handle-fin-frame connection frame)
+      (handle-non-fin-frame connection frame)))
+
+(defun handle-frame (connection frame)
+  (with-slots (state) connection
+    (if (eq :awaiting-close state)
+        (handle-last-frame connection frame)
+        (if (control-frame-p frame)
+            (handle-control-frame connection frame)
+            (handle-data-frame connection frame)))))
