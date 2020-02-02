@@ -14,10 +14,7 @@
            :close-session
            :connect)
   (:import-from :http
-                :define-handler
-                :handler
                 :handle
-                :call-next-handler
                 :request
                 :request-uri
                 :request-header
@@ -35,8 +32,7 @@
   (:import-from :uri
                 :uri-scheme
                 :uri-host
-                :uri-port
-                :uri-path)
+                :uri-port)
   (:import-from :closer-mop
                 :compute-class-precedence-list
                 :shared-initialize
