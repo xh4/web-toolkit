@@ -7,10 +7,8 @@
   :depends-on (:wt.http
                :wt.uri
                :alexandria
-               :cl-ppcre
                :ironclad
                :bordeaux-threads
-               :trivial-backtrace
                :cl-cont
                :closer-mop
                #-lispworks
