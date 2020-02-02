@@ -66,7 +66,7 @@
           line))))
 
 (defun parse-header-field (line)
-  (let ((list (cl-ppcre:split "\\s+" line :limit 2)))
+  (let ((list (cl-ppcre:split ":\\s+" line :limit 2)))
     (when (= 2 (length list))
       (destructuring-bind (name value) list
         (make-instance 'header-field :name name :value value)))))
