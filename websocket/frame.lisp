@@ -155,4 +155,7 @@
 
 ;; TODO: real masking key
 (defun make-masking-key ()
-  #(42 42 42 42))
+  (let ((masking-key (make-array 4 :element-type '(unsigned-byte 8))))
+    (dotimes (i 4)
+      (setf (aref key i) (random 255)))
+    (masking-key)))
