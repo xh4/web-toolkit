@@ -26,6 +26,7 @@
                 :request
                 :request-uri
                 :request-header
+                :request-body
                 :header
                 :header-field
                 :header-fields
@@ -34,7 +35,8 @@
                 :find-header-field
                 :reply
                 :status
-                :*response*)
+                :*response*
+                :response-header)
   (:import-from :uri
                 :uri-scheme
                 :uri-host

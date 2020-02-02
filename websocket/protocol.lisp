@@ -130,70 +130,40 @@
            while (not (or (eq state :closed)
                           (eq state :closing))))))))
 
-(defun websocket-uri (path host &optional ssl)
-  "Form WebSocket URL (ws:// or wss://) URL."
-  (format nil "~:[ws~;wss~]://~a~a" ssl host path))
-
 (defun handle-handshake (request)
-  (let ((connection (header-field-value
-                     (find-header-field request "Connection")))
-        (upgrade (header-field-value
-                  (find-header-field request "Upgrade"))))
-    (unless (and
-             connection
-             (member "Upgrade" (cl-ppcre:split "\\s*,\\s*" connection)
-                     :test #'string-equal)
-             upgrade
-             (string-equal "WebSocket" upgrade))
-      (error "Not websocket request")))
-  (let ((requested-version (header-field-value
-                            (find-header-field request "Sec-WebSocket-Version"))))
-    (unless (equal "13" requested-version)
-      (websocket-error 1002
-                       "Unsupported websocket version ~a" requested-version)))
-  (when (find-header-field request "Sec-WebSocket-Draft")
-    (websocket-error 1002 "Websocket draft is unsupported"))
-  (let* ((key (header-field-value
-               (find-header-field request "Sec-WebSocket-Key")))
-         (key+magic (concatenate 'string key +magic+)))
-    (reply (header-field "Sec-WebSocket-Accept"
-                         (base64:usb8-array-to-base64-string
-                          (ironclad:digest-sequence
-                           'ironclad:sha1
-                           (ironclad:ascii-string-to-byte-array
-                            key+magic))))))
-  (let ((origin (header-field-value
-                 (find-header-field request "Sec-WebSocket-Origin"))))
-    (reply (header "Sec-WebSocket-Origin" origin)))
-  (let* ((host (header-field-value
-                (find-header-field request "Host")))
-         (uri (request-uri request))
-         (path (uri:uri-path uri)))
-    (reply (header "Sec-WebSocket-Location"
-                   (websocket-uri path host nil))))
-  (let ((protocol (header-field-value
-                   (find-header-field request "Sec-WebSocket-Protocol"))))
-    (when protocol
-      (reply (header "Sec-WebSocket-Protocol"
-                     (first (cl-ppcre:split "\\s*,\\s*" protocol))))))
+  (check-handshake-request request)
+  (accept-handshake-request request)
   (reply
    (status :switching-protocols)
    (header :upgrade "WebSocket")
-   (header :connection "Upgrade")
-   (header :content-type "application/octet-stream"))
+   (header :connection "Upgrade"))
+  (let ((stream (request-body request)))
 
-  #+lispworks
-  (setf (stream:stream-read-timeout (http::request-stream request)) nil
-        (stream:stream-write-timeout (http::request-stream request)) nil)
+    ;; #+lispworks
+    ;; (setf (stream:stream-read-timeout stream) nil
+    ;;       (stream:stream-write-timeout stream) nil)
 
-  (let ((stream (flex:make-flexi-stream (http::request-stream request)
-                                        :external-format (flex:make-external-format :latin1 :eol-style :lf))))
-    (format stream "HTTP/1.1 ~D ~A~C~C" 101 "Switching Protocols" #\Return #\Linefeed)
-    (loop for header-field in (header-fields *response*)
-       for name = (header-field-name header-field)
-       for value = (header-field-value header-field)
-       do (hunchentoot::write-header-line name value stream))
-    (format stream "~C~C" #\Return #\Linefeed)
-    (force-output stream))
+    (http::write-status-line stream "HTTP/1.1" 101 "Switching Protocols")
+    (http::write-header stream (response-header *response*))
+    (force-output stream)
+    *response*))
 
-  *response*)
+(defun check-handshake-request (request)
+  (unless (and
+           (string-equal "Upgrade" (header-field-value
+                                    (find-header-field request "Connection")))
+           (string-equal "WebSocket" (header-field-value
+                                      (find-header-field request "Upgrade")))
+           (string-equal "13" (header-field-value
+                               (find-header-field request "Sec-WebSocket-Version"))))
+    (error "Bad WebSocket request")))
+
+(defun accept-handshake-request (request)
+  (let ((key (header-field-value
+              (find-header-field request "Sec-WebSocket-Key"))))
+    (let ((accept (base64:usb8-array-to-base64-string
+                   (ironclad:digest-sequence
+                    'ironclad:sha1
+                    (ironclad:ascii-string-to-byte-array
+                     (concatenate 'string key +magic+))))))
+      (reply (header-field "Sec-WebSocket-Accept" accept)))))
