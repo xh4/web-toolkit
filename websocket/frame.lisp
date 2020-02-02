@@ -70,7 +70,7 @@
             "Expected to read ~a bytes, but read ~a" n read)
     array))
 
-(defun read-frame (stream &key read-payload-p)
+(defun read-frame (stream)
   (let* ((first-byte       (read-byte stream))
          (fin              (ldb (byte 1 7) first-byte))
          (extensions       (ldb (byte 3 4) first-byte))
@@ -125,14 +125,14 @@
     (when masking-key
       (mask-unmask payload-data masking-key))))
 
-(defun write-frame (stream opcode &optional data)
+(defun write-frame (stream opcode &optional data &key mask)
   (let* ((first-byte     #x00)
          (second-byte    #x00)
          (len            (if data (length data) 0))
          (payload-length (cond ((<= len 125)        len)
                                ((< len (expt 2 16)) 126)
                                (t                   127)))
-         (mask-p         (and (plusp len))))
+         (mask-p         (and mask (plusp len))))
     (setf (ldb (byte 1 7) first-byte)  1
           (ldb (byte 3 4) first-byte)  0
           (ldb (byte 4 0) first-byte)  opcode
@@ -150,7 +150,7 @@
       (let ((masking-key (make-masking-key)))
         (write-sequence masking-key stream)
         (setf data (mask-unmask data masking-key))))
-    (if data (write-sequence data stream))
+    (when data (write-sequence data stream))
     (force-output stream)))
 
 (defun make-masking-key ()

@@ -52,7 +52,8 @@
                                                :handshake-request request
                                                :handshake-response response
                                                :input-stream stream
-                                               :output-stream stream)))
+                                               :output-stream stream
+                                               :mask-frame-p t)))
                 (let ((session-class (decide-endpoint-session-class endpoint request)))
                   (let ((session (make-session-instance session-class connection request)))
                     (invoke-open-handler endpoint session)

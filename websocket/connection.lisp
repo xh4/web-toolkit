@@ -17,18 +17,21 @@
     :initform (bt:make-lock))
    (state
     :initarg :state
-    :initform :disconnected) ;; :disconnected, connecting, open, :awaiting-close, :closing, closed
+    :initform :disconnected) ;; :open, :awaiting-close, :closed
    (pending-fragments
     :initform nil)
    (pending-opcode
+    :initform nil)
+   (mask-frame-p
+    :initarg :mask-frame-p
     :initform nil)))
 
 (defun send-frame (connection opcode &optional data)
-  (with-slots (state write-lock output-stream) connection
+  (with-slots (state write-lock output-stream mask-frame-p) connection
     (when (and (eq state :open)
                (open-stream-p output-stream))
       (bt:with-lock-held (write-lock)
-        (write-frame output-stream opcode data)))))
+        (write-frame output-stream opcode data :mask mask-frame-p)))))
 
 (defun receive-frame (connection)
   (with-slots (input-stream) connection
