@@ -25,12 +25,7 @@
    (opening-header
     :initarg :opening-header
     :initform nil
-    :reader session-opening-header
-    :allocation :class)
-   (pool
-    :initform nil
-    :allocation :class
-    :reader session-pool))
+    :reader session-opening-header))
   (:metaclass session-class))
 
 (defmethod shared-initialize :before ((class session-class) slot-names
