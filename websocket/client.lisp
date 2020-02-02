@@ -19,8 +19,7 @@
         (add-header-field "Host" (format nil "~A~@[:~A~]" host port))
         (add-header-field "Upgrade" "WebSocket")
         (add-header-field "Connection" "Upgrade")
-        ;; TODO: real sec key
-        (add-header-field "Sec-WebSocket-Key" (base64-encode "aaaaaaaaaaaaaaaa"))
+        (add-header-field "Sec-WebSocket-Key" (make-handshake-key))
         (add-header-field "Sec-WebSocket-Version" "13"))
       (setf (request-header request) request-header)
       (http::write-request stream request)
@@ -73,3 +72,9 @@
                            #+(or abcl clisp lispworks mcl openmcl sbcl)
                            connection-timeout
                            :nodelay :if-supported)))
+
+(defun make-handshake-key ()
+  (let ((key (with-output-to-string (stream)
+               (dotimes (i 16)
+                 (write-char (code-char (random 255)) stream)))))
+    (base64-encode key)))
