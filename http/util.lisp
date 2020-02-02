@@ -1,6 +1,6 @@
 (in-package :http)
 
-(defconstant +crlf+
+(defvar +crlf+
   (make-array 2 :element-type '(unsigned-byte 8)
               :initial-contents (mapcar 'char-code '(#\Return #\Linefeed)))
   "A 2-element array consisting of the character codes for a CRLF sequence.")
