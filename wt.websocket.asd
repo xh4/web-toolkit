@@ -15,7 +15,7 @@
                :closer-mop
                #-lispworks
                :usocket
-               :base64)
+               :cl-base64)
   :serial t
   :components ((:module "websocket"
                         :serial t
