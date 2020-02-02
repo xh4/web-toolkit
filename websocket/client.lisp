@@ -11,7 +11,8 @@
          (stream (open-tcp-stream host port)))
     (unless host
       (error "Missing host in uri"))
-    (let ((request-header (make-instance 'header)))
+    (let ((request-header (make-instance 'header))
+          (request-key (make-handshake-key)))
       (flet ((add-header-field (name value)
                (http::add-header-field
                 request-header
@@ -19,7 +20,7 @@
         (add-header-field "Host" (format nil "~A~@[:~A~]" host port))
         (add-header-field "Upgrade" "WebSocket")
         (add-header-field "Connection" "Upgrade")
-        (add-header-field "Sec-WebSocket-Key" (make-handshake-key))
+        (add-header-field "Sec-WebSocket-Key" request-key)
         (add-header-field "Sec-WebSocket-Version" "13"))
       (setf (request-header request) request-header)
       (http::write-request stream request)
@@ -28,9 +29,21 @@
         (destructuring-bind (http-version status-code reason-phase) status-line
           (declare (ignore http-version reason-phase))
           (unless (= 101 status-code)
+            (close stream)
             (error "Unexpected response code ~D" status-code))
           (let ((response-header (http::read-header stream)))
-            ;; TODO: check response header
+            (let ((response-accept (header-field-value
+                                    (find-header-field response-header "Sec-WebSocket-Accept")))
+                  (expected-response-accept (base64:usb8-array-to-base64-string
+                                             (ironclad:digest-sequence
+                                              'ironclad:sha1
+                                              (ironclad:ascii-string-to-byte-array
+                                               (concatenate 'string
+                                                            request-key
+                                                            +magic+))))))
+              (unless (equal response-accept expected-response-accept)
+                (close stream)
+                (error "Mismatch key and accept")))
             (let ((response (make-instance 'http:response
                                            :status status-code
                                            :header response-header)))
@@ -77,4 +90,4 @@
   (let ((key (with-output-to-string (stream)
                (dotimes (i 16)
                  (write-char (code-char (random 255)) stream)))))
-    (base64-encode key)))
+    (base64:string-to-base64-string key)))

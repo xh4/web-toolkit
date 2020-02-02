@@ -16,7 +16,8 @@
 
            :define-handler-macro
 
-           :connect)
+           :connect
+           :add-header-field)
   (:import-from :http
                 :define-handler
                 :handler
@@ -45,6 +46,4 @@
                 :validate-superclass)
   (:import-from :cl-cont
                 :call/cc
-                :lambda/cc)
-  (:import-from :base64
-                :base64-encode))
+                :lambda/cc))
