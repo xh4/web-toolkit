@@ -132,7 +132,7 @@
          (payload-length (cond ((<= len 125)        len)
                                ((< len (expt 2 16)) 126)
                                (t                   127)))
-         (mask-p         t))
+         (mask-p         (and (plusp len))))
     (setf (ldb (byte 1 7) first-byte)  1
           (ldb (byte 3 4) first-byte)  0
           (ldb (byte 4 0) first-byte)  opcode
