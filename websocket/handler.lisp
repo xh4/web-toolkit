@@ -1,20 +1,10 @@
 (in-package :websocket)
 
-(defvar *handler-macros* '())
-
-(defmacro define-handler-macro (name lambda-list &body body)
-  (let ((macro (append (list name lambda-list) body)))
-    `(eval-when (:compile-toplevel :load-toplevel :execute)
-       (if-let ((pos (position ',name *handler-macros* :key 'first)))
-         (setf (nth pos *handler-macros*) ',macro)
-         (appendf *handler-macros* (list ',macro))))))
-
 (defmacro make-handler (form)
   (when form
     (unless (member (first form) '(lambda lambda/cc))
       (error "Malformed handler form ~A, expect LAMBDA or LAMBDA/CC expression" form)))
-  `(macrolet (,@*handler-macros*)
-     ,form))
+  form)
 
 (defun compute-endpoint-class-precedence-list (instance-or-class)
   (let ((class (cond

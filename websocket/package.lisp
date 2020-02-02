@@ -4,7 +4,6 @@
   (:nicknames :ws :wt.ws :wt.websocket)
   (:use :cl :alexandria)
   (:export :define-endpoint
-
            :define-session
            :session-opening-uri
            :session-opening-header
@@ -13,11 +12,7 @@
            :send-binary
            :ping
            :close-session
-
-           :define-handler-macro
-
-           :connect
-           :add-header-field)
+           :connect)
   (:import-from :http
                 :define-handler
                 :handler
