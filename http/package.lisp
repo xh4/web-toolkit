@@ -51,6 +51,7 @@
                 :uri-scheme
                 :uri-host
                 :uri-path
+                :uri-query
                 :uri-string)
   (:import-from :closer-mop
                 :compute-class-precedence-list
