@@ -14,20 +14,6 @@
     :initform nil
     :accessor response-body)))
 
-(defmethod print-object ((response response) stream)
-  (print-unreadable-object (response stream :type t)
-    (let ((*print-pretty* t))
-      (pprint-logical-block (stream nil)
-        (pprint-indent :block -8 stream)
-        (pprint-newline :mandatory stream)
-        (format stream "~A" (response-status response))
-        (pprint-indent :block -8 stream)
-        (pprint-newline :mandatory stream)
-        (format stream "~A" (response-header response))
-        (pprint-indent :block -8 stream)
-        (pprint-newline :mandatory stream)
-        (format stream "~A" (response-body response))))))
-
 (defvar *response* nil)
 
 (defgeneric response-status (response))

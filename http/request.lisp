@@ -22,7 +22,6 @@
 
 (defgeneric (setf request-method) (value request))
 
-;; scheme + host + port + path + query
 (defgeneric request-uri (request))
 
 (defgeneric (setf request-uri) (value request))
@@ -57,7 +56,6 @@
 
 (defun request-stream (request)
   (gethash request *request-stream-mapping-table*))
-
 
 (defun read-request-line (stream &key (parse t))
   (let ((line (handler-case
