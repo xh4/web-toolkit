@@ -102,76 +102,41 @@
     (loop for listener in listeners-to-remove
        do (remove-listener server listener))))
 
-(defun pprint-server (server stream)
-  (let ((*print-pretty* t))
-    (pprint-logical-block (stream nil)
-      (pprint-indent :block (indent-relative-to-object-name server 1) stream)
-      (pprint-newline :mandatory stream)
-      (write-string "Handler:" stream)
-      (pprint-indent :block (indent-relative-to-object-name server 3) stream)
-      (pprint-newline :mandatory stream)
-      (format stream "~A" (server-handler server))
+(defgeneric start-server (server &key)
+  (:method ((server server) &key)
+    (loop for listener in (ensure-list (server-listener server))
+       do
+         (handler-case
+             (start-listener listener)
+           (error (e)
+             ;; (stop-server server)
+             (error e)))
+       finally
+         (setf (server-started-p server) t))
+    server))
 
-      (pprint-indent :block (indent-relative-to-object-name server 1) stream)
-      (pprint-newline :mandatory stream)
-      (write-string "Listeners:" stream)
-      (loop for listener in (ensure-list (server-listener server))
-         do
-           (pprint-indent :block (indent-relative-to-object-name server 3) stream)
-           (pprint-newline :mandatory stream)
-           (format stream "~A" listener))
-      (pprint-indent :block (indent-relative-to-object-name server -2) stream)
-      (pprint-newline :mandatory stream))))
+(defgeneric stop-server (server &key)
+  (:method ((server server) &key)
+    (loop for listener in (ensure-list (server-listener server))
+       do
+         (stop-listener listener)
+       finally
+         (setf (server-started-p server) nil))
+    server))
 
-(defmethod print-object ((server server) stream)
-  (print-unreadable-object (server stream :type t :identity t)
-    (if *print-pretty*
-        (pprint-server server stream))))
+(defgeneric add-listener (server listener)
+  (:method ((server server) (listener listener))
+    (setf (listener-server listener) server)
+    (when (server-started-p server)
+      (start-listener listener))
+    (let ((listeners (append (ensure-list (server-listener server))
+                             (list listener))))
+      (setf (server-listener server) listeners))))
 
-(defmethod initialize-instance :after ((server server) &key))
-
-(defgeneric start-server (server &key))
-
-(defmethod start-server ((server server) &key)
-  (loop for listener in (ensure-list (server-listener server))
-     do
-       (handler-case
-           (start-listener listener)
-         (error (e)
-           ;; (stop-server server)
-           (error e)))
-     finally
-       (setf (server-started-p server) t))
-  server)
-
-(defgeneric stop-server (server &key))
-
-(defmethod stop-server ((server server) &key)
-  (loop for listener in (ensure-list (server-listener server))
-     do
-       (stop-listener listener)
-     finally
-       (setf (server-started-p server) nil))
-  server)
-
-(defgeneric add-listener (server listener))
-
-(defmethod add-listener ((server server) (listener listener))
-  (setf (listener-server listener) server)
-  (when (server-started-p server)
-    (start-listener listener))
-  (let ((listeners (append (ensure-list (server-listener server))
-                           (list listener))))
-    (setf (server-listener server) listeners)))
-
-(defgeneric remove-listener (server listener))
-
-(defmethod remove-listener ((server server) (listener listener))
-  (when (server-started-p server)
-    (stop-listener listener))
-  (setf (listener-server listener) nil)
-  (setf (server-listener server)
-        (remove listener (ensure-list (server-listener server)))))
-
-(defmethod (setf server-handler) (handler (server server))
-  (setf (slot-value server 'handler) handler))
+(defgeneric remove-listener (server listener)
+  (:method ((server server) (listener listener))
+    (when (server-started-p server)
+      (stop-listener listener))
+    (setf (listener-server listener) nil)
+    (setf (server-listener server)
+          (remove listener (ensure-list (server-listener server))))))
