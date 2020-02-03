@@ -55,7 +55,7 @@
   (let ((socket (usocket:socket-listen
                  (listener-address listener)
                  (listener-port listener)
-                 :backlog (listener-backlog listener)
+                 :backlog (or (listener-backlog listener) 5)
                  :element-type '(unsigned-byte 8))))
     (setf (listener-socket listener) socket)
     (let ((process (bt:make-thread
