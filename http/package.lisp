@@ -45,7 +45,8 @@
            :put
            :post
            :delete
-           :head)
+           :head
+           :superclasses)
   (:import-from :uri
                 :uri
                 :uri-scheme
@@ -55,7 +56,8 @@
                 :uri-string)
   (:import-from :closer-mop
                 :compute-class-precedence-list
-                :subclassp)
+                :subclassp
+                :validate-superclass)
   (:import-from :cl-change-case
                 :header-case)
   (:import-from :split-sequence
