@@ -18,22 +18,17 @@
     :initform nil
     :accessor connection-option)))
 
-(defgeneric make-and-process-connection (listener socket))
-
-(defmethod make-and-process-connection (listener (socket-handle fixnum))
-  (let ((stream (make-instance 'comm:socket-stream
-                               :socket socket-handle
-                               :direction :io
-                               :element-type '(unsigned-byte 8))))
+(defun make-and-process-connection (listener socket)
+  (let ((stream (usocket:socket-stream socket)))
     (let ((connection (make-instance 'connection
-                                     :socket socket-handle
+                                     :socket socket
                                      :input-stream stream
                                      :output-stream stream)))
-      (mp:process-run-function
-       "Listener process"
-       '()
-       'process-connection
-       listener connection))))
+      (bt:make-thread
+       (lambda ()
+         (process-connection listener connection))
+       :initial-bindings `((*standard-output* . ,*standard-output*)
+                           (*error-output* . ,*error-output*))))))
 
 (defun process-connection (listener connection)
   (with-slots (input-stream output-stream) connection
