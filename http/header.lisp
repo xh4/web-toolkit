@@ -65,7 +65,7 @@
   (:method (stream (header header))
     (loop for header-field in (header-fields header)
        for size = (write-header-field stream header-field)
-       sum size into all-size
+       sum size into header-size
        finally
          (write-sequence +crlf+ stream)
-         (return (+ all-size (length +crlf+))))))
+         (return (+ header-size (length +crlf+))))))

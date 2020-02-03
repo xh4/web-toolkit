@@ -1,131 +1,5 @@
 (in-package :http)
 
-(defclass acceptor (hunchentoot:acceptor)
-  ((server
-    :initarg :server
-    :initform nil
-    :accessor acceptor-server)))
-
-(defmethod hunchentoot:handle-request ((acceptor acceptor) request0)
-  (let ((server (acceptor-server acceptor)))
-    (let ((handler (server-handler server)))
-      (let ((request (make-instance 'request
-                                    :method (hunchentoot:request-method request0)
-                                    :uri (hunchentoot:request-uri request0)
-                                    :body (hunchentoot:raw-post-data
-                                           :request request0
-                                           :want-stream t)))
-            (header (make-instance 'header)))
-        (setf (gethash request *request-stream-mapping-table*)
-              (hunchentoot::content-stream request0))
-        (unwind-protect
-             (progn
-               (loop for (name . value) in (hunchentoot:headers-in request0)
-                  for field = (make-instance 'header-field
-                                             :name name
-                                             :value value)
-                  do (push field (header-fields header))
-                  finally
-                    (reversef (header-fields header))
-                    (setf (request-header request) header))
-               (handler-bind ((error (lambda (c)
-                                       (trivial-backtrace:print-backtrace c))))
-                 (let ((response (invoke-handler handler request)))
-                   (when (or (null (response-status response))
-                             (not (= (status-code (response-status response)) 101)))
-                     (handle-response response))
-                   ;; Handle the response ourself, prevent hunchentoot sending the response
-                   (setf hunchentoot::*headers-sent* t))))
-             (remhash request *request-stream-mapping-table*))))))
-
-(defun handle-response-header (response)
-  (let ((header (response-header response)))
-    (loop for field in (header-fields header)
-       for name = (header-field-name field)
-       for value = (header-field-value field)
-       do (setf (hunchentoot:header-out name) value)))
-  (hunchentoot:send-headers))
-
-(defun handle-response (response)
-  (when (pathnamep (response-body response))
-    (return-from handle-response (handle-pathname-response response)))
-
-  (let ((status (response-status response)))
-    (let ((status-code (typecase status
-                         (null nil)
-                         (status (status-code status))
-                         (integer status)
-                         (symbol (let ((status (gethash (make-keyword status)
-                                                        *status-keyword-mapping-table*)))
-                                   ;; TODO: handle status missing
-                                   (status-code status)))
-                         (t (error "When handle-response, don't know how to handle response status ~A" status)))))
-      (unless status-code
-        (if (response-body response)
-            (setf status-code 200)   ;; OK
-            (setf status-code 204))) ;; No Content
-      (setf (hunchentoot:return-code*) status-code)))
-
-  (let ((stream (handle-response-header response)))
-    (let ((body (response-body response)))
-      (typecase body
-        (string
-         (let ((octets (flexi-streams:string-to-octets body
-                                                       :external-format :utf-8)))
-           (write-sequence octets stream)))))))
-
-(defun handle-pathname-response (response)
-  (let ((pathname (response-body response)))
-
-    (when (or (wild-pathname-p pathname)
-              (not (fad:file-exists-p pathname))
-              (fad:directory-exists-p pathname))
-      ;; Missing
-      (setf (response-status response) 404)
-      (add-header-field (response-header response)
-                        (header-field "Content-Type" "text/plain"))
-      (setf (response-body response) "static handler: not found")
-      (return-from handle-pathname-response))
-
-    ;; Content-Type
-    (let ((content-type (or (header-field-value
-                             (header-field response "Content-Type"))
-                            (mime-type pathname)
-                            "application/octet-stream")))
-      ;; Charset
-      (if (and (cl-ppcre:scan "(?i)^text" content-type)
-               (not (cl-ppcre:scan "(?i);\\s*charset=" content-type)))
-          (setf content-type
-                (format nil "~A; charset=~(~A~)" content-type
-                        (flex:external-format-name
-                         (flex:make-external-format :utf8 :eol-style :lf)))))
-      (add-header-field (response-header response)
-                        (header-field "Content-Type" content-type)))
-
-    ;; Last-Modified
-    (let ((time (or (file-write-date pathname)
-                    (get-universal-time))))
-      (add-header-field (response-header response)
-                        (header-field "Last-Modified" (rfc-1123-date time))))
-
-    (with-open-file (input-stream pathname
-                          :direction :input
-                          :element-type '(unsigned-byte 8))
-      (let* ((bytes-to-send (file-length input-stream))
-             (buffer-size 8192)
-             (buffer (make-array buffer-size :element-type '(unsigned-byte 8))))
-        (let ((output-stream (handle-response-header response)))
-          (loop
-             (when (zerop bytes-to-send)
-               (return))
-             (let* ((chunk-size (min buffer-size bytes-to-send)))
-               (unless (eql chunk-size (read-sequence buffer input-stream
-                                                      :end chunk-size))
-                 (error "can't read from input file"))
-               (write-sequence buffer output-stream :end chunk-size)
-               (decf bytes-to-send chunk-size)))
-          (finish-output output-stream))))))
-
 (defclass listener ()
   ((port
     :initarg :port
@@ -139,11 +13,18 @@
     :initarg :name
     :initform nil
     :accessor listener-name)
-   ;; 借用 Hunchentoot 的 Acceptor 实现 Listener 的功能
-   (acceptor
-    :initarg :acceptor
-    :initform nil)
-   ;; 指向所属的 Server
+   (socket
+    :initarg :socket
+    :initform nil
+    :accessor listener-socket)
+   (process
+    :initarg :process
+    :initform nil
+    :accessor listener-process)
+   (backlog
+    :initarg :backlog
+    :initform nil
+    :accessor listener-backlog)
    (server
     :initarg :server
     :initform nil
@@ -156,13 +37,9 @@
         (format stream "Address: ~A, Port: ~A, Started: ~A" address port started-p)))))
 
 (defmethod initialize-instance :after ((listener listener) &key)
-  (with-slots (port address acceptor server) listener
+  (with-slots (port) listener
     (unless port
-      (error "Missing port"))
-    (setf acceptor (make-instance 'acceptor
-                                  :port port
-                                  :address address
-                                  :server server))
+      (error "Missing PORT argument when initialize listener"))
     listener))
 
 (defmacro listener (&key port address)
@@ -170,28 +47,30 @@
                   :port ,port
                   :address ,address))
 
-(defmethod (setf listener-server) (server (listener listener))
-  (setf (slot-value listener 'server) server)
-  (let ((acceptor (slot-value listener 'acceptor)))
-    (setf (slot-value acceptor 'server) server)))
-
 (defgeneric start-listener (listener &key))
 
 (defmethod start-listener ((listener listener) &key)
   (unless (listener-server listener)
     (error "Missing server in listener"))
-  (hunchentoot:start (slot-value listener 'acceptor)))
+  (let ((process (comm:start-up-server
+                  :function (lambda (socket)
+                              (make-and-process-connection listener socket))
+                  :local-port (listener-port listener)
+                  :local-address (listener-address listener)
+                  :backlog (listener-backlog listener)
+                  :announce (lambda (socket condition)
+                              (setf (listener-socket listener) socket)))))
+    (setf (listener-process listener) process)))
 
 (defgeneric stop-listener (listener &key))
 
 (defmethod stop-listener ((listener listener) &key)
-  (hunchentoot:stop (slot-value listener 'acceptor)))
+  (when-let ((socket (listener-socket listener)))
+    (comm::close-socket socket))
+  (when-let ((process (listener-process listener)))
+    (mp:process-terminate process)))
 
 (defgeneric listener-started-p (listener))
 
 (defmethod listener-started-p ((listener listener))
-  (hunchentoot:started-p (slot-value listener 'acceptor)))
-
-(defmethod (setf listener-port) (port (listener listener))
-  (let ((acceptor (slot-value listener 'acceptor)))
-    (setf (slot-value acceptor 'hunchentoot::port) port)))
+  nil)

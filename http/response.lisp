@@ -68,9 +68,10 @@
 
 (defun read-status-line (stream &key (parse t))
   (let ((line (read-line stream)))
-    (if parse
-        (parse-status-line line)
-        line)))
+    (unless (emptyp line)
+      (if parse
+          (parse-status-line line)
+          line))))
 
 (defun parse-status-line (line)
   (unless (every #'printable-ascii-char-p line)
@@ -84,12 +85,18 @@
   (check-type status-code (or string integer))
   (check-type reason-phase string)
   (let ((line (format nil "~A ~A ~A" http-version status-code reason-phase)))
-    (write-sequence line stream)
+    (write-string line stream)
     (write-sequence +crlf+ stream)
     (+ (length line) (length +crlf+))))
 
 (defun read-response-body (stream)
   (alexandria::read-stream-content-into-byte-vector stream))
+
+(defun write-response-body (stream response)
+  (let ((body (response-body response)))
+    (typecase body
+      (string (length (write-string body stream)))
+      (vector (length (write-sequence body stream))))))
 
 (defun read-response (stream)
   (let ((status-line (read-status-line stream)))
@@ -103,4 +110,11 @@
 
 (defgeneric write-response (stream response)
   (:method (stream (response response))
-    ))
+    (+
+     (write-status-line stream "HTTP/1.1"
+                        (status-code (response-status response))
+                        (status-reason-phrase (response-status response)))
+     (write-header stream (response-header response))
+     (write-response-body stream response))))
+
+(trace write-response write-response-body write-header write-status-line)

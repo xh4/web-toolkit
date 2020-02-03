@@ -60,7 +60,7 @@
 
 (defun read-header-field (stream &key (parse t))
   (let ((line (read-line stream)))
-    (when (plusp (length line))
+    (unless (emptyp line)
       (if parse
           (parse-header-field line)
           line))))

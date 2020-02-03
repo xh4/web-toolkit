@@ -59,11 +59,14 @@
   (gethash request *request-stream-mapping-table*))
 
 
-(defun read-request-line (stream)
+(defun read-request-line (stream &key (parse t))
   (let ((line (handler-case
                   (read-line stream)
                 ((or end-of-file #-:lispworks usocket:timeout-error) nil))))
-    (parse-request-line line)))
+    (unless (emptyp line)
+      (if parse
+          (parse-request-line line)
+          line))))
 
 (defun printable-ascii-char-p (char)
   (<= 32 (char-code char) 126))
@@ -87,8 +90,33 @@
 (defun write-request-body (stream body)
   (write-sequence body stream))
 
-(defun read-request (stream)
+(defun read-request-body (stream request)
+  (let ((request-header (request-header request)))
+    (let ((content-length (header-field-value
+                           (find-header-field
+                            request-header
+                            "Content-Length"))))
+      (if content-length
+          (setf content-length (parse-integer content-length))
+          (setf content-length 0))
+      (when (plusp content-length)
+        (let ((body (make-array 1 :element-type '(unsigned-byte 8))))
+          (read-sequence body stream))))))
+
+(defun write-request-body (request)
   )
+
+(defun read-request (stream)
+  (let ((request-line (read-request-line stream)))
+    (when request-line
+      (let ((request (make-instance 'request)))
+        (destructuring-bind (method uri version) request-line
+          (setf (request-method request) method
+                (request-uri request) uri))
+        (let ((request-header (read-header stream)))
+          (setf (request-header request) request-header))
+        (setf (request-body request) stream)
+        request))))
 
 (defgeneric write-request (stream request)
   (:method (stream (request request))

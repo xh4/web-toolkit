@@ -13,6 +13,7 @@
                :cl-fad
                :trivial-garbage
                :trivial-backtrace
+               :usocket
                :drakma)
   :serial t
   :components ((:module "http"
@@ -33,6 +34,7 @@
                                      (:file "router")
                                      (:file "static")
                                      (:file "websocket")
+                                     (:file "connection")
                                      (:file "listener")
                                      (:file "server")
                                      (:file "client"))))

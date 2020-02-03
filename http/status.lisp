@@ -36,6 +36,14 @@
     (integer (gethash status *status-code-mapping-table*))
     (keyword (gethash status *status-keyword-mapping-table*))))
 
+(defmethod status-code ((status integer)) (status-code (status status)))
+(defmethod status-code ((status symbol)) (status-code (status status)))
+
+(defmethod status-reason-phrase ((status integer)) (status-reason-phrase
+                                                    (status status)))
+(defmethod status-reason-phrase ((status symbol)) (status-reason-phrase
+                                                   (status status)))
+
 ;; https://tools.ietf.org/html/rfc7231#section-6.1
 
 (define-response-status :continue                        100 "Continue")
