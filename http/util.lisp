@@ -31,11 +31,6 @@ HANDLE-IF-MODIFIED-SINCE."
             minute
             second)))
 
-(defun indent-relative-to-object-name (object n)
-  (- n
-     1
-     (length (symbol-name (class-name (class-of object))))))
-
 (defun read-char (stream &optional (eof-error-p t) eof-value)
   (let ((char-code (read-byte stream eof-error-p eof-value)))
     (and char-code
