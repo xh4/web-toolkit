@@ -30,6 +30,7 @@
                                      (:file "reply")
                                      (:file "redirect")
                                      (:file "handler")
+                                     (:file "handler-default")
                                      (:file "router")
                                      (:file "static")
                                      (:file "websocket")
