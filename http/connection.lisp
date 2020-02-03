@@ -12,11 +12,7 @@
    (output-stream
     :initarg :output-stream
     :initform nil
-    :accessor connection-output-stream)
-   (option
-    :initarg :option
-    :initform nil
-    :accessor connection-option)))
+    :accessor connection-output-stream)))
 
 (defun make-and-process-connection (listener socket)
   (let ((stream (usocket:socket-stream socket)))
@@ -28,12 +24,21 @@
        (lambda ()
          (process-connection listener connection))
        :initial-bindings `((*standard-output* . ,*standard-output*)
-                           (*error-output* . ,*error-output*))))))
+                           (*error-output* . ,*error-output*)))
+      connection)))
 
 (defun process-connection (listener connection)
   (with-slots (input-stream output-stream) connection
-    (when-let ((request (read-request input-stream)))
-      (handle-request listener connection request))))
+    (tagbody :start
+       (when-let ((request (read-request input-stream)))
+         (let ((response (handle-request listener connection request)))
+           (if (or (search "close" (header-field-value
+                                    (find-header-field request "Connection")))
+                   (search "close" (header-field-value
+                                    (find-header-field response "Connection")))
+                   (not (open-stream-p input-stream)))
+               (close output-stream)
+               (go :start)))))))
 
 (defun handle-request (listener connection request)
   (let ((server (listener-server listener)))
@@ -45,7 +50,8 @@
         (let ((response (invoke-handler handler request)))
           (when (or (null (response-status response))
                     (not (= (status-code (response-status response)) 101)))
-            (handle-response listener connection response)))))))
+            (handle-response listener connection response))
+          response)))))
 
 (defun handle-response (listener connection response)
   (let ((stream (connection-output-stream connection)))

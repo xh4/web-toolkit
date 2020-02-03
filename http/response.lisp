@@ -88,8 +88,8 @@
          (add-header-field header (header-field "Content-Length" file-length)))))
     (write-header stream header)))
 
-(defun read-response-body (stream)
-  (alexandria::read-stream-content-into-byte-vector stream))
+(defun read-response-body (stream response)
+  )
 
 (defun write-response-body (stream response)
   (let ((body (response-body response)))

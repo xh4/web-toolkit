@@ -60,13 +60,17 @@
     (setf (listener-socket listener) socket)
     (let ((process (bt:make-thread
                     (lambda ()
-                      (loop for new-socket = (usocket:socket-accept
-                                              socket
-                                              :element-type '(unsigned-byte 8))
-                           do (make-and-process-connection listener new-socket)))
+                      (listener-loop listener))
                     :initial-bindings `((*standard-output* . ,*standard-output*)
                                         (*error-output* . ,*error-output*)))))
       (setf (listener-process listener) process))))
+
+(defun listener-loop (listener)
+  (let ((socket (listener-socket listener)))
+    (loop for new-socket = (usocket:socket-accept
+                            socket
+                            :element-type '(unsigned-byte 8))
+       do (make-and-process-connection listener new-socket))))
 
 (defgeneric stop-listener (listener &key))
 
