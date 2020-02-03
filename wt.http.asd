@@ -7,6 +7,7 @@
   :depends-on (:wt.uri
                :alexandria
                :closer-mop
+               :babel
                :cl-change-case
                :split-sequence
                :cl-fad

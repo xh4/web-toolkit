@@ -85,7 +85,7 @@
   (check-type status-code (or string integer))
   (check-type reason-phase string)
   (let ((line (format nil "~A ~A ~A" http-version status-code reason-phase)))
-    (write-string line stream)
+    (write-sequence (babel:string-to-octets line) stream)
     (write-sequence +crlf+ stream)
     (+ (length line) (length +crlf+))))
 
@@ -108,7 +108,7 @@
 (defun write-response-body (stream response)
   (let ((body (response-body response)))
     (typecase body
-      (string (length (write-string body stream)))
+      (string (length (write-sequence (babel:string-to-octets body) stream)))
       (vector (length (write-sequence body stream))))))
 
 (defun read-response (stream)

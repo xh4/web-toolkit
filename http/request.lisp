@@ -83,7 +83,7 @@
   (when (symbolp method)
     (setf method (symbol-name method)))
   (let ((line (format nil "~A ~A ~A" method request-uri http-version)))
-    (write-string line stream)
+    (write-sequence (babel:string-to-octets line) stream)
     (write-sequence +crlf+ stream)
     (+ (length line) (length +crlf+))))
 
@@ -103,8 +103,11 @@
         (let ((body (make-array 1 :element-type '(unsigned-byte 8))))
           (read-sequence body stream))))))
 
-(defun write-request-body (request)
-  )
+(defun write-request-body (stream request)
+  (let ((body (request-body request)))
+    (typecase body
+      (string (length (write-sequence (babel:string-to-octets body) stream)))
+      (vector (length (write-sequence body stream))))))
 
 (defun read-request (stream)
   (let ((request-line (read-request-line stream)))

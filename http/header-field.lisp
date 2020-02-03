@@ -75,6 +75,6 @@
   (:method (stream (header-field header-field))
     (with-slots (name value) header-field
       (let ((line (format nil "~A: ~A" name value)))
-        (write-string line stream)
+        (write-sequence (babel:string-to-octets line) stream)
         (write-sequence +crlf+ stream)
         (+ (length line) (length +crlf+))))))
