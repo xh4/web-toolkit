@@ -37,7 +37,7 @@
 (http:define-server test-server
     :handler (http:router
               (:get "/" test-endpoint))
-    :listeners (list
+    :listener (list
                 (http:listener :port 4000)))
 
 (defmacro with-test-server (port &body body)
