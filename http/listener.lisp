@@ -52,23 +52,29 @@
 (defmethod start-listener ((listener listener) &key)
   (unless (listener-server listener)
     (error "Missing server in listener"))
-  (let ((process (comm:start-up-server
-                  :function (lambda (socket)
-                              (make-and-process-connection listener socket))
-                  :local-port (listener-port listener)
-                  :local-address (listener-address listener)
-                  :backlog (listener-backlog listener)
-                  :announce (lambda (socket condition)
-                              (setf (listener-socket listener) socket)))))
-    (setf (listener-process listener) process)))
+  (let ((socket (usocket:socket-listen
+                 (listener-address listener)
+                 (listener-port listener)
+                 :backlog (listener-backlog listener)
+                 :element-type '(unsigned-byte 8))))
+    (setf (listener-socket listener) socket)
+    (let ((process (bt:make-thread
+                    (lambda ()
+                      (loop for new-socket = (usocket:socket-accept
+                                              socket
+                                              :element-type '(unsigned-byte 8))
+                           do (make-and-process-connection listener new-socket)))
+                    :initial-bindings `((*standard-output* . ,*standard-output*)
+                                        (*error-output* . ,*error-output*)))))
+      (setf (listener-process listener) process))))
 
 (defgeneric stop-listener (listener &key))
 
 (defmethod stop-listener ((listener listener) &key)
   (when-let ((socket (listener-socket listener)))
-    (comm::close-socket socket))
+    (usocket:socket-close socket))
   (when-let ((process (listener-process listener)))
-    (mp:process-terminate process)))
+    (bt:destroy-thread process)))
 
 (defgeneric listener-started-p (listener))
 

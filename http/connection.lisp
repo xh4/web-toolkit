@@ -43,6 +43,9 @@
 (defun handle-request (listener connection request)
   (let ((server (listener-server listener)))
     (let ((handler (server-handler server)))
+      (unless handler
+        (setf handler default-handler))
+      (format t "Handler: ~A~%" handler)
       (handler-bind ((error (lambda (c)
                               (trivial-backtrace:print-backtrace c))))
         (let ((response (invoke-handler handler request)))

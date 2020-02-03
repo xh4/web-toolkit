@@ -1,5 +1,10 @@
 (in-package :http)
 
+(defclass handler-class (standard-class) ())
+
+(defmethod validate-superclass ((class handler-class) (super-class standard-class))
+  t)
+
 (define-condition condition/next-handler () ())
 
 (defmacro next-handler ()
@@ -18,29 +23,32 @@
   `(signal 'condition/abort-handler))
 
 ;; Mapping from handler names (class names of handlers) to handler instances
-(defvar *static-handlers* (make-hash-table))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *static-handlers* (make-hash-table)))
 
-(defclass handler () ())
+(defclass handler () ()
+  (:metaclass handler-class))
 
 (defmethod handle ((handler handler) (request request))
   (call-next-handler))
 
-(defparameter handler (make-instance 'handler))
+(defvar handler (make-instance 'handler))
 
 (setf (gethash 'handler *static-handlers*) handler)
 
-(defmacro define-handler (handler-name super-handlers slots &rest options)
-  (unless (find 'handler super-handlers)
-    (appendf super-handlers '(handler)))
+(defmacro define-handler (handler-name superclasses slots &rest options)
+  (unless (find 'handler superclasses)
+    (appendf superclasses '(handler)))
   (let ((instanize (if-let ((option (find :instanize options :key 'first)))
                      (second option)
                      t)))
     (let ((options (remove-if (lambda (options)
                                 (member (first options) '(:instanize)))
                               options)))
+      (rewrite-class-option options :metaclass handler-class)
       `(progn
          (eval-when (:compile-toplevel :load-toplevel :execute)
-           (defclass ,handler-name ,super-handlers
+           (defclass ,handler-name ,superclasses
              ,slots
              ,@options)
            ,@(when instanize
@@ -48,7 +56,7 @@
                    (make-instance ',handler-name))
                  (setf (gethash ',handler-name *static-handlers*) ,handler-name))))))))
 
-(defgeneric handle (handler thing))
+(defgeneric handle (handler object))
 
 (defun compute-handler-class-precedence-list (handler)
   (let ((handler-class
@@ -138,3 +146,12 @@
 
         (%call-next-handler)))
     *response*))
+
+(define-handler default-handler ()
+  ())
+
+(defmethod handle ((handler default-handler) request)
+  (reply
+   (status 200)
+   (header "Content-Type" "text/plain")
+   "Lisp Web Toolkit"))

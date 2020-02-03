@@ -5,7 +5,6 @@
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
   :depends-on (:wt.uri
-               :hunchentoot
                :alexandria
                :closer-mop
                :cl-change-case

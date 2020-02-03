@@ -89,6 +89,19 @@
     (write-sequence +crlf+ stream)
     (+ (length line) (length +crlf+))))
 
+(defun write-response-header (stream response)
+  (let ((header (response-header response))
+        (body (response-body response)))
+    (typecase body
+      ((or vector string)
+       (add-header-field header (header-field "Content-Length" (length body))))
+      (pathname
+       (when-let ((file-length (ignore-errors
+                                 (with-open-file (stream body)
+                                   (file-length stream)))))
+         (add-header-field header (header-field "Content-Length" file-length)))))
+    (write-header stream header)))
+
 (defun read-response-body (stream)
   (alexandria::read-stream-content-into-byte-vector stream))
 
@@ -114,7 +127,5 @@
      (write-status-line stream "HTTP/1.1"
                         (status-code (response-status response))
                         (status-reason-phrase (response-status response)))
-     (write-header stream (response-header response))
+     (write-response-header stream response)
      (write-response-body stream response))))
-
-(trace write-response write-response-body write-header write-status-line)
