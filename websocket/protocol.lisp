@@ -67,7 +67,7 @@
   (handler-bind ((error (lambda (c)
                           (trivial-backtrace:print-backtrace c))))
     (let ((response (handle-handshake request)))
-      (let* ((stream (http::request-stream request))
+      (let* ((stream (request-body request))
              (connection (make-instance 'connection
                                         :state :open
                                         :handshake-request request

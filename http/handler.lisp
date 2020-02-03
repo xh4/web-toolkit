@@ -71,9 +71,6 @@
          (subclassp handler-class root-handler-class))
        handler-classes))))
 
-;; (compute-handler-class-precedence-list 'your-handler)
-;; (compute-handler-class-precedence-list your-handler)
-
 (defun compute-handler-precedence-list (handler)
   (let ((handler-classes (compute-handler-class-precedence-list handler)))
     (let ((handlers (loop for handler-class in handler-classes
@@ -86,8 +83,6 @@
       (typecase handler
         (handler (cons handler (rest handlers)))
         (t handlers)))))
-
-;; (compute-handler-precedence-list your-handler)
 
 (defun invoke-handler (handler request)
   (let ((next-handlers (reverse (compute-handler-precedence-list handler)))
