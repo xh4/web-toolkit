@@ -44,7 +44,7 @@
 (defmacro with-test-server (port &body body)
   `(unwind-protect
         (progn
-          (let ((listener (first (http::server-listeners test-server))))
+          (let ((listener (first (ensure-list (http::server-listener test-server)))))
             (setf (http::listener-port listener) ,port))
           (http:start-server test-server)
           ,@body)
