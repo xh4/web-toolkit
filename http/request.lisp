@@ -61,7 +61,10 @@
           line))))
 
 (defun parse-request-line (line)
-  (cl-ppcre:split "\\s+" line :limit 3))
+  (let ((result (cl-ppcre:split "\\s+" line :limit 3)))
+    (if (= (length result) 3)
+        result
+        nil)))
 
 (defun write-request-line (stream method request-uri http-version)
   (check-type method (or string symbol))

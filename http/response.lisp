@@ -60,9 +60,11 @@
           line))))
 
 (defun parse-status-line (line)
-  (destructuring-bind (http-version status-code reason-phase)
-      (cl-ppcre:split "\\s+" line :limit 3)
-    (list http-version (parse-integer status-code) reason-phase)))
+  (let ((result (cl-ppcre:split "\\s+" line :limit 3)))
+    (if (= (length result) 3)
+        (destructuring-bind (http-version status-code reason-phase) result
+          (list http-version (parse-integer status-code) reason-phase))
+        nil)))
 
 (defun write-status-line (stream http-version status-code reason-phase)
   (check-type http-version string)
