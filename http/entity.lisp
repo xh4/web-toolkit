@@ -73,4 +73,5 @@
    (let ((body (response-body entity)))
      (typecase body
        (string (length (write-sequence (babel:string-to-octets body) stream)))
-       (vector (length (write-sequence body stream)))))))
+       (vector (length (write-sequence body stream)))
+       (t 0)))))
