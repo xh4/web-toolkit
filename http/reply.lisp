@@ -1,38 +1,46 @@
 (in-package :http)
 
-(defun add-header-field (header header-field)
-  (if-let ((header-field-0 (find-header-field header (header-field-name header-field))))
-    (setf (header-field-value header-field-0)
-          (header-field-value header-field))
-    (appendf (header-fields header) (list header-field))))
-
 (defmacro reply (&rest forms)
-  (with-gensyms (object header-field)
-    `(let ((*response* (or *response* (make-instance 'response))))
+  (with-gensyms (object)
+    `(progn
+       (setf *response* (or *response* (make-instance 'response)))
        ,@(loop for form in forms
             collect
               `(let ((,object ,form))
-                 (typecase ,object
-                   (status (setf (response-status *response*) ,object))
-                   (header-field (add-header-field (response-header *response*)
-                                                   ,object))
-                   (header (loop for ,header-field in (header-fields ,object)
-                              do (add-header-field (response-header *response*)
-                                                   ,header-field)))
-                   (t (setf (response-body *response*) ,object)))))
+                 (reply-object ,object)))
        *response*)))
 
-(defgeneric reply-object (object response))
+(defgeneric reply-object (object))
 
-(defmethod reply-object ((status status) (response response))
-  (setf (response-status response) status))
+(defmethod reply-object ((status status))
+  (setf (response-status *response*) status))
 
-(defmethod reply-object ((header-field header-field) (response response))
-  (add-header-field (response-header response) header-field))
+(defmethod reply-object ((header-field header-field))
+  (add-header-field (entity-header *response*) header-field))
 
-(defmethod reply-object ((header header) (response response))
+(defmethod reply-object ((header header))
   (loop for header-field in (header-fields header)
-     do (add-header-field (response-header response) header-field)))
+     do (add-header-field (response-header *response*) header-field)))
 
-(defmethod reply-object (object (response response))
-  (setf (response-body response) object))
+(defmethod reply-object ((response response))
+  (setf *response* response))
+
+(defmethod reply-object ((entity entity))
+  (setf *response* entity))
+
+(defmethod reply-object ((text string))
+  (setf *response* (make-instance 'text-entity
+                                  :status (response-status *response*)
+                                  :header (response-header *response*)
+                                  :body text)))
+
+(defmethod reply-object ((data vector))
+  (setf (response-body *response*) data))
+
+(defmethod reply-object ((pathname pathname))
+  (setf *response* (make-instance 'file-entity
+                                  :status (response-status *response*)
+                                  :header (response-header *response*)
+                                  :body pathname)))
+
+(defmethod reply-object ((nothing null)))

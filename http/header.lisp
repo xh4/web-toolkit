@@ -43,6 +43,12 @@
                   (header-field-name-match-p header-field
                                              name)))))
 
+(defun add-header-field (header header-field)
+  (if-let ((header-field-0 (find-header-field header (header-field-name header-field))))
+    (setf (header-field-value header-field-0)
+          (header-field-value header-field))
+    (appendf (header-fields header) (list header-field))))
+
 (defun read-header (stream)
   (loop for header-field = (read-header-field stream)
      while header-field

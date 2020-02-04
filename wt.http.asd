@@ -30,6 +30,8 @@
                                      (:file "version")
                                      (:file "response")
                                      (:file "entity")
+                                     (:file "entity-text")
+                                     (:file "entity-file")
                                      (:file "reply")
                                      (:file "redirect")
                                      (:file "handler")

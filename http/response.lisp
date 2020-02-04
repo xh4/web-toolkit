@@ -91,11 +91,12 @@
 (defun read-response-body (stream response)
   )
 
-(defun write-response-body (stream response)
-  (let ((body (response-body response)))
-    (typecase body
-      (string (length (write-sequence (babel:string-to-octets body) stream)))
-      (vector (length (write-sequence body stream))))))
+(defgeneric write-response-body (stream response)
+  (:method (stream (response response))
+    (let ((body (response-body response)))
+      (typecase body
+        (string (length (write-sequence (babel:string-to-octets body) stream)))
+        (vector (length (write-sequence body stream)))))))
 
 (defun read-response (stream)
   (let ((status-line (read-status-line stream)))
