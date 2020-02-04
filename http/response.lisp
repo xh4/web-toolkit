@@ -94,14 +94,15 @@
     (when content-length (setf content-length (parse-integer content-length)))
     (when (and content-length (plusp content-length))
       (alexandria::read-stream-content-into-byte-vector
-       stream 'alexandria.0.dev::%length content-length))))
+       stream 'alexandria::%length content-length))))
 
 (defgeneric write-response-body (stream response)
   (:method (stream (response response))
     (let ((body (response-body response)))
       (typecase body
         (string (length (write-sequence (babel:string-to-octets body) stream)))
-        (vector (length (write-sequence body stream)))))))
+        (vector (length (write-sequence body stream)))
+        (t 0)))))
 
 (defun read-response (stream)
   (let ((status-line (read-status-line stream)))
