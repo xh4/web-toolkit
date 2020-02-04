@@ -15,43 +15,48 @@
     :accessor connection-output-stream)))
 
 (defun make-and-process-connection (listener socket)
+  (let ((connection (make-connection socket)))
+    (bt:make-thread
+     (lambda ()
+       (process-connection listener connection))
+     :initial-bindings `((*standard-output* . ,*standard-output*)
+                         (*error-output* . ,*error-output*)))
+    connection))
+
+(defun make-connection (socket)
   (let ((stream (usocket:socket-stream socket)))
-    (let ((connection (make-instance 'connection
-                                     :socket socket
-                                     :input-stream stream
-                                     :output-stream stream)))
-      (bt:make-thread
-       (lambda ()
-         (process-connection listener connection))
-       :initial-bindings `((*standard-output* . ,*standard-output*)
-                           (*error-output* . ,*error-output*)))
-      connection)))
+    (make-instance 'connection
+                   :socket socket
+                   :input-stream stream
+                   :output-stream stream)))
 
 (defun process-connection (listener connection)
   (with-slots (input-stream output-stream) connection
     (tagbody :start
-       (when-let ((request (read-request input-stream)))
+       (if-let ((request (read-request input-stream)))
          (let ((response (handle-request listener connection request)))
+           (handle-response listener connection response)
            (if (or (search "close" (header-field-value
                                     (find-header-field request "Connection")))
                    (search "close" (header-field-value
                                     (find-header-field response "Connection")))
                    (not (open-stream-p input-stream)))
-               (close output-stream)
-               (go :start)))))))
+               (go :end)
+               (go :start))))
+     :end (close-connection connection))))
+
+(defun close-connection (connection)
+  (with-slots (socket input-stream output-stream) connection
+    (close input-stream)
+    (close output-stream)
+    (usocket:socket-close socket)))
 
 (defun handle-request (listener connection request)
   (let ((server (listener-server listener)))
     (let ((handler (server-handler server)))
       (unless handler
         (setf handler default-handler))
-      (handler-bind ((error (lambda (c)
-                              (trivial-backtrace:print-backtrace c))))
-        (let ((response (invoke-handler handler request)))
-          (when (or (null (response-status response))
-                    (not (= (status-code (response-status response)) 101)))
-            (handle-response listener connection response))
-          response)))))
+      (invoke-handler handler request))))
 
 (defun handle-response (listener connection response)
   (let ((stream (connection-output-stream connection)))
