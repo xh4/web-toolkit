@@ -51,12 +51,6 @@
 
 (defparameter *methods* '(:get :post :put :delete :head))
 
-(defvar *request-stream-mapping-table*
-  (trivial-garbage:make-weak-hash-table :weakness :key))
-
-(defun request-stream (request)
-  (gethash request *request-stream-mapping-table*))
-
 (defun read-request-line (stream &key (parse t))
   (let ((line (handler-case
                   (read-line stream)
@@ -65,9 +59,6 @@
       (if parse
           (parse-request-line line)
           line))))
-
-(defun printable-ascii-char-p (char)
-  (<= 32 (char-code char) 126))
 
 (defun parse-request-line (line)
   (unless (every #'printable-ascii-char-p line)
@@ -84,6 +75,12 @@
     (write-sequence (babel:string-to-octets line) stream)
     (write-sequence +crlf+ stream)
     (+ (length line) (length +crlf+))))
+
+(defun read-request-header (stream)
+  (read-header stream))
+
+(defun write-request-header (stream header)
+  (write-header stream header))
 
 (defun write-request-body (stream body)
   (write-sequence body stream))
@@ -130,4 +127,4 @@
           (setf request-uri (concatenate 'string request-uri "?" query)))
         (write-request-line stream method request-uri "HTTP/1.1")
         (write-header stream header)
-        (write-request-body stream body)))))
+        (write-request-body stream request)))))
