@@ -6,7 +6,7 @@
 (defmethod initialize-instance :after ((entity file-entity) &key)
   (check-type (entity-body entity) pathname))
 
-(defmethod content-length ((entity text-entity))
+(defmethod content-length ((entity file-entity))
   (let ((pathname (entity-body entity)))
     (handler-case
         (with-open-file (stream pathname)
@@ -15,7 +15,7 @@
         (declare (ignore e))
         0))))
 
-(defmethod content-type ((entity text-entity))
+(defmethod content-type ((entity file-entity))
   (let ((pathname (entity-body entity)))
     (or (mime-type pathname)
         "application/octet-stream")))
