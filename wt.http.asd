@@ -17,7 +17,7 @@
   :components ((:module "http"
                         :serial t
                         :components ((:file "package")
-                                     (:file "util")
+                                     (:file "utility")
                                      (:file "header-field")
                                      (:file "header-fields")
                                      (:file "header")
@@ -45,13 +45,18 @@
 
 (defsystem wt.http/test
   :depends-on (:wt.http
+               :babel-streams
                :fiveam)
   :serial t
   :components ((:module "test"
                         :components ((:module "http"
                                               :components ((:file "package")
+                                                           (:file "helper")
+                                                           (:file "utility")
                                                            (:file "status")
                                                            (:file "header")
+                                                           (:file "request")
+                                                           (:file "response")
                                                            (:file "redirect")
                                                            (:file "static"))))))
   :perform (test-op (o c)
