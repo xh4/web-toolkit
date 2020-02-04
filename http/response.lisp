@@ -88,8 +88,13 @@
          (add-header-field header (header-field "Content-Length" file-length)))))
     (write-header stream header)))
 
-(defun read-response-body (stream response)
-  )
+(defun read-response-body (stream header)
+  (let ((content-length (header-field-value
+                         (find-header-field header "Content-Length"))))
+    (when content-length (setf content-length (parse-integer content-length)))
+    (when (and content-length (plusp content-length))
+      (alexandria::read-stream-content-into-byte-vector
+       stream 'alexandria.0.dev::%length content-length))))
 
 (defgeneric write-response-body (stream response)
   (:method (stream (response response))
@@ -101,7 +106,7 @@
 (defun read-response (stream)
   (let ((status-line (read-status-line stream)))
     (let ((header (read-header stream)))
-      (let ((body (read-response-body stream)))
+      (let ((body (read-response-body stream header)))
         (let ((status-code (second status-line)))
           (make-instance 'response
                          :status status-code
