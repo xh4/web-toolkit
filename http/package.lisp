@@ -51,6 +51,7 @@
                 :uri
                 :uri-scheme
                 :uri-host
+                :uri-port
                 :uri-path
                 :uri-query
                 :uri-string)

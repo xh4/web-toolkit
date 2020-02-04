@@ -11,10 +11,8 @@
                :cl-change-case
                :split-sequence
                :cl-fad
-               :trivial-garbage
                :trivial-backtrace
-               :usocket
-               :drakma)
+               :usocket)
   :serial t
   :components ((:module "http"
                         :serial t

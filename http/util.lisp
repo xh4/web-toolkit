@@ -31,6 +31,9 @@ HANDLE-IF-MODIFIED-SINCE."
             minute
             second)))
 
+(defun printable-ascii-char-p (char)
+  (<= 32 (char-code char) 126))
+
 (defun read-char (stream &optional (eof-error-p t) eof-value)
   (let ((char-code (read-byte stream eof-error-p eof-value)))
     (and char-code
