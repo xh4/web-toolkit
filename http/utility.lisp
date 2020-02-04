@@ -31,7 +31,7 @@ HANDLE-IF-MODIFIED-SINCE."
             minute
             second)))
 
-(defun printable-ascii-char-p (char)
+(defun line-char-p (char)
   (<= 32 (char-code char) 126))
 
 (defun read-char (stream &optional (eof-error-p t) eof-value)
@@ -41,19 +41,21 @@ HANDLE-IF-MODIFIED-SINCE."
 
 (defun read-line (stream)
   (with-output-to-string (line)
-    (loop for char-seen-p = nil then t
+    (loop with ever-write-p = nil
        for char = (read-char stream nil)
+       for line-char-p = (and char (line-char-p char))
        for is-cr-p = (and char (char= char #\Return))
        until (or (null char)
+                 (not line-char-p)
                  is-cr-p)
-       do (write-char char line)
-       finally (cond ((and (not char-seen-p)
-                           (null char))
+       when (and char line-char-p)
+       do (write-char char line) and do (setf ever-write-p t)
+       finally (cond ((or (not ever-write-p)
+                          (not is-cr-p))
                       (return-from read-line nil))
                      (is-cr-p
                       (unless (eql (read-char stream) #\Linefeed)
-                        ;; raise error here?
-                        ))))))
+                        (return-from read-line nil)))))))
 
 (defmacro replace-class-option (name key &rest values)
   (with-gensyms (pos/s)

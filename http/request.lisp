@@ -61,8 +61,6 @@
           line))))
 
 (defun parse-request-line (line)
-  (unless (every #'printable-ascii-char-p line)
-    (error "Non-ASCII character in request line"))
   (cl-ppcre:split "\\s+" line :limit 3))
 
 (defun write-request-line (stream method request-uri http-version)

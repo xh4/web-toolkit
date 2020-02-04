@@ -60,11 +60,10 @@
           line))))
 
 (defun parse-status-line (line)
-  (unless (every #'printable-ascii-char-p line)
-    (error "Non-ASCII character in status line"))
   (destructuring-bind (http-version status-code reason-phase)
       (cl-ppcre:split "\\s+" line :limit 3)
-    (list http-version (parse-integer status-code) reason-phase)))
+    (list http-version (parse-integer status-code) reason-phase))
+  )
 
 (defun write-status-line (stream http-version status-code reason-phase)
   (check-type http-version string)
