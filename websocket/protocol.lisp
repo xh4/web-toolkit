@@ -81,7 +81,8 @@
               (when (typep result 'session)
                 (setf session result)))
 
-            (process-connection endpoint session connection)))))))
+            (process-connection endpoint session connection))))
+      response)))
 
 (defun process-connection (endpoint session connection)
   (block nil

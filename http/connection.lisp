@@ -35,14 +35,18 @@
     (tagbody :start
        (if-let ((request (read-request input-stream)))
          (let ((response (handle-request listener connection request)))
-           (handle-response listener connection response)
-           (if (or (search "close" (header-field-value
-                                    (find-header-field request "Connection")))
-                   (search "close" (header-field-value
-                                    (find-header-field response "Connection")))
-                   (not (open-stream-p input-stream)))
+           (if (= 101 (status-code (response-status response)))
                (go :end)
-               (go :start))))
+               (progn
+                 (handle-response listener connection response)
+                 (if (or (search "close" (header-field-value
+                                          (find-header-field request "Connection")))
+                         (search "close" (header-field-value
+                                          (find-header-field response "Connection")))
+                         (= 101 (status-code (response-status response)))
+                         (not (open-stream-p input-stream)))
+                     (go :end)
+                     (go :start))))))
      :end (close-connection connection))))
 
 (defun close-connection (connection)
