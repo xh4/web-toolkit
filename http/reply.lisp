@@ -48,3 +48,21 @@
                                   :body pathname)))
 
 (defmethod reply-object ((nothing null)))
+
+(defmethod reply-object ((object json:object))
+  (setf *response* (make-instance 'json-entity
+                                  :status (response-status *response*)
+                                  :header (response-header *response*)
+                                  :body object)))
+
+(defmethod reply-object ((document html:document))
+  (setf *response* (make-instance 'html-entity
+                                  :status (response-status *response*)
+                                  :header (response-header *response*)
+                                  :body document)))
+
+(defmethod reply-object ((element html:element))
+  (setf *response* (make-instance 'html-entity
+                                  :status (response-status *response*)
+                                  :header (response-header *response*)
+                                  :body element)))

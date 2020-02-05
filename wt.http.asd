@@ -30,6 +30,8 @@
                                      (:file "entity")
                                      (:file "entity-text")
                                      (:file "entity-file")
+                                     (:file "entity-html")
+                                     (:file "entity-json")
                                      (:file "reply")
                                      (:file "redirect")
                                      (:file "handler")
