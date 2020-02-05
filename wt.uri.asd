@@ -33,6 +33,7 @@
   :serial t
   :components ((:module "test"
                         :components ((:module "uri"
+                                              :serial t
                                               :components ((:file "package")
                                                            (:file "decode")
                                                            (:file "encode")

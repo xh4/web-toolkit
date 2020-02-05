@@ -21,6 +21,7 @@
   :serial t
   :components ((:module "test"
                         :components ((:module "html"
+                                              :serial t
                                               :components ((:file "package")
                                                            (:file "text")
                                                            (:file "element")

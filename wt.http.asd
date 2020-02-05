@@ -50,6 +50,7 @@
   :serial t
   :components ((:module "test"
                         :components ((:module "http"
+                                              :serial t
                                               :components ((:file "package")
                                                            (:file "helper")
                                                            (:file "utility")

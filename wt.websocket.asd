@@ -38,6 +38,7 @@
   :serial t
   :components ((:module "test"
                         :components ((:module "websocket"
+                                              :serial t
                                               :components ((:file "package")
                                                            (:file "autobahn")
                                                            (:file "websocket"))))))

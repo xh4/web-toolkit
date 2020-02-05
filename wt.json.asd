@@ -23,6 +23,7 @@
   :serial t
   :components ((:module "test"
                         :components ((:module "json"
+                                              :serial t
                                               :components ((:file "package")
                                                            (:file "decode")
                                                            (:file "encode")

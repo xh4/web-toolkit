@@ -18,6 +18,7 @@
                :wt.uri/test
                :wt.http/test
                :wt.websocket/test)
+  :serial t
   :perform (test-op (o s)
                     (uiop:eval-input "(setf fiveam:*on-error* :debug)")
                     (uiop:eval-input "(setf fiveam:*on-failure* :debug)")
