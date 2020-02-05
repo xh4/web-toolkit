@@ -5,10 +5,10 @@
     :initarg :message-handler
     :initform nil
     :accessor session-message-handler)
-   (message-handler-code
-    :initarg :message-handler-code
+   (message-handler-lambda-list
+    :initarg :message-handler-lambda-list
     :initform nil
-    :accessor session-message-handler-code)))
+    :accessor session-message-handler-lambda-list)))
 
 (defmethod validate-superclass ((class session-class) (super-class standard-class))
   t)
@@ -32,10 +32,11 @@
                                       &key on-message
                                         &allow-other-keys)
   (declare (ignore slot-names))
-  (when on-message
-    (check-message-handler-lambda-list (car (cdadar on-message)))
-    (setf (slot-value class 'message-handler) (eval (car on-message))
-          (slot-value class 'message-handler-code) (cdadar on-message))))
+  (with-slots (message-handler message-handler-lambda-list) class
+    (when on-message
+      (setf message-handler (eval (car on-message))
+            message-handler-lambda-list (function-lambda-list message-handler))
+      (check-message-handler-lambda-list message-handler-lambda-list))))
 
 (defgeneric close-session  (session &optional reason)
   (:method ((session session) &optional reason)
@@ -71,11 +72,8 @@
 (defmacro define-session (session-name superclasses slots &rest options)
   (let* ((superclasses (if (find 'session superclasses)
                            superclasses
-                           (append superclasses (list 'session))))
-         (message-handler-form (second (find :on-message options :key 'first))))
+                           (append superclasses (list 'session)))))
     (rewrite-class-option options :metaclass session-class)
-    (replace-class-option options :on-message
-                          `(make-handler ,message-handler-form))
     `(progn
        (eval-when (:compile-toplevel :load-toplevel :execute)
          (defclass ,session-name ,superclasses

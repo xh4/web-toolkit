@@ -18,7 +18,7 @@
   :components ((:module "websocket"
                         :serial t
                         :components ((:file "package")
-                                     (:file "util")
+                                     (:file "utility")
                                      (:file "handler")
                                      (:file "session")
                                      (:file "endpoint")
