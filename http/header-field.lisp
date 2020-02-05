@@ -65,13 +65,13 @@
           line))))
 
 (defun parse-header-field (line)
-  (let ((list (split-sequence #\: line)))
-    (if (< (length list) 2)
-        (error "Malformed header field")
+  (let ((list (cl-ppcre:split ":" line :limit 2)))
+    (if (= 2 (length list))
         (let ((name (first list))
-              (value (format nil "~{~A~^:~}" (rest list))))
+              (value (second list)))
           (setf value (trim-whitespace value))
-          (make-instance 'header-field :name name :value value)))))
+          (make-instance 'header-field :name name :value value))
+        (error "Malformed header field"))))
 
 (defgeneric write-header-field (stream header-field)
   (:method (stream (header-field header-field))
