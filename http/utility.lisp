@@ -41,8 +41,7 @@ HANDLE-IF-MODIFIED-SINCE."
 
 (defun read-line (stream)
   (with-output-to-string (line)
-    (loop with ever-write-p = nil
-       for char = (read-char stream nil)
+    (loop for char = (read-char stream nil)
        for line-char-p = (and char (line-char-p char))
        for is-cr-p = (and char (char= char #\Return))
        until (or (null char)
@@ -52,14 +51,10 @@ HANDLE-IF-MODIFIED-SINCE."
        do (write-char char line) and do (setf ever-write-p t)
        finally (if is-cr-p
                    (if (eql (read-char stream) #\Linefeed)
-                       (if ever-write-p
-                           t
-                           (return-from read-line nil))
+                       t
                        (return-from read-line nil))
                    (if (null char)
-                       (if ever-write-p
-                           t
-                           (return-from read-line nil))
+                       t
                        (return-from read-line nil))))))
 
 (defmacro replace-class-option (name key &rest values)
@@ -74,3 +69,9 @@ HANDLE-IF-MODIFIED-SINCE."
       `(if-let ((,pos/s (position ,key ,name :key 'first)))
          (setf (nth ,pos/s ,name) ',option)
          (appendf ,name (list ',option))))))
+
+(defun trim-whitespace (string)
+  (string-trim
+   '(#\Space #\Newline #\Backspace #\Tab
+     #\Linefeed #\Page #\Return #\Rubout)
+   string))
