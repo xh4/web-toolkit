@@ -4,22 +4,23 @@
 
 (defmacro with-read-header-field ((var line) &body body)
   `(with-input-from-lines (stream '(,line))
-    (let ((,var (http::read-header-field stream)))
-      ,@body)))
+     (let ((,var (http::read-header-field stream)))
+       (is-true (stream-empty-p stream))
+       ,@body)))
 
 (test read-header-field
   (with-read-header-field (hf "foo: bar")
-    (is (typep hf 'header-field))
+    (is-true (typep hf 'header-field))
     (is (equal "foo" (header-field-name hf)))
     (is (equal "bar" (header-field-value hf))))
 
   (with-read-header-field (hf "foo:bar")
-    (is (typep hf 'header-field))
+    (is-true (typep hf 'header-field))
     (is (equal "foo" (header-field-name hf)))
     (is (equal "bar" (header-field-value hf))))
 
   (with-read-header-field (hf "foo:   bar   ")
-    (is (typep hf 'header-field))
+    (is-true (typep hf 'header-field))
     (is (equal "foo" (header-field-name hf)))
     (is (equal "bar" (header-field-value hf)))))
 

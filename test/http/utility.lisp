@@ -11,6 +11,10 @@
     (is (equal "foo" (http::read-line stream)))
     (is-true (stream-length-p 5 stream)))
 
+  (with-input-from-lines (stream '("foo: bar"))
+    (is (equal "foo: bar" (http::read-line stream)))
+    (is-true (stream-empty-p stream)))
+
   (with-input-from-lines (stream '(""))
     (is (equal "" (http::read-line stream))))
 

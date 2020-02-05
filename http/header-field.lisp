@@ -66,10 +66,11 @@
 
 (defun parse-header-field (line)
   (let ((list (split-sequence #\: line)))
-    (when (= 2 (length list))
+    (if (= 2 (length list))
       (destructuring-bind (name value) list
         (setf value (trim-whitespace value))
-        (make-instance 'header-field :name name :value value)))))
+        (make-instance 'header-field :name name :value value))
+      (error "Malformed header field"))))
 
 (defgeneric write-header-field (stream header-field)
   (:method (stream (header-field header-field))
