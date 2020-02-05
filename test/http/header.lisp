@@ -18,7 +18,11 @@
 
   (with-read-header (hd '("foo: bar" "" "goo: gle"))
     (is (typep hd 'header))
-    (is (= 1 (length (header-fields hd))))))
+    (is (= 1 (length (header-fields hd)))))
+
+  (with-read-header (hd '("foo: bar" "goo: gle"))
+    (is (typep hd 'header))
+    (is (= 2 (length (header-fields hd))))))
 
 (test header
   (let ((header (header "foo" "bar" "goo" "gle")))
