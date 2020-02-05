@@ -44,7 +44,8 @@
                          (search "close" (header-field-value
                                           (find-header-field response "Connection")))
                          (= 101 (status-code (response-status response)))
-                         (not (open-stream-p input-stream)))
+                         (not (open-stream-p input-stream))
+                         (not (open-stream-p output-stream)))
                      (go :end)
                      (go :start))))))
      :end (close-connection connection))))
