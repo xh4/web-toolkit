@@ -54,6 +54,7 @@
                                                            (:file "helper")
                                                            (:file "utility")
                                                            (:file "status")
+                                                           (:file "header-field")
                                                            (:file "header")
                                                            (:file "request")
                                                            (:file "response")

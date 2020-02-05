@@ -12,10 +12,10 @@
     (is-true (stream-length-p 5 stream)))
 
   (with-input-from-lines (stream '(""))
-    (is (null (http::read-line stream))))
+    (is (equal "" (http::read-line stream))))
 
   (with-input-from-lines (stream '("" "foo"))
-    (is (null (http::read-line stream)))
+    (is (equal "" (http::read-line stream)))
     (is-true (stream-length-p 5 stream)))
 
   (with-input-from-lines (stream '("foo" "bar") :line-break #\Return)
