@@ -50,12 +50,17 @@ HANDLE-IF-MODIFIED-SINCE."
                  is-cr-p)
        when (and char line-char-p)
        do (write-char char line) and do (setf ever-write-p t)
-       finally (cond ((or (not ever-write-p)
-                          (not is-cr-p))
-                      (return-from read-line nil))
-                     (is-cr-p
-                      (unless (eql (read-char stream) #\Linefeed)
-                        (return-from read-line nil)))))))
+       finally (if is-cr-p
+                   (if (eql (read-char stream) #\Linefeed)
+                       (if ever-write-p
+                           t
+                           (return-from read-line nil))
+                       (return-from read-line nil))
+                   (if (null char)
+                       (if ever-write-p
+                           t
+                           (return-from read-line nil))
+                       (return-from read-line nil))))))
 
 (defmacro replace-class-option (name key &rest values)
   (with-gensyms (pos/s)

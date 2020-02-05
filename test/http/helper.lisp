@@ -13,3 +13,10 @@
                          finally (return all-octets))))
      (babel-streams:with-input-from-sequence (,var all-octets)
        ,@body)))
+
+(defun stream-length-p (n stream)
+  (let ((content (alexandria::read-stream-content-into-byte-vector stream)))
+    (= n (length content))))
+
+(defun stream-empty-p (stream)
+  (stream-length-p 0 stream))

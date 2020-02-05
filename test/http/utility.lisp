@@ -4,13 +4,19 @@
 
 (test read-line
   (with-input-from-lines (stream '("foo"))
-    (is (equal "foo" (http::read-line stream))))
+    (is (equal "foo" (http::read-line stream)))
+    (is-true (stream-empty-p stream)))
 
   (with-input-from-lines (stream '("foo" "bar"))
-    (is (equal "foo" (http::read-line stream))))
+    (is (equal "foo" (http::read-line stream)))
+    (is-true (stream-length-p 5 stream)))
 
   (with-input-from-lines (stream '(""))
     (is (null (http::read-line stream))))
+
+  (with-input-from-lines (stream '("" "foo"))
+    (is (null (http::read-line stream)))
+    (is-true (stream-length-p 5 stream)))
 
   (with-input-from-lines (stream '("foo" "bar") :line-break #\Return)
     (is (null (http::read-line stream)) "Wrong line break #\\Return"))
