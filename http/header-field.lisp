@@ -57,7 +57,6 @@
 (defmacro header-field (name value)
   `(make-instance 'header-field :name ,name :value ,value))
 
-
 (defun read-header-field (stream &key (parse t))
   (let ((line (read-line stream)))
     (unless (emptyp line)
@@ -66,9 +65,10 @@
           line))))
 
 (defun parse-header-field (line)
-  (let ((list (cl-ppcre:split ":\\s+" line :limit 2)))
+  (let ((list (split-sequence #\: line)))
     (when (= 2 (length list))
       (destructuring-bind (name value) list
+        (setf value (trim-whitespace value))
         (make-instance 'header-field :name name :value value)))))
 
 (defgeneric write-header-field (stream header-field)
