@@ -13,12 +13,14 @@
                :closer-mop
                #-lispworks
                :usocket
+               #+sbcl
+               :sb-introspect
                :cl-base64)
   :serial t
   :components ((:module "websocket"
                         :serial t
                         :components ((:file "package")
-                                     (:file "util")
+                                     (:file "utility")
                                      (:file "handler")
                                      (:file "session")
                                      (:file "endpoint")
