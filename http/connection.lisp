@@ -33,7 +33,7 @@
 (defun process-connection (listener connection)
   (with-slots (input-stream output-stream) connection
     (tagbody :start
-       (if-let ((request (read-request input-stream)))
+       (when-let ((request (read-request input-stream)))
          (let ((response (handle-request listener connection request)))
            (if (= 101 (status-code (response-status response)))
                (go :end)
