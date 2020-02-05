@@ -27,7 +27,9 @@
   (with-read-header-field (hf "Host: 127.0.0.1:80")
     (is-true (typep hf 'header-field))
     (is (equal "Host" (header-field-name hf)))
-    (is (equal "127.0.0.1:80" (header-field-value hf)))))
+    (is (equal "127.0.0.1:80" (header-field-value hf))))
+
+  (signals error (with-read-header-field (hf "foo"))))
 
 (test header-field
   (let ((hf (header-field "foo" "bar")))
