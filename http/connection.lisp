@@ -52,7 +52,11 @@
                          (not (open-stream-p input-stream))
                          (not (open-stream-p output-stream)))
                      (go :end)
-                     (go :start))))))
+                     (progn
+                       (let ((body (request-body request)))
+                         (typecase body
+                           (stream (stream-read-remain body))))
+                       (go :start)))))))
      :end (close-connection connection))))
 
 (defun close-connection (connection)

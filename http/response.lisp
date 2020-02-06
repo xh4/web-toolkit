@@ -1,6 +1,6 @@
 (in-package :http)
 
-(defclass response ()
+(defclass response (message)
   ((status
     :initarg :status
     :initform nil

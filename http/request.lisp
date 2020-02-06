@@ -1,6 +1,6 @@
 (in-package :http)
 
-(defclass request ()
+(defclass request (message)
   ((method
     :initarg :method
     :initform nil
@@ -58,6 +58,10 @@
 
 (defparameter *methods* '(:get :post :put :delete :head))
 
+(defgeneric request-body-present-p (request)
+  (:method ((request request))
+    (message-body-present-p request)))
+
 (defun read-request-line (stream &key (parse t))
   (let ((line (handler-case
                   (read-line stream)
@@ -104,6 +108,16 @@
         (let ((body (make-array 1 :element-type '(unsigned-byte 8))))
           (read-sequence body stream))))))
 
+(defun read-request-body-into-string ())
+
+(defun read-request-body-into-vector ())
+
+(defun read-request-body-into-temporary-file ())
+
+(defun pipe-request-body-chunks ())
+
+(defun pipe-request-body-chunks-as-vector ())
+
 (defun write-request-body (stream request)
   (let ((body (request-body request)))
     (typecase body
@@ -120,7 +134,17 @@
                 (request-version request) version))
         (let ((request-header (read-header stream)))
           (setf (request-header request) request-header))
-        (setf (request-body request) stream)
+        (if (message-body-present-p request)
+            (if (transfer-encoding-chunked-p request)
+                (setf (request-body request)
+                      (make-instance 'stream :upstream (chunga:make-chunked-stream stream)))
+                (if-let ((content-length (header-field-value
+                                       (find-header-field "Content-Length" request))))
+                  (progn (setf content-length (parse-integer content-length))
+                         (setf (request-body request)
+                               (make-instance 'stream :upstream stream :length content-length)))
+                  (error "Require content length")))
+            (setf (request-body request) stream))
         request))))
 
 (defgeneric write-request (stream request)

@@ -14,17 +14,21 @@
                :split-sequence
                :cl-fad
                :trivial-backtrace
-               :usocket)
+               :trivial-gray-streams
+               :usocket
+               :chunga)
   :serial t
   :components ((:module "http"
                         :serial t
                         :components ((:file "package")
                                      (:file "utility")
+                                     (:file "stream")
                                      (:file "header-field")
                                      (:file "header-fields")
                                      (:file "header")
                                      (:file "mime")
                                      (:file "body")
+                                     (:file "message")
                                      (:file "request")
                                      (:file "status")
                                      (:file "version")
@@ -57,6 +61,7 @@
                                               :serial t
                                               :components ((:file "package")
                                                            (:file "helper")
+                                                           (:file "stream")
                                                            (:file "utility")
                                                            (:file "status")
                                                            (:file "header-field")

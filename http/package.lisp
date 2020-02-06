@@ -3,7 +3,7 @@
 (defpackage :http
   (:nicknames :wt.http)
   (:use :cl :alexandria)
-  (:shadow :get :delete :read-line :read-char)
+  (:shadow :get :delete :read-line :read-char :stream)
   (:export :header
            :header-fields
            :header-field
@@ -64,4 +64,7 @@
   (:import-from :cl-change-case
                 :header-case)
   (:import-from :split-sequence
-                :split-sequence))
+                :split-sequence)
+  (:import-from :trivial-gray-streams
+                :fundamental-binary-input-stream
+                :fundamental-binary-output-stream))

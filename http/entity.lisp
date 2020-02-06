@@ -1,6 +1,6 @@
 (in-package :http)
 
-(defclass entity ()
+(defclass entity (message)
   ((status
     :initarg :status
     :initform nil
