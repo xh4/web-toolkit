@@ -17,6 +17,20 @@
                 (http::write-request-line stream "GET" "/" "HTTP/1.1"))))
     (is (equal line (format nil "GET / HTTP/1.1~C~C" #\Return #\Newline)))))
 
+(test write&read-request
+  (with-request-in-stream (stream (make-instance 'request
+                                                 :method "GET"
+                                                 :uri "/"
+                                                 :version "HTTP/1.0"
+                                                 :header (header "a" "1" "b" "2" "c" "3")))
+    (let ((request (http::read-request stream)))
+      (is (typep request 'request))
+      (is (equal "GET" (request-method request)))
+      (is (equal "/" (request-uri request)))
+      (is (equal "HTTP/1.0" (request-version request)))
+      (let ((header (request-header request)))
+        (is (= 3 (length (header-fields header))))))))
+
 (test message-body-present-p/request
   (let ((req (make-instance 'request
                             :header (header "Content-Length" "42"))))
