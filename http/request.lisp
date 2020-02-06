@@ -120,7 +120,7 @@
                 (request-version request) version))
         (let ((request-header (read-header stream)))
           (setf (request-header request) request-header))
-        (read-request-body stream request)
+        (setf (request-body request) stream)
         request))))
 
 (defgeneric write-request (stream request)
