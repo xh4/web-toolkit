@@ -16,7 +16,8 @@
                :trivial-backtrace
                :trivial-gray-streams
                :usocket
-               :chunga)
+               :chunga
+               :cl-cont)
   :serial t
   :components ((:module "http"
                         :serial t

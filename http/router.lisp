@@ -5,7 +5,21 @@
     :initarg :rules
     :initform nil
     :accessor router-rules))
-  (:instanize nil))
+  (:instanize nil)
+  (:function (lambda (router request)
+               (let ((target-rule nil))
+                 (loop for rule in (router-rules router)
+                    for matcher = (routing-rule-matcher rule)
+                    when (funcall matcher request)
+                    do
+                      (setf target-rule rule)
+                      (return))
+                 (if target-rule
+                     (let ((handler (symbol-value (routing-rule-handler target-rule))))
+                       (typecase handler
+                         (handler (invoke-handler handler request))
+                         (t (handle handler request))))
+                     (handle-missing request))))))
 
 (defmacro define-router (name)
   `(if (boundp ',name)
@@ -83,20 +97,4 @@
   (declare (ignore request))
   (reply
    (status 404)
-   (header :content-type "text/plain")
    "not found"))
-
-(defmethod handle ((router router) (request request))
-  (let ((target-rule nil))
-    (loop for rule in (router-rules router)
-       for matcher = (routing-rule-matcher rule)
-       when (funcall matcher request)
-       do
-         (setf target-rule rule)
-         (return))
-    (if target-rule
-        (let ((handler (symbol-value (routing-rule-handler target-rule))))
-          (typecase handler
-            (handler (invoke-handler handler request))
-            (t (handle handler request))))
-        (handle-missing request))))

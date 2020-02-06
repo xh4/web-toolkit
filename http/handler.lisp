@@ -1,10 +1,77 @@
 (in-package :http)
 
-(defclass handler-class (standard-class) ())
+(defclass handler-class (standard-class)
+  ((function
+    :initarg :function
+    :initform nil
+    :accessor handler-function)
+   (function-lambda-list
+    :initarg :function-lambda-list
+    :initform nil
+    :accessor handler-function-lambda-list)))
 
 (defmethod validate-superclass ((class handler-class) (super-class standard-class))
   t)
 
+(defun check-handler-function-lambda-list (lambda-list)
+  (when (> (length lambda-list) 2)
+    (error "Bad handler function lambda list")))
+
+(defmethod shared-initialize :after ((class handler-class) slot-names
+                                     &key &allow-other-keys)
+  (declare (ignore slot-names))
+  (let ((function (slot-value class 'function)))
+    (with-slots ((handler-function function)
+                 (handler-function-lambda-list function-lambda-list)) class
+      (when function
+        (setf handler-function (eval (car function))
+              handler-function-lambda-list (function-lambda-list handler-function))
+        (check-handler-function-lambda-list handler-function-lambda-list)))))
+
+;; Mapping from handler names (class names of handlers) to handler instances
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *static-handlers* (make-hash-table)))
+
+(defclass handler ()
+  ()
+  (:metaclass handler-class)
+  (:function (lambda (request) (call-next-handler))))
+
+(defmethod handler-function ((handler handler))
+  (handler-function (class-of handler)))
+
+(defmethod (setf handler-function) (function (handler handler))
+  (setf (handler-function (class-of handler)) function))
+
+(defmethod handler-function-lambda-list ((handler handler))
+  (handler-function-lambda-list (class-of handler)))
+
+(defvar handler (make-instance 'handler))
+
+(setf (gethash 'handler *static-handlers*) handler)
+
+(defmacro define-handler (handler-name superclasses slots &rest options)
+  (unless (find 'handler superclasses)
+    (appendf superclasses '(handler)))
+  (let ((function (second (find :function options :key 'first)))
+        (instanize (if-let ((option (find :instanize options :key 'first)))
+                     (second option)
+                     t)))
+    (let ((options (remove-if (lambda (options)
+                                (member (first options) '(:instanize)))
+                              options)))
+      (rewrite-class-option options :metaclass handler-class)
+      `(progn
+         (eval-when (:compile-toplevel :load-toplevel :execute)
+           (defclass ,handler-name ,superclasses
+             ,slots
+             ,@options)
+           ,@(if instanize
+               `((defvar ,handler-name
+                   (make-instance ',handler-name))
+                 (setf (handler-function ,handler-name) ,function)
+                 (setf (gethash ',handler-name *static-handlers*) ,handler-name))
+               `((remhash ',handler-name *static-handlers*))))))))
 (define-condition condition/next-handler () ())
 
 (defmacro next-handler ()
@@ -21,42 +88,6 @@
 
 (defmacro abort-handler ()
   `(signal 'condition/abort-handler))
-
-;; Mapping from handler names (class names of handlers) to handler instances
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *static-handlers* (make-hash-table)))
-
-(defclass handler () ()
-  (:metaclass handler-class))
-
-(defmethod handle ((handler handler) (request request))
-  (call-next-handler))
-
-(defvar handler (make-instance 'handler))
-
-(setf (gethash 'handler *static-handlers*) handler)
-
-(defmacro define-handler (handler-name superclasses slots &rest options)
-  (unless (find 'handler superclasses)
-    (appendf superclasses '(handler)))
-  (let ((instanize (if-let ((option (find :instanize options :key 'first)))
-                     (second option)
-                     t)))
-    (let ((options (remove-if (lambda (options)
-                                (member (first options) '(:instanize)))
-                              options)))
-      (rewrite-class-option options :metaclass handler-class)
-      `(progn
-         (eval-when (:compile-toplevel :load-toplevel :execute)
-           (defclass ,handler-name ,superclasses
-             ,slots
-             ,@options)
-           ,@(when instanize
-               `((defvar ,handler-name
-                   (make-instance ',handler-name))
-                 (setf (gethash ',handler-name *static-handlers*) ,handler-name))))))))
-
-(defgeneric handle (handler object))
 
 (defun compute-handler-class-precedence-list (handler)
   (let ((handler-class
@@ -98,18 +129,6 @@
                      (%call-handler handler))))
 
                (%call-handler (handler)
-                 (when (find-method #'handle
-                                    '()
-                                    (list (class-of handler) (find-class 'request))
-                                    nil)
-                   (%call-handler-with-request handler))
-                 (when (find-method #'handle
-                                    '()
-                                    (list (class-of handler) (find-class t))
-                                    nil)
-                   (%call-handler-with-request handler)))
-
-               (%call-handler-with-request (handler)
                  (setf next-handlers (rest next-handlers))
                  (handler-bind ((condition/next-handler
                                  (lambda (c)
@@ -135,9 +154,15 @@
                                                                  (t location))))
                                      (reply (status status)))
                                    (return-from finish-handling))))
-                   (let ((result (handle handler request)))
-                     (when (typep result 'response)
-                       (setf *response* result))))))
+                   (when-let ((function (handler-function handler))
+                              (function-lambda-list (handler-function-lambda-list handler)))
+                     (let ((result (cond
+                                     ((= 1 (length function-lambda-list))
+                                      (funcall function request))
+                                     ((= 2 (length function-lambda-list))
+                                      (funcall function handler request)))))
+                       (when (typep result 'response)
+                         (setf *response* result)))))))
 
         (%call-next-handler)))
     *response*))
