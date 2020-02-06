@@ -20,3 +20,37 @@
 
 (defun stream-empty-p (stream)
   (stream-length-p 0 stream))
+
+(defclass test-socket ()
+  ((open-p
+    :initform t
+    :accessor socket-open-p)))
+
+(defvar test-listener (listener :port 4004))
+
+(define-server test-server ()
+  ()
+  (:listener test-listener))
+
+(defmacro with-request-in-stream ((stream request) &body body)
+  `(let ((data (babel-streams:with-output-to-sequence (stream)
+                 (loop for request in (ensure-list ,request)
+                    do (http::write-request stream request)))))
+     (let ((,stream (babel-streams:make-in-memory-input-stream data)))
+       ,@body)))
+
+(defmacro with-output-to-string ((stream) &body body)
+  `(babel:octets-to-string
+    (babel-streams:with-output-to-sequence (,stream)
+      ,@body)))
+
+(defmacro with-read-header-field ((var line) &body body)
+  `(with-input-from-lines (stream '(,line))
+     (let ((,var (http::read-header-field stream)))
+       (is-true (stream-empty-p stream))
+       ,@body)))
+
+(defmacro with-read-header ((var lines) &body body)
+  `(with-input-from-lines (stream ,lines)
+     (let ((,var (http::read-header stream)))
+       ,@body)))

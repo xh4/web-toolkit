@@ -68,6 +68,7 @@
                                                            (:file "header")
                                                            (:file "request")
                                                            (:file "response")
+                                                           (:file "connection")
                                                            (:file "redirect")
                                                            (:file "static"))))))
   :perform (test-op (o c)

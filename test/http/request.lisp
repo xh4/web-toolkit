@@ -12,6 +12,11 @@
   (with-input-from-lines (stream '("GET"))
     (is (equal nil (http::read-request-line stream)))))
 
+(test write-request-line
+  (let ((line (with-output-to-string (stream)
+                (http::write-request-line stream "GET" "/" "HTTP/1.1"))))
+    (is (equal line (format nil "GET / HTTP/1.1~C~C" #\Return #\Newline)))))
+
 (test message-body-present-p/request
   (let ((req (make-instance 'request
                             :header (header "Content-Length" "42"))))

@@ -2,11 +2,6 @@
 
 (in-suite :http-test)
 
-(defmacro with-read-header ((var lines) &body body)
-  `(with-input-from-lines (stream ,lines)
-     (let ((,var (http::read-header stream)))
-       ,@body)))
-
 (test read-header
   (with-read-header (hd '("foo: bar"))
     (is (typep hd 'header))
@@ -60,3 +55,11 @@
   (let ((h (header "foo" "bar")))
     (http::set-header-field h (header-field "foo" "bar2"))
     (is (equal "bar2" (header-field-value (find-header-field :foo h))))))
+
+(test write-header
+  (let ((lines (with-output-to-string (stream)
+                 (http::write-header stream (header "foo" "bar"
+                                                    "goo" "gle")))))
+    (let ((last-4-chars (subseq lines (- (length lines) 4) (length lines))))
+      (is (equal (format nil "~C~C~C~C" #\Return #\Newline #\Return #\Newline)
+           last-4-chars)))))
