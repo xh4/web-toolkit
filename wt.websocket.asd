@@ -11,7 +11,6 @@
                :bordeaux-threads
                :cl-cont
                :closer-mop
-               #-lispworks
                :usocket
                #+sbcl
                :sb-introspect
