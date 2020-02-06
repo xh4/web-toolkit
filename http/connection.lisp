@@ -23,6 +23,7 @@
     (bt:make-thread
      (lambda ()
        (process-connection connection))
+     :name (format nil "Connection on ~A" (listener-port listener))
      :initial-bindings `((*standard-output* . ,*standard-output*)
                          (*error-output* . ,*error-output*)))
     connection))
@@ -43,7 +44,7 @@
     (tagbody :start
        (when-let ((request (read-request input-stream)))
          (let ((response (handle-request connection request)))
-           (if (= 101 (status-code (response-status response)))
+           (if (equal 101 (status-code (response-status response)))
                (go :end)
                (progn
                  (handle-response connection response)

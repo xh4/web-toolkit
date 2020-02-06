@@ -61,6 +61,7 @@
     (let ((process (bt:make-thread
                     (lambda ()
                       (listener-loop listener))
+                    :name (format nil "Listener (~A)" (listener-port listener))
                     :initial-bindings `((*standard-output* . ,*standard-output*)
                                         (*error-output* . ,*error-output*)))))
       (setf (listener-process listener) process))))
