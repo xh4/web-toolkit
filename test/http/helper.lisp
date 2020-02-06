@@ -38,7 +38,9 @@
                  (loop for request in (ensure-list ,request)
                     do (http::write-request stream request)))))
      (let ((,stream (babel-streams:make-in-memory-input-stream data)))
-       ,@body)))
+       (unwind-protect
+            ,@body
+         (close stream)))))
 
 (defmacro with-output-to-string ((stream) &body body)
   `(babel:octets-to-string
@@ -55,3 +57,20 @@
   `(with-input-from-lines (stream ,lines)
      (let ((,var (http::read-header stream)))
        ,@body)))
+
+(defmacro with-connection ((connection &key request) &body body)
+  `(let ((socket (make-instance 'test-socket)))
+     (let ((input-data nil))
+       (when ,request
+         (setf input-data (babel:octets-to-string
+                           (babel-streams:with-output-to-sequence (stream)
+                             (loop for req in (ensure-list ,request)
+                                do (write-request stream req))))))
+       (let ((input-stream (babel-streams:make-in-memory-input-stream input-data))
+             (output-stream (babel-streams:make-in-memory-output-stream)))
+         (let ((,connection (make-instance 'http::connection
+                                           :listener test-listener
+                                           :socket socket
+                                           :input-stream input-stream
+                                           :output-stream output-stream)))
+           ,@body)))))

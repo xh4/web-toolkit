@@ -3,9 +3,15 @@
 (in-suite :http-test)
 
 (test persistent-connection
-  (with-request-in-stream (stream (make-instance 'request
-                                                 :method "GET"
-                                                 :uri "/"
-                                                 :version "HTTP/1.0"
-                                                 :header (header "Connection" "close")))
-    (http::read-request stream)))
+  )
+
+(test handle-request
+  (with-connection (connection)
+    (let* ((request (make-instance 'request
+                                   :method "GET"
+                                   :uri "/"
+                                   :version "HTTP/1.0"
+                                   :header (header "Connection" "Keep-Alive")))
+           (response (http::handle-request connection request)))
+      (is (equal "Keep-Alive" (header-field-value
+                               (find-header-field "Connection" response)))))))
