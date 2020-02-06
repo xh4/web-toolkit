@@ -26,7 +26,8 @@
     :initform t
     :accessor socket-open-p)))
 
-(defvar test-listener (listener :port 4004))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar test-listener (listener :port 4004)))
 
 (define-server test-server ()
   ()
