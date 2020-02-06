@@ -49,8 +49,11 @@
   (let ((header (response-header response)))
     (setf (header-fields header) value)))
 
-(defmethod find-header-field ((response response) name)
-  (find-header-field (response-header response) name))
+(defmethod find-header-field (name (response response))
+  (find-header-field name (response-header response)))
+
+(defmethod set-header-field ((response response) header-field)
+  (set-header-field (response-header response) header-field))
 
 (defun read-status-line (stream &key (parse t))
   (let ((line (read-line stream)))
@@ -76,21 +79,12 @@
     (+ (length line) (length +crlf+))))
 
 (defun write-response-header (stream response)
-  (let ((header (response-header response))
-        (body (response-body response)))
-    (typecase body
-      ((or vector string)
-       (add-header-field header (header-field "Content-Length" (length body))))
-      (pathname
-       (when-let ((file-length (ignore-errors
-                                 (with-open-file (stream body)
-                                   (file-length stream)))))
-         (add-header-field header (header-field "Content-Length" file-length)))))
+  (let ((header (response-header response)))
     (write-header stream header)))
 
 (defun read-response-body (stream header)
   (let ((content-length (header-field-value
-                         (find-header-field header "Content-Length"))))
+                         (find-header-field "Content-Length" header))))
     (when content-length (setf content-length (parse-integer content-length)))
     (when (and content-length (plusp content-length))
       (alexandria::read-stream-content-into-byte-vector

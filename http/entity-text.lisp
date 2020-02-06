@@ -12,8 +12,7 @@
 
 (defmethod content-type ((entity text-entity))
   (or (header-field-value
-       (find-header-field
-        (response-header entity) "Content-Type"))
+       (find-header-field "Content-Type" (response-header entity)))
       "text/plain; charset=UTF-8"))
 
 (defmethod response-status ((entity text-entity))

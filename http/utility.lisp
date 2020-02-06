@@ -34,6 +34,7 @@ HANDLE-IF-MODIFIED-SINCE."
 (defun line-char-p (char)
   (<= 32 (char-code char) 126))
 
+;; TODO: read-byte 会报远程主机关闭的错误
 (defun read-char (stream &optional (eof-error-p t) eof-value)
   (let ((char-code (read-byte stream eof-error-p eof-value)))
     (and char-code
@@ -48,9 +49,9 @@ HANDLE-IF-MODIFIED-SINCE."
                  (not line-char-p)
                  is-cr-p)
        when (and char line-char-p)
-       do (write-char char line) and do (setf ever-write-p t)
+       do (write-char char line)
        finally (if is-cr-p
-                   (if (eql (read-char stream) #\Linefeed)
+                   (if (eql (read-char stream nil) #\Linefeed)
                        t
                        (return-from read-line nil))
                    (if (null char)

@@ -152,16 +152,16 @@
 (defun check-handshake-request (request)
   (unless (and
            (string-equal "Upgrade" (header-field-value
-                                    (find-header-field request "Connection")))
+                                    (find-header-field "Connection" request)))
            (string-equal "WebSocket" (header-field-value
-                                      (find-header-field request "Upgrade")))
+                                      (find-header-field "Upgrade" request)))
            (string-equal "13" (header-field-value
-                               (find-header-field request "Sec-WebSocket-Version"))))
+                               (find-header-field "Sec-WebSocket-Version" request))))
     (error "Bad WebSocket request")))
 
 (defun accept-handshake-request (request)
   (let ((key (header-field-value
-              (find-header-field request "Sec-WebSocket-Key"))))
+              (find-header-field "Sec-WebSocket-Key" request))))
     (let ((accept (base64:usb8-array-to-base64-string
                    (ironclad:digest-sequence
                     'ironclad:sha1

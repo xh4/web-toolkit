@@ -16,15 +16,11 @@
   (setf (response-status *response*) status))
 
 (defmethod reply-object ((header-field header-field))
-  (typecase *response*
-    (response (add-header-field (response-header *response*) header-field))
-    (entity (add-header-field (entity-header *response*) header-field))))
+  (set-header-field *response* header-field))
 
 (defmethod reply-object ((header header))
   (loop for header-field in (header-fields header)
-     do (typecase *response*
-          (response (add-header-field (response-header *response*) header-field))
-          (entity (add-header-field (entity-header *response*) header-field)))))
+     do (set-header-field *response* header-field)))
 
 (defmethod reply-object ((response response))
   (setf *response* response))

@@ -10,10 +10,12 @@
            :header-field-name
            :header-field-value
            :find-header-field
+           :set-header-field
            :body
            :request
            :request-method
            :request-uri
+           :request-version
            :request-header
            :request-body
            :status

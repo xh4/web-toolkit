@@ -13,15 +13,15 @@
       (error "Missing host in uri"))
     (let ((request-header (make-instance 'header))
           (request-key (make-handshake-key)))
-      (flet ((add-header-field (name value)
-               (http::add-header-field
+      (flet ((set-header-field (name value)
+               (http::set-header-field
                 request-header
                 (header-field name value))))
-        (add-header-field "Host" (format nil "~A~@[:~A~]" host port))
-        (add-header-field "Upgrade" "WebSocket")
-        (add-header-field "Connection" "Upgrade")
-        (add-header-field "Sec-WebSocket-Key" request-key)
-        (add-header-field "Sec-WebSocket-Version" "13"))
+        (set-header-field "Host" (format nil "~A~@[:~A~]" host port))
+        (set-header-field "Upgrade" "WebSocket")
+        (set-header-field "Connection" "Upgrade")
+        (set-header-field "Sec-WebSocket-Key" request-key)
+        (set-header-field "Sec-WebSocket-Version" "13"))
       (setf (request-header request) request-header)
       (http::write-request stream request)
       (force-output stream)
@@ -33,7 +33,7 @@
             (error "Unexpected response code ~D" status-code))
           (let ((response-header (http::read-header stream)))
             (let ((response-accept (header-field-value
-                                    (find-header-field response-header "Sec-WebSocket-Accept")))
+                                    (find-header-field "Sec-WebSocket-Accept" response-header)))
                   (expected-response-accept (base64:usb8-array-to-base64-string
                                              (ironclad:digest-sequence
                                               'ironclad:sha1

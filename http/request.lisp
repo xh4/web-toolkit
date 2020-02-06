@@ -9,6 +9,10 @@
     :initarg :uri
     :initform nil
     :accessor request-uri)
+   (version
+     :initarg :version
+     :initform nil
+     :accessor request-version)
    (header
     :initarg :header
     :initform nil
@@ -46,8 +50,11 @@
   (let ((header (request-header request)))
     (setf (header-fields header) value)))
 
-(defmethod find-header-field ((request request) name)
-  (find-header-field (request-header request) name))
+(defmethod find-header-field (name (request request))
+  (find-header-field name (request-header request)))
+
+(defmethod set-header-field ((request request) header-field)
+  (set-header-field (request-header request) header-field))
 
 (defparameter *methods* '(:get :post :put :delete :head))
 
@@ -89,9 +96,7 @@
 (defun read-request-body (stream request)
   (let ((request-header (request-header request)))
     (let ((content-length (header-field-value
-                           (find-header-field
-                            request-header
-                            "Content-Length"))))
+                           (find-header-field "Content-Length" request-header))))
       (if content-length
           (setf content-length (parse-integer content-length))
           (setf content-length 0))
@@ -111,10 +116,11 @@
       (let ((request (make-instance 'request)))
         (destructuring-bind (method uri version) request-line
           (setf (request-method request) method
-                (request-uri request) uri))
+                (request-uri request) uri
+                (request-version request) version))
         (let ((request-header (read-header stream)))
           (setf (request-header request) request-header))
-        (setf (request-body request) stream)
+        (read-request-body stream request)
         request))))
 
 (defgeneric write-request (stream request)

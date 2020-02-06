@@ -54,8 +54,11 @@
 (defmethod (setf response-body) (body (entity entity))
   (setf (entity-body entity) body))
 
-(defmethod find-header-field ((entity entity) name)
-  (find-header-field (entity-header entity) name))
+(defmethod find-header-field (name (entity entity))
+  (find-header-field name (entity-header entity)))
+
+(defmethod set-header-field ((entity entity) header-field)
+  (set-header-field (entity-header entity) header-field))
 
 (defmethod write-response (stream (entity entity))
   (+
@@ -65,10 +68,10 @@
    (let ((header (response-header entity)))
      (when (find-method #'content-length '() (list (class-of entity)) nil)
        (when-let ((value (content-length entity)))
-         (add-header-field header (header-field "Content-Length" value))))
+         (set-header-field header (header-field "Content-Length" value))))
      (when (find-method #'content-type '() (list (class-of entity)) nil)
        (when-let ((value (content-type entity)))
-         (add-header-field header (header-field "Content-Type" value))))
+         (set-header-field header (header-field "Content-Type" value))))
      (write-header stream header))
    (let ((body (response-body entity)))
      (typecase body
