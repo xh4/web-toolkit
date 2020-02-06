@@ -111,8 +111,8 @@
 (defgeneric write-response (stream response)
   (:method (stream (response response))
     (+
-     (write-status-line stream "HTTP/1.1"
-                        (status-code (response-status response))
-                        (status-reason-phrase (response-status response)))
+     (if-let ((status (response-status response)))
+       (write-status-line stream "HTTP/1.1" (status-code status) (status-reason-phrase status))
+       (error "Missing status in response"))
      (write-response-header stream response)
      (write-response-body stream response))))
