@@ -22,7 +22,7 @@
   (let ((connection (make-connection listener socket)))
     (bt:make-thread
      (lambda ()
-       (process-connection listener connection))
+       (process-connection connection))
      :initial-bindings `((*standard-output* . ,*standard-output*)
                          (*error-output* . ,*error-output*)))
     connection))
