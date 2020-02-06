@@ -1,7 +1,11 @@
 (in-package :http)
 
 (defclass connection ()
-  ((socket
+  ((listener
+    :initarg :listener
+    :initform nil
+    :accessor connection-listener)
+   (socket
     :initarg :socket
     :initform nil
     :accessor connection-socket)
@@ -15,7 +19,7 @@
     :accessor connection-output-stream)))
 
 (defun make-and-process-connection (listener socket)
-  (let ((connection (make-connection socket)))
+  (let ((connection (make-connection listener socket)))
     (bt:make-thread
      (lambda ()
        (process-connection listener connection))
@@ -23,29 +27,26 @@
                          (*error-output* . ,*error-output*)))
     connection))
 
-(defun make-connection (socket)
+(defun make-connection (listener socket)
   (let ((stream (usocket:socket-stream socket)))
     #+lispworks
     (setf (stream:stream-read-timeout stream) 10
           (stream:stream-write-timeout stream) 10)
     (make-instance 'connection
+                   :listener listener
                    :socket socket
                    :input-stream stream
                    :output-stream stream)))
 
-(defun process-connection (listener connection)
+(defun process-connection (connection)
   (with-slots (input-stream output-stream) connection
     (tagbody :start
        (when-let ((request (read-request input-stream)))
-         (let ((response (handle-request listener connection request)))
-           (when (and (equal "HTTP/1.0" (request-version request))
-                    (string-equal "Keep-Alive" (header-field-value
-                                                (find-header-field "Connection" request))))
-             (set-header-field response (header-field "Connection" "Keep-Alive")))
+         (let ((response (handle-request connection request)))
            (if (= 101 (status-code (response-status response)))
                (go :end)
                (progn
-                 (handle-response listener connection response)
+                 (handle-response connection response)
                  (if (or (not (keep-alive-p request))
                          (not (keep-alive-p response))
                          (= 101 (status-code (response-status response)))
@@ -65,15 +66,20 @@
     (close output-stream)
     (usocket:socket-close socket)))
 
-(defun handle-request (listener connection request)
-  (let ((server (listener-server listener)))
-    (let ((handler (server-handler server)))
-      (unless handler
-        (setf handler default-handler))
-      (invoke-handler handler request))))
+(defun handle-request (connection request)
+  (let ((listener (connection-listener connection)))
+    (let ((server (listener-server listener)))
+      (let ((handler (server-handler server)))
+        (unless handler
+          (setf handler default-handler))
+        (let ((response (invoke-handler handler request)))
+          (when (and (equal "HTTP/1.0" (request-version request))
+                     (string-equal "Keep-Alive" (header-field-value
+                                                 (find-header-field "Connection" request))))
+            (set-header-field response (header-field "Connection" "Keep-Alive")))
+          response)))))
 
-(defun handle-response (listener connection response)
-  (declare (ignore listener))
+(defun handle-response (connection response)
   (let ((stream (connection-output-stream connection)))
     (prog1
         (write-response stream response)
