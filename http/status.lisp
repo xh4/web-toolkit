@@ -38,11 +38,13 @@
 
 (defmethod status-code ((status integer)) (status-code (status status)))
 (defmethod status-code ((status symbol)) (status-code (status status)))
+(defmethod status-code ((status null)))
 
 (defmethod status-reason-phrase ((status integer)) (status-reason-phrase
                                                     (status status)))
 (defmethod status-reason-phrase ((status symbol)) (status-reason-phrase
                                                    (status status)))
+(defmethod status-reason-phrase ((status null)))
 
 ;; https://tools.ietf.org/html/rfc7231#section-6.1
 
