@@ -57,6 +57,20 @@
                         :documentation documentation
                         :location location)))
 
+(defgeneric handler-class-precedence-list (handler-class)
+  (:method ((handler-class handler-class))
+    (compute-handler-class-precedence-list handler-class))
+  (:method ((handler handler))
+    (compute-handler-class-precedence-list (class-of handler))))
+
+(defun compute-handler-class-precedence-list (handler-class)
+  (let ((handler-classes (compute-class-precedence-list handler-class))
+        (root-handler-class (find-class 'handler)))
+    (remove-if-not
+     (lambda (handler-class)
+       (subclassp handler-class root-handler-class))
+     handler-classes)))
+
 ;; Mapping from handler names (class names of handlers) to handler instances
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *static-handlers* (make-hash-table)))
@@ -123,21 +137,8 @@
   (defmacro abort-handler ()
     `(signal 'condition/abort-handler)))
 
-(defun compute-handler-class-precedence-list (handler)
-  (let ((handler-class
-         (typecase handler
-           (symbol (find-class handler))
-           (handler (class-of handler))
-           (standard-class handler))))
-    (let ((handler-classes (compute-class-precedence-list handler-class))
-          (root-handler-class (find-class 'handler)))
-      (remove-if-not
-       (lambda (handler-class)
-         (subclassp handler-class root-handler-class))
-       handler-classes))))
-
 (defun compute-handler-precedence-list (handler)
-  (let ((handler-classes (compute-handler-class-precedence-list handler)))
+  (let ((handler-classes (handler-class-precedence-list handler)))
     (let ((handlers (loop for handler-class in handler-classes
                        for handler-instance = (gethash (class-name handler-class)
                                                        *static-handlers*)

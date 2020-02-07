@@ -83,6 +83,12 @@
                         :location location
                         :function function)))
 
+(defmethod http::handler-class-precedence-list ((endpoint-class endpoint-class))
+  (list endpoint-class))
+
+(defmethod http::handler-class-precedence-list ((endpoint endpoint))
+  (list (class-of endpoint)))
+
 (defmacro define-endpoint (endpoint-name superclasses slots &rest options)
   (let ((superclasses (if (find 'endpoint superclasses)
                           superclasses
