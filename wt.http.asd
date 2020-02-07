@@ -69,6 +69,7 @@
                                                            (:file "header")
                                                            (:file "request")
                                                            (:file "response")
+                                                           (:file "handler")
                                                            (:file "connection")
                                                            (:file "redirect")
                                                            (:file "static"))))))
