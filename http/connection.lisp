@@ -50,7 +50,7 @@
                  (handle-response connection response)
                  (if (or (not (keep-alive-p request))
                          (not (keep-alive-p response))
-                         (= 101 (status-code (response-status response)))
+                         (equal 101 (status-code (response-status response)))
                          (not (open-stream-p input-stream))
                          (not (open-stream-p output-stream)))
                      (go :end)
@@ -82,6 +82,9 @@
 
 (defun handle-response (connection response)
   (let ((stream (connection-output-stream connection)))
+    (when (null (response-status response))
+      (setf response (make-instance 'response
+                                    :status 204)))
     (unless (equal 101 (status-code (response-status response)))
       (prog1
           (write-response stream response)
