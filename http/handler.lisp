@@ -39,7 +39,8 @@
                (check-handler-function-lambda-list function-lambda-list)
                (setf (slot-value class 'function) function)
                (setf (slot-value class 'function-lambda-list) function-lambda-list)))
-      (setf (slot-value class 'function-lambda-list) nil))
+      (progn (setf (slot-value class 'function) nil
+                   (slot-value class 'function-lambda-list) nil)))
   (if (getf args :name)
       ;; First initialize
       (call-next-method class slot-names
