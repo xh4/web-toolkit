@@ -81,6 +81,11 @@
               (when (typep result 'session)
                 (setf session result)))
 
+            ;; Remove timeouts before process connection
+            ;; #+lispworks
+            (setf (stream:stream-read-timeout stream) nil
+                  (stream:stream-write-timeout stream) nil)
+
             (process-connection endpoint session connection))))
       response)))
 
@@ -139,11 +144,6 @@
    (header :upgrade "WebSocket")
    (header :connection "Upgrade"))
   (let ((stream (request-body request)))
-
-    ;; #+lispworks
-    ;; (setf (stream:stream-read-timeout stream) nil
-    ;;       (stream:stream-write-timeout stream) nil)
-
     (http::write-status-line stream "HTTP/1.1" 101 "Switching Protocols")
     (http::write-header stream (response-header *response*))
     (force-output stream))
