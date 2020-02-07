@@ -63,7 +63,7 @@
                  :opening-uri (request-uri request)
                  :opening-header (request-header request)))
 
-(defun handle-user-endpoint-request (endpoint request)
+(defun handle-endpoint-request (endpoint request)
   (handler-bind ((error (lambda (c)
                           (trivial-backtrace:print-backtrace c))))
     (let ((response (handle-handshake request)))

@@ -1,6 +1,6 @@
 (in-package :websocket)
 
-(defclass endpoint-class (standard-class)
+(defclass endpoint-class (http::handler-class)
   ((session-class
     :initarg :session-class
     :initform nil
@@ -37,47 +37,65 @@
   ()
   (:metaclass endpoint-class))
 
-(defmethod shared-initialize :before ((class endpoint-class) slot-names
-                                      &key on-open on-close on-error
+(defmethod shared-initialize :around ((class endpoint-class) slot-names
+                                      &rest args
+                                      &key name direct-slots direct-superclasses location
+                                        extra-initargs direct-default-initargs documentation
+                                        on-open on-close on-error session-class function
                                         &allow-other-keys)
   (declare (ignore slot-names))
-  (with-slots (open-handler open-handler-lambda-list
-               close-handler close-handler-lambda-list
-               error-handler error-handler-lambda-list) class
-    (when on-open
-      (setf open-handler (eval (car on-open))
-            open-handler-lambda-list (function-lambda-list open-handler))
-      (check-open-handler-lambda-list open-handler-lambda-list))
-    (when on-close
-      (setf close-handler (eval (car on-close))
-            close-handler-lambda-list (function-lambda-list close-handler))
-      (check-close-handler-lambda-list close-handler-lambda-list))
-    (when on-error
-      (setf error-handler (eval (car on-error))
-            error-handler-lambda-list (function-lambda-list error-handler))
-      (check-error-handler-lambda-list error-handler-lambda-list))))
-
-(defmethod shared-initialize :after ((class endpoint-class) slot-names
-                                      &key session-class
-                                        &allow-other-keys)
-  (declare (ignore slot-names))
+  ;; (format t "Shared-initialize :around (endpoint-class): ~A~%" args)
+  (when on-open
+    (let* ((handler (eval (car on-open)))
+           (handler-lambda-list (function-lambda-list handler)))
+      (check-open-handler-lambda-list handler-lambda-list)
+      (setf (slot-value class 'open-handler) handler
+            (slot-value class 'open-handler-lambda-list) handler-lambda-list)))
+  (when on-close
+    (let* ((handler (eval (car on-close)))
+           (handler-lambda-list (function-lambda-list handler)))
+      (check-close-handler-lambda-list handler-lambda-list)
+      (setf (slot-value class 'close-handler) handler
+            (slot-value class 'close-handler-lambda-list) handler-lambda-list)))
+  (when on-error
+    (let* ((handler (eval (car on-error)))
+           (handler-lambda-list (function-lambda-list handler)))
+      (check-error-handler-lambda-list handler-lambda-list)
+      (setf (slot-value class 'error-handler) handler
+            (slot-value class 'error-handler-lambda-list) handler-lambda-list)))
   (when session-class
-    (setf (slot-value class 'session-class) (eval (first session-class)))))
+    (setf (slot-value class 'session-class) (eval (car session-class))))
+  (if (getf args :name)
+      ;; First initialize
+      (call-next-method class slot-names
+                        :name name
+                        :direct-slots direct-slots
+                        :direct-superclasses direct-superclasses
+                        :location location
+                        :function function)
+      ;; Rest initialize
+      (call-next-method class slot-names
+                        :direct-slots direct-slots
+                        :direct-superclasses direct-superclasses
+                        :extra-initargs extra-initargs
+                        :direct-default-initargs direct-default-initargs
+                        :documentation documentation
+                        :location location
+                        :function function)))
 
 (defmacro define-endpoint (endpoint-name superclasses slots &rest options)
   (let ((superclasses (if (find 'endpoint superclasses)
                           superclasses
                           (append superclasses (list 'endpoint)))))
     (rewrite-class-option options :metaclass endpoint-class)
-    (with-gensyms (endpoint/s request/s)
-      `(progn
-         (eval-when (:compile-toplevel :load-toplevel :execute)
-           (defclass ,endpoint-name ,superclasses ,slots ,@options)
-           (defvar ,endpoint-name (make-instance ',endpoint-name)))
-         (defmethod http:handle ((,endpoint/s ,endpoint-name) (,request/s request))
-           (handle-user-endpoint-request ,endpoint/s ,request/s))
-         (eval-when (:execute)
-           ,endpoint-name)))))
+    (rewrite-class-option options :function (lambda (endpoint request)
+                                              (handle-endpoint-request endpoint request)))
+    `(progn
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+         (define-handler ,endpoint-name ,superclasses ,slots ,@options)
+         (defvar ,endpoint-name (make-instance ',endpoint-name)))
+       (eval-when (:execute)
+         ,endpoint-name))))
 
 (defmethod endpoint-session-class ((endpoint endpoint))
   (endpoint-session-class (class-of endpoint)))

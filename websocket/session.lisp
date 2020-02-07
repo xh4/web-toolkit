@@ -28,15 +28,34 @@
     :reader session-opening-header))
   (:metaclass session-class))
 
-(defmethod shared-initialize :before ((class session-class) slot-names
-                                      &key on-message
+(defmethod shared-initialize :around ((class session-class) slot-names
+                                      &rest args
+                                      &key name direct-slots direct-superclasses location
+                                        extra-initargs direct-default-initargs documentation
+                                        on-message
                                         &allow-other-keys)
   (declare (ignore slot-names))
-  (with-slots (message-handler message-handler-lambda-list) class
-    (when on-message
-      (setf message-handler (eval (car on-message))
-            message-handler-lambda-list (function-lambda-list message-handler))
-      (check-message-handler-lambda-list message-handler-lambda-list))))
+  (when on-message
+    (let* ((handler (eval (car on-message)))
+           (handler-lambda-list (function-lambda-list handler)))
+      (check-message-handler-lambda-list handler-lambda-list)
+      (setf (slot-value class 'message-handler) handler
+            (slot-value class 'message-handler-lambda-list) handler-lambda-list)))
+  (if (getf args :name)
+      ;; First initialize
+      (call-next-method class slot-names
+                        :name name
+                        :direct-slots direct-slots
+                        :direct-superclasses direct-superclasses
+                        :location location)
+      ;; Rest initialize
+      (call-next-method class slot-names
+                        :direct-slots direct-slots
+                        :direct-superclasses direct-superclasses
+                        :extra-initargs extra-initargs
+                        :direct-default-initargs direct-default-initargs
+                        :documentation documentation
+                        :location location)))
 
 (defgeneric close-session  (session &optional reason)
   (:method ((session session) &optional reason)
