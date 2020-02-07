@@ -1,5 +1,7 @@
 (in-package :websocket-test)
 
+(in-suite :websocket-test)
+
 (defparameter *wstest-executable-path* "C:\\Python27amd64\\Scripts\\wstest.exe")
 
 (defparameter *wstest-port* 54000)
@@ -226,8 +228,6 @@
                   collect `(,(test-case-function-name test-case-id) :run nil)))
            (setf *wstest-cases* ',*wstest-cases*)
            ,@body)))))
-
-(in-suite :websocket-test)
 
 (test-group "1 Framing"
   (test-group "1.1 Text Messages"
