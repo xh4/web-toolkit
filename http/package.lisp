@@ -30,7 +30,6 @@
            :reply
            :reply-object
            :define-handler
-           :handle
            :next-handler
            :call-next-handler
            :redirect
