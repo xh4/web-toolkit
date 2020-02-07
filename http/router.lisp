@@ -16,9 +16,7 @@
                       (return))
                  (if target-rule
                      (let ((handler (symbol-value (routing-rule-handler target-rule))))
-                       (typecase handler
-                         (handler (invoke-handler handler request))
-                         (t (handle handler request))))
+                       (invoke-handler handler request))
                      (handle-missing request))))))
 
 (defmacro define-router (name)
