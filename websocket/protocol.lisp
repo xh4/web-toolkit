@@ -82,7 +82,7 @@
                 (setf session result)))
 
             ;; Remove timeouts before process connection
-            ;; #+lispworks
+            #+lispworks
             (setf (stream:stream-read-timeout stream) nil
                   (stream:stream-write-timeout stream) nil)
 
