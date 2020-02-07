@@ -146,8 +146,8 @@
 
     (http::write-status-line stream "HTTP/1.1" 101 "Switching Protocols")
     (http::write-header stream (response-header *response*))
-    (force-output stream)
-    *response*))
+    (force-output stream))
+  *response*)
 
 (defun check-handshake-request (request)
   (unless (and
