@@ -17,16 +17,28 @@
   (when (> (length lambda-list) 2)
     (error "Bad handler function lambda list")))
 
-(defmethod shared-initialize :after ((class handler-class) slot-names
-                                     &key &allow-other-keys)
+(defmethod shared-initialize :around ((class handler-class) slot-names
+                                     &key function &allow-other-keys)
   (declare (ignore slot-names))
-  (let ((function (slot-value class 'function)))
-    (with-slots ((handler-function function)
-                 (handler-function-lambda-list function-lambda-list)) class
-      (when function
-        (setf handler-function (eval (car function))
-              handler-function-lambda-list (function-lambda-list handler-function))
-        (check-handler-function-lambda-list handler-function-lambda-list)))))
+  (let ((handler-function (and (slot-boundp class 'function) (slot-value class 'function)))
+        (handler-function-lambda-list (and (slot-boundp class 'function-lambda-list)
+                                           (slot-value class 'function-lambda-list))))
+    (let ((original-handler-function handler-function)
+          (original-handler-function-lambda-list handler-function-lambda-list))
+      (call-next-method)
+      (with-slots ((handler-function function)
+                   (handler-function-lambda-list function-lambda-list)) class
+        (if function
+            (handler-case
+                (progn
+                  (setf handler-function (eval (car function))
+                        handler-function-lambda-list (function-lambda-list handler-function))
+                  (check-handler-function-lambda-list handler-function-lambda-list))
+              (error (e)
+                (setf handler-function original-handler-function
+                      handler-function-lambda-list original-handler-function-lambda-list)
+                (error e)))
+            (setf handler-function-lambda-list nil))))))
 
 ;; Mapping from handler names (class names of handlers) to handler instances
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -70,8 +82,11 @@
                `((defvar ,handler-name
                    (make-instance ',handler-name))
                  (setf (handler-function ,handler-name) ,function)
-                 (setf (gethash ',handler-name *static-handlers*) ,handler-name))
-               `((remhash ',handler-name *static-handlers*))))))))
+                 (setf (gethash ',handler-name *static-handlers*) ,handler-name)
+                 ,handler-name)
+               `((remhash ',handler-name *static-handlers*)
+                 (find-class ',handler-name))))))))
+
 (define-condition condition/next-handler () ())
 
 (defmacro next-handler ()
