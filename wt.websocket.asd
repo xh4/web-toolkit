@@ -42,6 +42,8 @@
                                               :serial t
                                               :components ((:file "package")
                                                            (:file "autobahn")
+                                                           (:file "endpoint")
+                                                           (:file "session")
                                                            (:file "websocket"))))))
   :perform (test-op (o c)
                     (symbol-call :fiveam :run! :websocket-test)))
