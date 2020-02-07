@@ -25,6 +25,7 @@
                 :header-field-name
                 :header-field-value
                 :find-header-field
+                :define-handler
                 :reply
                 :status
                 :*response*
