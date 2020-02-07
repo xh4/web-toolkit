@@ -12,7 +12,7 @@
 (test endpoint-is-handler
   (let ((endpoint (define-endpoint foo-endpoint () ())))
     (is (functionp (http::handler-function foo-endpoint)))
-    (is (equal 1 (length (http::handler-function-lambda-list foo-endpoint))))))
+    (is (equal 2 (length (http::handler-function-lambda-list foo-endpoint))))))
 
 (test define-endpoint-with-handlers
   (define-endpoint foo-endpoint () () (:on-open (lambda (session))))
