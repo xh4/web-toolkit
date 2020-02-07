@@ -17,7 +17,9 @@
                :trivial-gray-streams
                :usocket
                :chunga
-               :cl-cont)
+               :cl-cont
+               #+sbcl
+               :sb-introspect)
   :serial t
   :components ((:module "http"
                         :serial t
