@@ -150,9 +150,9 @@
         (t handlers)))))
 
 (defun invoke-handler (handler request)
-  (let ((next-handlers (reverse (compute-handler-precedence-list handler)))
-        (*response* (make-instance 'response
-                                   :header (make-instance 'header))))
+  (let ((*response* (make-instance 'response
+                                   :header (make-instance 'header)))
+        (next-handlers (reverse (compute-handler-precedence-list handler))))
     (block finish-handling
       (labels ((%next-handler ()
                  (first next-handlers))
@@ -188,16 +188,24 @@
                                                                  (t location))))
                                      (reply (status status)))
                                    (return-from finish-handling))))
-                   (when-let ((function (handler-function handler))
-                              (function-lambda-list (handler-function-lambda-list handler)))
-                     (let ((result (cond
-                                     ((= 0 (length function-lambda-list))
-                                      (funcall function))
-                                     ((= 1 (length function-lambda-list))
-                                      (funcall function request))
-                                     ((= 2 (length function-lambda-list))
-                                      (funcall function handler request)))))
-                       (when (typep result 'response)
-                         (setf *response* result)))))))
+                   (let ((result (call-handler handler request)))
+                     (when (or (typep result 'response)
+                               (typep result 'entity))
+                       (setf *response* result))))))
         (%call-next-handler)))
     *response*))
+
+(defun call-handler (handler request)
+  (when-let ((function (handler-function handler)))
+    (let ((function-lambda-list (handler-function-lambda-list handler)))
+      (cond
+        ((= 0 (length function-lambda-list))
+         (funcall function))
+        ((= 1 (length function-lambda-list))
+         (funcall function request))
+        ((= 2 (length function-lambda-list))
+         (funcall function handler request)))
+      (let ((result ))
+        (when (or (typep result 'response)
+                  (typep result 'entity))
+          (setf *response* result))))))
