@@ -191,6 +191,8 @@
                    (when-let ((function (handler-function handler))
                               (function-lambda-list (handler-function-lambda-list handler)))
                      (let ((result (cond
+                                     ((= 0 (length function-lambda-list))
+                                      (funcall function))
                                      ((= 1 (length function-lambda-list))
                                       (funcall function request))
                                      ((= 2 (length function-lambda-list))
