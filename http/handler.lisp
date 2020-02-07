@@ -105,22 +105,23 @@
                `((remhash ',handler-name *static-handlers*)
                  (find-class ',handler-name))))))))
 
-(define-condition condition/next-handler () ())
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (define-condition condition/next-handler () ())
 
-(defmacro next-handler ()
-  `(restart-case (signal 'condition/next-handler)
-     (restart/next-handler (handler) handler)))
+  (defmacro next-handler ()
+    `(restart-case (signal 'condition/next-handler)
+       (restart/next-handler (handler) handler)))
 
-(define-condition condition/call-next-handler () ())
+  (define-condition condition/call-next-handler () ())
 
-(defmacro call-next-handler ()
-  `(restart-case (signal 'condition/call-next-handler)
-     (restart/call-next-handler (response) response)))
+  (defmacro call-next-handler ()
+    `(restart-case (signal 'condition/call-next-handler)
+       (restart/call-next-handler (response) response)))
 
-(define-condition condition/abort-handler () ())
+  (define-condition condition/abort-handler () ())
 
-(defmacro abort-handler ()
-  `(signal 'condition/abort-handler))
+  (defmacro abort-handler ()
+    `(signal 'condition/abort-handler)))
 
 (defun compute-handler-class-precedence-list (handler)
   (let ((handler-class
@@ -196,6 +197,5 @@
                                       (funcall function handler request)))))
                        (when (typep result 'response)
                          (setf *response* result)))))))
-
         (%call-next-handler)))
     *response*))
