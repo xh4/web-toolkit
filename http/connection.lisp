@@ -82,9 +82,10 @@
 
 (defun handle-response (connection response)
   (let ((stream (connection-output-stream connection)))
-    (prog1
-        (write-response stream response)
-      (finish-output stream))))
+    (unless (equal 101 (status-code (response-status response)))
+      (prog1
+          (write-response stream response)
+        (finish-output stream)))))
 
 (defgeneric keep-alive-p (object)
   (:method ((request request))

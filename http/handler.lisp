@@ -13,32 +13,48 @@
 (defmethod validate-superclass ((class handler-class) (super-class standard-class))
   t)
 
+(defun check-handler-function (function)
+  (typecase function
+    (null "Missing handler function body")
+    ((or function cl-cont::funcallable/cc))
+    (symbol (unless (ignore-errors (symbol-function function))
+              (error "Symbol not associate with function")))
+    (t (error "Wrong function value"))))
+
 (defun check-handler-function-lambda-list (lambda-list)
   (when (> (length lambda-list) 2)
     (error "Bad handler function lambda list")))
 
 (defmethod shared-initialize :around ((class handler-class) slot-names
-                                     &key function &allow-other-keys)
-  (declare (ignore slot-names))
-  (let ((handler-function (and (slot-boundp class 'function) (slot-value class 'function)))
-        (handler-function-lambda-list (and (slot-boundp class 'function-lambda-list)
-                                           (slot-value class 'function-lambda-list))))
-    (let ((original-handler-function handler-function)
-          (original-handler-function-lambda-list handler-function-lambda-list))
-      (call-next-method)
-      (with-slots ((handler-function function)
-                   (handler-function-lambda-list function-lambda-list)) class
-        (if function
-            (handler-case
-                (progn
-                  (setf handler-function (eval (car function))
-                        handler-function-lambda-list (function-lambda-list handler-function))
-                  (check-handler-function-lambda-list handler-function-lambda-list))
-              (error (e)
-                (setf handler-function original-handler-function
-                      handler-function-lambda-list original-handler-function-lambda-list)
-                (error e)))
-            (setf handler-function-lambda-list nil))))))
+                                      &rest args
+                                      &key name direct-slots direct-superclasses location
+                                        extra-initargs direct-default-initargs documentation
+                                        function
+                                        &allow-other-keys)
+  ;; (format t "Shared-initialize :around (handler-class): ~A~%" args)
+  (if function
+      (progn (setf function (eval (car function)))
+             (check-handler-function function)
+             (let ((function-lambda-list (function-lambda-list function)))
+               (check-handler-function-lambda-list function-lambda-list)
+               (setf (slot-value class 'function) function)
+               (setf (slot-value class 'function-lambda-list) function-lambda-list)))
+      (setf (slot-value class 'function-lambda-list) nil))
+  (if (getf args :name)
+      ;; First initialize
+      (call-next-method class slot-names
+                        :name name
+                        :direct-slots direct-slots
+                        :direct-superclasses direct-superclasses
+                        :location location)
+      ;; Rest initialize
+      (call-next-method class slot-names
+                        :direct-slots direct-slots
+                        :direct-superclasses direct-superclasses
+                        :extra-initargs extra-initargs
+                        :direct-default-initargs direct-default-initargs
+                        :documentation documentation
+                        :location location)))
 
 ;; Mapping from handler names (class names of handlers) to handler instances
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -66,13 +82,15 @@
   (unless (find 'handler superclasses)
     (appendf superclasses '(handler)))
   (let ((function (second (find :function options :key 'first)))
+        (metaclass (second (find :metaclass options :key 'first)))
         (instanize (if-let ((option (find :instanize options :key 'first)))
                      (second option)
                      t)))
     (let ((options (remove-if (lambda (options)
                                 (member (first options) '(:instanize)))
                               options)))
-      (rewrite-class-option options :metaclass handler-class)
+      (unless metaclass
+        (rewrite-class-option options :metaclass handler-class))
       `(progn
          (eval-when (:compile-toplevel :load-toplevel :execute)
            (defclass ,handler-name ,superclasses
@@ -81,7 +99,6 @@
            ,@(if instanize
                `((defvar ,handler-name
                    (make-instance ',handler-name))
-                 (setf (handler-function ,handler-name) ,function)
                  (setf (gethash ',handler-name *static-handlers*) ,handler-name)
                  ,handler-name)
                `((remhash ',handler-name *static-handlers*)
