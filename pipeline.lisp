@@ -9,6 +9,7 @@
 (ql:quickload :drakma)
 (ql:quickload :trivial-backtrace)
 (ql:quickload :fiveam)
+(ql:quickload :local-time)
 
 (defpackage :pipeline
   (:use :cl :alexandria :cxml :drakma)
@@ -58,10 +59,27 @@
 
 (defvar *status-uri* "http://127.0.0.1:7000/status")
 
+(local-time:reread-timezone-repository)
+
+(defvar *pipeline-id* (local-time:format-timestring
+                       nil
+                       (local-time:now)
+                       :format '((:year 4) #\- (:month 2) #\- (:day 2) #\-
+                                 (:hour 2) #\- (:min 2) #\- (:sec 2))
+                       :timezone (local-time:find-timezone-by-location-name "Asia\\Shanghai")))
+
+(defvar *report-id* 1)
+
 (defun make-report (system operation stage &optional condition)
   (prog1
       (with-xml-output (make-string-sink)
-        (with-element "pipeline-event"
+        (with-element "report"
+          (with-element "id"
+            (text (format nil "~A" *report-id*)))
+          (with-element "pipeline"
+            (text (format nil "~A" *pipeline-id*)))
+          (with-element "system"
+            (text (format nil "~A" system)))
           (with-element "system"
             (text (format nil "~A" system)))
           (with-element "operation"
@@ -99,7 +117,13 @@
           (with-element "uiop-implementation-identifier"
             (text (uiop:implementation-identifier)))
           (with-element "current-working-directory"
-            (text (namestring (uiop:getcwd))))))
+            (text (namestring (uiop:getcwd))))
+          (with-element "time"
+            (text (local-time:format-timestring
+                   nil
+                   (local-time:now)
+                   :timezone (local-time:find-timezone-by-location-name "Asia\\Shanghai"))))))
+    (incf *report-id*)
     (make-fresh-output)))
 
 (defun report (system operation stage &optional condition)
