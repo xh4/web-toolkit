@@ -1,3 +1,7 @@
+;; sbcl --quit --disable-debugger --load pipeline.lisp
+;; wx86cl64 --load pipeline.lisp
+;; lispworks -load pipeline.lisp
+
 (in-package :cl-user)
 
 (ql:quickload :alexandria)
@@ -30,32 +34,37 @@
 (defun output-stream-content ()
   (get-output-stream-string *output-stream*))
 
-(unless *load-truename*
-  (error "This file must be LOADed to execute this pipeline."))
+;; (unless *load-truename*
+;;   (error "This file must be LOADed to execute this pipeline."))
 
-(defvar *wt-home*
-  (make-pathname :name nil :type nil
-                 :defaults *load-truename*))
-
-(push *wt-home* asdf:*central-registry*)
+(eval-when (:load-toplevel)
+  (defvar *wt-home*
+    (make-pathname :name nil :type nil
+                   :defaults *load-truename*))
+  (push *wt-home* asdf:*central-registry*))
 
 #+ccl
-(setf *debugger-hook*
-      (lambda (error hook)
-        (declare (ignore hook))
-        (trivial-backtrace:print-backtrace error)
-        (quit -1)))
+(eval-when (:load-toplevel)
+  (setf *debugger-hook*
+        (lambda (error hook)
+          (declare (ignore hook))
+          (trivial-backtrace:print-backtrace error)
+          (quit -1))))
 
 (defvar *git-branch* (uiop:getenv "GIT_BRANCH"))
 (defvar *git-commit* (uiop:getenv "GIT_COMMIT"))
 
-(defun make-report (system operation)
+(defvar *status-uri* "http://127.0.0.1:7000/status")
+
+(defun make-report (system operation stage &optional condition)
   (with-xml-output (make-string-sink)
     (with-element "pipeline-event"
       (with-element "system"
         (text (format nil "~A" system)))
       (with-element "operation"
         (text (format nil "~A" operation)))
+      (with-element "stage"
+        (text (format nil "~A" stage)))
       (with-element "git-branch"
         (text *git-branch*))
       (with-element "git-commit"
@@ -85,6 +94,12 @@
       (with-element "current-working-directory"
         (text (namestring (uiop:getcwd)))))))
 
+(defun report (system operation stage &optional condition)
+  (format t "~A ~A ~A ~A~%" system operation stage condition)
+  ;; (make-report system operation stage condition)
+
+  )
+
 (defun system-dependencies ()
   (labels ((wt-system-p (system)
              (let ((pos (search "wt" system :test 'equal)))
@@ -110,97 +125,69 @@
          unless (wt-system-p dp)
          collect dp))))
 
-(defvar *systems* '(:wt.uri :wt.html :wt.json
-                    :wt.http :wt.websocket
-                    :wt.component :wt.form))
+(defvar *systems* '(:wt.html :wt.json :wt.uri
+                    ;; :wt.http :wt.websocket
+                    ))
 
 (defun compile-system (system)
   (make-fresh-output)
   (asdf:compile-system system))
 
-(defun report-compile-starting (system)
-  )
-
-(defun report-compile-condition (system condition)
-  )
-
-(defun report-compile-completion (system)
-  (format t "Compile done: ~A~%" system))
-
 (defun load-system (system)
   (make-fresh-output)
   (asdf:load-system system))
-
-(defun report-load-starting (system)
-  )
-
-(defun report-load-condition (system condition)
-  )
-
-(defun report-load-completion (system)
-  (format t "Load done: ~A~%" system))
-
-(defun report-load-abortion (system)
-  (format t "Load abort: ~A~%" system))
 
 (defun test-system (system)
   (make-fresh-output)
   (asdf:test-system system))
 
-(defun report-test-starting (system)
-  )
-
-(defun report-test-condition (system condition)
-  )
-
-(defun report-test-completion (system)
-  (format t "Test done: ~A~%" system))
-
-(defun report-test-abortion (system)
-  (format t "Test abort: ~A~%" system))
-
 (defun process-system (system)
   (let (start-load start-test)
     (tagbody
      :compile
-       (report-compile-starting system)
+       (report system :compile :start)
        (handler-bind ((error (lambda (condition)
-                               (report-compile-condition system condition)
-                               (go :done))))
+                               (report system :compile :fail condition)
+                               (go :all-done))))
          (compile-system system))
-       (report-compile-completion system)
+       (report system :compile :done)
 
      :load
        (setf start-load t)
+       (report system :load :start)
        (handler-bind ((error (lambda (condition)
-                               (report-load-condition system condition)
-                               (go :done))))
+                               (report system :load :fail condition)
+                               (go :all-done))))
          (load-system system))
-       (report-load-completion system)
+       (report system :load :done)
 
      :test
        (setf start-test t)
+       (report system :test :start)
        (handler-bind ((error (lambda (condition)
-                               (report-test-condition system condition))))
+                               (report system :test :fail condition))))
          (test-system system))
-       (report-test-completion system)
+       (report system :test :done)
 
-     :done
+     :all-done
        (unless start-load
-         (report-load-abortion system))
+         (report system :load :discard))
        (unless start-test
-         (report-test-abortion system)))))
+         (report system :test :discard)))))
 
 (defun process-systems ()
+  (report :wt :process :start)
   (loop for system in *systems*
-     do (process-system system)))
+     do (process-system system))
+  (report :wt :process :done))
 
 
 
 (let ((ds (system-dependencies)))
   (ql:quickload ds))
 
-;; (process-systems)
 
-#+(or ccl lispworks)
-(quit)
+(eval-when (:load-toplevel)
+  (process-systems)
+  #+(or ccl lispworks)
+  (quit 0))
