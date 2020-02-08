@@ -1,33 +1,33 @@
-<h3 align="center">Lisp Web Toolkit</h3>
+<h2 align="center">Lisp Web Toolkit</h2>
 
 <p align="center">
     <a href="https://lisp-web-toolkit.com">lisp-web-toolkit.com</a>
 </p>
 
-# Status [![](https://travis-ci.org/xh4/web-toolkit.svg?branch=master)](https://travis-ci.org/xh4/web-toolkit)
+## Status [![](https://travis-ci.org/xh4/web-toolkit.svg?branch=master)](https://travis-ci.org/xh4/web-toolkit)
 
 <a href="https://lisp-web-toolkit.com/status">
     <img src="https://lisp-web-toolkit.com/status.png" width="656">
 </a>
 
-# Systems
+## Systems
 
-## HTTP
+### HTTP
 WT.HTTP provides HTTP construct as is defined in [RFC 7231 Hypertext Transfer Protocol (HTTP/1.1)](https://www.ietf.org/rfc/rfc7231.txt), together with implementation of server and client.
 
-## WebSocket
+### WebSocket
 WT.WEBSOCKET provides WebSocket functionality with interfaces inspired by [JSR 356, Java API for WebSocket](https://www.oracle.com/technetwork/articles/java/jsr356-1937161.html). The system is tested against the [Autobahn WebSocket Testsuite](https://github.com/crossbario/autobahn-testsuite).
 
-## HTML
+### HTML
 WT.HTML implements HTML parser, serializer and constructors.
 
-## JSON
+### JSON
 WT.JSON is based on [CL-JSON](https://common-lisp.net/project/cl-json/cl-json.html).
 
-## URI
+### URI
 WT.URI provides URI parser and constructor, with support of UTF-8 characters, IPv6 addresses and query parameters handling. It utilize recursive descent [parser combinators](https://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf) to provide a concise implementation that is close to the definition in [RFC 3986 Uniform Resource Identifier (URI): Generic Syntax](https://tools.ietf.org/html/rfc3986).
 
-# Roadmap
+## Roadmap
 
 * Overall
   * Use in production environments
@@ -46,5 +46,5 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Implement server statistics and metrics monitoring
   * Support [Compression Extensions](https://tools.ietf.org/html/rfc7692)
 
-# Author
+## Author
 [Xiangyu He](https://xh.coobii.com) <[xh@coobii.com](mailto:xh@coobii.com)>
