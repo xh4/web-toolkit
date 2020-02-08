@@ -36,9 +36,10 @@ HANDLE-IF-MODIFIED-SINCE."
 
 ;; TODO: read-byte 会报远程主机关闭的错误
 (defun read-char (stream &optional (eof-error-p t) eof-value)
-  (let ((char-code (read-byte stream eof-error-p eof-value)))
-    (and char-code
-         (code-char char-code))))
+  (ignore-errors
+    (let ((char-code (read-byte stream eof-error-p eof-value)))
+      (and char-code
+           (code-char char-code)))))
 
 (defun read-line (stream)
   (with-output-to-string (line)
