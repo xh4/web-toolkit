@@ -77,4 +77,6 @@
      (typecase body
        (string (length (write-sequence (babel:string-to-octets body) stream)))
        (vector (length (write-sequence body stream)))
+       (pathname (with-open-file (input-stream body :element-type '(unsigned-byte 8))
+                   (alexandria::copy-stream input-stream stream)))
        (t 0)))))
