@@ -1,12 +1,14 @@
 <h3 align="center">Lisp Web Toolkit</h3>
 
 <p align="center">
-    <a href="https://lisp-web-toolkit.com">lisp-web-toolkit.com</a>
+    <a href="https://lisp-web-toolkit.com" target="_blank">lisp-web-toolkit.com</a>
 </p>
 
 # Status [![](https://travis-ci.org/xh4/web-toolkit.svg?branch=master)](https://travis-ci.org/xh4/web-toolkit)
 
-![](https://lisp-web-toolkit.com/status.png)
+<a href="https://lisp-web-toolkit.com/status" target="_blank">
+    <img src="https://lisp-web-toolkit.com/status.png">
+</a>
 
 # Systems
 
