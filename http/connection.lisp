@@ -84,7 +84,7 @@
   (let ((stream (connection-output-stream connection)))
     (when (null (response-status response))
       (setf response (make-instance 'response
-                                    :status 204)))
+                                    :status 200)))
     (unless (equal 101 (status-code (response-status response)))
       (prog1
           (write-response stream response)
