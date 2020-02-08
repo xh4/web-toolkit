@@ -4,9 +4,7 @@
     <a href="https://lisp-web-toolkit.com">lisp-web-toolkit.com</a>
 </p>
 
-# Status
-
-[![Build Status](https://travis-ci.org/xh4/web-toolkit.svg?branch=master)](https://travis-ci.org/xh4/web-toolkit)
+# Status [![](https://travis-ci.org/xh4/web-toolkit.svg?branch=master)](https://travis-ci.org/xh4/web-toolkit)
 
 # Systems
 
