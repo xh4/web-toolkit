@@ -6,6 +6,8 @@
 
 # Status [![](https://travis-ci.org/xh4/web-toolkit.svg?branch=master)](https://travis-ci.org/xh4/web-toolkit)
 
+![](https://lisp-web-toolkit.com/status.png)
+
 # Systems
 
 ## HTTP
