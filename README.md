@@ -27,7 +27,22 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
 
 # Roadmap
 
-* HTTP/2
+* Overall
+  * Use in production environments
+  * Write [documentation](https://lisp-web-toolkit.com)
+  * Carefully design conditions
+  * Write more tests
+  * Add project build status graph
+  * Add code coverage informataion
+* HTTP
+  * Use Asynchronous I/O in LispWorks
+  * Implement server statistics and metrics monitoring
+  * Implement [HTTP/2](https://tools.ietf.org/html/rfc7540)
+  * Implement common handlers
+* WebSocket
+  * Use Asynchronous I/O in LispWorks
+  * Implement server statistics and metrics monitoring
+  * Support [Compression Extensions](https://tools.ietf.org/html/rfc7692)
 
 # Author
 [Xiangyu He](https://xh.coobii.com) <[xh@coobii.com](mailto:xh@coobii.com)>
