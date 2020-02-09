@@ -134,8 +134,7 @@
      :method :post
      :content-type "application/xml"
      :content report
-     :content-length (length report)
-     :external-format-out :utf-8)))
+     :want-stream t)))
 
 (defun system-dependencies ()
   (labels ((wt-system-p (system)
