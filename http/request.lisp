@@ -108,15 +108,25 @@
         (let ((body (make-array 1 :element-type '(unsigned-byte 8))))
           (read-sequence body stream))))))
 
-(defun read-request-body-into-string ())
+(defgeneric read-request-body-into-string (request)
+  (:method ((request request))
+    (read-message-body-into-string request)))
 
-(defun read-request-body-into-vector ())
+(defgeneric read-request-body-into-vector (request)
+  (:method ((request request))
+    (read-message-body-into-vector request)))
 
-(defun read-request-body-into-temporary-file ())
+(defgeneric read-request-body-into-temporary-file (request)
+  (:method ((request request))
+    (read-message-body-into-temporary-file request)))
 
-(defun pipe-request-body-chunks ())
+(defgeneric pipe-reqeust-body-chunks (request)
+  (:method ((request request))
+    (pipe-message-body-chunks request)))
 
-(defun pipe-request-body-chunks-as-vector ())
+(defgeneric pipe-request-body-chunks-as-vector (request)
+  (:method ((request request))
+    (pipe-message-body-chunks-as-vector request)))
 
 (defun write-request-body (stream request)
   (let ((body (request-body request)))

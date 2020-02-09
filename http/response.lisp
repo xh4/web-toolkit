@@ -90,6 +90,26 @@
       (alexandria::read-stream-content-into-byte-vector
        stream 'alexandria::%length content-length))))
 
+(defgeneric read-response-body-into-vector (response)
+  (:method ((response response))
+    (read-message-body-into-vector response)))
+
+(defgeneric read-response-body-into-string (response)
+  (:method ((response response))
+    (read-message-body-into-string response)))
+
+(defgeneric read-response-body-into-temporary-file (response)
+  (:method ((response response))
+    (read-message-body-into-temporary-file response)))
+
+(defgeneric pipe-response-body-chunks (response)
+  (:method ((response response))
+    (pipe-message-body-chunks response)))
+
+(defgeneric pipe-response-body-chunks-as-vector (response)
+  (:method ((response response))
+    (pipe-message-body-chunks-as-vector response)))
+
 (defgeneric write-response-body (stream response)
   (:method (stream (response response))
     (let ((body (response-body response)))
