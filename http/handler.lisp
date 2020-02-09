@@ -75,6 +75,23 @@
 (defmethod handler-function-lambda-list ((handler handler))
   (handler-function-lambda-list (class-of handler)))
 
+(define-condition condition/next-handler () ())
+
+(defmacro next-handler ()
+  `(restart-case (signal 'condition/next-handler)
+     (restart/next-handler (handler) handler)))
+
+(define-condition condition/call-next-handler () ())
+
+(defmacro call-next-handler ()
+  `(restart-case (signal 'condition/call-next-handler)
+     (restart/call-next-handler (response) response)))
+
+(define-condition condition/abort-handler () ())
+
+(defmacro abort-handler ()
+  `(signal 'condition/abort-handler))
+
 (defvar handler (make-instance 'handler))
 
 (setf (gethash 'handler *static-handlers*) handler)
@@ -118,24 +135,6 @@
      (lambda (handler-class)
        (subclassp handler-class root-handler-class))
      handler-classes)))
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (define-condition condition/next-handler () ())
-
-  (defmacro next-handler ()
-    `(restart-case (signal 'condition/next-handler)
-       (restart/next-handler (handler) handler)))
-
-  (define-condition condition/call-next-handler () ())
-
-  (defmacro call-next-handler ()
-    `(restart-case (signal 'condition/call-next-handler)
-       (restart/call-next-handler (response) response)))
-
-  (define-condition condition/abort-handler () ())
-
-  (defmacro abort-handler ()
-    `(signal 'condition/abort-handler)))
 
 (defun compute-handler-precedence-list (handler)
   (let ((handler-classes (handler-class-precedence-list handler)))
