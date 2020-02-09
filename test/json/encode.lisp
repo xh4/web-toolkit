@@ -37,7 +37,7 @@
 (defun decode-then-encode (json)
   (assert (member (elt json 0) '(#\{ #\[ #\" ))) ;must be json
   (flet ((normalize (string)
-           (remove #\Newline (remove #\Space string))))
+           (remove #\Return (remove #\Newline (remove #\Space string)))))
     (let* ((decoded (decode json))
            (encoded (encode decoded)))
       ;;        (format t "Decoded:~a~&" decoded)
