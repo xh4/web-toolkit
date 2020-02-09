@@ -35,12 +35,14 @@
                :fiveam
                :cl-ppcre
                :split-sequence
-               :serapeum)
+               :serapeum
+               :cl-fad)
   :serial t
   :components ((:module "test"
                         :components ((:module "websocket"
                                               :serial t
                                               :components ((:file "package")
+                                                           (:file "helper")
                                                            (:file "autobahn")
                                                            (:file "endpoint")
                                                            (:file "session")

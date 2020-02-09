@@ -2,7 +2,9 @@
 
 (in-suite :websocket-test)
 
-(defparameter *wstest-executable-path* "C:\\Python27amd64\\Scripts\\wstest.exe")
+(defparameter *wstest-executable-path*
+  (or (find-executable "wstest" "wstest.exe")
+      (error "Missing wstest executable file (PATH: ~A)" (uiop:getenv "PATH"))))
 
 (defparameter *wstest-port* 54000)
 
