@@ -59,7 +59,7 @@
 (defvar *git-branch* (uiop:getenv "GIT_BRANCH"))
 (defvar *git-commit* (uiop:getenv "GIT_COMMIT"))
 
-(defvar *status-uri* "http://127.0.0.1:7000/status")
+(defvar *status-uri* "https://lisp-web-toolkit.com/status")
 
 (local-time:reread-timezone-repository)
 
