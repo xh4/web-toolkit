@@ -6,7 +6,7 @@
   (or (find-executable "wstest" "wstest.exe")
       (error "Missing wstest executable file (PATH: ~A)" (uiop:getenv "PATH"))))
 
-(defparameter *wstest-port* 0)
+(defparameter *wstest-port* 40000)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *wstest-cases* nil))
@@ -43,7 +43,7 @@
   (:handler (http:router
              (:get "/" test-endpoint)))
   (:listener (list
-              (http:listener :port 4000))))
+              (http:listener :port 40000))))
 
 (defmacro with-test-server (port &body body)
   `(unwind-protect
