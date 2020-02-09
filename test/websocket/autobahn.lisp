@@ -6,7 +6,7 @@
   (or (find-executable "wstest" "wstest.exe")
       (error "Missing wstest executable file (PATH: ~A)" (uiop:getenv "PATH"))))
 
-(defparameter *wstest-port* 54000)
+(defparameter *wstest-port* 0)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *wstest-cases* nil))
@@ -158,23 +158,28 @@
 (defun run-wstest (&optional (cases *wstest-cases*))
   (unless (probe-file *wstest-executable-path*)
     (error "Missing wstest execuable (~A)" *wstest-executable-path*))
-  (let* ((port *wstest-port*)
-         (url (format nil "ws://127.0.0.1:~A" port))
-         (outdir (namestring (uiop:default-temporary-directory)))
-         (spec-path (make-test-spec
-                     :url url
-                     :outdir outdir
-                     :cases cases)))
-    (when cases
-      (let ((command (format nil "~A --mode fuzzingclient --spec ~A"
-                             *wstest-executable-path*
-                             spec-path)))
-        (with-test-server port
-          (uiop:run-program command
-                            :output *standard-output*
-                            :error-output *standard-output*))
-        (delete-file spec-path)
-        (merge-pathnames "index.html" (uiop:default-temporary-directory))))))
+  (tagbody :start
+     (setf *wstest-port* (find-port))
+     (let* ((url (format nil "ws://127.0.0.1:~A" *wstest-port*))
+            (outdir (namestring (uiop:default-temporary-directory)))
+            (spec-path (make-test-spec
+                        :url url
+                        :outdir outdir
+                        :cases cases)))
+       (when cases
+         (let ((command (format nil "~A --mode fuzzingclient --spec ~A"
+                                *wstest-executable-path*
+                                spec-path)))
+           (handler-bind ((usocket:address-in-use-error
+                           (lambda (e)
+                             (declare (ignore e))
+                             (go :start))))
+             (with-test-server *wstest-port*
+               (uiop:run-program command
+                                 :output *standard-output*
+                                 :error-output *standard-output*)))
+           (delete-file spec-path)
+           (merge-pathnames "index.html" (uiop:default-temporary-directory)))))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun test-case-function-name (case-id)

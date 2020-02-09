@@ -36,7 +36,8 @@
                :cl-ppcre
                :split-sequence
                :serapeum
-               :cl-fad)
+               :cl-fad
+               :find-port)
   :serial t
   :components ((:module "test"
                         :components ((:module "websocket"

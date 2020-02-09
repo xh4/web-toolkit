@@ -6,7 +6,9 @@
   (:shadow :test-case)
   (:export :run!)
   (:import-from :split-sequence
-                :split-sequence))
+                :split-sequence)
+  (:import-from :find-port
+                :find-port))
 
 (in-package :websocket-test)
 (def-suite :websocket-test)
