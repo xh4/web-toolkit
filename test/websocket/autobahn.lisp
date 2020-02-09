@@ -9,7 +9,7 @@
 (defparameter *wstest-port* 9500)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defparameter *wstest-cases* nil))
+  (defvar *wstest-cases* nil))
 
 (defparameter *wstest-complete* nil)
 
