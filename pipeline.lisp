@@ -4,6 +4,8 @@
 
 (in-package :cl-user)
 
+(uiop:delete-directory-tree asdf::*user-cache* :validate t)
+
 (ql:quickload :alexandria)
 (ql:quickload :cxml)
 (ql:quickload :drakma)
@@ -225,6 +227,5 @@
 
 
 (progn
-  (uiop:delete-directory-tree asdf::*user-cache* :validate t)
   (process-systems)
   (uiop:quit))
