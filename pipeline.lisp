@@ -49,7 +49,7 @@
 (when *wt-home*
   (push *wt-home* asdf:*central-registry*))
 
-#+ccl
+#+(or ccl lispworks)
 (setf *debugger-hook*
       (lambda (error hook)
         (declare (ignore hook))
