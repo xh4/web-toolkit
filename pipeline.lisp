@@ -200,7 +200,9 @@
        (handler-bind ((error (lambda (condition)
                                (report system :test :fail condition))))
          (test-system system))
-       (report system :test :done))))
+       (report system :test :done)
+     :done
+       (report system :process :done))))
 
 (defun process-systems ()
   (report :wt :process :start)
