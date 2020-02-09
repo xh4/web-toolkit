@@ -131,7 +131,8 @@
      *status-uri*
      :method :post
      :content-type "application/xml"
-     :content report)))
+     :content report
+     :external-format-out :utf-8)))
 
 (defun system-dependencies ()
   (labels ((wt-system-p (system)
