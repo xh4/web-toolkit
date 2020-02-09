@@ -75,22 +75,23 @@
 (defmethod handler-function-lambda-list ((handler handler))
   (handler-function-lambda-list (class-of handler)))
 
-(define-condition condition/next-handler () ())
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (define-condition condition/next-handler () ())
 
-(defmacro next-handler ()
-  `(restart-case (signal 'condition/next-handler)
-     (restart/next-handler (handler) handler)))
+  (defmacro next-handler ()
+    `(restart-case (signal 'condition/next-handler)
+       (restart/next-handler (handler) handler)))
 
-(define-condition condition/call-next-handler () ())
+  (define-condition condition/call-next-handler () ())
 
-(defmacro call-next-handler ()
-  `(restart-case (signal 'condition/call-next-handler)
-     (restart/call-next-handler (response) response)))
+  (defmacro call-next-handler ()
+    `(restart-case (signal 'condition/call-next-handler)
+       (restart/call-next-handler (response) response)))
 
-(define-condition condition/abort-handler () ())
+  (define-condition condition/abort-handler () ())
 
-(defmacro abort-handler ()
-  `(signal 'condition/abort-handler))
+  (defmacro abort-handler ()
+    `(signal 'condition/abort-handler)))
 
 (defvar handler (make-instance 'handler))
 
