@@ -134,6 +134,7 @@
      :method :post
      :content-type "application/xml"
      :content report
+     :content-length (length report)
      :external-format-out :utf-8)))
 
 (defun system-dependencies ()
