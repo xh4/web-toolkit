@@ -9,7 +9,7 @@
 (defparameter *wstest-port* 9500)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *wstest-cases* nil))
+  (defparameter *wstest-cases* nil))
 
 (defparameter *wstest-complete* nil)
 
@@ -223,8 +223,7 @@
     (setf test-case-ids (sort test-case-ids 'string<))
     (loop for test-case-id in test-case-ids
        unless (find test-case-id *wstest-cases* :test 'equal)
-       do (push test-case-id *wstest-cases*)
-       finally (setf *wstest-cases* (sort *wstest-cases* 'string<)))
+       do (push test-case-id *wstest-cases*))
     (let ((group-id (cl-ppcre:scan-to-strings "[\\d.]+" title)))
       (let ((test-group-function-name (test-group-function-name group-id)))
         `(progn
