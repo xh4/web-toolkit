@@ -59,8 +59,6 @@
 (defvar *git-branch* (uiop:getenv "GIT_BRANCH"))
 (defvar *git-commit* (uiop:getenv "GIT_COMMIT"))
 
-(defvar *status-uri* "https://lisp-web-toolkit.com/status")
-
 (local-time:reread-timezone-repository)
 
 (defvar *pipeline-id* (local-time:format-timestring
@@ -130,8 +128,9 @@
   ;; (format t "~%~%~A ~A ~A~%~%" system operation stage)
   (let ((report (make-report system operation stage condition)))
     (drakma:http-request
-     *status-uri*
+     "https://47.104.177.139/status"
      :method :post
+     :additional-headers `(("Host" . "lisp-web-toolkit.com"))
      :content-type "application/xml"
      :content report
      :want-stream t)))
