@@ -57,24 +57,6 @@
                         :documentation documentation
                         :location location)))
 
-;; Mapping from handler names (class names of handlers) to handler instances
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *static-handlers* (make-hash-table)))
-
-(defclass handler ()
-  ()
-  (:metaclass handler-class)
-  (:function (lambda (request) (call-next-handler))))
-
-(defmethod handler-function ((handler handler))
-  (handler-function (class-of handler)))
-
-(defmethod (setf handler-function) (function (handler handler))
-  (setf (handler-function (class-of handler)) function))
-
-(defmethod handler-function-lambda-list ((handler handler))
-  (handler-function-lambda-list (class-of handler)))
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (define-condition condition/next-handler () ())
 
@@ -92,6 +74,24 @@
 
   (defmacro abort-handler ()
     `(signal 'condition/abort-handler)))
+
+;; Mapping from handler names (class names of handlers) to handler instances
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *static-handlers* (make-hash-table)))
+
+(defclass handler ()
+  ()
+  (:metaclass handler-class)
+  (:function (lambda (request) (call-next-handler))))
+
+(defmethod handler-function ((handler handler))
+  (handler-function (class-of handler)))
+
+(defmethod (setf handler-function) (function (handler handler))
+  (setf (handler-function (class-of handler)) function))
+
+(defmethod handler-function-lambda-list ((handler handler))
+  (handler-function-lambda-list (class-of handler)))
 
 (defvar handler (make-instance 'handler))
 
