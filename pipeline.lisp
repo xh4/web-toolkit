@@ -214,7 +214,8 @@
                                 (loop for system in (subseq *systems* (1+ index))
                                    do (report system :process :discard))
                                 (report :wt :process :done))))
-          (process-system system))))
+          (process-system system)))
+  (report :wt :process :done))
 
 
 
