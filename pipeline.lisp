@@ -80,8 +80,6 @@
             (text (format nil "~A" *pipeline-id*)))
           (with-element "system"
             (text (format nil "~A" system)))
-          (with-element "system"
-            (text (format nil "~A" system)))
           (with-element "operation"
             (text (format nil "~A" operation)))
           (with-element "stage"
@@ -127,7 +125,7 @@
     (make-fresh-output)))
 
 (defun report (system operation stage &optional condition)
-  (format t "~%~%~A ~A ~A~%~%" system operation stage)
+  ;; (format t "~%~%~A ~A ~A~%~%" system operation stage)
   (let ((report (make-report system operation stage condition)))
     (drakma:http-request
      *status-uri*
@@ -223,5 +221,6 @@
 
 
 (progn
+  (uiop:delete-directory-tree asdf::*user-cache* :validate t)
   (process-systems)
   (uiop:quit))
