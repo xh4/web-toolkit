@@ -112,6 +112,8 @@
             (text (ql:client-version)))
           (with-element "quicklisp-dist-version"
             (text (ql:dist-version "quicklisp")))
+          (with-element "asdf-version"
+            (text (asdf:asdf-version)))
           (with-element "uiop-implementation-identifier"
             (text (uiop:implementation-identifier)))
           (with-element "current-working-directory"
@@ -128,9 +130,8 @@
   ;; (format t "~%~%~A ~A ~A~%~%" system operation stage)
   (let ((report (make-report system operation stage condition)))
     (drakma:http-request
-     "https://47.104.177.139/status"
+     "https://lisp-web-toolkit.com/status"
      :method :post
-     :additional-headers `(("Host" . "lisp-web-toolkit.com"))
      :content-type "application/xml"
      :content report
      :want-stream t)))
