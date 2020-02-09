@@ -6,7 +6,7 @@
 
 TODO: Write some introduction here
 
-### Status [![](https://travis-ci.org/xh4/web-toolkit.svg?branch=master)](https://travis-ci.org/xh4/web-toolkit)
+### Status
 
 <a href="https://lisp-web-toolkit.com/status">
     <img src="https://lisp-web-toolkit.com/status.png" width="656">
