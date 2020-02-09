@@ -54,7 +54,10 @@
       (lambda (error hook)
         (declare (ignore hook))
         (trivial-backtrace:print-backtrace error)
-        (uiop:quit -1)))
+        #-ccl
+        (uiop:quit -1)
+        #+ccl
+        (eval "(#__exit -1)")))
 
 (defvar *git-branch* (uiop:getenv "GIT_BRANCH"))
 (defvar *git-commit* (uiop:getenv "GIT_COMMIT"))
@@ -228,4 +231,7 @@
 
 (progn
   (process-systems)
-  (uiop:quit))
+  #-ccl
+  (uiop:quit)
+  #+ccl
+  (eval "(#__exit 0)"))
