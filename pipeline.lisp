@@ -129,12 +129,13 @@
 (defun report (system operation stage &optional condition)
   ;; (format t "~%~%~A ~A ~A~%~%" system operation stage)
   (let ((report (make-report system operation stage condition)))
-    (drakma:http-request
-     "https://lisp-web-toolkit.com/status"
-     :method :post
-     :content-type "application/xml"
-     :content report
-     :want-stream t)))
+    (let ((stream (drakma:http-request
+                   "https://lisp-web-toolkit.com/status"
+                   :method :post
+                   :content-type "application/xml"
+                   :content report
+                   :want-stream t)))
+      (close stream))))
 
 (defun system-dependencies ()
   (labels ((wt-system-p (system)
