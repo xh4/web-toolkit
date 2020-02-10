@@ -3,7 +3,7 @@
 (defmacro reply (&rest forms)
   (with-gensyms (object)
     `(progn
-       (let ((*response* (make-instance 'response)))
+       (let ((*response* (or *response* (make-instance 'response))))
          ,@(loop for form in forms
               collect
                 `(let ((,object ,form))
