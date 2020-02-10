@@ -73,7 +73,11 @@
       (let ((handler (server-handler server)))
         (unless handler
           (setf handler default-handler))
-        (let ((response (invoke-handler handler request)))
+        (let ((response (handler-bind ((error (lambda (error)
+                                                (use-value (handle-error error-handler request error)))))
+                          (restart-case
+                              (invoke-handler handler request)
+                            (use-value (response) response)))))
           (when (and (equal "HTTP/1.0" (request-version request))
                      (string-equal "Keep-Alive" (header-field-value
                                                  (find-header-field "Connection" request))))
