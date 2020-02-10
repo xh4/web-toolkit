@@ -3,12 +3,12 @@
 (defmacro reply (&rest forms)
   (with-gensyms (object)
     `(progn
-       (setf *response* (or *response* (make-instance 'response)))
-       ,@(loop for form in forms
-            collect
-              `(let ((,object ,form))
-                 (reply-object ,object)))
-       *response*)))
+       (let ((*response* (make-instance 'response)))
+         ,@(loop for form in forms
+              collect
+                `(let ((,object ,form))
+                   (reply-object ,object)))
+         *response*))))
 
 (defgeneric reply-object (object))
 
