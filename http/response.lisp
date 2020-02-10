@@ -121,14 +121,13 @@
         (t 0)))))
 
 (defun read-response (stream)
-  (let ((status-line (read-status-line stream)))
-    (let ((header (read-header stream)))
-      (let ((body (read-response-body stream header)))
-        (let ((status-code (second status-line)))
-          (make-instance 'response
-                         :status status-code
-                         :header header
-                         :body body))))))
+  (when-let ((status-line (read-status-line stream)))
+    (let ((status-code (second status-line)))
+      (let ((header (read-header stream)))
+        (make-instance 'response
+                       :status status-code
+                       :header header
+                       :body stream)))))
 
 (defgeneric write-response (stream response)
   (:method (stream (response response))

@@ -26,6 +26,9 @@
     :initform t
     :accessor socket-open-p)))
 
+(defmethod usocket:socket-close ((socket test-socket))
+  (setf (socket-open-p socket) nil))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar test-listener (listener :port 4004)))
 
@@ -40,7 +43,16 @@
      (let ((,stream (babel-streams:make-in-memory-input-stream data)))
        (unwind-protect
             ,@body
-         (close stream)))))
+         (close ,stream)))))
+
+(defmacro with-response-in-stream ((stream response) &body body)
+  `(let ((data (babel-streams:with-output-to-sequence (stream)
+                 (loop for response in (ensure-list ,response)
+                    do (http::write-response stream response)))))
+     (let ((,stream (babel-streams:make-in-memory-input-stream data)))
+       (unwind-protect
+            ,@body
+         (close ,stream)))))
 
 (defmacro with-output-to-string ((stream) &body body)
   `(babel:octets-to-string
@@ -58,19 +70,43 @@
      (let ((,var (http::read-header stream)))
        ,@body)))
 
-(defmacro with-connection ((connection &key request) &body body)
+(defmacro with-connection ((connection &optional request) &body body)
   `(let ((socket (make-instance 'test-socket)))
-     (let ((input-data nil))
-       (when ,request
-         (setf input-data (babel:octets-to-string
-                           (babel-streams:with-output-to-sequence (stream)
-                             (loop for req in (ensure-list ,request)
-                                do (write-request stream req))))))
-       (let ((input-stream (babel-streams:make-in-memory-input-stream input-data))
-             (output-stream (babel-streams:make-in-memory-output-stream)))
+     (with-request-in-stream (input-stream ,request)
+       (let ((output-stream (babel-streams:make-in-memory-output-stream)))
          (let ((,connection (make-instance 'http::connection
                                            :listener test-listener
                                            :socket socket
                                            :input-stream input-stream
                                            :output-stream output-stream)))
            ,@body)))))
+
+(defmacro with-process-connection ((request response) &body body)
+  `(with-connection (connection ,request)
+     (let ((cvar (bt:make-condition-variable))
+           (lock (bt:make-lock)))
+       (bt:acquire-lock lock)
+       (let ((thread (bt:make-thread
+                      (lambda ()
+                        (http::process-connection connection)
+                        (bt:condition-notify cvar)))))
+         (bt:condition-wait cvar lock :timeout 5)
+         (bt:destroy-thread thread)))
+     (let ((output-stream (http::connection-output-stream connection)))
+       (let ((output-vector (babel-streams::vector-stream-vector
+                             output-stream)))
+         (let ((input-stream (babel-streams:make-in-memory-input-stream
+                              output-vector)))
+           (let ((,response (loop for res = (http::read-response input-stream)
+                               while res
+                               do (http::read-response-body-into-vector res)
+                               collect res)))
+             ,@body))))))
+
+;; (with-process-connection ((list (make-instance 'request
+;;                                                :method "GET"
+;;                                                :uri "/"
+;;                                                :version "HTTP/1.0"
+;;                                                :header (header "Connection" "close")))
+;;                           response)
+;;   response)
