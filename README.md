@@ -9,7 +9,7 @@ TODO: Write some introduction here
 ### Status
 
 <a href="https://lisp-web-toolkit.com/status">
-    <img src="https://lisp-web-toolkit.com/status.png" width="656">
+    <img src="https://lisp-web-toolkit.com/status.png" width="750">
 </a>
 
 ### Systems
