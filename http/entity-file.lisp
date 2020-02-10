@@ -26,10 +26,8 @@
                     (get-universal-time))))
       (rfc-1123-date time))))
 
-(defmethod response-status ((entity file-entity))
-  (if-let ((status (entity-status entity)))
-    status
-    (let ((pathname (entity-body entity)))
-      (if (probe-file pathname)
-          200
-          404))))
+(defmethod entity-status ((entity file-entity))
+  (let ((pathname (entity-body entity)))
+    (if (probe-file pathname)
+        200
+        404)))

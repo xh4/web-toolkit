@@ -37,7 +37,7 @@
 (defgeneric entity-body (entity))
 
 (defmethod response-status ((entity entity))
-  (entity-status entity))
+  (or (slot-value entity 'status) (entity-status entity) 200))
 
 (defmethod (setf response-status) (status (entity entity))
   (setf (entity-status entity) status))

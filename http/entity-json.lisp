@@ -16,9 +16,6 @@
 (defmethod content-type ((entity json-entity))
   "application/json; charset=UTF-8")
 
-(defmethod response-status ((entity json-entity))
-  200)
-
 (defmethod response-body ((entity json-entity))
   (with-slots (string) entity
     string))

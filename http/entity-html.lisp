@@ -16,9 +16,6 @@
 (defmethod content-type ((entity html-entity))
   "text/html; charset=UTF-8")
 
-(defmethod response-status ((entity html-entity))
-  200)
-
 (defmethod response-body ((entity html-entity))
   (with-slots (string) entity
     string))
