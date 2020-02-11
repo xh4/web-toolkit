@@ -18,7 +18,7 @@
 
 (defsystem wt.html/test
   :depends-on (:wt.html
-               :test)
+               :wt.test)
   :serial t
   :components ((:module "test"
                         :components ((:module "html"
