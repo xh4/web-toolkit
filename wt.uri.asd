@@ -30,7 +30,7 @@
 
 (defsystem wt.uri/test
   :depends-on (:wt.uri
-               :fiveam)
+               :wt.test)
   :serial t
   :components ((:module "test"
                         :components ((:module "uri"
@@ -46,4 +46,4 @@
                                                            (:file "merge")
                                                            (:file "uri"))))))
   :perform (test-op (o c)
-                    (symbol-call :fiveam :run! :uri-test)))
+                    (symbol-call :test :run! :uri-test)))

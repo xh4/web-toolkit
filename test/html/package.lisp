@@ -2,7 +2,7 @@
 
 (defpackage :html-test
   (:nicknames :wt.html-test)
-  (:use :cl :html :fiveam)
+  (:use :cl :html :test)
   (:shadow :time :map)
   (:export :run!))
 

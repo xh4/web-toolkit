@@ -18,7 +18,7 @@
 
 (defsystem wt.html/test
   :depends-on (:wt.html
-               :fiveam)
+               :test)
   :serial t
   :components ((:module "test"
                         :components ((:module "html"
@@ -29,4 +29,4 @@
                                                            (:file "document")
                                                            (:file "serialize"))))))
   :perform (test-op (o c)
-                    (symbol-call :fiveam :run! :html-test)))
+                    (symbol-call :test :run! :html-test)))

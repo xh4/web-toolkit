@@ -2,7 +2,7 @@
 
 (defpackage :uri-test
   (:nicknames :wt.uri-test)
-  (:use :cl :uri :fiveam)
+  (:use :cl :uri :test)
   (:export :run!))
 
 (in-package :uri-test)

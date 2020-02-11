@@ -20,7 +20,7 @@
 
 (defsystem wt.json/test
   :depends-on (:wt.json
-               :fiveam)
+               :wt.test)
   :serial t
   :components ((:module "test"
                         :components ((:module "json"
@@ -30,4 +30,4 @@
                                                            (:file "encode")
                                                            (:file "object"))))))
   :perform (test-op (o c)
-                    (symbol-call :fiveam :run! :json-test)))
+                    (symbol-call :test :run! :json-test)))

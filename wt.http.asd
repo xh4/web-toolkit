@@ -58,15 +58,13 @@
 
 (defsystem wt.http/test
   :depends-on (:wt.http
-               :babel-streams
-               :fiveam)
+               :wt.test
+               :babel-streams)
   :serial t
   :components ((:module "test"
                         :components ((:module "http"
                                               :serial t
                                               :components ((:file "package")
-                                                           (:file "serapeum")
-                                                           (:file "fiveam")
                                                            (:file "helper")
                                                            (:file "stream")
                                                            (:file "utility")
@@ -80,4 +78,4 @@
                                                            (:file "redirect")
                                                            (:file "static"))))))
   :perform (test-op (o c)
-                    (symbol-call :fiveam :run! :http-test)))
+                    (symbol-call :test :run! :http-test)))

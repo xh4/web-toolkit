@@ -1,4 +1,4 @@
-(in-package :http-test)
+(in-package :test)
 
 (declaim (inline reuse-cons))
 (defun reuse-cons (x y x-y)

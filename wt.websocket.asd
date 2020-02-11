@@ -33,7 +33,7 @@
 (defsystem wt.websocket/test
   :depends-on (:wt.websocket
                :wt.json
-               :fiveam
+               :wt.test
                :cl-ppcre
                :split-sequence
                :cl-fad
@@ -43,11 +43,10 @@
                         :components ((:module "websocket"
                                               :serial t
                                               :components ((:file "package")
-                                                           (:file "serapeum")
                                                            (:file "helper")
                                                            (:file "autobahn")
                                                            (:file "endpoint")
                                                            (:file "session")
                                                            (:file "websocket"))))))
   :perform (test-op (o c)
-                    (symbol-call :fiveam :run! :websocket-test)))
+                    (symbol-call :test :run! :websocket-test)))

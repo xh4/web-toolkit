@@ -1,4 +1,4 @@
-(in-package :http-test)
+(in-package :test)
 
 (defvar *it* nil)
 (defvar *is* nil)
@@ -13,7 +13,7 @@
           (map-tree
            (lambda (form)
              (if (and (listp form)
-                      (not (emptyp form))
+                      (not (= 0 (length form)))
                       (member (first form) '(fiveam:is fiveam:is-true
                                              fiveam:is-every fiveam:is-false
                                              fiveam:signals fiveam:finishes
@@ -32,20 +32,20 @@
   (let ((reason (and reason-format
                      (apply #'format nil reason-format format-args)))
         (premble))
-    (setf *it*
-          (http-test::map-tree
+    (setf test:*it*
+          (test::map-tree
            (lambda (form)
              (if (and (listp form)
                       (not (emptyp form))
-                      (equal (first form) '=>))
+                      (equal (first form) 'test:=>))
                  (throw :skip
-                   (if (equal (second *is*) (second form))
-                       (cons '=> (cddr form))
+                   (if (equal (second test:*is*) (second form))
+                       (cons 'test:=> (cddr form))
                        (cddr form)))
                  form))
-           *it*
+           test:*it*
            :tag :skip))
-    (loop for form in *it*
+    (loop for form in test:*it*
        do (setf premble (concatenate 'string
                                      premble
                                      (format nil "~%IN ~%~A~%"
@@ -57,4 +57,4 @@
              :reason reason))
     (add-result 'test-failure :test-expr test-expr
                 :reason reason)))
-(in-package :http-test)
+(in-package :test)

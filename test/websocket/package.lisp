@@ -2,7 +2,7 @@
 
 (defpackage :websocket-test
   (:nicknames :wt.websocket-test :ws-test :wt.ws-test)
-  (:use :cl :websocket :fiveam :alexandria)
+  (:use :cl :websocket :test :alexandria)
   (:shadow :test-case)
   (:export :run!)
   (:import-from :split-sequence
