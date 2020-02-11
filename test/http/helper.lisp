@@ -27,7 +27,8 @@
   `(let ((*it* ',body))
      ,@body))
 
-(defun fiveam::process-failure (test-expr &optional reason-format &rest format-args)
+(in-package :fiveam)
+(defun process-failure (test-expr &optional reason-format &rest format-args)
   (let ((reason (and reason-format
                      (apply #'format nil reason-format format-args)))
         (premble))
@@ -51,11 +52,12 @@
                                              (cl:with-output-to-string (stream)
                                                (pprint form stream))))))
     (setf reason (concatenate 'string premble reason))
-    (with-simple-restart (fiveam::ignore-failure "Continue the test run.")
-      (error 'fiveam::check-failure :test-expr test-expr
+    (with-simple-restart (ignore-failure "Continue the test run.")
+      (error 'check-failure :test-expr test-expr
              :reason reason))
-    (fiveam::add-result 'fiveam::test-failure :test-expr test-expr
+    (add-result 'test-failure :test-expr test-expr
                         :reason reason)))
+(in-package :http-test)
 
 (defmacro with-input-from-lines ((var lines &key (line-break http::+crlf+)) &body body)
   `(let* ((line-break (typecase ,line-break
