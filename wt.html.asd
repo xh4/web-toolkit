@@ -7,6 +7,7 @@
   :depends-on (:alexandria
                :cxml-dom
                :closure-html)
+  :defsystem-depends-on (:wt.vendor)
   :serial t
   :components ((:module "html"
                         :serial t

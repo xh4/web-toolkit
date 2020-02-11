@@ -8,6 +8,7 @@
                :babel
                :maxpc
                :split-sequence)
+  :defsystem-depends-on (:wt.vendor)
   :serial t
   :components ((:module "uri"
                         :serial t

@@ -1,0 +1,118 @@
+<documentation title="CXML Installation">
+    <h1>Installation of Closure XML</h1>
+
+    <a name="download"/>
+    <h2>Download</h2>
+    <p>
+      Download <a href="http://common-lisp.net/project/cxml/download/">tarballs</a> for both cxml itself and closure-common.
+    </p>
+    <p>
+      Or get it from git:
+    </p>
+    <p>
+      <tt>git clone git://repo.or.cz/cxml.git</tt>
+      (<a href="http://repo.or.cz/w/cxml.git">gitweb</a>)
+      <br/>
+      
+      <tt>git clone git://repo.or.cz/closure-common.git</tt>
+      (<a href="http://repo.or.cz/w/closure-common.git">gitweb</a>)
+      <br/>
+    </p>
+
+    <a name="implementations"/>
+    <h2>Implementation-specific notes</h2>
+    <p>
+      CXML should be portable to all Common Lisp implementations
+      supported by <a
+      href="http://common-lisp.net/project/cl-plus-ssl/#trivial-gray-streams">trivial-gray-streams</a>.
+    </p>
+    <p>
+      On Lisps without Unicode support, cxml uses integers instead of
+      characters to represent code points internally.  By default,
+      however, the parser will recode all data to strings containing
+      characters representing UTF-8 bytes before passing it to user
+      code.
+    </p>
+
+    <a name="compilation"/>
+    <h2>Compilation</h2>
+    <p>
+      <a href="http://www.cliki.net/asdf">ASDF</a> is used for
+      compilation.  The following instructions assume that ASDF has
+      already been loaded.
+    </p>
+
+    <p>
+      <b>Prerequisites.</b>
+      CXML needs:
+      <ul>
+	<li><a href="http://www.cliki.net/Puri">puri</a></li>
+	<li><a href="http://www.common-lisp.net/project/cl-plus-ssl/#trivial-gray-streams">trivial-gray-streams</a></li>
+	<li>
+	  <a href="http://common-lisp.net/project/babel/">Babel</a>
+	  (on Unicode-capable Lisps only)
+	</li>
+	<li>
+	  <a href="http://www.cliki.net/closure-common">closure-common</a>
+	  is maintained together with cxml but available as a separate
+	  download (see above for check-out instructions).
+	</li>
+      </ul>
+    </p>
+
+    <p>
+      <b>Compiling and loading CXML.</b>
+      Register the .asd file, e.g. by symlinking it:
+    </p>
+    <pre>$ ln -sf `pwd`/cxml/cxml.asd /path/to/your/registry/
+$ ln -sf `pwd`/closure-common/closure-common.asd /path/to/your/registry/</pre>
+    <p>Then compile CXML using:</p>
+    <pre>* (asdf:operate 'asdf:load-op :cxml)</pre>
+
+    <p>
+      You can then try the <a href="quickstart.html">quick-start example</a>.
+    </p>
+
+    <a name="tests"/>
+    <h2>Tests</h2>
+    <p>Check out the XML and DOM testsuites:</p>
+    <pre>$ export CVSROOT=:pserver:anonymous@dev.w3.org:/sources/public
+$ cvs login    # password is "anonymous"
+$ cvs co 2001/XML-Test-Suite/xmlconf
+$ cvs co -D '2005-05-06 23:00' 2001/DOM-Test-Suite
+$ cd 2001/DOM-Test-Suite &amp;&amp; ant dom1-dtd dom2-dtd</pre>
+    <p>
+      Omit <tt>-D</tt> to get the latest version, which may not work
+      with cxml yet.  The <tt>ant</tt> step is necessary to run the DOM
+      tests.
+    </p>
+    <p>Usage:</p>
+    <pre>* (xmlconf:run-all-tests "/path/to/2001/XML-Test-Suite/xmlconf/")
+* (domtest:run-all-tests "/path/to/2001/DOM-Test-Suite/")
+</pre>
+    <p>
+      To compare your results with known output, refer to the files
+      <tt>XMLCONF</tt> and <tt>DOMTEST</tt> in the cxml distribution.
+    </p>
+
+    <p>
+      <i>fixme</i>: Add an explanation of xml/sax-tests here.
+    </p>
+
+    <p>
+      <b>fixme</b> domtest.lisp does not understand the current
+      testsuite driver anymore.&#160; To fix this problem, revert the
+      affected files manually after check-out:
+    </p>
+
+    <pre>$ cd 2001/XML-Test-Suite/xmlconf/
+xmltest$ patch -p0 -R &lt;/path/to/cxml/test/xmlconf-base.diff</pre>
+
+    <p>
+      The log message for the changes reads "<i>Removed unnecessary
+      xml:base attribute</i>".&#160; If I understand correctly, only
+      DOM&#160;3 parsers provide the baseURI attribute necessary for
+      understanding <tt>xmlconf.xml</tt> now.&#160; We don't have that
+      yet.
+    </p>
+</documentation>

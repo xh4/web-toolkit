@@ -1,0 +1,119 @@
+<documentation title="CXML XMLS Compatibility">
+    <h1>XMLS Builder</h1>
+    <p>
+      Like other XML parsers written in Lisp, CXML can work with
+      documents represented as list structures. The specific model
+      implemented by cxml is compatible with the <a
+      href="http://common-lisp.net/project/xmls/">xmls parser</a>.  Xmls
+      list structures are a simpler and faster alternative to full DOM
+      document trees.  They also serve as an example showing how to
+      implement user-defined document models as an independent layer
+      over the the base parser (c.f. <tt>xml/xmls-compat.lisp</tt> in
+      the cxml distribution).  However, note that the list structures do
+      not include all information available in DOM documents
+      (notably, things like <tt>dom:parent-node</tt>) and are
+      sometimes more difficult to work with because of that since many
+      DOM functions cannot be implemented on them.
+    </p>
+    <p>
+      <b>New namespace handling:</b>
+      XMLS compatibility is not <i>bug-for-bug</i>-compatible with
+      XMLS any more.  There is now a mode using pairs of local name
+      and namespace URI, and a second mode using qualified names
+      only.  The old behaviour using pairs of prefix and local names
+      was removed.
+    </p>
+<!--
+    <p>
+      <strike>
+	fixme: It is unclear to me how namespaces are meant to
+	work in xmls, since xmls documentation differs from how xmls
+	actually works in current releases.  Usually applications need to
+	know both the namespace prefix <em>and</em> the namespace URI.  We
+	currently follow the xmls <em>implementation</em> and use the
+	namespace prefix instead of following its <em>documentation</em> which
+	shows the URI.  We do not follow xmls in munging xmlns attribute
+	values.  Attributes themselves have namespaces and it is not clear
+	to me how that works in xmls.
+      </strike>
+    </p>
+-->
+    <p>
+      <div class="def">Function CXML-XMLS:MAKE-XMLS-BUILDER (&amp;key include-default-values include-namespace-uri)</div>
+      Create a SAX handler which builds XMLS list structures.&#160;
+      If <tt>include-default-values</tt> is true, default values for
+      attributes declared in a DTD are included as attributes in the
+      xmls output.  <tt>include-default-values</tt> is true by default
+      and can be set to <tt>nil</tt> to suppress inclusion of default
+      values.
+    </p>
+    <p>
+      If <tt>include-namespace-uri</tt> is true (the default), node
+      names and attribute names are pairs of local name and namespace
+      URI. (Except for attributes without a namespace, which are named
+      using a string.) Otherwise, nodes and attributes are named by
+      their qualified name.
+    </p>
+    <p>
+      Example:
+    </p>
+    <pre>(cxml:parse-file "test.xml" (cxml-xmls:make-xmls-builder))</pre>
+    <p>
+      <div class="def">Function CXML-XMLS:MAP-NODE (handler node &amp;key include-xmlns-attributes include-namespace-uri)</div>
+      Traverse an XMLS document/node and call SAX functions as if an XML
+      representation of the document were processed by a SAX parser.
+    </p>
+    <p>
+      Use this function to serialize XMLS data.  For example, we could
+      define a replacement for <tt>xmls:write-xml</tt> like this:
+    </p>
+    <pre>(defun write-xml (stream node &amp;key indent)
+  (let ((sink (cxml:make-character-stream-sink
+               stream :canonical nil :indentation indent)))
+    (cxml-xmls:map-node sink node)))</pre>
+    <p>
+      <div class="def">Function CXML-XMLS:MAKE-NODE (&amp;key name ns attrs
+      children) => xmls node</div>
+      Build a list node of the form
+      (<em>name</em>&#160;((<em>name</em>&#160;<em>value</em>)<em>*</em>)&#160;<em>child*</em>).
+    </p>
+    <p>
+      The node list's <tt>car</tt> can also be a cons of local <tt>name</tt>
+      and namespace prefix <tt>ns</tt>.
+    </p>
+    <p>
+      <div class="def">Accessor CXML-XMLS:NODE-NAME (node)</div>
+      <div class="def">Accessor CXML-XMLS:NODE-NS (node)</div>
+      <div class="def">Accessor CXML-XMLS:NODE-ATTRS (node)</div>
+      <div class="def">Accessor CXML-XMLS:NODE-CHILDREN (node)</div>
+      Accessors for xmls node data.
+    </p>
+    <p>
+      <div class="def">Accessor CXML-XMLS:MAKE-XPATH-NAVIGATOR ()</div>
+      Creates a navigator object for use with Plexippus XPath.
+    </p>
+    <p>
+      Note that the navigator object caches parts of the document
+      structure, so when re-using a navigator across XPath evalutions,
+      make sure not to modify the list structure.
+    </p>
+    <p>
+      Example:
+    </p>
+    <pre>CL-USER> (defparameter *test-document*
+	   (cxml:parse
+            "&lt;foo a='b'>
+               &lt;a id='1'/> &lt;b id='2'/> &lt;c id='3'/>
+               &lt;a id='4'/> &lt;b id='5'/> &lt;c id='6'/>
+               &lt;a id='7'/> &lt;b id='8'/> &lt;c id='9'/>
+               &lt;last/>
+             &lt;/foo>"
+	    (cxml-xmls:make-xmls-builder)))
+*TEST-DOCUMENT*</pre>
+<pre>CL-USER> (let ((xpath:*navigator* (cxml-xmls:make-xpath-navigator)))
+	   (xpath:evaluate "//c[position()=2]|//a[@id='1']"
+			   *test-document*))
+#&lt;XPATH:NODE-SET (a ((id 1))), ... {27C751F1}></pre>
+<pre>CL-USER> (xpath:all-nodes *)
+(("a" (("id" "1"))) ("c" (("id" "6"))))</pre>
+</documentation>

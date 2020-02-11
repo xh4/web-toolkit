@@ -1,0 +1,27 @@
+<page title="Installing Closure HTML">
+
+  <h3>Download</h3>
+  <p>
+    Download a
+    <a href="http://common-lisp.net/project/closure/download/">tarball</a>.
+  </p>
+  <p>
+    Or get it from git://repo.or.cz/closure-html.git
+    (<a href="http://repo.or.cz/w/closure-html.git">gitweb</a>)
+  </p>
+
+  <h3>Installation</h3>
+  <p>
+    Closure HTML needs
+    <a href="http://www.cliki.net/closure-common">closure-common</a>
+    and <a href="http://weitz.de/flexi-streams/">flexi-streams</a>.
+  </p>
+  <p>
+    <a href="http://www.cliki.net/asdf">ASDF</a> is used for
+    compilation.  Register the .asd file, e.g. by symlinking it, then
+    compile cxml-stp using <tt>asdf:operate</tt>.
+  </p>
+  <pre>$ ln -sf `pwd`/closure-html.asd /path/to/your/registry/
+* (asdf:operate 'asdf:load-op :closure-html)</pre>
+
+</page>

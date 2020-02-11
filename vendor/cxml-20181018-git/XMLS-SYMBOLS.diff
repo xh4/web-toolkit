@@ -1,0 +1,98 @@
+* looking for david@knowledgetools.de--cxml/cxml--devel--1.0--patch-309 to compare with
+* comparing to david@knowledgetools.de--cxml/cxml--devel--1.0--patch-309
+M  xml/xmls-compat.lisp
+
+* modified files
+
+--- orig/xml/xmls-compat.lisp
++++ mod/xml/xmls-compat.lisp
+@@ -12,7 +12,8 @@
+ (defpackage cxml-xmls
+   (:use :cl :runes)
+   (:export #:make-node #:node-name #:node-ns #:node-attrs #:node-children
+-           #:make-xmls-builder #:map-node))
++           #:make-xmls-builder #:map-node
++           #:*identifier-case*))
+ 
+ (in-package :cxml-xmls)
+ 
+@@ -64,6 +65,10 @@
+ 
+ ;;;; SAX-Handler (Parser)
+ 
++(defvar *identifier-case* nil
++  "One of NIL (don't intern names), :PRESERVE, :UPCASE, :DOWNCASE, or :INVERT
++   (intern name into the keyword package after adjusting case).")
++
+ (defclass xmls-builder ()
+     ((element-stack :initform nil :accessor element-stack)
+      (root :initform nil :accessor root)))
+@@ -74,16 +79,46 @@
+ (defmethod sax:end-document ((handler xmls-builder))
+   (root handler))
+ 
++(defun string-invert-case (str)
++  (map 'string
++    (lambda (c)
++      (cond
++        ((upper-case-p c) (char-downcase c))
++        ((lower-case-p c) (char-upcase c))
++        (t c)))
++    str))
++
++(defun maybe-intern (name)
++  (if *identifier-case*
++      (let ((str (if (stringp name) name (rod-string name))))
++        (intern (ecase *identifier-case*
++                  (:preserve str)
++                  (:upcase (string-upcase str))
++                  (:downcase (string-downcase str))
++                  (:invert (string-invert-case str)))
++                :keyword))
++      name))
++
++(defun maybe-stringify (name)
++  (if (symbolp name)
++      (let ((str (symbol-name name)))
++        (ecase *identifier-case*
++          (:preserve str)
++          (:upcase (string-downcase str))
++          (:downcase (string-upcase str))
++          (:invert (string-invert-case str))))
++      name))
++
+ (defmethod sax:start-element
+     ((handler xmls-builder) namespace-uri local-name qname attributes)
+   (declare (ignore namespace-uri))
+   (setf local-name (or local-name qname))
+   (let* ((attributes
+           (mapcar (lambda (attr)
+-                    (list (sax:attribute-qname attr)
++                    (list (maybe-intern (sax:attribute-qname attr))
+                           (sax:attribute-value attr)))
+                   attributes))
+-         (node (make-node :name local-name
++         (node (make-node :name (maybe-intern local-name)
+                           :ns (let ((lq (length qname))
+                                     (ll (length local-name)))
+                                 (if (eql lq ll)
+@@ -124,7 +159,7 @@
+   (labels ((walk (node)
+              (let* ((attlist
+                      (compute-attributes node include-xmlns-attributes))
+-                    (lname (rod (node-name node)))
++                    (lname (rod (maybe-stringify (node-name node))))
+                     (ns (rod (node-ns node)))
+                     (qname (concatenate 'rod ns (rod ":") lname)))
+                ;; fixme: namespaces
+@@ -141,6 +176,7 @@
+   (remove nil
+           (mapcar (lambda (a)
+                     (destructuring-bind (name value) a
++                      (setf name (maybe-stringify name))
+                       (if (or xmlnsp (not (cxml::xmlns-attr-p (rod name))))
+                           (sax:make-attribute :qname (rod name)
+                                               :value (rod value)
+
+
+

@@ -15,6 +15,7 @@
                #+sbcl
                :sb-introspect
                :cl-base64)
+  :defsystem-depends-on (:wt.vendor)
   :serial t
   :components ((:module "websocket"
                         :serial t

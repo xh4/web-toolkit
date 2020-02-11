@@ -1,0 +1,261 @@
+<documentation title="Closure XML">
+    <h1>Closure XML Parser</h1>
+
+    <p>An XML parser written in Common Lisp.</p>
+
+    <p>
+      Closure XML was written
+      by <a href="http://www.stud.uni-karlsruhe.de/~unk6/">Gilbert
+      Baumann</a> as part of the Closure web browser and is now
+      maintained by
+      <a href="mailto:david@lichteblau.com">David Lichteblau</a>.
+      It is licensed under Lisp-LGPL.
+    </p>      
+
+    <p>
+      CXML implements a <a
+      href="http://www.w3.org/TR/REC-xml-names/">namespace-aware</a>,
+      validating <a
+      href="http://www.w3.org/TR/2000/REC-xml-20001006">XML&#160;1.0</a>
+      parser as well as the <a
+      href="http://www.w3.org/TR/DOM-Level-2-Core/">DOM&#160;Level&#160;2&#160;Core</a>
+      interfaces.  Two parser interfaces are offered, one SAX-like, the
+      other similar to StAX.
+    </p>
+
+    <p>
+      Send bug reports to <a
+      href="mailto:cxml-devel@common-lisp.net">cxml-devel@common-lisp.net</a>
+      (<a
+      href="http://common-lisp.net/cgi-bin/mailman/listinfo/cxml-devel">list
+      information</a>).
+    </p>
+
+    <h3>Add-on features</h3>
+    <p>
+      The following libraries are available as separate downloads:
+    </p>
+    <ul style="list-style-type: square">
+      <li>
+	<a href="http://www.lichteblau.com/cxml-rng/">cxml-rng</a>:
+	Relax NG validation
+      </li>
+      <li>
+	<a href="http://www.lichteblau.com/cxml-stp/">cxml-stp</a>:
+	STP, an alternative to DOM
+      </li>
+      <li>
+	<a href="http://common-lisp.net/project/plexippus-xpath/">Plexippus</a>:
+	XPath 1.0
+      </li>
+      <li>
+	<a href="http://common-lisp.net/project/xuriella/">Xuriella</a>:
+	XSLT 1.0
+      </li>
+      <li>
+	<a href="http://common-lisp.net/project/closure/closure-html/">Closure
+	  HTML</a>:
+	parse HTML 4; convert between HTML and XHTML
+      </li>
+    </ul>
+
+    <a name="changes"/>
+    <h3>Recent Changes</h3>
+    <div style="background-color: #f7f7f7;
+		width: 60%;
+		border: solid #9c0000;
+		margin: 0em 2pt 1em 2em;
+		padding: 1em">
+      cxml and closure-common are now available from <b>git</b> instead of CVS.
+      Please refer to the <a href="installation.html#download">
+      installation instructions</a> for details.
+    </div>
+    <p class="nomargin"><tt>rel-2008-11-30</tt></p>
+    <ul class="nomargin">
+      <li>
+	Support for user-specified output encodings
+	using <a href="http://common-lisp.net/project/babel/">Babel</a>.
+      </li>
+      <li>
+	More support for input encodings, thanks to Pierre Mai.
+      </li>
+      <li>
+	Lisps using full 21 bit code points as characters are now fully
+	supported (including SBCL and Clozure CL) addition to the
+	existing support for 16 bit characters using UTF-16 (including
+	Allegro and LispWorks).  The feature <tt>rune-is-utf-16</tt> is
+	now set on 16 bit Lisps. Make sure to update and
+	recompile both cxml and closure-common when upgrading.
+      </li>
+      <li>
+	New sink slot sink-omit-xml-declaration-p; functions cxml:unescaped
+	and sax:unescaped.
+      </li>
+      <li>
+	Added XPath support to the XMLS compatibility model.
+      </li>
+      <li>
+	Fixed various DTD serialization bugs.  Fixed xmls compatibility
+	bugs.  Fixed variable names in with-source.  Fixed klacks-error
+	export.  Consistently use strings as base URIs.  Fixed PARSE for
+	non-file-streams.  Added support for the UTF-8 "BOM", thanks to
+	Ivan Shvedunov.
+      </li>
+    </ul>
+    <br/><br/>
+    <div style="background-color: #f7f7f7;
+		width: 60%;
+		border: solid #9c0000;
+		margin: 0em 2pt 1em 2em;
+		padding: 1em">
+      Runes have been moved into a <b>separate project</b>,
+      named <b>closure-common</b>.  Releases will be available
+      as <b>separate tarballs</b> in the download directory.  Please
+      refer to the <a href="installation.html#download"> installation
+      instructions</a> for details.
+    </div>
+    <p class="nomargin"><tt>rel-2007-10-21</tt></p>
+    <ul class="nomargin">
+      <li>
+	Moved runes into a separate project.
+      </li>
+      <li>
+	Incompatible SAX changes: Added new classes
+	sax:abstract-handler, sax:content-handler, sax:default-handler.
+	Implementations of SAX handlers should now subclass one of
+	these classes.
+      </li>
+      <li>
+	fixed make-source :buffering nil, thanks to Magnus Henoch for
+	the report
+      </li>
+      <li>
+	fixed time and space usage in cases where entity references
+	follow each other (thanks to Ivan Shvedunov for the report)
+      </li>
+      <li>
+	In the DOM builder, grow a buffer for string normalization
+	exponentially, fixing a long-standing speed issue.
+      </li>
+    </ul>
+    <p class="nomargin"><tt>rel-2007-08-05</tt></p>
+    <ul class="nomargin">
+      <li>Various DTD serialization fixes</li>
+      <li>UTF-8 fix, thanks to Francis Leboutte</li>
+    </ul>
+    <p class="nomargin"><tt>rel-2007-07-07</tt></p>
+    <ul class="nomargin">
+      <li>
+	Fixed build on non-Unicode lisps.  Fixed parsing on
+	non-Unicode lisps.  Fixed Unicode detection on OpenMCL.
+      </li>
+      <li>New function <tt>cxml:parse</tt>.</li>
+      <li>Serialization no longer defaults to canonical form.</li>
+      <li>Fixed octet array argument to make-source.</li>
+      <li>
+	XMLS compatibility is not <i>bug-for-bug</i>-compatible with
+	XMLS any more.  There is now a mode using pairs of local name
+	and namespace URI, and a second mode using qualified names
+	only.  The old behaviour using pairs of prefix and local names
+	was removed.  (Thanks to Douglas Crosher.)
+      </li>
+      <li>
+	SCL support (thanks to Douglas Crosher).  Includes support for
+	implementations where URIs are valid namestrings, and a mode
+	where normal streams are used instead of xstreams and ystreams
+	(albeit both SCL-specific at this point).
+      </li>
+      <li>new convenience serialization function cxml:doctype.  Various
+	DTD serialization fixes.</li>
+    </ul>
+    <p class="nomargin"><tt>rel-2007-05-26</tt></p>
+    <ul class="nomargin">
+      <li>cxml.asd has been split up into <tt>cxml.asd</tt> for the
+      XML parser and <tt>runes.asd</tt> for the runes package, in
+      preparation of a complete split of the two systems.  Future CXML
+      releases will use separate tarballs for <tt>runes</tt>
+      and <tt>cxml</tt>.</li>
+      <li>xml:base support (SAX and Klacks only, not yet used in DOM).
+      See documentation <a href="sax.html#saxparser">here</a> and <a
+      href="klacks.html#locator">here</a>.</li>
+      <li>New class <tt>broadcast-handler</tt> as a generalization
+      of the older <tt>sax-proxy</tt>.</li>
+      <li>New class <tt>tapping-source</tt>, a klacks source that
+      relays events from an upstream klacks source unchanged, while also
+      emitting them as SAX events to a user-specified handler at the
+      same time.</li>
+      <li>Changed attributes to carry an lname even when occurring
+      without a namespace.  Added new functions attribute*,
+      unparse-attribute, and macro with-element*, with-namespace* to
+      the SAX generation wrapper API.</li>
+      <li>Klacks improvements: Incompatibly changed
+      klacks:find-element and find-event to consider the current event
+      as a result.  Added klacks-error, klacks:expect, klacks:skip,
+      klacks:expecting-element.  Fixed serialize-event to generate
+      start-prefix-mapping and end-prefix-mapping events.  New function
+      map-current-namespace-declarations.</li>
+      <li>fixed build with common-lisp-controller</li>
+    </ul>
+    <p class="nomargin"><tt>rel-2007-02-18</tt></p>
+    <ul class="nomargin">
+      <li>New StAX-like parser interface.</li>
+      <li>Serialization fixes (thanks to Nathan Bird, Donavon Keithley).</li>
+      <li>characters.lisp cleanup (thanks to Nathan Bird).</li>
+      <li>Namespace normalizer bugfixes.</li>
+      <li>Minor changes: clone-node on document as an extension.  DOM
+      class hierarchy reworked.  New function parse-empty-document.
+      Fixed the DOM serializer to not throw away local names.
+      Fixed a long-standing bug in the parser for documents without a
+      doctype. ANSI conformance fixes.</li>
+    </ul>
+    <p class="nomargin"><tt>rel-2006-01-05</tt></p>
+    <ul class="nomargin">
+      <li>Implemented DOM 2 Core.</li>
+      <li>Error handling overhaul.</li>
+      <li>UTF-8 string support in DOM on Lisps without Unicode characters.</li>
+      <li>Sink API has been changed.</li>
+      <li>Support internal subset serialization.</li>
+      <li>Whitespace normalizer.</li>
+      <li>Gilbert Baumann has clarified the license as Lisp-LGPL.</li>
+      <li>Use trivial-gray-streams.</li>
+    </ul>
+    <p class="nomargin"><tt>rel-2005-06-25</tt></p>
+    <ul class="nomargin">
+      <li>Port to OpenMCL (thanks to Rudi Schlatte).</li>
+      <li>Port to LispWorks (thanks to Edi Weitz).</li>
+      <li>Minor new features: <tt>include-default-values</tt> argument to
+      <tt>make-xmls-builder</tt>; <tt>handler</tt> argument
+      to <tt>parse-dtd-stream</tt>; SAX proxy class</li>
+      <li>Various bugfixes.</li>
+    </ul>
+    <p class="nomargin"><tt>patch-357</tt> (2004-10-10)</p>
+    <ul class="nomargin">
+      <li>Auto-detect unicode support for better asdf-installability.</li>
+      <li>Use the puri library for Sys-ID handling.</li>
+      <li>Semi-automatic caching of DTD instances.</li>
+      <li>Support user-defined entity resolvers.</li>
+      <li>Support for Oasis XML Catalogs.</li>
+      <li>xhtmlgen version of Franz htmlgen.</li>
+      <li>Fixes for SBCL's unicode support.</li>
+    </ul>
+    <p class="nomargin"><tt>patch-306</tt> (2004-09-03)</p>
+    <ul class="nomargin">
+      <li>Event-based serialization which does not require DOM documents</li>
+      <li>XMLS compatiblity</li>
+      <li>minor bugfixes (thread safety; should work on clisp again)</li>
+    </ul>
+    <p class="nomargin"><tt>patch-279</tt> (2004-05-11)</p>
+    <ul class="nomargin">
+      <li>Validation</li>
+      <li>bugfixes; XHTML DTD parses again; corrected SAX entity handling</li>
+    </ul>
+    <p class="nomargin"><tt>patch-204</tt></p>
+    <ul class="nomargin">
+      <li>Renamed package <tt>XML</tt> to <tt>CXML</tt>.</li>
+      <li>The unparse functions support non-canonical output now.</li>
+    </ul>
+    <p class="nomargin"><tt>patch-191</tt> (2004-03-18)</p>
+    <ul class="nomargin">
+      <li>Initial release.</li>
+    </ul>
+</documentation>

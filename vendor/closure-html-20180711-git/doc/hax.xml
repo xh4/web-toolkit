@@ -1,0 +1,103 @@
+<page title="Closure HTML Manual">
+
+  <h3>Example</h3>
+
+  <p>Parse into LHTML:</p>
+<pre class="code">
+(<b>chtml:parse</b> "&lt;p>nada&lt;/p>" <b>(chtml:make-lhtml-builder)</b>)
+
+=> (:HTML NIL (:HEAD NIL) (:BODY NIL (:P NIL "nada")))
+</pre>
+
+  <p>Serialize LHTML back into a string:</p>
+<pre class="code">
+(<b>chtml:serialize-lhtml</b> * (<b>chtml:make-string-sink</b>))
+
+=> "&lt;HTML>&lt;HEAD>&lt;/HEAD>&lt;BODY>&lt;P>nada&lt;/P>&lt;/BODY>&lt;/HTML>"
+</pre>
+
+  <h3>Parsing</h3>
+  <p>
+    foo
+  </p>
+<!--
+  <pre class="code">
+CL-USER> <b>(chtml:parse #p"/path/to/example.html" nil)</b>
+#&lt;SGML:PT HTML ..>
+
+CL-USER> <b>(chtml:parse "&lt;p>nada&lt;/p>" nil)</b>
+#&lt;SGML:PT HTML ..>
+
+CL-USER> (chtml:parse "&lt;p>nada&lt;/p>" <b>(chtml:make-lhtml-builder)</b>)
+(:HTML NIL (:HEAD NIL) (:BODY NIL (:P NIL "nada")))
+
+CL-USER> (chtml:parse "&lt;p>nada&lt;/p>" <b>(cxml-dom:make-dom-builder)</b>)
+#&lt;RUNE-DOM::DOCUMENT {10048699E1}>
+
+CL-USER> (chtml:parse "&lt;p>nada&lt;/p>" <b>(stp:make-builder)</b>)
+#.(CXML-STP-IMPL::DOCUMENT
+   :CHILDREN '(#.(CXML-STP:ELEMENT
+                  #| :PARENT of type DOCUMENT |#
+                  :CHILDREN '...
+                  :LOCAL-NAME "html"
+                  :NAMESPACE-URI "http://www.w3.org/1999/xhtml")))
+</pre>
+-->
+
+<!--
+  <h3>Comparison to Closure XML</h3>
+  <p>
+    The Closure browser uses Closure XML and Closure HTML.  In turn,
+    both parsers depend on closure-common.
+  </p>
+  <table cellspacing="0">
+    <tr>
+      <td style="border-bottom: 2px solid black;
+		 border-right: 2px solid black;
+		 padding: 3px">
+      </td>
+      <td style="border-bottom: 2px solid black;
+		 border-right: 1px solid black;
+		 padding: 3px">
+	Closure XML
+      </td>
+      <td style="border-bottom: 2px solid black;
+		 padding: 3px">
+	Closure HTML
+      </td>
+    </tr>
+    <tr>
+      <td style="border-bottom: 1px solid black;
+		 border-right: 2px solid black;
+		 padding: 3px">
+	Purpose
+      </td>
+      <td style="border-bottom: 1px solid black;
+		 border-right: 1px solid black;
+		 padding: 3px">
+	XML parser
+      </td>
+      <td style="border-bottom: 1px solid black;
+		 padding: 3px">
+	HTML parser
+      </td>
+    </tr>
+    <tr>
+      <td style="border-bottom: 1px solid black;
+		 border-right: 2px solid black;
+		 padding: 3px">
+	Strictness
+      </td>
+      <td style="border-bottom: 1px solid black;
+		 border-right: 1px solid black;
+		 padding: 3px">
+	Strictly correct (non-wellformed XML rejected)
+      </td>
+      <td style="border-bottom: 1px solid black;
+		 padding: 3px">
+	Lax (Tries to accept broken HTML)
+      </td>
+    </tr>
+  </table>
+-->
+</page>

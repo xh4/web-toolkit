@@ -20,6 +20,7 @@
                :cl-cont
                #+sbcl
                :sb-introspect)
+  :defsystem-depends-on (:wt.vendor)
   :serial t
   :components ((:module "http"
                         :serial t

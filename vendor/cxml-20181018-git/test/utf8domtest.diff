@@ -1,0 +1,102 @@
+Index: test/domtest.lisp
+===================================================================
+RCS file: /project/cxml/cvsroot/cxml/test/domtest.lisp,v
+retrieving revision 1.13
+diff -u -r1.13 domtest.lisp
+--- test/domtest.lisp	27 Dec 2005 00:21:37 -0000	1.13
++++ test/domtest.lisp	27 Dec 2005 00:46:00 -0000
+@@ -137,21 +137,22 @@
+     ((digit-char-p (runes:rune-char (elt str 0)))
+       (parse-integer (runes:rod-string str)))
+     ((runes:rune= (elt str 0) #.(runes:char-rune #\"))
+-      (let ((v (make-array 1 :fill-pointer 0 :adjustable t)))
+-        (for* ((i = 1 :then (1+ i))
+-               (c = (elt str i))
+-               :until (runes:rune= c #.(runes:char-rune #\")))
+-            (if (runes:rune= c #.(runes:char-rune #\\))
+-                (let ((frob
+-		       (progn
+-                         (incf i)
+-                         (elt str i))))
+-		  (ecase frob
+-		    ;; ...
+-		    (#/n (vector-push-extend #/newline v (length v)))
+-		    ((#/\\ #/\") (vector-push-extend #/\\ v (length v)))))
+-                (vector-push-extend c v (length v))))
+-        (coerce v 'runes::simple-rod)))
++      (utf8-dom::%rod
++       (let ((v (make-array 1 :fill-pointer 0 :adjustable t)))
++	 (for* ((i = 1 :then (1+ i))
++		(c = (elt str i))
++		:until (runes:rune= c #.(runes:char-rune #\")))
++	       (if (runes:rune= c #.(runes:char-rune #\\))
++		   (let ((frob
++			  (progn
++			    (incf i)
++			    (elt str i))))
++		     (ecase frob
++		       ;; ...
++		       (#/n (vector-push-extend #/newline v (length v)))
++		       ((#/\\ #/\") (vector-push-extend #/\\ v (length v)))))
++		 (vector-push-extend c v (length v))))
++	 (coerce v 'runes::simple-rod))))
+     (t
+       (%intern str))))
+ 
+@@ -368,7 +369,7 @@
+ 
+ (defun translate-implementation (elt)
+   (with-attributes (|var|) elt
+-    (maybe-setf (%intern |var|) `'rune-dom:implementation)))
++    (maybe-setf (%intern |var|) `'utf8-dom:implementation)))
+ 
+ (defun translate-length (load)
+   ;; XXX Soweit ich sehe unterscheiden die Tests nicht zwischen
+@@ -406,7 +407,7 @@
+     (if (nullify |obj|)
+ 	(translate-member element)
+ 	(maybe-setf (%intern |var|)
+-		    `(dom:has-feature 'rune-dom:implementation
++		    `(dom:has-feature 'utf8-dom:implementation
+ 				      ,(parse-java-literal |feature|)
+ 				      ,(parse-java-literal |version|))))))
+ 
+@@ -493,9 +494,9 @@
+       (return
+         `(block assert-domexception
+            (handler-bind
+-               ((rune-dom::dom-exception
++               ((utf8-dom::dom-exception
+                  (lambda (c)
+-                   (when (eq (rune-dom::dom-exception-key c)
++                   (when (eq (utf8-dom::dom-exception-key c)
+                              ,(intern (tag-name c) :keyword))
+                      (return-from assert-domexception)))))
+              ,@(translate-body c)
+@@ -506,7 +507,7 @@
+      ,@(map-child-elements
+         'list
+         (lambda (exception)
+-          `(when (eq (rune-dom::dom-exception-key c)
++          `(when (eq (utf8-dom::dom-exception-key c)
+                      ,(intern (runes:rod-string (dom:get-attribute exception "code"))
+                               :keyword))
+              ,@(translate-body exception)
+@@ -516,7 +517,7 @@
+ (defun translate-try (element)
+   `(block try
+      (handler-bind
+-         ((rune-dom::dom-exception
++         ((utf8-dom::dom-exception
+            ,(translate-catch
+              (do-child-elements (c element :name "catch") (return c))
+              '(return-from try))))
+@@ -631,7 +632,7 @@
+   (setf name (runes:rod-string name))
+   (cxml:parse-file
+    (make-pathname :name name :type "xml" :defaults *files-directory*)
+-   (rune-dom:make-dom-builder)))
++   (cxml:make-recoder (utf8-dom:make-dom-builder) 'cxml:rod-to-utf8-string)))
+ 
+ (defparameter *bad-tests*
+     '("hc_elementnormalize2.xml"

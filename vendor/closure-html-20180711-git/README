@@ -1,0 +1,25 @@
+
+Closure HTML
+
+   An HTML parser written in Common Lisp.
+
+   Closure HTML was written by Gilbert Baumann as part of the Closure
+   web browser. It was first converted into a stand-alone installation by
+   Ignas Mikalajunas, and finally reassembled and documented for
+   integration with Closure XML and use with the Closure browser by David
+   Lichteblau under its current name.
+
+   It available under an MIT-style license.
+
+   Please send bug reports to closure-devel@common-lisp.net
+   (http://common-lisp.net/cgi-bin/mailman/listinfo/closure-devel)
+
+
+Documentation
+
+   Please refer to http://common-lisp.net/project/closure/closure-html/
+   for details.
+
+   The documentation is also available in the doc/ subdirectory of this
+   source distribution, run `make' in that directory to build HTML
+   from the XML sources (requires xsltproc).

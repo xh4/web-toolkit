@@ -1,0 +1,247 @@
+<documentation title="CXML Quick-Start Example">
+    <h1>Quick-Start Example / FAQ</h1>
+
+    <p>
+      Make sure to <a href="installation.html#installation">install and load</a> cxml first.
+    </p>
+
+    <h3>
+      On this page
+    </h3>      
+    <page-index/>
+    
+    <p>
+      To try the following examples, create a test file
+      called <tt>example.xml</tt>:
+    </p>
+    <pre>* <b>(with-open-file (s "example.xml" :direction :output)
+    (write-string "&lt;test a='b'&gt;&lt;child/&gt;&lt;/test>" s))</b></pre>
+
+    <heading>Parsing a file</heading>
+
+    <p>Parse <tt>example.xml</tt> into a DOM tree (<a href="sax.html#parser">read
+    more</a>):</p>
+    <pre>* <b>(cxml:parse-file "example.xml" (cxml-dom:make-dom-builder))</b>
+#&lt;DOM-IMPL::DOCUMENT @ #x72206172>
+
+;; save result for later:
+* <b>(defparameter *example* *)</b>
+*EXAMPLE*</pre>
+
+    <heading>Using DOM</heading>
+
+    <p>Inspect the DOM tree (<a href="sax.html#dom">read more</a>):</p>
+    <pre>* <b>(dom:document-element *example*)</b>
+#&lt;DOM-IMPL::ELEMENT test @ #x722b6ba2&gt;
+
+* (<b>dom:tag-name</b> (dom:document-element *example*))
+"test"
+
+* (<b>dom:child-nodes</b> (dom:document-element *example*))
+#(#&lt;DOM-IMPL::ELEMENT child @ #x722b6d8a&gt;)
+
+* (<b>dom:get-attribute</b> (dom:document-element *example*) <b>"a"</b>)
+"b"</pre>
+
+    <heading>Serializing DOM</heading>
+
+    <p>Serialize the DOM document back into a file (<a
+    href="sax.html#serialization">read more</a>):</p>
+    <pre>(with-open-file (out "example.out" :direction :output :element-type '(unsigned-byte 8))
+  <b>(dom:map-document (cxml:make-octet-stream-sink out) *example*)</b></pre>
+
+    <heading>Parsing into XMLS-like lists</heading>
+
+    <p>
+      If DOM is not the representation you want to you, parsing into
+      other data structures is possible using the same SAX parser
+      function, while using a different handler.
+      The XMLS builder is included for compatibility with XMLS, and also
+      also sample code (see cxml/xml/xmls-compat.lisp) for your own
+      handlers.
+    </p>
+
+    <p>As an alternative to DOM, parse into xmls-compatible list
+    structure (<a href="xmls-compat.html">read more</a>):</p>
+    <pre>* <b>(cxml:parse-file "example.xml" (cxml-xmls:make-xmls-builder))</b>
+("test" (("a" "b")) ("child" NIL))</pre>
+
+    <p>
+      Again, serialization into XML is done using a sink as a SAX
+      handler and a data-structure specific function to generate SAX
+      events for the document, in this case <tt>cxml-xmls:map-node</tt>.
+    </p>
+
+    <pre>* (with-open-file (out "example.out" :direction :output :element-type '(unsigned-byte 8))
+    (<b>cxml-xmls:map-node (cxml:make-octet-stream-sink out)
+                        '("test" (("a" "b")) ("child" nil)))</b>)</pre>
+
+    <heading>Parsing incrementally using Klacks</heading>
+
+    <p>Use klacks to read events from the parser incrementally.  The
+    following example looks only for :start-element and :end-element
+    events and prints them (<a href="klacks.html">read more</a>):</p>
+    <pre>* <b>(klacks:with-open-source
+    (s (cxml:make-source #p"example.xml"))</b>
+  (loop
+      for key = <b>(klacks:peek s)</b>
+      while key
+      do
+	(case key
+	  (:start-element
+	    (format t "~A {" <b>(klacks:current-qname s)</b>))
+	  (:end-element
+	    (format t "}")))
+	<b>(klacks:consume s)</b>))
+test {child {}}</pre>
+
+    <heading>Writing XML</heading>
+
+    <p>
+      Serialization is always done using sinks, which accept SAX events,
+      but there are convenience functions and macros to make that easier
+      to use:
+    </p>
+    <pre>(cxml:with-xml-output (cxml:make-octet-stream-sink stream :indentation 2 :canonical nil)
+  (cxml:with-element "foo"
+    (cxml:attribute "xyz" "abc")
+    (cxml:with-element "bar"
+      (cxml:attribute "blub" "bla"))
+    (cxml:text "Hi there.")))</pre>
+   <p>
+      Prints this to <tt>stream</tt>:
+   </p>
+   <pre>&lt;foo xyz="abc"&gt;
+  &lt;bar blub="bla"&gt;&lt;/bar&gt;
+  Hi there.
+&lt;/foo&gt;</pre>
+    
+    <heading>Help! CXML says 'URI scheme :HTTP not supported'</heading>
+
+    <p>
+      By default, this error will occur when the DTD (or generally, any
+      entity) has an http:// URL as its system ID.  CXML itself
+      understands only file:// URLs, but allows users to customize the
+      behaviour for all URLs.
+    </p>
+
+    <p>
+      The are several solutions to this, covered in detail below:
+      <ul>
+	<li>
+	  Load the DTD/entity from local files using an entity resolver
+	</li>
+	<li>
+	  Skip parsing of the DTD/entity entirely by pretending it is
+	  empty, again using an entity resolver.
+	</li>
+	<li>
+	  Use a <em>catalog</em> to make CXML find DTDs in the local
+	  filesystem automatically.
+	</li>
+	<li>
+	  Teach CXML actually load DTDs using HTTP.
+	</li>
+      </ul>
+    </p>
+
+    <p>
+      Here are the example files for the following solutions to this
+      problem:
+    </p>
+
+    <a href="http://www.lichteblau.com/blubba/dtdexample.xml">
+      <tt>dtdexample.xml</tt>:</a>
+    <pre>&lt;!DOCTYPE test SYSTEM 'http://www.lichteblau.com/blubba/dtdexample.dtd'>
+&lt;test a='b'>blub&lt;child/>&lt;/test></pre>
+    
+    <a href="http://www.lichteblau.com/blubba/dtdexample.dtd">
+      <tt>dtdexample.dtd</tt></a>:
+    <pre>&lt;!ELEMENT test (#PCDATA|child)*>
+&lt;!ATTLIST test
+  a CDATA #REQUIRED
+  >
+
+&lt;!ELEMENT child EMPTY>
+</pre>
+
+    <heading>Loading DTDs from local files</heading>
+
+    <p>
+      Use the :entity-resolver argument to <tt>parse-file</tt> to
+      specify a function that maps System IDs and Public IDs to local
+      files of your choice:
+    </p>
+    
+    <pre>(let ((uri "http://www.lichteblau.com/blubba/dtdexample.dtd")
+      (pathname "dtdexample.dtd"))
+  (flet ((resolver (pubid sysid)
+	   (declare (ignore pubid))
+	   <b>(when (puri:uri= sysid (puri:parse-uri uri))
+	     (open pathname :element-type '(unsigned-byte 8)))</b>))
+    (cxml:parse-file "dtdexample.xml" (cxml-dom:make-dom-builder) <b>:entity-resolver #'resolver</b>)))</pre>
+
+
+    <heading>Can I skip loading of DTDs entirely?</heading>
+
+    <p>
+      Yes and no.
+    </p>
+    <p>
+      <i>Yes</i>, you can force CXML to do this, see the following example.
+    </p>
+    
+    <p>
+      But no, skipping the DTD will not actually work if the document
+      references entities declared in the DTD, especially since neither
+      SAX nor DOM are able to report unresolved entity references in
+      attributes.
+    </p>
+
+    <p>
+      The trick to make CXML skip the DTD is to pretend that it is empty
+      by returning a zero-length stream instead:
+    </p>
+    
+    <pre>(flet ((resolver (pubid sysid)
+	 (declare (ignore pubid sysid))
+	 <b>(flexi-streams:make-in-memory-input-stream nil)</b>))
+  (cxml:parse-file "dtdexample.xml" (cxml-dom:make-dom-builder) <b>:entity-resolver #'resolver</b>))</pre>
+
+    <heading>
+      Catalogs: How can I use the HTML DTD installed by my distribution?
+    </heading>
+
+    <p>
+      Rather than writing an entity resolver function yourself, CXML can
+      use XML catalogs to find DTDs and entity files on your local system.
+    </p>
+    <p>
+      Catalogs are particularly helpful for DTDs that are
+      pre-installed.  For example, most Linux distributions include a
+      package for the XHTML DTD.  The DTD will reside in a
+      distribution-dependent location, which the central catalog file
+      points to.
+    </p>
+    <p>By default, CXML looks for the catalog in /etc/xml/catalog
+    (Linux) and /usr/local/share/xml/catalog.ports (FreeBSD).
+    </p>
+    <pre>* <b>(setf cxml:*catalog* (cxml:make-catalog))</b>
+* (cxml:parse-file "test.xhtml" (cxml-dom:make-dom-builder))</pre>
+
+    <heading>
+      Can I load DTDs through HTTP?
+    </heading>
+
+    <p>
+      Sure, just use an entity-resolver function that does it.
+    </p>
+    <p>
+      Install <a href="http://weitz.de/drakma/">Drakma</a> and try this:
+    </p>
+    <pre>(flet ((resolver (pubid sysid)
+	 (declare (ignore pubid))
+	 <b>(when (eq (puri:uri-scheme sysid) :http)
+	   (drakma:http-request sysid :want-stream t))</b>))
+  (cxml:parse-file "dtdexample.xml" (cxml-dom:make-dom-builder) <b>:entity-resolver #'resolver</b>))</pre>
+</documentation>

@@ -1,0 +1,262 @@
+<page title="Closure HTML Examples">
+  <p>
+    Simple examples using Closure HTML.
+  </p>
+
+  <toc/>
+
+  <div style="width: 60%">
+    <b>Note on non-Unicode Lisps:</b> The examples on this page were
+    written for Lisps with Unicode support.  When using Closure HTML on
+    Lisps without Unicode characters, some changes need to be made.  For
+    example, <tt>make-string-sink</tt> is not available without Unicode
+    support, but <tt>make-string-sink/utf8</tt> can be substituted in
+    some of the examples.
+  </div>
+  
+  <div style="float: left">
+  <section>Parsing a string</section>
+  <example-box>
+    <fun>parse</fun>
+    <fun>make-lhtml-builder</fun>
+    <fun>serialize-lhtml</fun>
+    <fun>make-string-sink</fun>
+  </example-box>
+
+  <p>Parse into LHTML:</p>
+  <example>(chtml:parse "&lt;p>nada&lt;/p>" (chtml:make-lhtml-builder))</example>
+  <result>(:HTML NIL (:HEAD NIL) (:BODY NIL (:P NIL "nada")))</result>
+
+  <p>Serialize LHTML back into a string:</p>
+  <example>(chtml:serialize-lhtml * (chtml:make-string-sink))</example>
+  <result>"&lt;HTML>&lt;HEAD>&lt;/HEAD>&lt;BODY>&lt;P>nada&lt;/P>&lt;/BODY>&lt;/HTML>"</result>
+
+  <section>Parsing a file</section>
+
+  <example-box>
+    <fun>parse</fun>
+    <fun>make-lhtml-builder</fun>
+  </example-box>
+
+  <p>
+    Note that the filename must be passed as a pathname (written
+    using <tt>#p</tt>), not just a
+    string, because a string would be interpreted as a literal HTML
+    document as in the first example above.
+  </p>
+  <example>(chtml:parse #p"example.html" (chtml:make-lhtml-builder))</example>
+  <result>(:HTML NIL (:HEAD NIL) (:BODY NIL (:P NIL "nada")))</result>
+
+  <section>Cleaning up broken HTML</section>
+  <example-box>
+    <fun>parse</fun>
+    <fun>make-string-sink</fun>
+  </example-box>
+
+  <p>
+    Many HTML syntax errors are corrected by Closure HTML
+    automatically.  In this example, we parse from a string and
+    serialize it back immediately.
+  </p>
+  <example>(defun clean-html (string)
+    (chtml:parse string (chtml:make-string-sink)))</example>
+  <result>CLEAN-HTML</result>
+  <p>
+    Note the differences between input and output in the following document:
+  </p>
+  <ul>
+    <li>&lt;title> is moved into &lt;head>.</li>
+    <li>The <tt>bogus</tt> attribute is removed.</li>
+    <li>&lt;br is corrected to &lt;br> and &lt;/oops> to &lt;/p>.</li>
+  </ul>
+  <example>(clean-html "&lt;title>cleanup example&lt;/title>
+&lt;p bogus>
+&lt;br
+&lt;/oops>")</example>
+  <result>"&lt;HTML>&lt;HEAD>&lt;TITLE>cleanup example&lt;/TITLE>&lt;/HEAD>&lt;BODY>&lt;P>
+&lt;BR>&lt;/P>&lt;/BODY>&lt;/HTML>"</result>
+
+  <section>Translating an HTML file to XHTML</section>
+  <example-box>
+    <fun>parse</fun>
+    <a href="http://common-lisp.net/project/cxml/sax.html#serialization">
+      cxml:make-octet-stream-sink
+    </a>
+  </example-box>
+
+  <p>
+    In this example, we parse an HTML file and serialize it into XHTML.
+  </p>
+  <p>
+    This example
+    uses <a href="http://common-lisp.net/project/cxml">Closure XML</a>.
+  </p>
+  <example>(defun html2xhtml (file &amp;key (if-exists :error))
+    (with-open-file (out (make-pathname :type "xml" :defaults file)
+			 :element-type '(unsigned-byte 8)
+			 :if-exists if-exists
+			 :direction :output)
+      (chtml:parse (pathname file)
+		   (cxml:make-octet-stream-sink out))))</example>
+  <result>HTML2XHTML</result>
+  Use like this:
+  <example>(html2xhtml "/home/david/test.html" :if-exists :supersede)</example>
+  <p>
+    The following input file and its XHTML version illustrate some of
+    the differences between the two syntaxes.
+  </p>
+  <p>
+    <b>test.html</b>:
+    <pre style="border: solid 1px #9c0000;
+		padding: 1em;
+		width: 60%;">&lt;p>foo&lt;/p>
+&lt;br>
+&lt;br>
+&lt;br>
+&lt;select>
+&lt;option selected>123
+&lt;option>456
+&lt;/select></pre>
+  </p>
+  <p>
+    <b>test.xml</b>:
+    <pre style="border: solid 1px #9c0000;
+		padding: 1em;
+		width: 60%;">&lt;?xml version="1.0" encoding="UTF-8"?>
+&lt;html xmlns="http://www.w3.org/1999/xhtml">&lt;head/>&lt;body>&lt;p>foo&lt;/p>
+&lt;br/>
+&lt;br/>
+&lt;br/>
+&lt;select>&lt;option selected="selected">123
+&lt;/option>&lt;option>456
+&lt;/option>&lt;/select>
+&lt;/body>&lt;/html></pre>
+  </p>
+
+  <section>Translating an XHTML file to HTML</section>
+  <example-box>
+    <a href="http://common-lisp.net/project/cxml/sax.html">
+      cxml:parse
+    </a>
+    <fun>make-octet-stream-sink</fun>
+  </example-box>
+
+  <p>
+    This is a continuation of the opposite example above.  In that
+    example, we converted an HTML file to HTML.   Going back to HTML is
+    just as easy:
+  </p>
+  <example>(defun xhtml2html (file &amp;key (if-exists :error))
+    (with-open-file (out (make-pathname :type "html" :defaults file)
+			 :element-type '(unsigned-byte 8)
+			 :if-exists if-exists
+			 :direction :output)
+      (cxml:parse (pathname file)
+		  (chtml:make-octet-stream-sink out))))</example>
+  <result>XHTML2HTML</result>
+  Running this function on the example above results in a clean-up
+  version of the original document: 
+  <p>
+    <b>test.html</b>:
+    <pre style="border: solid 1px #9c0000;
+		padding: 1em;
+		width: 60%;">&lt;html>&lt;head>&lt;/head>&lt;body>&lt;p>foo&lt;/p>
+&lt;br>
+&lt;br>
+&lt;br>
+&lt;select>&lt;option selected>123
+&lt;/option>&lt;option>456
+&lt;/option>&lt;/select>
+&lt;/body>&lt;/html></pre>
+  </p>
+
+  <section>Fetching and parsing Google search results</section>
+  <example-box>
+    <fun>parse</fun>
+    <a href="http://weitz.de/drakma/#http-request">
+      drakma:http-request
+    </a>
+    <a href="http://www.lichteblau.com/cxml-stp/doc/pages/cxml-stp__fun__make-builder.html">
+      cxml-stp:make-builder
+    </a>
+    <a href="http://www.lichteblau.com/cxml-stp/doc/pages/cxml-stp__macro__do-recursively.html">
+      cxml-stp:do-recursively
+    </a>
+    <a href="http://www.lichteblau.com/cxml-stp/doc/pages/cxml-stp__class__element.html">
+      cxml-stp:element
+    </a>
+    <a href="http://www.lichteblau.com/cxml-stp/doc/pages/cxml-stp__fun__local-name.html">
+      cxml-stp:local-name
+    </a>
+    <a href="http://www.lichteblau.com/cxml-stp/doc/pages/cxml-stp__fun__attribute-value.html">
+      cxml-stp:attribute-value
+    </a>
+  </example-box>
+
+  <p>
+    In this example, we perform a google search and print the first ten
+    results by looking for all links of the form &lt;a class="l">.
+  </p>
+  <p>
+    This example
+    uses <a href="http://weitz.de/drakma">Drakma</a> to perform the HTTP
+    request, and the DOM
+    alternative <a href="http://www.lichteblau.com/cxml-stp/">cxml-stp</a>.
+  </p>
+  <example>(defun show-google-hits (term)
+    (let* ((query (list (cons "q" term)))
+	   (str (drakma:http-request "http://www.google.com/search"
+				     :parameters query))
+	   (document (chtml:parse str (cxml-stp:make-builder))))
+      (stp:do-recursively (a document)
+	(when (and (typep a 'stp:element)
+		   (equal (stp:local-name a) "a")
+		   (equal (stp:attribute-value a "class") "l"))
+	  (format t "~A:~%  ~A~%~%"
+		  (stp:string-value a)
+		  (stp:attribute-value a "href"))))))</example>
+  <result>SHOW-GOOGLE-HITS</result>
+  Searching for "lisp" we get these results:
+  <example>(show-google-hits "lisp")</example>
+  <result>Lisp (programming language) - Wikipedia, the free encyclopedia:
+  http://en.wikipedia.org/wiki/Lisp_programming_language
+
+Lisp - Wikipedia, the free encyclopedia:
+  http://en.wikipedia.org/wiki/Lisp
+
+Association of Lisp Users:
+  http://www.lisp.org/
+
+An Introduction and Tutorial for Common Lisp:
+  http://www.apl.jhu.edu/~hall/lisp.html
+
+Lisp:
+  http://www.paulgraham.com/lisp.html
+
+The Roots of Lisp:
+  http://www.paulgraham.com/rootsoflisp.html
+
+Planet Lisp:
+  http://planet.lisp.org/
+
+Practical Common Lisp:
+  http://www.gigamonkeys.com/book/
+
+CLISP - an ANSI Common Lisp Implementation:
+  http://clisp.cons.org/
+
+Lisp FAQ:
+  http://www.cs.cmu.edu/Groups/AI/html/faqs/lang/lisp/top.html</result>
+
+<!--
+  <section>Serializing using WITH-HTML-OUTPUT</section>
+  <example-box>
+    <macro>with-html-output</macro>
+    <macro>with-element</macro>
+    <fun>attribute</fun>
+    <fun>text</fun>
+  </example-box>
+-->
+
+  </div>
+</page>

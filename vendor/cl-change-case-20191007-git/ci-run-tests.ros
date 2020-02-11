@@ -1,0 +1,26 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+
+(ql:quickload :fiveam)
+(ql:quickload :cl-coveralls)
+(ql:quickload :cl-change-case)
+(ql:quickload :cl-change-case-test)
+
+(defun main (&rest argv)
+  (declare (ignorable argv))
+  (uiop:quit (if (handler-case
+                     (progn
+                       (let ((5am:*debug-on-error* t)
+                             (5am:*debug-on-failure* t))
+                         
+                         (coveralls:with-coveralls (:exclude (list "t"))
+                           (asdf:test-system :cl-change-case))
+                         ))
+                   (serious-condition (c)
+                     (describe c)
+                     (uiop:quit 2)))
+                 0
+                 1)))

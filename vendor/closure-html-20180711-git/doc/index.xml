@@ -1,0 +1,101 @@
+<page title="Closure HTML">
+  <p>An HTML parser written in Common Lisp.</p>
+
+  <h3>About</h3>
+
+  <p>
+    Closure HTML was written
+    by <a href="http://www.stud.uni-karlsruhe.de/~unk6/">Gilbert
+    Baumann</a> as part of the Closure web browser.  It was first
+    converted into a stand-alone installation by Ignas Mikalajūnas, and
+    finally reassembled and documented for integration with Closure XML
+    and use with the Closure browser by David Lichteblau under its
+    current name.
+  </p>
+  <p>
+    It available under an MIT-style license.
+  </p>      
+
+  <p>
+    Please send bug reports
+    to <a href="mailto:closure-devel@common-lisp.net">
+      closure-devel@common-lisp.net</a>
+    (<a href="http://common-lisp.net/cgi-bin/mailman/listinfo/closure-devel">list information</a>).
+  </p>
+
+  <h3>Related projects</h3>
+  <ul>
+    <li>
+      <a href="http://common-lisp.net/project/cxml/">Closure XML</a>:
+      An XML library that can be used together with Closure HTML.
+    </li>
+<!--
+    <li>
+      <a href="http://www.lichteblau.com/cxml-stp/">cxml-stp</a>:
+      STP, an alternative to DOM
+    </li>
+-->
+    <li>
+      <a href="http://common-lisp.net/project/closure/">Closure</a>:
+      The web browser based on Closure HTML.
+    </li>
+  </ul>
+
+  <h3>History</h3>
+  <p><b>2008-11-30</b></p>
+  <ul>
+    <li>
+      Changes in closure-common:
+      <ul>
+	<li>
+	  Use 21 bit characters on Lisp offering them.
+	</li>
+	<li>
+	  New event HAX:UNESCAPED for unescaped characters.
+	</li>
+	<li>
+	  Allow Microsoft BOM (thanks to Ivan Shvedunov)
+	</li>
+      </ul>
+    </li>
+    <li>
+      Serialization fixes:
+      <ul>
+	<li>
+	  Fixed serialization of unknown elements.
+	</li>
+	<li>
+	  Implemented hax:unescaped on sinks.
+	</li>
+	<li>
+	  Fixed contents of script and style to be written without
+	  escaping by the sink.
+	</li>
+	<li>
+	  Don't escape &lt; in attributes.
+	</li>
+	<li>
+	  Don't escape &amp;{ in attributes.
+	</li>
+	<li>
+	  Escape non-ASCII characters in URIs.
+	</li>
+      </ul>
+    </li>
+    <li>
+      New argument documentp to serialize-pt.
+    </li>
+  </ul>
+  <p><b>2007-10-28</b></p>
+  <ul>
+    <li>Closure HTML released as a stand-alone project.</li>
+  </ul>
+  <p><b>2005-03-13</b></p>
+  <ul>
+    <li>Closure released unter an MIT-style license.</li>
+  </ul>
+  <p><b>1996-10-21</b></p>
+  <ul>
+    <li>sgml-parse.lisp created.</li>
+  </ul>
+</page>

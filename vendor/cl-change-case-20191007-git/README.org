@@ -1,0 +1,266 @@
+#+STARTUP: showall
+#+OPTIONS: toc:nil
+
+#+MARKDOWN: [![Build Status](https://travis-ci.org/rudolfochrist/cl-change-case.svg?branch=master)](https://travis-ci.org/rudolfochrist/cl-change-case) [![Coverage Status](https://coveralls.io/repos/github/rudolfochrist/cl-change-case/badge.svg?branch=master)](https://coveralls.io/github/rudolfochrist/cl-change-case?branch=master) [![Quicklisp](http://quickdocs.org/badge/cl-change-case.svg)](http://quickdocs.org/cl-change-case/)
+
+* NAME
+
+cl-change-case --- Convert strings between camelCase, param-case, PascalCase and more
+
+* VERSION
+
+#+BEGIN_SRC lisp :exports results 
+(format nil "Version ~A" (asdf:component-version (asdf:find-system :cl-change-case)))
+#+END_SRC
+
+#+RESULTS:
+: Version 0.1.0
+
+* SYNOPSIS
+
+#+BEGIN_SRC lisp :exports code :results output
+(use-package :cl-change-case)
+
+(format t "~{~S~%~}"
+        (list (camel-case "test string")
+              (param-case "test string")
+              (pascal-case "test string")))
+#+END_SRC
+
+#+RESULTS:
+: "testString"
+: "test-string"
+: "TestString"
+
+* DESCRIPTION
+
+=cl-change-case= is library to convert strings between =camelCase=, =PascalCase=, =snake_case=, =param-case=,
+=CONSTANT_CASE= and more. 
+
+This is a Common Lisp port of [[https://github.com/blakeembrey/change-case][blakeembrey/change-case]] released under [[https://opensource.org/licenses/MIT][The MIT License]]. 
+
+** Functions
+:PROPERTIES:
+:header-args: :results verbatim :exports both
+:END:
+
+*** lower-case
+
+Return the string in lower case.
+
+#+BEGIN_SRC lisp 
+(lower-case "TEST STRING")
+#+END_SRC
+
+#+RESULTS:
+: "test string"
+
+*** lower-case-first
+
+Lower case of the first character of string.
+
+#+BEGIN_SRC lisp
+(lower-case-first "TEST STRING")
+#+END_SRC
+
+#+RESULTS:
+: "tEST STRING"
+
+*** string-lower-case-p
+
+Test if all characters in string have lower case.
+
+#+BEGIN_SRC lisp
+(string-lower-case-p "test string")
+#+END_SRC
+
+#+RESULTS:
+: T
+
+*** upper-case
+
+Return the string in upper case.
+
+#+BEGIN_SRC lisp
+(upper-case "test string")
+#+END_SRC
+
+#+RESULTS:
+: "TEST STRING"
+
+*** upper-case-first
+
+Upper case the first character of string.
+
+#+BEGIN_SRC lisp
+(upper-case-first "test string")
+#+END_SRC
+
+#+RESULTS:
+: "Test string"
+
+*** string-upper-case-p
+
+Test if all characters in string have upper case.
+
+#+BEGIN_SRC lisp
+(string-upper-case-p "TEST STRING")
+#+END_SRC
+
+#+RESULTS:
+: T
+
+*** no-case
+
+Make string a lower case, space separated string. 
+
+#+BEGIN_SRC lisp
+(no-case "test_stringTest")
+#+END_SRC
+
+#+RESULTS:
+: "test string test"
+
+Optionally you can provide a different replacement string.
+
+#+BEGIN_SRC lisp
+(no-case "test_stringTest" :replacement "$$")
+#+END_SRC
+
+#+RESULTS:
+: "test$$string$$test"
+
+*** camel-case
+
+Convert string to =camelCase=.
+
+#+BEGIN_SRC lisp
+(camel-case "test_string")
+#+END_SRC
+
+#+RESULTS:
+: "testString"
+
+*** dot-case
+
+Convert string to =dot.case=.
+
+#+BEGIN_SRC lisp
+(dot-case "Test String")
+#+END_SRC
+
+#+RESULTS:
+: "test.string"
+
+*** header-case
+
+Title case string but dash separated.
+
+#+BEGIN_SRC lisp
+(header-case "test string")
+#+END_SRC
+
+#+RESULTS:
+: "Test-String"
+
+*** param-case
+
+Convert string to =param-case=.
+
+#+BEGIN_SRC lisp
+(param-case "test string")
+#+END_SRC
+
+#+RESULTS:
+: "test-string"
+
+*** pascal-case
+
+Convert string to =PascalCase=.
+
+#+BEGIN_SRC lisp
+(pascal-case "test string")
+#+END_SRC
+
+#+RESULTS:
+: "TestString"
+
+*** path-case
+
+Convert string to =path/case=.
+
+#+BEGIN_SRC lisp
+(path-case "test string more")
+#+END_SRC
+
+#+RESULTS:
+: "test/string/more"
+
+*** sentence-case
+
+Makes string a lower case, space separated string with the first word capitalized.
+
+#+BEGIN_SRC lisp
+(sentence-case "thisIsATestString")
+#+END_SRC
+
+#+RESULTS:
+: "This is a test string"
+
+*** snake-case
+
+Convert string to =snake_case=.
+
+#+BEGIN_SRC lisp
+(snake-case "test string")
+#+END_SRC
+
+#+RESULTS:
+: "test_string"
+
+*** swap-case
+
+Reverse the case of each character in string.
+
+#+BEGIN_SRC lisp
+(swap-case "PascalCase")
+#+END_SRC
+
+#+RESULTS:
+: "pASCALcASE"
+
+*** title-case
+
+Make string space separated with each word capitalized.
+
+#+BEGIN_SRC lisp
+(title-case "this_is a_test_string")
+#+END_SRC
+
+#+RESULTS:
+: "This Is A Test String"
+
+*** constant-case
+
+Convert string to =CONSTANT_CASE=.
+
+#+BEGIN_SRC lisp
+(constant-case "test string")
+#+END_SRC
+
+#+RESULTS:
+: "TEST_STRING"
+
+* AUTHOR
+
+Sebastian Christ ([[mailto:rudolfo.christ@gmail.com]])
+
+* COPYRIGHT
+
+Copyright (c) 2016 Sebastian Christ (rudolfo.christ@gmail.com)
+
+Released under the LLGPL license.
+
+* SEE ALSO
+
+- [[https://github.com/blakeembrey/change-case][blakeembrey/change-case]]

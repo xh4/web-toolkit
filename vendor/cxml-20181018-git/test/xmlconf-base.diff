@@ -1,0 +1,53 @@
+A recent check-in to the XML-Test-Suite's metadata has broken my parser for
+xmlconf.xml.  Apply this patch to revert it.
+
+Index: oasis/oasis.xml
+===================================================================
+RCS file: /sources/public/2001/XML-Test-Suite/xmlconf/oasis/oasis.xml,v
+retrieving revision 1.5
+retrieving revision 1.6
+diff -u -r1.5 -r1.6
+--- oasis/oasis.xml	16 May 2002 14:46:32 -0000	1.5
++++ oasis/oasis.xml	4 Mar 2004 18:23:37 -0000	1.6
+@@ -1,6 +1,6 @@
+ <?xml version='1.0' encoding='UTF-8'?>
+ 
+-<TESTCASES PROFILE='OASIS/NIST TESTS, 1-Nov-1998' xml:base="oasis/">
++<TESTCASES PROFILE='OASIS/NIST TESTS, 1-Nov-1998'>
+ 
+   <TEST TYPE='valid' SECTIONS='2.2 [1]'
+       ID='o-p01pass2' URI='p01pass2.xml'>
+Index: xmltest/xmltest.xml
+===================================================================
+RCS file: /sources/public/2001/XML-Test-Suite/xmlconf/xmltest/xmltest.xml,v
+retrieving revision 1.9
+retrieving revision 1.10
+diff -u -r1.9 -r1.10
+--- xmltest/xmltest.xml	21 May 2002 19:05:57 -0000	1.9
++++ xmltest/xmltest.xml	4 Mar 2004 18:25:11 -0000	1.10
+@@ -5,7 +5,7 @@
+     All Rights Reserved.
+ -->
+ 
+-<TESTCASES PROFILE="James Clark XMLTEST cases, 18-Nov-1998" xml:base="xmltest/">
++<TESTCASES PROFILE="James Clark XMLTEST cases, 18-Nov-1998">
+ 
+ <!-- Start:  not-wf/sa -->
+ <TEST TYPE="not-wf" ENTITIES="none" ID="not-wf-sa-001"
+Index: japanese/japanese.xml
+===================================================================
+RCS file: /sources/public/2001/XML-Test-Suite/xmlconf/japanese/japanese.xml,v
+retrieving revision 1.4
+retrieving revision 1.5
+diff -u -r1.4 -r1.5
+--- japanese/japanese.xml	26 Mar 2002 14:43:54 -0000	1.4
++++ japanese/japanese.xml	4 Mar 2004 18:18:39 -0000	1.5
+@@ -5,7 +5,7 @@
+     All Rights Reserved.
+ -->
+ 
+-<TESTCASES PROFILE="Fuji Xerox Japanese Text Tests" xml:base="japanese/">
++<TESTCASES PROFILE="Fuji Xerox Japanese Text Tests">
+ 
+     <TEST TYPE="error" SECTIONS="4.3.3 [4,84]"
+ 	    ID="pr-xml-euc-jp" ENTITIES="parameter" URI="pr-xml-euc-jp.xml">

@@ -1,0 +1,68 @@
+--- xml/xml-parse.lisp
++++ xml/xml-parse.lisp
+@@ -2497,20 +2497,20 @@
+   (let ((input-var (gensym))
+         (collect (gensym))
+         (c (gensym)))
+-    `(LET ((,input-var ,input))
+-       (MULTIPLE-VALUE-BIND (,res ,res-start ,res-end) 
+-           (WITH-RUNE-COLLECTOR/RAW (,collect)
+-             (LOOP
+-               (LET ((,c (PEEK-RUNE ,input-var)))
+-                 (COND ((EQ ,c :EOF) 
++    `(let ((,input-var ,input))
++       (multiple-value-bind (,res ,res-start ,res-end) 
++           (with-rune-collector/raw (,collect)
++             (loop
++               (let ((,c (peek-rune ,input-var)))
++                 (cond ((eq ,c :eof) 
+                         ;; xxx error message
+-                        (RETURN))
+-                       ((FUNCALL ,predicate ,c)
+-                        (RETURN))
++                        (return))
++                       ((funcall ,predicate ,c)
++                        (return))
+                        (t
+                         (,collect ,c)
+-                        (CONSUME-RUNE ,input-var))))))
+-         (LOCALLY
++                        (consume-rune ,input-var))))))
++         (locally
+            ,@body)))))
+   
+ (defun read-name-token (input)
+
+
+
+Index: xml/xml-name-rune-p.lisp
+===================================================================
+RCS file: /project/cxml/cvsroot/cxml/xml/xml-name-rune-p.lisp,v
+retrieving revision 1.2
+diff -r1.2 xml-name-rune-p.lisp
+214,225c214,225
+<              (DEFINLINE NAME-RUNE-P (RUNE)
+<                (SETF RUNE (RUNE-CODE RUNE))
+<                (AND (<= 0 RUNE ,*max*)
+<                     (LOCALLY (DECLARE (OPTIMIZE (SAFETY 0) (SPEED 3)))
+<                              (= 1 (SBIT ',(predicate-to-bv #'name-rune-p)
+<                                         (THE FIXNUM RUNE))))))
+<              (DEFINLINE NAME-START-RUNE-P (RUNE)
+<                (SETF RUNE (RUNE-CODE RUNE))
+<                (AND (<= 0 RUNE ,*MAX*)
+<                     (LOCALLY (DECLARE (OPTIMIZE (SAFETY 0) (SPEED 3)))
+<                              (= 1 (SBIT ',(predicate-to-bv #'name-start-rune-p)
+<                                         (THE FIXNUM RUNE)))))))) ))))
+---
+>              (definline name-rune-p (rune)
+>                (setf rune (rune-code rune))
+>                (and (<= 0 rune ,*max*)
+>                     (locally (declare (optimize (safety 0) (speed 3)))
+>                              (= 1 (sbit ',(predicate-to-bv #'name-rune-p)
+>                                         (the fixnum rune))))))
+>              (definline name-start-rune-p (rune)
+>                (setf rune (rune-code rune))
+>                (and (<= 0 rune ,*max*)
+>                     (locally (declare (optimize (safety 0) (speed 3)))
+>                              (= 1 (sbit ',(predicate-to-bv #'name-start-rune-p)
+>                                         (the fixnum rune)))))))) ))))

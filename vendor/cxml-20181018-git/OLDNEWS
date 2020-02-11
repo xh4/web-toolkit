@@ -1,0 +1,272 @@
+Changes to Gilbert Baumann's Code
+========================================
+(Stand dieser Liste: patch-190)
+
+base-0
+    Import of Closure's src/xml and src/glisp
+
+
+Build system
+----------------
+patch-14
+    dom-builder.lsp braucht package.lisp
+patch-17
+    xml-parse braucht dom-impl
+patch-18
+    xml-parse braucht encodings
+patch-19
+    xml-parse.lisp needs xml-stream.lisp
+patch-157
+    DOM in eigenes Verzeichnis und System verschoben
+patch-158
+    COPYING auch im DOM
+patch-160
+    tests in eigenes Verzeichnis verschoben
+patch-184
+    commented out most of dep-clisp for now
+patch-185
+    CLISP fixes
+
+
+glisp durch runes ersetzt
+---------------- 
+patch-139 patch-140 patch-141 patch-142 patch-143
+    unbenutzte Funktionen aus glisp entfernt
+    GLISP keine COMMON-LISP-Symbole mehr exportieren lassen
+    glisp defpackage weiter vereinfacht
+patch-148
+    runes.lisp aufgeteilt in runes.lisp und syntax.lisp
+patch-149
+    CHARACTER-basierte Runen-Implementation
+patch-150
+    removed support for oldish gcl
+patch-151
+    removed dep-gcl-2.lisp
+patch-152
+    clarified glisp license as LLGPL as per Gilbert Baumann
+patch-155
+    GLISP in RUNES umbenannt
+patch-156
+    xstream (und encoding) nach runes verschoben
+patch-178
+patch-180
+    really fixed rune-char
+
+
+DOM fixes
+----------------
+patch-3
+    add dom:remove-child, dom:import-node
+patch-6
+    fixed dom:remove-child
+patch-7
+    strings->rods in set-attribute, too
+patch-21
+    dom:item und dom:length fuer NodeList implementiert
+patch-22
+    s/remove-atttribute/remove-attribute
+patch-23
+    dom:remove-attribute-node korrigiert
+patch-24
+    neu: dom:remove-attribute
+patch-25
+    dom:normalize implementiert
+patch-26
+    get-elements-by-tag-name fuer Element implementiert
+patch-32
+    s/data/value/ fuer CHARACTER-DATA
+patch-33
+    Aufruf von Setter-Methoden
+patch-34
+    (setf value) nachgetragen
+patch-35
+    (DOM:NODE-VALUE ATTRIBUTE) korrigiert
+patch-36
+    writer fuer DOM:DATA
+patch-37
+    (setf dom:node-value) implementiert
+patch-43
+    hack: implemented CHILD-NODES for ENTITY-REFERENCE
+patch-44
+    ENTITY-REFERENCE-Kinder als read-only markieren
+patch-45
+    DOM-EXCEPTION implementiert
+patch-46
+    fixed special cases in delete-data and replace-data
+patch-47
+    delete-data: Arraytyp korrigiert
+patch-48
+    DOM:INSERT-DATA implementiert
+patch-49
+    bugfix: replace-data for count != (length arg)
+patch-50
+    patch-46 nachgebessert: offset == length ist OK
+patch-51
+    fixed special cases in dom:substring-data
+patch-52
+    fixed patch-36, my (setf dom:data) implementation was bogus
+patch-55
+    temporary fix: attributes are created with value ""
+patch-58
+    START-DTD, END-DTD, DOCUMENT-TYPE initialisation
+patch-60
+    neu: CLONE-NODE
+patch-65, patch-66
+    verify attribute name syntax in createAttribute
+patch-67
+    more NAME syntax checks: CREATE-ELEMENT, SET-ATTRIBUTE
+patch-68
+    CREATE-ATTRIBUTE: set SPECIFIED to true
+patch-69, patch-70
+    INUSE_ATTRIBUTE_ERR
+patch-71
+    hacked my resolve-entity function to return NIL for undefined entities
+patch-72
+    INVALID_CHARACTER_ERR in create-entity-reference, too
+patch-73
+    Implement no-op methods on (setf node-value) where required...
+patch-74
+    fixed get-elements-by-tag-name not to include the argument itself
+patch-76, patch-77
+    implemented DOM:SPLIT-TEXT
+patch-80
+    noch unfertig: initialisiere dom:enitities richtig, erzeuge Entity-Knoten
+patch-82
+    dom:notations fuellen
+patch-85
+    WRONG_DOCUMENT_ERR auch in set-attribute-node
+patch-86
+    WRONG_DOCUMENT_ERR nicht nur in set-attribute-node, sondern prinzipiell in set-named-item
+patch-91
+    :NOT_FOUND_ERR in remove-named-item
+patch-94
+    can-adopt-p implementiert
+patch-95
+    ENSURE-VALID-INSERTION-REQUEST korrigiert
+patch-96
+    normalize korrigiert: cdata-section nicht beruehren
+patch-98
+    DOCUMENTs have owner NIL
+patch-101
+    (setf dom:data) fuer PI korrigiert
+patch-102
+    NOT_FOUND_ERR in REMOVE-CHILD
+patch-104
+    oops, split-text korrigiert
+patch-106
+    NOT_FOUND_ERROR in removeAttributeNode sucht das Objekt, nicht seinen Namen
+patch-107, patch-113
+    Defaultwert fuer fehlende Attribute ist der leere Rod-String, nicht NIL
+patch-118
+    entity und notation maps sind read-only
+patch-119
+    dom:item liefert NIL bei ungueltigem index
+patch-120, patch-122, patch-124
+    NodeList reimplementiert
+patch-121
+    NAMED-NODE-MAP muss auch auf HIERARCHY_REQUEST_ERR pruefen...
+patch-128
+    ATTRIBUTE hat jetzt Kinder
+patch-129
+    auch Attribute normalisieren
+patch-130
+    (setf dom:value) auf einem Attribut darf ein etwaiges Kinderobjekt nicht wiederverwenden
+patch-131
+    replace-child fuer document-fragment implementiert
+patch-132
+    CAN-ADOPT-P fuer Parent ATTRIBUTE und Kind CDATA-SECTION korrigiert
+patch-133
+    DOCUMENT darf nur jeweils ein ELEMENT- und DOCTYPE-Kind haben
+patch-137
+    neu: map-node-list, do-node-list.  ensure-valid-insertion-request korrigiert
+patch-165
+    ANSI conformance fix in MOVE
+patch-181
+    ignore fill-pointers in MOVE
+
+xml-parse.lisp changes
+----------------
+patch-5
+    (assert (eql initial-speed 1)) in make-xstream
+patch-20
+    added a forward declaration for *namespace-bindings*
+patch-39
+    fix for thread safety in p/document
+patch-41
+    Warnung ueber (nicht) redefinierte Attribute abschalten koennen
+patch-54
+    call sax:comment; create comment nodes
+patch-89
+    public-id und system-id der Entities uebergeben
+patch-100
+    Die XML Deklaration ist keine Processing Instruction.
+patch-146
+    SAX-Aufrufe korrigiert fuer DTD ohne ID; Entitydeklaration mit SYSTEM ID
+patch-166
+    added missing format argument in internal-entity-expansion
+patch-172
+    fixed rod type in appenddata
+patch-174
+    reordered definitions to avoid forward references
+patch-177
+    more SBCL warnings removed
+patch-188
+    new function parse-octets
+(See also: patch-58, patch-80, patch-82)
+
+
+DOM-Builder und SAX-Interface
+----------------
+patch-57
+    Warnungen beseitigt ("undefined variable")
+patch-75
+    fixed PARENT slot initialization and added a rant about the current implementation
+patch-97
+    CDATA sections bauen
+patch-136
+    normalisierte Elemente bauen
+
+(See also: patch-58, patch-80, patch-82, patch-86, patch-118, patch-120)
+
+
+unparse
+----------------
+patch-2
+    export UNPARSE-DOCUMENT
+patch-144
+    Kommentare verstehen (und nicht ausgeben)
+patch-189
+    new function UNPARSE-DOCUMENT-TO-OCTETS
+
+
+Misc.
+----------------
+patch-9
+    print elements with their tag-name
+patch-11
+    print attributes with name and value
+
+patch-138
+    workaround, need to revert this later
+
+patch-10 reverted by patch-12
+patch-114 reverted by patch-115
+patch-63 reverted by patch-134
+patch-4 patch-38 patch-87 patch-90 patch-103 reverted by patch-154
+patch-154 STRING-DOM nicht mehr verwenden.  File ist aber noch da.
+
+
+domtest.cl
+----------------
+patch-27 patch-28 patch-29 patch-30 patch-31 patch-40 patch-42 patch-53
+patch-59 patch-61 patch-62 patch-64 patch-78 patch-79 patch-83 patch-84
+patch-88 patch-92 patch-93 patch-99 patch-105 patch-108 patch-111
+patch-116 patch-117 patch-123 patch-153 patch-182
+    DOM tests
+
+
+xmlconf.cl
+----------------
+patch-13 patch-15 patch-16 patch-147 patch-186
+    Testfunktion fuer XML Conformance Test Suite
+(need to merge this with Gilbert's work)

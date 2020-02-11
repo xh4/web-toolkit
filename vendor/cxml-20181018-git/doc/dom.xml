@@ -1,0 +1,150 @@
+<documentation title="CXML W3C DOM">
+  <h1>W3C DOM</h1>
+  <p>
+    CXML implements the DOM Level 2 Core interfaces.&#160; For details
+    on DOM, please refer to the <a
+				   href="http://www.w3.org/TR/DOM-Level-2-Core/core.html">specification</a>.
+  </p>
+
+  <a name="parser"/>
+  <h3>Parsing into DOM</h3>
+  <p>
+    To parse an XML document into a DOM tree, use the SAX parser with a
+    DOM builder as the SAX handler.  Example:
+  </p>
+  <pre>(cxml:parse-file "test.xml" (cxml-dom:make-dom-builder))</pre>
+  <p>
+    <div class="def">Function CXML-DOM:MAKE-DOM-BUILDER ()</div>
+    Create a SAX handler which builds a DOM document.
+    <p>
+    </p>
+    This functions returns a DOM builder that will work with the default
+    configuration of the SAX parser and is guaranteed to use
+    characters/strings instead of runes/rods, if that makes a
+    difference on the Lisp in question.
+    <p>
+    </p>
+    This is the same as <tt>rune-dom:make-dom-builder</tt> on Lisps
+    with Unicode support, and the same as
+    <tt>utf8-dom:make-dom-builder</tt> otherwise.
+  </p>
+
+  <p>
+    <div class="def">Function RUNE-DOM:MAKE-DOM-BUILDER ()</div>
+    Create a SAX handler which builds a DOM document using runes and rods.
+  </p>
+
+  <p>
+    <div class="def">Function UTF8-DOM:MAKE-DOM-BUILDER ()</div>
+    (Only on Lisps without Unicode support:)
+    Create a SAX handler which builds a DOM document using
+    UTF-8-encoded strings.
+  </p>
+
+  <a name="serialization"/>
+  <h3>Serializing DOM</h3>
+  <p>
+    To serialize a DOM document, use a SAX serialization sink as the
+    argument to <tt>dom:map-document</tt>, which generates SAX events
+    for the DOM tree.
+  </p>
+  <p>
+    Applications dealing with namespaces might want to inject a
+    <a href="sax.html#misc">namespace normalizer</a> into the
+    sink chain.
+  </p>
+  <p>
+    <div class="def">Function DOM:MAP-DOCUMENT (handler document &amp;key include-xmlns-attributes include-default-values include-doctype)</div>
+    Traverse a DOM document and call SAX functions as if an XML
+    representation of the document was processed by a SAX parser.
+  </p>
+  <p>Keyword arguments:</p>
+  <ul>
+    <li>
+      <tt>include-xmlns-attributes</tt> -- defaults to
+      <tt>sax:*include-xmlns-attributes*</tt>
+    </li>
+    <li>
+      <tt>include-doctype</tt> -- One of <tt>nil</tt> (no doctype
+      declaration), <tt>:full-internal-subset</tt> (include a doctype
+      declaration and the full internal subset), or
+      <tt>:canonical-notations</tt> (write a doctype declaration
+      with an internal subset including only notations, as required
+      for canonical serialization).
+    </li>
+    <li>
+      <tt>include-default-values</tt> -- include attribute nodes with nil
+      <tt>dom:specified</tt>.
+    </li>
+    <li>
+      <tt>recode</tt> -- (ignored on Lisps with Unicode support.) If
+      true, recode UTF-8 strings to rods.   Defaults to true if used
+      with a UTF-8 DOM document.  It can be set to false manually to
+      suppress recoding in this case.
+    </li>
+  </ul>
+
+  <a name="mapping"/>
+  <h3>DOM/Lisp mapping</h3>
+  <p>
+    Note that there is no "standard" DOM mapping for Lisp.
+  </p>
+  <p>
+    DOM is <a
+	      href="http://www.w3.org/TR/DOM-Level-2-Core/idl-definitions.html">specified
+      in CORBA IDL</a>, but it refrains from using object-oriented IDL
+    features, allowing for a much more natural Lisp implemenation than
+    the the ordinary IDL/Lisp mapping would.&#160;
+    Differences between CXML's DOM and the direct IDL/Lisp mapping:
+  </p>
+  <ul>
+    <li>
+      DOM function names are symbols in the <tt>DOM</tt> package (not
+      the <tt>OP</tt> package).
+    </li>
+    <li>
+      DOM functions have proper required arguments, not a huge
+      <tt>&amp;rest</tt> lambda list.
+    </li>
+    <li>
+      Although most IDL interfaces are implemented as CLOS classes by
+      CXML, the Lisp types of DOM objects is not documented and cannot
+      be relied upon.&#160; A node's type can be determined using
+      <tt>dom:node-type</tt> instead.
+    </li>
+    <li>
+      <tt>DOMString</tt> is mapped to <tt>rod</tt>, which is either
+      an <tt>(unsigned-byte 16)</tt> array type or a string type.
+    </li>
+    <li>
+      The IDL/Lisp mapping maps CORBA enums to Lisp keywords.&#160;
+      Unfortunately, the DOM IDL does not use enums.&#160; Instead,
+      both exception types and node types are defined integer
+      constants.&#160; CXML chooses to ignore this definition and uses
+      keywords instead.
+    </li>
+    <li>
+      DOM uses StudlyCaps.&#160; Lisp programmers don't.&#160; We
+      insert <tt>#\-</tt> before every upper case letter preceded by a
+      lower case letter and before every upper case letter which is
+      followed by a lower case letter, but preceded by a capital
+      letter.&#160; This algorithms leads to the natural Lisp spelling
+      of DOM function names.
+    </li>
+    <li>
+      Implementation note: DOM's <tt>NodeList</tt> does not
+      necessarily map to a native "sequence" type.&#160; (For example,
+      node lists are objects in Java, not arrays.)&#160;
+      <tt>NodeList</tt> is specified to reflect changes done after a
+      node list was created, so node lists cannot be Lisp lists.&#160;
+      (A node list could be implemented as a CLOS object pointing to
+      said list though.)&#160; Instead, CXML currently implements node
+      lists as adjustable vectors.&#160; Note that code which relies on
+      this implementation and uses Lisp sequence functions
+      instead of sticking to <tt>dom:item</tt> and <tt>dom:length</tt>
+      is not portable.&#160; As a compromise, you can use our
+      extensions <tt>dom:map-node-list</tt> or
+      <tt>dom:do-node-list</tt>, which can be implemented portably.
+    </li>
+  </ul>
+</documentation>

@@ -1,0 +1,24 @@
+* Introduction
+
+  An XML parser written in Common Lisp.
+
+  Closure XML was written by Gilbert Baumann (unk6 at
+  rz.uni-karlsruhe.de) as part of the Closure web browser.
+
+  Contributions to the parser by
+  * Henrik Motakef (hmot at henrik-motakef.de)
+  * David Lichteblau (david@lichteblau.com)
+
+  CXML implements a namespace-aware, validating XML 1.0 parser
+  as well as the DOM Level 2 Core interfaces. Two parser interfaces
+  are offered, one SAX-like, the other similar to StAX.
+
+  CXML is licensed under Lisp-LGPL.
+
+* Documentation
+
+  Please refer to http://common-lisp.net/project/cxml/ for details.
+
+  The documentation is also available in the doc/ subdirectory of this
+  source distribution, run =make= in that directory to build HTML
+  for the XML sources (requires =xsltproc=).

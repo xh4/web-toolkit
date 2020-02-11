@@ -1,0 +1,42 @@
+language: common-lisp
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - libc6-i386
+      - openjdk-7-jre
+
+env:
+  global:
+    - PATH=~/.roswell/bin:$PATH
+    - ROSWELL_INSTALL_DIR=$HOME/.roswell
+  matrix:
+    - LISP=sbcl-bin COVERALLS=true
+    - LISP=ccl-bin
+    - LISP=abcl
+    - LISP=clisp
+    - LISP=ecl
+
+matrix:
+  allow_failures:
+    - env: LISP=clisp
+    - env: LISP=abcl
+    - env: LISP=ecl
+
+install:
+  - curl -L https://raw.githubusercontent.com/snmsts/roswell/release/scripts/install-for-ci.sh | sh
+
+cache:
+  directories:
+    - $HOME/.roswell
+    - $HOME/.config/common-lisp
+
+script:
+  - ./ci-run-tests.ros
+
+notifications:
+  email:
+    recipient:
+      - rudolfo.christ@gmail.com
+    on_failure: change

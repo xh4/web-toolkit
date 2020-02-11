@@ -1,0 +1,31 @@
+
+<!ENTITY % header "(H1 | H2 | H3 | H4 | H5 | H6)">
+
+<!ENTITY % text "(#PCDATA | BR | P)">
+<!ELEMENT BR - O EMPTY>
+<!ELEMENT P - O EMPTY>
+
+<!ELEMENT BOOKMARK-FILE O O (TITLE | %header; | DL)>
+
+<!ELEMENT TITLE - - (#PCDATA)>
+
+<!ELEMENT %header; - - (#PCDATA)>
+<!ATTLIST %header;
+   FOLDED (folded) #IMPLIED
+   ADD_DATE NUMBER #IMPLIED
+>
+
+<!ELEMENT A - - %text;*>
+
+<!ATTLIST A
+   HREF          CDATA   #IMPLIED
+   ADD_DATE      NUMBER  #IMPLIED
+   LAST_VISIT    NUMBER  #IMPLIED
+   LAST_MODIFIED NUMBER  #IMPLIED
+>
+
+<!ELEMENT DT - O (A | (%header, DL, DD))>
+<!ELEMENT DL - - (DT|P)*>
+
+<!ELEMENT DD - O (%text;)*>
+

@@ -1,0 +1,41 @@
+Time required for parsing a simple document (wc: 99621 298859 3267087).
+
+;; CXML with NIL builder
+;; (cxml:parse-file "~/test.xml" nil)
+
+; cpu time (non-gc) 12,940 msec user, 20 msec system
+; cpu time (gc)     0 msec user, 0 msec system
+; cpu time (total)  12,940 msec user, 20 msec system
+; real time  12,991 msec
+; space allocation:
+;  4,184,599 cons cells, 47,682,392 other bytes, 0 static bytes
+
+;; CXML with xmls-compatible builder
+;; (cxml:parse-file "~/test.xml" (cxml-xmls:make-xmls-builder))
+
+; cpu time (non-gc) 14,370 msec user, 20 msec system
+; cpu time (gc)     0 msec user, 0 msec system
+; cpu time (total)  14,370 msec user, 20 msec system
+; real time  14,387 msec
+; space allocation:
+;  8,667,564 cons cells, 47,682,600 other bytes, 0 static bytes
+
+;; For comparison: xmls.lisp
+;; (with-open-file (s "~/test.xml") (xmls:parse s :compress-whitespace nil))
+
+; cpu time (non-gc) 27,440 msec user, 50 msec system
+; cpu time (gc)     860 msec user, 0 msec system
+; cpu time (total)  28,300 msec user, 50 msec system
+; real time  28,813 msec
+; space allocation:
+;  14,821,161 cons cells, 243,886,592 other bytes, 0 static bytes
+
+;; CXML with DOM builder
+;; (cxml:parse-file "~/test.xml" (dom:make-dom-builder))
+
+; cpu time (non-gc) 34,900 msec user, 40 msec system
+; cpu time (gc)     760 msec user, 0 msec system
+; cpu time (total)  35,660 msec user, 40 msec system
+; real time  35,822 msec
+; space allocation:
+;  14,645,503 cons cells, 300,235,640 other bytes, 0 static bytes
