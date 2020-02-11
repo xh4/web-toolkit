@@ -49,11 +49,13 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Implement [HTTP/2](https://tools.ietf.org/html/rfc7540)
   * Implement common handlers
   * Implement virtual host
+  * Support HTTPS for both client and server
 * WebSocket
   * Use Asynchronous I/O in LispWorks
   * Implement server statistics and metrics monitoring
   * Implement traffic throttling and message size limiting
   * Support [Compression Extensions](https://tools.ietf.org/html/rfc7692)
+  * Support WSS for both client and server
 * URI
   * Test against [Web Platform Tests](https://github.com/web-platform-tests/wpt)
 * HTML
