@@ -48,6 +48,7 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Implement logging
   * Implement [HTTP/2](https://tools.ietf.org/html/rfc7540)
   * Implement common handlers
+  * Implement virtual host
 * WebSocket
   * Use Asynchronous I/O in LispWorks
   * Implement server statistics and metrics monitoring
