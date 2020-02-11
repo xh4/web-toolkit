@@ -41,11 +41,17 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
 * HTTP
   * Use Asynchronous I/O in LispWorks
   * Implement server statistics and metrics monitoring
+  * Implement traffic throttling and message size limiting
+  * Implement authentication, authorization and access control
+  * Implement static file serving
+  * Implement cache control
+  * Implement logging
   * Implement [HTTP/2](https://tools.ietf.org/html/rfc7540)
   * Implement common handlers
 * WebSocket
   * Use Asynchronous I/O in LispWorks
   * Implement server statistics and metrics monitoring
+  * Implement traffic throttling and message size limiting
   * Support [Compression Extensions](https://tools.ietf.org/html/rfc7692)
 
 ### Author
