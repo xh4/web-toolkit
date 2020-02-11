@@ -213,7 +213,7 @@
 
 (defmacro test-group (title &body body)
   (let ((test-case-ids '()))
-    (serapeum:walk-tree
+    (walk-tree
      (lambda (form)
        (when (and (listp form) (eq (first form) 'test-case))
          (let ((test-case-id (second form)))

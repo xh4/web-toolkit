@@ -35,7 +35,6 @@
                :fiveam
                :cl-ppcre
                :split-sequence
-               :serapeum
                :cl-fad
                :find-port)
   :serial t
@@ -43,6 +42,7 @@
                         :components ((:module "websocket"
                                               :serial t
                                               :components ((:file "package")
+                                                           (:file "serapeum")
                                                            (:file "helper")
                                                            (:file "autobahn")
                                                            (:file "endpoint")
