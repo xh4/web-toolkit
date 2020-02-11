@@ -36,7 +36,7 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Write [documentation](https://lisp-web-toolkit.com)
   * Carefully design conditions
   * Write more tests
-  * Add project build status graph
+  * <s>Add project build status graph</s>
   * Add code coverage informataion
 * HTTP
   * Use Asynchronous I/O in LispWorks
@@ -54,6 +54,16 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Implement server statistics and metrics monitoring
   * Implement traffic throttling and message size limiting
   * Support [Compression Extensions](https://tools.ietf.org/html/rfc7692)
+* URI
+  * Test against [Web Platform Tests](https://github.com/web-platform-tests/wpt)
+* HTML
+  * Implement parser
+  * Implement pretty print
+  * Refine element constractor error report
+  * Enclose DOM implementation
+  * Test against [Web Platform Tests](https://github.com/web-platform-tests/wpt)
+* JSON
+  * Test against [JSONTestSuite](https://github.com/nst/JSONTestSuite)
 
 ### Author
 [Xiangyu He](https://xh.coobii.com) <[xh@coobii.com](mailto:xh@coobii.com)>
