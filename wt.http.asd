@@ -58,6 +58,7 @@
 (defsystem wt.http/test
   :depends-on (:wt.http
                :babel-streams
+               :serapeum
                :fiveam)
   :serial t
   :components ((:module "test"
