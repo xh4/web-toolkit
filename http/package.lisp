@@ -32,6 +32,7 @@
            :define-handler
            :next-handler
            :call-next-handler
+           :abort-handler
            :redirect
            :listener
            :listener-port
