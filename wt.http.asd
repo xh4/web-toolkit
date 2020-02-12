@@ -79,6 +79,7 @@
                                                            (:file "handler")
                                                            (:file "connection")
                                                            (:file "redirect")
+                                                           (:file "error")
                                                            (:file "static"))))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :http-test)))

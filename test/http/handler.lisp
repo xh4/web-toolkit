@@ -5,12 +5,12 @@
 (test define-handler-with-instalize-nil
   (it
     (let ((handler-class (define-handler foo () () (:instanize nil))))
-      (is (typep handler-class 'http::handler-class)))))
+      (is (equal 'http::handler-class (type-of handler-class))))))
 
 (test define-handler-with-instalize-unset
   (it
     (let ((handler (define-handler foo () ())))
-      (is (typep handler 'http::handler)))))
+      (is-true (typep handler 'http::handler)))))
 
 (test define-handler-with-instalize-nil-and-a-function
   (it
@@ -71,7 +71,7 @@
 (test define-handler-with-call-cc-function
   (it
     (define-handler test-handler () () (:function (cl-cont:lambda/cc (request))))
-    (is-true (typep (http::handler-function test-handler) 'cl-cont::funcallable/cc))
+    (is-true (equal 'cl-cont::funcallable/cc (type-of (http::handler-function test-handler))))
     (is (equal '(request) (http::handler-function-lambda-list test-handler)))))
 
 (test handler-function-lambda-list
@@ -87,14 +87,14 @@
         ()
         (:function (lambda ())))
       (let ((res (http::invoke-handler foo nil)))
-        (is (typep res 'response))))
+        (is (equal 'response (type-of res)))))
 
   (it "should return a response"
       (define-handler foo ()
         ()
         (:function (lambda () (reply (status 201)))))
       (let ((res (http::invoke-handler foo nil)))
-        (is (typep res 'response))
+        (is (equal 'response (type-of res)))
         (is (equal 201 (status-code (response-status res)))))))
 
 (test call-next-handler
@@ -111,7 +111,7 @@
                      (reply (status 202)))))
 
       (let ((res (http::invoke-handler bar nil)))
-        (is (typep res 'response))
+        (is (equal 'response (type-of res)))
         (is (equal 202 (status-code (response-status res))))))
 
   (it "should be able to access next handler's response"
@@ -133,12 +133,12 @@
         ()
         (:function (lambda ()
                      (let ((res (call-next-handler)))
-                       (is (typep res 'response))))))
+                       (is (equal 'response (type-of res)))))))
 
       (http::invoke-handler foo nil)))
 
 (test abort-handler
-  (it "should abort handler"
+  (it "should abort current handler"
       (define-handler foo ()
         ()
         (:function (lambda ()
@@ -147,5 +147,21 @@
                      (reply (status 202)))))
 
       (let ((res (http::invoke-handler foo nil)))
-        (is (typep res 'response))
+        (is (equal 'response (type-of res)))
+        (is (equal 201 (status-code (response-status res))))))
+
+  (it "should abort rest handlers"
+      (define-handler foo ()
+        ()
+        (:function (lambda ()
+                     (reply (status 201))
+                     (abort-handler))))
+
+      (define-handler bar (foo)
+        ()
+        (:function (lambda ()
+                     (reply (status 202)))))
+
+      (let ((res (http::invoke-handler foo nil)))
+        (is (equal 'response (type-of res)))
         (is (equal 201 (status-code (response-status res)))))))
