@@ -68,4 +68,7 @@
        sum size into header-size
        finally
          (write-sequence +crlf+ stream)
-         (return (+ header-size (length +crlf+))))))
+         (return (+ header-size (length +crlf+)))))
+  (:method (stream (header null))
+    (write-sequence +crlf+ stream)
+    2))
