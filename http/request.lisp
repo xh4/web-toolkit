@@ -15,7 +15,7 @@
      :accessor request-version)
    (header
     :initarg :header
-    :initform nil
+    :initform (make-instance 'header)
     :accessor request-header)
    (body
     :initarg :body

@@ -14,8 +14,6 @@
     :initform nil
     :accessor response-body)))
 
-(defvar *response* nil)
-
 (defgeneric response-status (response))
 
 (defgeneric (setf response-status) (value response))
