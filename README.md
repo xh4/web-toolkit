@@ -45,6 +45,7 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Implement authentication, authorization and access control
   * Implement static file serving
   * Implement cache control
+  * Implement compression
   * Implement logging
   * Implement [HTTP/2](https://tools.ietf.org/html/rfc7540)
   * Implement common handlers
