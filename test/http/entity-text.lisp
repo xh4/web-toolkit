@@ -6,7 +6,11 @@
   (it
     (let ((entity (make-instance 'http::text-entity
                                  :body "foo")))
-      (is (equal 3 (length (response-body entity))))))
+      (is (equal 3 (length (response-body entity))))
+      (is (equal "text/plain; charset=UTF-8" (header-field-value
+                                              (find-header-field
+                                               "Content-Type"
+                                               (response-header entity)))))))
 
   (it
     (let ((entity (make-instance 'http::text-entity

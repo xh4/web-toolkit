@@ -49,7 +49,10 @@
           (value (header-field-value header-field)))
       (if-let ((current-header-field (find-header-field name header)))
         (setf (header-field-value current-header-field) value)
-        (appendf (header-fields header) (list header-field))))))
+        (appendf (header-fields header)
+                 (list (make-instance 'header-field
+                                      :name (header-field-name header-field)
+                                      :value (header-field-value header-field))))))))
 
 (defun read-header (stream)
   (loop for header-field = (read-header-field stream)

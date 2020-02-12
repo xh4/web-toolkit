@@ -43,7 +43,14 @@
   (setf (entity-status entity) status))
 
 (defmethod response-header ((entity entity))
-  (entity-header entity))
+  (let ((header (copy-header (entity-header entity))))
+    (when (find-method #'content-length '() (list (class-of entity)) nil)
+      (when-let ((value (content-length entity)))
+        (set-header-field header (header-field "Content-Length" value))))
+    (when (find-method #'content-type '() (list (class-of entity)) nil)
+      (when-let ((value (content-type entity)))
+        (set-header-field header (header-field "Content-Type" value))))
+    header))
 
 (defmethod (setf response-header) (header (entity entity))
   (setf (entity-header entity) header))
@@ -61,22 +68,10 @@
   (set-header-field (entity-header entity) header-field))
 
 (defmethod write-response (stream (entity entity))
-  (+
-   (write-status-line stream "HTTP/1.1"
-                      (status-code (response-status entity))
-                      (status-reason-phrase (response-status entity)))
-   (let ((header (response-header entity)))
-     (when (find-method #'content-length '() (list (class-of entity)) nil)
-       (when-let ((value (content-length entity)))
-         (set-header-field header (header-field "Content-Length" value))))
-     (when (find-method #'content-type '() (list (class-of entity)) nil)
-       (when-let ((value (content-type entity)))
-         (set-header-field header (header-field "Content-Type" value))))
-     (write-header stream header))
-   (let ((body (response-body entity)))
-     (typecase body
-       (string (length (write-sequence (babel:string-to-octets body) stream)))
-       (vector (length (write-sequence body stream)))
-       (pathname (with-open-file (input-stream body :element-type '(unsigned-byte 8))
-                   (alexandria::copy-stream input-stream stream)))
-       (t 0)))))
+  (write-response stream entity))
+
+(defun copy-header (header)
+  (let ((new-header (make-instance 'header)))
+    (loop for header-field in (header-fields header)
+       do (set-header-field header header-field))
+    new-header))
