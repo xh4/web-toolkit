@@ -7,7 +7,7 @@
      (handler-bind ((error (lambda (error)
                              (use-value (handle-error handler request error)))))
        (restart-case (call-next-handler)
-         (use-value (value) value))))))
+         (use-value (response) response))))))
 
 (defgeneric handle-error (handler request error)
   (:method ((handler error-handler) (request request) error)

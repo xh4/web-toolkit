@@ -58,22 +58,25 @@
                         :location location)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (define-condition condition/next-handler () ())
-
-  (defmacro next-handler ()
-    `(restart-case (signal 'condition/next-handler)
-       (restart/next-handler (handler) handler)))
-
-  (define-condition condition/call-next-handler () ())
+  (defvar *request* nil)
+  (defvar *response* nil)
+  (defvar *next-handlers* nil)
 
   (defmacro call-next-handler ()
-    `(restart-case (signal 'condition/call-next-handler)
-       (restart/call-next-handler (response) response)))
+    `(if *next-handlers*
+         (let ((handler (first *next-handlers*))
+               (*next-handlers* (rest *next-handlers*)))
+           (let ((result (call-handler handler *request*)))
+             (when (or (typep result 'response)
+                       (typep result 'entity))
+               (setf *response* result))
+             *response*))
+         *response*))
 
-  (define-condition condition/abort-handler () ())
+  (define-condition abort-handler () ())
 
   (defmacro abort-handler ()
-    `(signal 'condition/abort-handler)))
+    `(signal 'abort-handler)))
 
 ;; Mapping from handler names (class names of handlers) to handler instances
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -151,49 +154,25 @@
         (t handlers)))))
 
 (defun invoke-handler (handler request)
-  (let ((*response* (make-instance 'response
-                                   :header (make-instance 'header)))
-        (next-handlers (reverse (compute-handler-precedence-list handler))))
-    (block finish-handling
-      (labels ((%next-handler ()
-                 (first next-handlers))
-
-               (%call-next-handler ()
-                 (let ((handler (%next-handler)))
-                   (when handler
-                     (%call-handler handler))))
-
-               (%call-handler (handler)
-                 (setf next-handlers (rest next-handlers))
-                 (handler-bind ((condition/next-handler
-                                 (lambda (c)
-                                   (declare (ignore c))
-                                   (let ((next-handler (%next-handler)))
-                                     (invoke-restart 'restart/next-handler next-handler))))
-                                (condition/call-next-handler
-                                 (lambda (c)
-                                   (declare (ignore c))
-                                   (%call-next-handler)
-                                   (invoke-restart 'restart/call-next-handler *response*)))
-                                (condition/abort-handler
-                                 (lambda (c)
-                                   (declare (ignore c))
-                                   (return-from finish-handling)))
-
-                                (condition/redirect
-                                 (lambda (c)
-                                   (with-slots (location status) c
-                                     (reply (header "Location" (case location
-                                                                 (:back (header-field-value
-                                                                         (header-field request "Referer")))
-                                                                 (t location))))
-                                     (reply (status status)))
-                                   (return-from finish-handling))))
-                   (let ((result (call-handler handler request)))
-                     (when (or (typep result 'response)
-                               (typep result 'entity))
-                       (setf *response* result))))))
-        (%call-next-handler)))
+  (let ((*request* request)
+        (*response* (make-instance 'response))
+        (*next-handlers* (reverse (compute-handler-precedence-list handler))))
+    (block nil
+      (handler-bind ((abort-handler
+                      (lambda (c)
+                        (declare (ignore c))
+                        (return)))
+                     (redirect
+                      (lambda (c)
+                        (with-slots (location status) c
+                          (reply (status status))
+                          (reply (header "Location" (case location
+                                                      ;; TODO: handle referer missing condition
+                                                      (:back (header-field-value
+                                                              (header-field request "Referer")))
+                                                      (t location))))
+                          (return)))))
+        (call-next-handler)))
     *response*))
 
 (defun call-handler (handler request)

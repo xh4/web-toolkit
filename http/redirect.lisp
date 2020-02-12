@@ -4,7 +4,7 @@
 
 ;; https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location
 
-(define-condition condition/redirect ()
+(define-condition redirect ()
   ((location
     :initarg :location
     :initform ""
@@ -15,6 +15,6 @@
     :accessor redirect-status)))
 
 (defmacro redirect (location &key (status :temporary-redirect))
-  `(signal 'condition/redirect
+  `(signal 'redirect
            :location ,location
            :status (or ,status :temporary-redirect)))
