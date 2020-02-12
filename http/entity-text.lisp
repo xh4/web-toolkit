@@ -17,3 +17,7 @@
   (or (header-field-value
        (find-header-field "Content-Type" (response-header entity)))
       "text/plain; charset=UTF-8"))
+
+(defmethod response-body ((entity text-entity))
+  (with-slots (octets) entity
+    octets))
