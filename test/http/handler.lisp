@@ -95,23 +95,24 @@
         (:function (lambda () (reply (status 201)))))
       (let ((res (http::invoke-handler foo nil)))
         (is (typep res 'response))
-        (is (equal 201 (status-code (response-status res))))))
+        (is (equal 201 (status-code (response-status res)))))))
 
+(test call-next-handler
   (it "should be able to call next handler"
-    (define-handler foo ()
-      ()
-      (:function (lambda ()
-                   (reply (status 201))
-                   (call-next-handler))))
+      (define-handler foo ()
+        ()
+        (:function (lambda ()
+                     (reply (status 201))
+                     (call-next-handler))))
 
-    (define-handler bar (foo)
-      ()
-      (:function (lambda ()
-                   (reply (status 202)))))
+      (define-handler bar (foo)
+        ()
+        (:function (lambda ()
+                     (reply (status 202)))))
 
-    (let ((res (http::invoke-handler bar nil)))
-      (is (typep res 'response))
-      (is (equal 202 (status-code (response-status res))))))
+      (let ((res (http::invoke-handler bar nil)))
+        (is (typep res 'response))
+        (is (equal 202 (status-code (response-status res))))))
 
   (it "should be able to access next handler's response"
       (define-handler foo ()
@@ -135,3 +136,16 @@
                        (is (typep res 'response))))))
 
       (http::invoke-handler foo nil)))
+
+(test abort-handler
+  (it "should abort handler"
+      (define-handler foo ()
+        ()
+        (:function (lambda ()
+                     (reply (status 201))
+                     (abort-handler)
+                     (reply (status 202)))))
+
+      (let ((res (http::invoke-handler foo nil)))
+        (is (typep res 'response))
+        (is (equal 201 (status-code (response-status res)))))))
