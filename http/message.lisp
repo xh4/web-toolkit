@@ -26,7 +26,10 @@
       (check-type stream cl:stream)
       (let ((content-length (header-field-value
                              (find-header-field "Content-Length" message))))
-        (when content-length (setf content-length (parse-integer content-length)))
+        ;; TODO: read chunked stream
+        (unless content-length
+          (error "Missing content length when read message body into vector"))
+        (setf content-length (parse-integer content-length))
         (alexandria::read-stream-content-into-byte-vector
          stream 'alexandria::%length content-length)))))
 
