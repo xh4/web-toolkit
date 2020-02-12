@@ -73,3 +73,65 @@
     (define-handler test-handler () () (:function (cl-cont:lambda/cc (request))))
     (is-true (typep (http::handler-function test-handler) 'cl-cont::funcallable/cc))
     (is (equal '(request) (http::handler-function-lambda-list test-handler)))))
+
+(test handler-function-lambda-list
+  (it
+    (finishes (http::check-handler-function-lambda-list '()))
+    (finishes (http::check-handler-function-lambda-list '(request)))
+    (finishes (http::check-handler-function-lambda-list '(handler request)))
+    (signals error (http::check-handler-function-lambda-list '(handler request xxx)))))
+
+(test invoke-handler
+  (it "should return a response"
+      (define-handler foo ()
+        ()
+        (:function (lambda ())))
+      (let ((res (http::invoke-handler foo nil)))
+        (is (typep res 'response))))
+
+  (it "should return a response"
+      (define-handler foo ()
+        ()
+        (:function (lambda () (reply (status 201)))))
+      (let ((res (http::invoke-handler foo nil)))
+        (is (typep res 'response))
+        (is (equal 201 (status-code (response-status res))))))
+
+  (it "should be able to call next handler"
+    (define-handler foo ()
+      ()
+      (:function (lambda ()
+                   (reply (status 201))
+                   (call-next-handler))))
+
+    (define-handler bar (foo)
+      ()
+      (:function (lambda ()
+                   (reply (status 202)))))
+
+    (let ((res (http::invoke-handler bar nil)))
+      (is (typep res 'response))
+      (is (equal 202 (status-code (response-status res))))))
+
+  (it "should be able to access next handler's response"
+      (define-handler foo ()
+        ()
+        (:function (lambda ()
+                     (let ((res (call-next-handler)))
+                       (is (equal 202 (status-code (response-status res))))))))
+
+      (define-handler bar (foo)
+        ()
+        (:function (lambda ()
+                     (reply (status 202)))))
+
+      (http::invoke-handler bar nil))
+
+  (it "should be able to call next handler even if there is none"
+      (define-handler foo ()
+        ()
+        (:function (lambda ()
+                     (let ((res (call-next-handler)))
+                       (is (typep res 'response))))))
+
+      (http::invoke-handler foo nil)))
