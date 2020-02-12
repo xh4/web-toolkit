@@ -1,13 +1,16 @@
 (in-package :http)
 
-(define-handler error-handler ()
+(defclass error-handler (handler)
   ()
+  (:metaclass handler-class)
   (:function
    (lambda (handler request)
      (handler-bind ((error (lambda (error)
                              (use-value (handle-error handler request error)))))
        (restart-case (call-next-handler)
          (use-value (response) response))))))
+
+(defvar error-handler (make-instance 'error-handler))
 
 (defgeneric handle-error (handler request error)
   (:method ((handler error-handler) (request request) error)

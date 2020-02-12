@@ -42,23 +42,26 @@
 (defun process-connection (connection)
   (with-slots (input-stream output-stream) connection
     (tagbody :start
-       (when-let ((request (read-request input-stream)))
-         (let ((response (handle-request connection request)))
-           (if (equal 101 (status-code (response-status response)))
-               (go :end)
-               (progn
-                 (handle-response connection response)
-                 (if (or (not (keep-alive-p request))
-                         (not (keep-alive-p response))
-                         (equal 101 (status-code (response-status response)))
-                         (not (open-stream-p input-stream))
-                         (not (open-stream-p output-stream)))
-                     (go :end)
-                     (progn
-                       (let ((body (request-body request)))
-                         (typecase body
-                           (stream (stream-read-remain body))))
-                       (go :start)))))))
+       (handler-bind ((error (lambda (error)
+                               (declare (ignore error))
+                               (go :end))))
+         (when-let ((request (read-request input-stream)))
+           (let ((response (handle-request connection request)))
+             (if (equal 101 (status-code (response-status response)))
+                 (go :end)
+                 (progn
+                   (handle-response connection response)
+                   (if (or (not (keep-alive-p request))
+                           (not (keep-alive-p response))
+                           (equal 101 (status-code (response-status response)))
+                           (not (open-stream-p input-stream))
+                           (not (open-stream-p output-stream)))
+                       (go :end)
+                       (progn
+                         (let ((body (request-body request)))
+                           (typecase body
+                             (stream (stream-read-remain body))))
+                         (go :start))))))))
      :end (close-connection connection))))
 
 (defun close-connection (connection)
@@ -73,11 +76,7 @@
       (let ((handler (server-handler server)))
         (unless handler
           (setf handler default-handler))
-        (let ((response (handler-bind ((error (lambda (error)
-                                                (use-value (handle-error error-handler request error)))))
-                          (restart-case
-                              (invoke-handler handler request)
-                            (use-value (response) response)))))
+        (let ((response (invoke-handler handler request)))
           (when (and (equal "HTTP/1.0" (request-version request))
                      (string-equal "Keep-Alive" (header-field-value
                                                  (find-header-field "Connection" request))))

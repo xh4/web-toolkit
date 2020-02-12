@@ -2,7 +2,7 @@
 
 (in-suite :http-test)
 
-(define-handler bad-handler (http::error-handler)
+(define-handler bad-handler ()
   ()
   (:function (lambda ()
                (error "oops..."))))
@@ -31,5 +31,12 @@
   (it "should handle error, render nothing"
       (let ((response (http::invoke-handler bad-handler
                                             (make-instance 'request))))
+        (is (equal 500 (status-code response)))
+        (is (equal nil (response-body response)))))
+
+  (it "should handle error, render nothing"
+      (let ((response (http::invoke-handler bad-handler
+                                            (make-instance 'request
+                                                           :header (header "Accept" "application/json")))))
         (is (equal 500 (status-code response)))
         (is (equal nil (response-body response))))))

@@ -101,8 +101,8 @@
 (setf (gethash 'handler *static-handlers*) handler)
 
 (defmacro define-handler (handler-name superclasses slots &rest options)
-  (unless (find 'handler superclasses)
-    (appendf superclasses '(handler)))
+  (unless (find 'application-handler superclasses)
+    (appendf superclasses '(application-handler)))
   (let ((function (second (find :function options :key 'first)))
         (metaclass (second (find :metaclass options :key 'first)))
         (instanize (if-let ((option (find :instanize options :key 'first)))
