@@ -95,7 +95,8 @@
                          (bt:condition-notify cvar)))))
           (bt:condition-wait cvar lock :timeout 1)
           (unless errorp
-            (bt:destroy-thread thread)))))
+            (ignore-errors
+              (bt:destroy-thread thread))))))
     (let ((output-stream (http::connection-output-stream connection)))
       (let ((output-vector (babel-streams::vector-stream-vector
                             output-stream)))
