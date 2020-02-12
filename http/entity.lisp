@@ -58,6 +58,9 @@
 (defmethod response-body ((entity entity))
   (entity-body entity))
 
+(defmethod message-body ((entity entity))
+  (response-body entity))
+
 (defmethod (setf response-body) (body (entity entity))
   (setf (entity-body entity) body))
 
