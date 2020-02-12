@@ -5,6 +5,7 @@
 (test status
   (is (typep (status 200) 'status))
   (is (typep (status :ok) 'status))
+  (is (typep (status nil) 'null))
 
   (is (equal 200 (status-code 200)))
   (is (equal 200 (status-code :ok)))
