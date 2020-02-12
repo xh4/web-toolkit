@@ -42,6 +42,15 @@
 (defmethod (setf response-status) (status (entity entity))
   (setf (entity-status entity) status))
 
+(defmethod status-code ((entity entity))
+  (status-code (response-status entity)))
+
+(defmethod status-keyword ((entity entity))
+  (status-keyword (response-status entity)))
+
+(defmethod status-reason-phrase ((entity entity))
+  (status-reason-phrase (response-status entity)))
+
 (defmethod response-header ((entity entity))
   (let ((header (copy-header (entity-header entity))))
     (when (find-method #'content-length '() (list (class-of entity)) nil)
