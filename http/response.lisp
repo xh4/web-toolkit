@@ -20,6 +20,15 @@
 
 (defgeneric (setf response-status) (value response))
 
+(defmethod status-code ((response response))
+  (status-code (response-status response)))
+
+(defmethod status-keyword ((response response))
+  (status-keyword (response-status response)))
+
+(defmethod status-reason-phrase ((response response))
+  (status-reason-phrase (response-status response)))
+
 (defgeneric response-header (response))
 
 (defgeneric (setf response-header) (value response))

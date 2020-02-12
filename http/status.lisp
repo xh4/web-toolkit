@@ -40,6 +40,10 @@
 (defmethod status-code ((status symbol)) (status-code (status status)))
 (defmethod status-code ((status null)))
 
+(defmethod status-keyword ((status integer)) (status-keyword (status status)))
+(defmethod status-keyword ((status symbol)) (status-keyword (status status)))
+(defmethod status-keyword ((status null)))
+
 (defmethod status-reason-phrase ((status integer)) (status-reason-phrase
                                                     (status status)))
 (defmethod status-reason-phrase ((status symbol)) (status-reason-phrase
