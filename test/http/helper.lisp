@@ -81,32 +81,28 @@
                                            :output-stream output-stream)))
            ,@body)))))
 
-(defmacro with-process-connection ((request response) &body body)
-  `(with-connection (connection ,request)
-     (let ((cvar (bt:make-condition-variable))
-           (lock (bt:make-lock)))
-       (bt:acquire-lock lock)
-       (let ((thread (bt:make-thread
-                      (lambda ()
-                        (http::process-connection connection)
-                        (bt:condition-notify cvar)))))
-         (bt:condition-wait cvar lock :timeout 5)
-         (bt:destroy-thread thread)))
-     (let ((output-stream (http::connection-output-stream connection)))
-       (let ((output-vector (babel-streams::vector-stream-vector
-                             output-stream)))
-         (let ((input-stream (babel-streams:make-in-memory-input-stream
-                              output-vector)))
-           (let ((,response (loop for res = (http::read-response input-stream)
-                               while res
-                               do (http::read-response-body-into-vector res)
-                               collect res)))
-             ,@body))))))
-
-;; (with-process-connection ((list (make-instance 'request
-;;                                                :method "GET"
-;;                                                :uri "/"
-;;                                                :version "HTTP/1.0"
-;;                                                :header (header "Connection" "close")))
-;;                           response)
-;;   response)
+(defun process-request (request)
+  (with-connection (connection (ensure-list request))
+    (let ((cvar (bt:make-condition-variable))
+          (lock (bt:make-lock)))
+      (bt:acquire-lock lock)
+      (let ((errorp))
+        (let ((thread (bt:make-thread
+                       (lambda ()
+                         (handler-bind ((error (lambda (e)
+                                                 (setf errorp t))))
+                           (http::process-connection connection))
+                         (bt:condition-notify cvar)))))
+          (bt:condition-wait cvar lock :timeout 1)
+          (unless errorp
+            (bt:destroy-thread thread)))))
+    (let ((output-stream (http::connection-output-stream connection)))
+      (let ((output-vector (babel-streams::vector-stream-vector
+                            output-stream)))
+        (let ((input-stream (babel-streams:make-in-memory-input-stream
+                             output-vector)))
+          (let ((response (loop for res = (http::read-response input-stream)
+                              while res
+                              do (http::read-response-body-into-vector res)
+                              collect res)))
+            response))))))
