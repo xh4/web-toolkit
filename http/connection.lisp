@@ -85,6 +85,7 @@
           response)))))
 
 (defun handle-response (connection response)
+  (set-header-field response (header-field "Date" (rfc-1123-date)))
   (let ((stream (connection-output-stream connection)))
     (when (null (response-status response))
       (setf response (make-instance 'response
