@@ -85,13 +85,13 @@
           response)))))
 
 (defun handle-response (connection response)
-  (set-header-field response (header-field "Date" (rfc-1123-date)))
   (let ((stream (connection-output-stream connection)))
     (when (null (response-status response))
       (setf response (make-instance 'response
                                     :status 200)))
     (unless (equal 101 (status-code (response-status response)))
       (prog1
+          (set-header-field response (header-field "Date" (rfc-1123-date)))
           (write-response stream response)
         (finish-output stream)))))
 
