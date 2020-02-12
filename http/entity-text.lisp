@@ -1,14 +1,17 @@
 (in-package :http)
 
 (defclass text-entity (entity)
-  ())
+  ((octets
+    :initform nil)))
 
 (defmethod initialize-instance :after ((entity text-entity) &key)
-  (check-type (entity-body entity) string))
+  (with-slots (body octets) entity
+    (check-type body string)
+    (setf octets (babel:string-to-octets body))))
 
 (defmethod content-length ((entity text-entity))
-  (let ((string (entity-body entity)))
-    (length string)))
+  (with-slots (octets) entity
+    (length octets)))
 
 (defmethod content-type ((entity text-entity))
   (or (header-field-value
