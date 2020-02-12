@@ -78,9 +78,10 @@
     (write-sequence +crlf+ stream)
     (+ (length line) (length +crlf+))))
 
-(defun write-response-header (stream response)
-  (let ((header (response-header response)))
-    (write-header stream header)))
+(defgeneric write-response-header (stream response)
+  (:method (stream (response response))
+    (let ((header (response-header response)))
+      (write-header stream header))))
 
 (defun read-response-body (stream header)
   (let ((content-length (header-field-value
@@ -112,13 +113,7 @@
 
 (defgeneric write-response-body (stream response)
   (:method (stream (response response))
-    (let ((body (response-body response)))
-      (typecase body
-        (string (length (write-sequence (babel:string-to-octets body) stream)))
-        (vector (length (write-sequence body stream)))
-        (pathname (with-open-file (input-stream body :element-type '(unsigned-byte 8))
-                    (alexandria::copy-stream input-stream stream)))
-        (t 0)))))
+    (write-message-body stream response)))
 
 (defun read-response (stream)
   (when-let ((status-line (read-status-line stream)))

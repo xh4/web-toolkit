@@ -68,7 +68,12 @@
   (set-header-field (entity-header entity) header-field))
 
 (defmethod write-response (stream (entity entity))
-  (write-response stream entity))
+  (+
+   (if-let ((status (response-status entity)))
+     (write-status-line stream "HTTP/1.1" (status-code status) (status-reason-phrase status))
+     (error "Missing status in response"))
+   (write-header stream (response-header entity))
+   (write-message-body stream entity)))
 
 (defun copy-header (header)
   (let ((new-header (make-instance 'header)))
