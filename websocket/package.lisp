@@ -14,7 +14,6 @@
            :close-session
            :connect)
   (:import-from :http
-                :handle
                 :request
                 :request-uri
                 :request-header
