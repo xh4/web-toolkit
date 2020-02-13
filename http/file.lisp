@@ -22,7 +22,7 @@
           #+sbcl
           (sb-posix:stat-size (sb-posix:stat pathname))
           #+ccl
-          (ccl:file-data-size path)
+          (ccl:file-data-size pathname)
           #+(and lispworks unix)
           (sys:file-stat-size (sys:get-file-stat namestring))
           #-(or sbcl ccl (and lispworks unix))
