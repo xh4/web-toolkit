@@ -4,19 +4,25 @@
   ((prefix
     :initarg :prefix
     :initform nil)
-   (location
-    :initarg :location
+   (root
+    :initarg :root
+    :initform nil))
+  (:function
+   (lambda (handler request)
+     (with-slots (prefix root) handler
+       (let ((pathname (resolve-path prefix root (uri-path (request-uri request)))))
+         (reply pathname))))))
+
+(defclass static-route (route)
+  ((prefix
+    :initarg :prefix
+    :initform nil)
+   (root
+    :initarg :root
     :initform nil)))
 
-(defmethod handle ((handler static-handler) (request request))
-  (let* ((prefix (slot-value handler 'prefix))
-         (location (slot-value handler 'location))
-         (relative-path (path-trim-prefix prefix (request-uri request)))
-         (pathname (merge-pathnames relative-path location)))
-    (setf (response-body *response*) pathname)))
-
-(defmethod build-routing-rule ((type (eql :static)) form)
-  (apply #'build-static-routing-rule (rest form)))
+(defmethod route ((type (eql :static)) form)
+  (apply 'make-static-route (rest form)))
 
 ;; TODO: Check path normativity
 (defun path-segments (path)
@@ -27,7 +33,7 @@
           (equal prefix "")
           (equal prefix "/"))
       t
-      (let ((path-segments (path-segments path))
+      (let ((path-segments (path-segments (uri::remove-dot-segments path)))
             (prefix-segments (split-sequence #\/ (string-trim "/" prefix))))
         (loop for pos upto (1- (min (length prefix-segments)
                                     (length path-segments)))
@@ -41,8 +47,8 @@
   (if (or (null prefix)
           (equal prefix "")
           (equal prefix "/"))
-      (subseq path 1)
-      (let ((path-segments (path-segments path))
+      (subseq (uri::remove-dot-segments path) 1)
+      (let ((path-segments (path-segments (uri::remove-dot-segments path)))
             (prefix-segments (split-sequence #\/ (string-trim "/" prefix)))
             (suffix-segments '())
             (match-prefix-p nil))
@@ -57,21 +63,28 @@
               ""
               (format nil "~{~A~^/~}" suffix-segments))))))
 
-(defun build-static-routing-rule (&key prefix location)
-  (check-type location (or string pathname))
-  (when (stringp location)
-    (setf location (pathname location)))
-  (unless (uiop:absolute-pathname-p location)
-    (error "Location must be absolute"))
-  (setf location (uiop:ensure-directory-pathname location))
+(defun resolve-path (prefix root path)
+  (let ((relative-path (path-trim-prefix prefix path)))
+    (setf relative-path (uri::percent-decode relative-path))
+    (let ((pathname (merge-pathnames relative-path root)))
+      pathname)))
 
-  (let ((rule (make-instance 'routing-rule)))
-    (let ((matcher (lambda (request)
-                     (and (eq (request-method request) :get)
-                          (path-trim-prefix prefix (request-uri request))))))
-      (setf (routing-rule-matcher rule) matcher))
-    (let ((handler (make-instance 'static-handler
-                                  :prefix prefix
-                                  :location location)))
-      (setf (routing-rule-handler rule) handler))
-    rule))
+(defun make-static-route (&key prefix root)
+  (check-type root (or string pathname))
+  (when (stringp root)
+    (setf root (pathname root)))
+  (unless (uiop:absolute-pathname-p root)
+    (error "Root must be absolute"))
+  (setf root (uiop:ensure-directory-pathname root))
+
+  (let ((matcher (lambda (request)
+                   (and (eq (request-method request) :get)
+                        (path-prefix-p prefix (uri-path (request-uri request))))))
+        (handler (make-instance 'static-handler
+                                :prefix prefix
+                                :root root)))
+    (make-instance 'static-route
+                   :prefix prefix
+                   :root root
+                   :matcher matcher
+                   :handler handler)))
