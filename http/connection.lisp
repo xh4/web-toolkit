@@ -28,9 +28,21 @@
                          (*error-output* . ,*error-output*)))
     connection))
 
+#-lispworks
 (defun make-connection (listener socket)
   (let ((stream (usocket:socket-stream socket)))
-    #+lispworks
+    (make-instance 'connection
+                   :listener listener
+                   :socket socket
+                   :input-stream stream
+                   :output-stream stream)))
+
+#+lispworks
+(defun make-connection (listener socket)
+  (let ((stream (make-instance 'comm:socket-stream
+                               :socket socket
+                               :direction :io
+                               :element-type '(unsigned-byte 8))))
     (setf (stream:stream-read-timeout stream) 10
           (stream:stream-write-timeout stream) 10)
     (make-instance 'connection
@@ -65,10 +77,9 @@
      :end (close-connection connection))))
 
 (defun close-connection (connection)
-  (with-slots (socket input-stream output-stream) connection
+  (with-slots (input-stream output-stream) connection
     (close input-stream)
-    (close output-stream)
-    (usocket:socket-close socket)))
+    (close output-stream)))
 
 (defun handle-request (connection request)
   (let ((listener (connection-listener connection)))

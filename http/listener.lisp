@@ -49,6 +49,7 @@
 
 (defgeneric start-listener (listener &key))
 
+#-lispworks
 (defmethod start-listener ((listener listener) &key)
   (unless (listener-server listener)
     (error "Missing server in listener"))
@@ -66,6 +67,24 @@
                                         (*error-output* . ,*error-output*)))))
       (setf (listener-process listener) process))))
 
+#+lispworks
+(defmethod start-listener ((listener listener) &key)
+  (unless (listener-server listener)
+    (error "Missing server in listener"))
+  (let ((process (comm:start-up-server
+                  :function (lambda (socket)
+                              (make-and-process-connection listener socket))
+                  :announce (lambda (socket condition)
+                              (declare (ignore condition))
+                              (setf (listener-socket listener) socket))
+                  :backlog (or (listener-backlog listener) 5)
+                  :local-port (listener-port listener)
+                  :local-address (listener-address listener)
+                  :process-name (format nil "Listener on port ~A" (listener-port listener)))))
+    (setf (listener-process listener) process)
+    listener))
+
+#-lispworks
 (defun listener-loop (listener)
   (let ((socket (listener-socket listener)))
     (loop for new-socket = (usocket:socket-accept
@@ -75,11 +94,17 @@
 
 (defgeneric stop-listener (listener &key))
 
+#-lispworks
 (defmethod stop-listener ((listener listener) &key)
   (when-let ((socket (listener-socket listener)))
     (usocket:socket-close socket))
   (when-let ((process (listener-process listener)))
     (bt:destroy-thread process)))
+
+#+lispworks
+(defmethod stop-listener ((listener listener) &key)
+  (when-let ((process (listener-process listener)))
+    (comm:server-terminate process)))
 
 (defgeneric listener-started-p (listener))
 
