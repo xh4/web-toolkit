@@ -107,3 +107,48 @@
                               do (http::read-response-body-into-vector res)
                               collect res)))
             response))))))
+
+(defun directory-pathname-p (pathspec)
+  (flet ((component-present-p (value)
+           (and value (not (eql value :unspecific)))))
+    (and
+     (not (component-present-p (pathname-name pathspec)))
+     (not (component-present-p (pathname-type pathspec)))
+     pathspec)))
+
+(defun map-pathnames (form)
+  (let ((paths '()))
+    (labels ((map-pathname (form &optional (base ""))
+               (cond
+                 ((and (listp form) (stringp (car form)))
+                  (let ((name (car form)))
+                    (unless (eq #\/ (aref name (1- (length name))))
+                      (setf name (concatenate 'string name "/")))
+                    (let ((path (merge-pathnames name base)))
+                      (appendf paths (list path))
+                      (map-pathname (cdr form) path))))
+                 ((stringp form)
+                  (let ((name form))
+                    (let ((path (merge-pathnames name base)))
+                      (appendf paths (list path)))))
+                 ((listp form)
+                  (loop for f in form do (map-pathname f base))))))
+      (map-pathname form))
+    paths))
+
+(defmacro with-static-files ((root fd-form) &body body)
+  (let ((pathnames (map-pathnames fd-form)))
+    (let ((root-pathname (merge-pathnames
+                 (format nil "~A/" (symbol-name (gensym "WT-STATIC-")))
+                 uiop:*temporary-directory*)))
+      `(let ((,root ,root-pathname))
+         (ensure-directories-exist ,root)
+         (loop for part in ',pathnames
+            for pathname = (merge-pathnames part ,root)
+            if (directory-pathname-p pathname)
+            do (ensure-directories-exist pathname)
+            else
+            do (with-open-file (stream pathname :direction :output :if-does-not-exist :create)))
+         (unwind-protect
+              ,@body
+           (uiop:delete-directory-tree ,root :validate t))))))
