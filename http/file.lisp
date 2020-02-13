@@ -18,14 +18,15 @@
   (:method ((file file))
     (with-slots (pathname) file
       (let ((namestring (namestring pathname)))
-        #+sbcl
-        (sb-posix:stat-size (sb-posix:stat pathname))
-        #+ccl
-        (ccl:file-data-size path)
-        #+(and lispworks unix)
-        (sys:file-stat-size (sys:get-file-stat namestring))
-        #-(or sbcl ccl (and lispworks unix))
-        (with-open-file (stream pathname
-                                :direction :input
-                                :element-type '(unsigned-byte 8))
-          (file-length stream))))))
+        (ignore-errors
+          #+sbcl
+          (sb-posix:stat-size (sb-posix:stat pathname))
+          #+ccl
+          (ccl:file-data-size path)
+          #+(and lispworks unix)
+          (sys:file-stat-size (sys:get-file-stat namestring))
+          #-(or sbcl ccl (and lispworks unix))
+          (with-open-file (stream pathname
+                                  :direction :input
+                                  :element-type '(unsigned-byte 8))
+            (file-length stream)))))))
