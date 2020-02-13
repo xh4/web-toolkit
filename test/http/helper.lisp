@@ -136,7 +136,7 @@
       (map-pathname form))
     paths))
 
-(defmacro with-static-files ((root fd-form) &body body)
+(defmacro with-static-files ((root &optional fd-form) &body body)
   (let ((pathnames (map-pathnames fd-form)))
     (let ((root-pathname (merge-pathnames
                  (format nil "~A/" (symbol-name (gensym "WT-STATIC-")))
