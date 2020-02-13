@@ -9,8 +9,7 @@
   (:function (lambda (router request)
                (let ((target-route nil))
                  (loop for route in (router-routes router)
-                    for matcher = (route-matcher route)
-                    when (funcall matcher request)
+                    when (route-match-p route request)
                     do
                       (setf target-route route)
                       (return))
@@ -35,6 +34,10 @@
     :accessor route-handler)))
 
 (defgeneric route (type form))
+
+(defun route-match-p (route request)
+  (let ((matcher (route-matcher route)))
+    (funcall matcher request)))
 
 (defclass simple-route (route)
   ((method
@@ -61,12 +64,11 @@
                      (and (equal path (uri-path uri))
                           (equal (symbol-name method)
                                  (request-method request)))))))
-    (let ((route (make-instance 'simple-route
-                                :method method
-                                :path path
-                                :matcher matcher
-                                :handler handler)))
-      route)))
+    (make-instance 'simple-route
+                   :method method
+                   :path path
+                   :matcher matcher
+                   :handler handler)))
 
 (defmacro router (&rest route-forms)
   (let ((make-route-forms
