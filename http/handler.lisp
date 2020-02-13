@@ -63,15 +63,16 @@
   (defvar *next-handlers* nil)
 
   (defmacro call-next-handler ()
-    `(if *next-handlers*
-         (let ((handler (first *next-handlers*))
-               (*next-handlers* (rest *next-handlers*)))
-           (let ((result (call-handler handler *request*)))
-             (when (or (typep result 'response)
-                       (typep result 'entity))
-               (setf *response* result))
-             *response*))
-         *response*))
+    (with-gensyms (handler result)
+      `(if *next-handlers*
+           (let ((,handler (first *next-handlers*))
+                 (*next-handlers* (rest *next-handlers*)))
+             (let ((,result (call-handler ,handler *request*)))
+               (when (or (typep ,result 'response)
+                         (typep ,result 'entity))
+                 (setf *response* ,result))
+               *response*))
+           *response*)))
 
   (define-condition abort-handler () ())
 
@@ -95,10 +96,6 @@
 
 (defmethod handler-function-lambda-list ((handler handler))
   (handler-function-lambda-list (class-of handler)))
-
-(defvar handler (make-instance 'handler))
-
-(setf (gethash 'handler *static-handlers*) handler)
 
 (defmacro define-handler (handler-name superclasses slots &rest options)
   (unless (find 'application-handler superclasses)
@@ -140,20 +137,22 @@
        (subclassp handler-class root-handler-class))
      handler-classes)))
 
+(defun make-handler (handler-class)
+  (make-instance handler-class))
+
 (defun compute-handler-precedence-list (handler)
   (let ((handler-classes (handler-class-precedence-list handler)))
     (let ((handlers (loop for handler-class in handler-classes
                        for handler-instance = (gethash (class-name handler-class)
                                                        *static-handlers*)
-                       when handler-instance
-                       collect handler-instance
-                       else
-                       collect (make-instance handler-class))))
+                       when handler-instance collect handler-instance
+                       else collect (make-handler handler-class))))
       (typecase handler
         (handler (cons handler (rest handlers)))
         (t handlers)))))
 
 (defun invoke-handler (handler request)
+  (check-type handler handler)
   (let ((*request* request)
         (*response* (make-instance 'response))
         (*next-handlers* (reverse (compute-handler-precedence-list handler))))
@@ -176,6 +175,7 @@
     *response*))
 
 (defun call-handler (handler request)
+  (check-type handler handler)
   (when-let ((function (handler-function handler)))
     (let ((function-lambda-list (handler-function-lambda-list handler)))
       (cond

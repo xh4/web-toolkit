@@ -10,8 +10,6 @@
        (restart-case (call-next-handler)
          (use-value (response) response))))))
 
-(defvar error-handler (make-instance 'error-handler))
-
 (defgeneric handle-error (handler request error)
   (:method ((handler error-handler) (request request) error)
     (reply (status 500))

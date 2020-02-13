@@ -11,7 +11,6 @@
            :header-field-value
            :find-header-field
            :set-header-field
-           :body
            :request
            :request-method
            :request-uri
@@ -23,14 +22,14 @@
            :status-code
            :status-reason-phrase
            :response
-           :*response*
            :response-status
            :response-header
            :response-body
            :reply
            :reply-object
            :define-handler
-           :next-handler
+           :*request*
+           :*response*
            :call-next-handler
            :abort-handler
            :redirect
@@ -38,8 +37,7 @@
            :listener-port
            :listener-address
            :router
-           :routing-rule
-           :build-routing-rule
+           :route
            :define-server
            :start-server
            :stop-server
@@ -47,8 +45,7 @@
            :put
            :post
            :delete
-           :head
-           :superclasses)
+           :head)
   (:import-from :uri
                 :uri
                 :uri-scheme

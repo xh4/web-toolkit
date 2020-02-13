@@ -1,95 +1,92 @@
 (in-package :http)
 
 (define-handler router ()
-  ((rules
-    :initarg :rules
+  ((routes
+    :initarg :routes
     :initform nil
-    :accessor router-rules))
+    :accessor router-routes))
   (:instanize nil)
   (:function (lambda (router request)
-               (let ((target-rule nil))
-                 (loop for rule in (router-rules router)
-                    for matcher = (routing-rule-matcher rule)
+               (let ((target-route nil))
+                 (loop for route in (router-routes router)
+                    for matcher = (route-matcher route)
                     when (funcall matcher request)
                     do
-                      (setf target-rule rule)
+                      (setf target-route route)
                       (return))
-                 (if target-rule
-                     (let ((handler (symbol-value (routing-rule-handler target-rule))))
-                       (invoke-handler handler request))
-                     (handle-missing request))))))
+                 (if target-route
+                     (if-let ((handler (route-handler target-route)))
+                       (if (boundp handler)
+                           (progn
+                             (setf handler (symbol-value handler))
+                             (check-type handler handler)
+                             (invoke-handler handler request))
+                           (error "Handler not bound"))
+                       (handle-missing request)))))))
 
-(defmacro define-router (name)
-  `(if (boundp ',name)
-       (progn
-         (setf ,name (make-instance 'router))
-         ,name)
-       (defvar ,name
-         (make-instance 'router))))
-
-(defclass routing-rule ()
+(defclass route ()
   ((matcher
     :initarg :matcher
     :initform nil
-    :accessor routing-rule-matcher)
+    :accessor route-matcher)
    (handler
     :initarg :handler
     :initform nil
-    :accessor routing-rule-handler)))
+    :accessor route-handler)))
 
-(defgeneric build-routing-rule (type form))
+(defgeneric route (type form))
 
-(defclass verbose-routing-rule (routing-rule)
+(defclass simple-route (route)
   ((method
     :initarg :method
     :initform nil
-    :accessor routing-rule-method)
+    :accessor route-method)
    (path
     :initarg :path
     :initform nil
-    :accessor routing-rule-path)))
+    :accessor route-path)))
 
-(defmethod build-routing-rule ((type (eql :get)) form)
-  (apply #'build-verbose-routing-rule form))
-(defmethod build-routing-rule ((type (eql :post)) form)
-  (apply #'build-verbose-routing-rule form))
-(defmethod build-routing-rule ((type (eql :put)) form)
-  (apply #'build-verbose-routing-rule form))
-(defmethod build-routing-rule ((type (eql :delete)) form)
-  (apply #'build-verbose-routing-rule form))
+(defmethod route ((type (eql :get)) form)
+  (apply 'make-simple-route form))
+(defmethod route ((type (eql :post)) form)
+  (apply 'make-simple-route form))
+(defmethod route ((type (eql :put)) form)
+  (apply 'make-simple-route form))
+(defmethod route ((type (eql :delete)) form)
+  (apply 'make-simple-route form))
 
-(defun build-verbose-routing-rule (method path handler)
-  (let ((rule (make-instance 'verbose-routing-rule
-                             :method method
-                             :path path
-                             :handler handler)))
-    (let ((matcher (lambda (request)
-                     (let ((uri (uri (request-uri request))))
-                       (and (equal (routing-rule-path rule) (uri-path uri))
-                            (equal (symbol-name (routing-rule-method rule))
-                                   (request-method request)))))))
-      (setf (routing-rule-matcher rule) matcher))
-    rule))
+(defun make-simple-route (method path handler)
+  (let ((matcher (lambda (request)
+                   (let ((uri (uri (request-uri request))))
+                     (and (equal path (uri-path uri))
+                          (equal (symbol-name method)
+                                 (request-method request)))))))
+    (let ((route (make-instance 'simple-route
+                                :method method
+                                :path path
+                                :matcher matcher
+                                :handler handler)))
+      route)))
 
-(defmacro router (&rest rule-forms)
-  (let ((rule-making-forms
-         (loop for rule-form in rule-forms
+(defmacro router (&rest route-forms)
+  (let ((make-route-forms
+         (loop for route-form in route-forms
             collect
               (progn
-                (unless (listp rule-form)
-                  (error "Illformed rule form: ~A, expect a list" rule-form))
-                (let ((type (car rule-form)))
+                (unless (listp route-form)
+                  (error "Illformed route form: ~A, expect a list" route-form))
+                (let ((type (car route-form)))
                   (unless (symbolp type)
-                    (error "Illformed rule form: ~A, expect a symbol at the head" rule-form))
+                    (error "Illformed route form: ~A, expect a symbol at the head" route-form))
                   (setf type (make-keyword type))
-                  (unless (find-method #'build-routing-rule
+                  (unless (find-method #'route
                                        '()
                                        (list `(eql ,type)
                                              (find-class t))
                                        nil)
-                    (error "No method to build routing rule for form ~A" rule-form))
-                  `(build-routing-rule ,type ',rule-form))))))
-    `(make-instance 'router :rules (list ,@rule-making-forms))))
+                    (error "No method found to build route for form ~A" route-form))
+                  `(route ,type ',route-form))))))
+    `(make-instance 'router :routes (list ,@make-route-forms))))
 
 (defun handle-missing (request)
   (declare (ignore request))

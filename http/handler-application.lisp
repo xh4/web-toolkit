@@ -4,5 +4,3 @@
   ()
   (:metaclass handler-class)
   (:function (lambda () (call-next-handler))))
-
-(defvar application-handler (make-instance 'application-handler))
