@@ -21,15 +21,13 @@
         (is (equal 2 (length (http::router-routes router))))))
 
   (it "should failed to make router"
-      (signals error (router 42)))
+      (signals error (eval '(router 42))))
 
   (it "should failed to make router"
-      (signals error (router
-                      (:love "/"))))
+      (signals error (eval '(router (:love "/")))))
 
   (it "should failed to make router"
-      (signals error (router
-                      ("GET" "/")))))
+      (signals error (eval '(router ("GET" "/"))))))
 
 (test simple-route
   (it
