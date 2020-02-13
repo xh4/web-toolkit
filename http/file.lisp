@@ -30,3 +30,7 @@
                                   :direction :input
                                   :element-type '(unsigned-byte 8))
             (file-length stream)))))))
+
+(defgeneric file-modify-time (file)
+  (:method ((file file))
+    (file-write-date (file-pathname file))))

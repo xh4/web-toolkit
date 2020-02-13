@@ -30,4 +30,6 @@
      (not (component-present-p (pathname-type pathspec)))
      pathspec)))
 
-(directory-content (make-instance 'directory :pathname #p"C:/Users/XH/"))
+(defgeneric directory-modify-time (directory)
+  (:method ((directory directory))
+    (file-write-date (directory-pathname directory))))
