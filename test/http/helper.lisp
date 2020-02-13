@@ -150,5 +150,5 @@
             else
             do (with-open-file (stream pathname :direction :output :if-does-not-exist :create)))
          (unwind-protect
-              ,@body
+              (progn ,@body)
            (uiop:delete-directory-tree ,root :validate t))))))
