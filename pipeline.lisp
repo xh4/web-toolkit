@@ -6,6 +6,7 @@
 
 (uiop:delete-directory-tree asdf::*user-cache* :validate t)
 
+(asdf:load-system :wt.vendor)
 (ql:quickload :alexandria)
 (ql:quickload :cxml)
 (ql:quickload :drakma)
