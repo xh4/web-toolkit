@@ -108,14 +108,6 @@
                               collect res)))
             response))))))
 
-(defun directory-pathname-p (pathspec)
-  (flet ((component-present-p (value)
-           (and value (not (eql value :unspecific)))))
-    (and
-     (not (component-present-p (pathname-name pathspec)))
-     (not (component-present-p (pathname-type pathspec)))
-     pathspec)))
-
 (defun map-pathnames (form)
   (let ((paths '()))
     (labels ((map-pathname (form &optional (base ""))
@@ -145,7 +137,7 @@
          (ensure-directories-exist ,root)
          (loop for part in ',pathnames
             for pathname = (merge-pathnames part ,root)
-            if (directory-pathname-p pathname)
+            if (http::directory-pathname-p pathname)
             do (ensure-directories-exist pathname)
             else
             do (with-open-file (stream pathname :direction :output :if-does-not-exist :create)))

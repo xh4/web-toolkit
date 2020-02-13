@@ -8,7 +8,7 @@
 
 (defmethod print-object ((file file) stream)
   (print-unreadable-object (file stream :type t :identity t)
-    (format stream "~A" (pathname file))))
+    (format stream "~S" (file-pathname file))))
 
 (defmethod initialize-instance :after ((file file) &key)
   (with-slots (pathname) file
