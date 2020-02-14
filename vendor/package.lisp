@@ -2,4 +2,5 @@
 
 (defpackage :vendor
   (:nicknames :wt.vendor)
-  (:use :cl))
+  (:use :cl)
+  (:export :install))
