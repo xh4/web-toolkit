@@ -197,7 +197,7 @@
   (cond
     ((typep form 'symbol) form)
     ((and (listp form)
-          (eq 'lambda (car form)))
+          (member (car form) '(lambda lambda/cc)))
      (let ((function (eval form))
            (handler (make-instance 'anonymous-handler)))
        (check-handler-function function)

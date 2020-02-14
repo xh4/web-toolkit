@@ -64,4 +64,6 @@
                 :split-sequence)
   (:import-from :trivial-gray-streams
                 :fundamental-binary-input-stream
-                :fundamental-binary-output-stream))
+                :fundamental-binary-output-stream)
+  (:import-from :cl-cont
+                :lambda/cc))
