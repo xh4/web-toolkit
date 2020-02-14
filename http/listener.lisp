@@ -65,8 +65,7 @@
                                      :element-type '(unsigned-byte 8))
                 do (make-and-process-connection listener new-socket))))
       (let ((process (bt:make-thread
-                      (lambda ()
-                        (listener-loop listener))
+                      #'listener-loop
                       :name (format nil "Listener (~A)" (listener-port listener))
                       :initial-bindings `((*standard-output* . ,*standard-output*)
                                           (*error-output* . ,*error-output*)))))
