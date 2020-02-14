@@ -23,7 +23,7 @@
 (defun make-handler-slot-definition (handler-option)
   `(handler
     :initarg :handler
-    :initform ,handler-option
+    :initform (handler-form ',handler-option)
     :accessor server-handler))
 
 (defun make-listener-slot-definition (listener-option)
@@ -73,7 +73,7 @@
 (defmacro update-server-instance (server-name options)
   (let ((handler (second (find :handler options :key 'first)))
         (listener (second (find :listener options :key 'first))))
-    `(update-server ,server-name :handler ,handler :listener ,listener)))
+    `(update-server ,server-name :handler (handler-form ',handler) :listener ,listener)))
 
 (defun update-server (server &key handler listener)
   (setf (server-handler server) handler)

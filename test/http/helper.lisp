@@ -26,7 +26,12 @@
     :initform t
     :accessor socket-open-p)))
 
+#-lispworks
 (defmethod usocket:socket-close ((socket test-socket))
+  (setf (socket-open-p socket) nil))
+
+#+lispworks
+(defmethod close ((socket test-socket) &key abort)
   (setf (socket-open-p socket) nil))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

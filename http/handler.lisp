@@ -16,14 +16,17 @@
 (defun check-handler-function (function)
   (typecase function
     (null "Missing handler function body")
-    ((or function cl-cont::funcallable/cc))
-    (symbol (unless (ignore-errors (symbol-function function))
-              (error "Symbol not associate with function")))
-    (t (error "Wrong function value"))))
+    (symbol (if (ignore-errors (symbol-function function))
+                (check-handler-function (symbol-function function))
+                (error "Symbol not associate with function")))
+    ((or function cl-cont::funcallable/cc)
+     (let ((function-lambda-list (function-lambda-list function)))
+       (check-handler-function-lambda-list function-lambda-list)))
+    (t (error "Bad handler function ~A" function))))
 
 (defun check-handler-function-lambda-list (lambda-list)
   (when (> (length lambda-list) 2)
-    (error "Bad handler function lambda list")))
+    (error "Bad handler function lambda list ~A" lambda-list)))
 
 (defmethod shared-initialize :around ((class handler-class) slot-names
                                       &rest args
@@ -36,7 +39,6 @@
       (progn (setf function (eval (car function)))
              (check-handler-function function)
              (let ((function-lambda-list (function-lambda-list function)))
-               (check-handler-function-lambda-list function-lambda-list)
                (setf (slot-value class 'function) function)
                (setf (slot-value class 'function-lambda-list) function-lambda-list)))
       (progn (setf (slot-value class 'function) nil
@@ -92,10 +94,15 @@
   (handler-function (class-of handler)))
 
 (defmethod (setf handler-function) (function (handler handler))
+  (check-handler-function function)
   (setf (handler-function (class-of handler)) function))
 
 (defmethod handler-function-lambda-list ((handler handler))
   (handler-function-lambda-list (class-of handler)))
+
+(defmethod (setf handler-function-lambda-list) (lambda-list (handler handler))
+  (check-handler-function-lambda-list lambda-list)
+  (setf (handler-function-lambda-list (class-of handler)) lambda-list))
 
 (defmacro define-handler (handler-name superclasses slots &rest options)
   (unless (find 'application-handler superclasses)
@@ -185,3 +192,16 @@
          (funcall function request))
         ((= 2 (length function-lambda-list))
          (funcall function handler request))))))
+
+(defun handler-form (form)
+  (cond
+    ((typep form 'symbol) form)
+    ((and (listp form)
+          (eq 'lambda (car form)))
+     (let ((function (eval form))
+           (handler (make-instance 'anonymous-handler)))
+       (check-handler-function function)
+       (setf (handler-function handler) function
+             (handler-function-lambda-list handler) (function-lambda-list function))
+       handler))
+    (t (error "Bad handler form ~A" form))))

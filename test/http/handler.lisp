@@ -74,12 +74,23 @@
     (is-true (equal 'cl-cont::funcallable/cc (type-of (http::handler-function test-handler))))
     (is (equal '(request) (http::handler-function-lambda-list test-handler)))))
 
-(test handler-function-lambda-list
+(test check-handler-function-lambda-list
   (it
     (finishes (http::check-handler-function-lambda-list '()))
     (finishes (http::check-handler-function-lambda-list '(request)))
     (finishes (http::check-handler-function-lambda-list '(handler request)))
     (signals error (http::check-handler-function-lambda-list '(handler request xxx)))))
+
+(test check-handler-function
+      (it
+       (finishes (http::check-handler-function (lambda ())))))
+
+(test handler-form
+      (it
+        (is (equal 'http::anonymous-handler
+                   (type-of (http::handler-form '(lambda ())))))
+        (is (equal nil (http::handler-form nil)))
+        (signals error (http::handler-form '(lambda (a b c))))))
 
 (test invoke-handler
   (it "should return a response"
