@@ -14,14 +14,16 @@
                       (setf target-route route)
                       (return))
                  (if target-route
-                     (if-let ((handler (route-handler target-route)))
-                       (if (boundp handler)
-                           (progn
-                             (setf handler (symbol-value handler))
-                             (check-type handler handler)
-                             (invoke-handler handler request))
-                           (error "Handler not bound"))
-                       (handle-missing request)))))))
+                     (let ((handler (route-handler target-route)))
+                       (typecase handler
+                         (handler (invoke-handler handler request))
+                         (symbol (if (boundp handler)
+                                     (progn
+                                       (setf handler (symbol-value handler))
+                                       (check-type handler handler)
+                                       (invoke-handler handler request))
+                                     (error "Handler not bound")))))
+                     (handle-missing request))))))
 
 (defclass route ()
   ((matcher
@@ -63,7 +65,8 @@
                    (let ((uri (uri (request-uri request))))
                      (and (equal path (uri-path uri))
                           (equal (symbol-name method)
-                                 (request-method request)))))))
+                                 (request-method request))))))
+        (handler (handler-form handler)))
     (make-instance 'simple-route
                    :method method
                    :path path

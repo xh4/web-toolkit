@@ -66,4 +66,5 @@
                 :fundamental-binary-input-stream
                 :fundamental-binary-output-stream)
   (:import-from :cl-cont
-                :lambda/cc))
+                :lambda/cc
+                :funcallable/cc))

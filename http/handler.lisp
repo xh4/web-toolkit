@@ -194,14 +194,17 @@
          (funcall function handler request))))))
 
 (defun handler-form (form)
-  (cond
-    ((typep form 'symbol) form)
-    ((and (listp form)
-          (member (car form) '(lambda lambda/cc)))
-     (let ((function (eval form))
-           (handler (make-instance 'anonymous-handler)))
-       (check-handler-function function)
-       (setf (handler-function handler) function
-             (handler-function-lambda-list handler) (function-lambda-list function))
-       handler))
+  (typecase form
+    (symbol form)
+    (list (let ((object (eval form)))
+            (typecase object
+              (handler object)
+              ((or function funcallable/cc)
+               (let ((function object)
+                     (handler (make-instance 'anonymous-handler)))
+                 (check-handler-function function)
+                 (setf (handler-function handler) function
+                       (handler-function-lambda-list handler) (function-lambda-list function))
+                 handler))
+              (t "~A evaluate to ~A which is not a valid handler form" form object))))
     (t (error "Bad handler form ~A" form))))
