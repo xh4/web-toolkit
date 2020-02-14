@@ -40,6 +40,8 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Add code coverage informataion
 * HTTP
   * Use Asynchronous I/O in LispWorks
+  * Use [serve-event] in SBCL (https://github.com/sbcl/sbcl/blob/master/src/code/serve-event.lisp)
+  * Abandon usocket & bordeaux-threads, write implementation-dependent code
   * Implement server statistics and metrics monitoring
   * Implement traffic throttling and message size limiting
   * Implement authentication, authorization and access control
@@ -53,6 +55,7 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Support HTTPS for both client and server
 * WebSocket
   * Use Asynchronous I/O in LispWorks
+  * Use [serve-event] in SBCL (https://github.com/sbcl/sbcl/blob/master/src/code/serve-event.lisp)
   * Implement server statistics and metrics monitoring
   * Implement traffic throttling and message size limiting
   * Support [Compression Extensions](https://tools.ietf.org/html/rfc7692)
@@ -63,10 +66,12 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Implement parser
   * Implement pretty print
   * Refine element constractor error report
-  * Enclose DOM implementation
+  * Implement DOM, abandon CXML's DOM implementation
   * Test against [Web Platform Tests](https://github.com/web-platform-tests/wpt)
 * JSON
   * Test against [JSONTestSuite](https://github.com/nst/JSONTestSuite)
+  * Implement accessors for object
+  * Implement identical transformation for JSON values (null, false, [])
 
 ### Author
 [Xiangyu He](https://xh.coobii.com) <[xh@coobii.com](mailto:xh@coobii.com)>
