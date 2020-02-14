@@ -40,7 +40,7 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Add code coverage informataion
 * HTTP
   * Use [Asynchronous I/O](http://www.lispworks.com/documentation/lw71/LW/html/lw-192.htm) in LispWorks
-  * Use [serve-event](https://github.com/sbcl/sbcl/blob/master/src/code/serve-event.lisp) in SBCL 
+  * Use [Recursive Event Dispatching (SERVE-EVENT)](https://github.com/sbcl/sbcl/blob/master/src/code/serve-event.lisp) in SBCL 
   * Abandon usocket & bordeaux-threads, write implementation-dependent code
   * Implement server statistics and metrics monitoring
   * Implement traffic throttling and message size limiting
@@ -55,7 +55,7 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Support HTTPS for both client and server
 * WebSocket
   * Use [Asynchronous I/O](http://www.lispworks.com/documentation/lw71/LW/html/lw-192.htm) in LispWorks
-  * Use [serve-event](https://github.com/sbcl/sbcl/blob/master/src/code/serve-event.lisp) in SBCL
+  * Use [Recursive Event Dispatching (SERVE-EVENT)](https://github.com/sbcl/sbcl/blob/master/src/code/serve-event.lisp) in SBCL
   * Implement server statistics and metrics monitoring
   * Implement traffic throttling and message size limiting
   * Support [Compression Extensions](https://tools.ietf.org/html/rfc7692)
