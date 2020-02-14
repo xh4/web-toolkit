@@ -59,13 +59,18 @@
                  :backlog (or (listener-backlog listener) 5)
                  :element-type '(unsigned-byte 8))))
     (setf (listener-socket listener) socket)
-    (let ((process (bt:make-thread
-                    (lambda ()
-                      (listener-loop listener))
-                    :name (format nil "Listener (~A)" (listener-port listener))
-                    :initial-bindings `((*standard-output* . ,*standard-output*)
-                                        (*error-output* . ,*error-output*)))))
-      (setf (listener-process listener) process))))
+    (flet ((listener-loop ()
+             (loop for new-socket = (usocket:socket-accept
+                                     socket
+                                     :element-type '(unsigned-byte 8))
+                do (make-and-process-connection listener new-socket))))
+      (let ((process (bt:make-thread
+                      (lambda ()
+                        (listener-loop listener))
+                      :name (format nil "Listener (~A)" (listener-port listener))
+                      :initial-bindings `((*standard-output* . ,*standard-output*)
+                                          (*error-output* . ,*error-output*)))))
+        (setf (listener-process listener) process)))))
 
 #+lispworks
 (defmethod start-listener ((listener listener) &key)
@@ -83,14 +88,6 @@
                   :process-name (format nil "Listener on port ~A" (listener-port listener)))))
     (setf (listener-process listener) process)
     listener))
-
-#-lispworks
-(defun listener-loop (listener)
-  (let ((socket (listener-socket listener)))
-    (loop for new-socket = (usocket:socket-accept
-                            socket
-                            :element-type '(unsigned-byte 8))
-       do (make-and-process-connection listener new-socket))))
 
 (defgeneric stop-listener (listener &key))
 
