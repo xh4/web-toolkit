@@ -9,6 +9,8 @@
 (defmethod initialize-instance :after ((entity file-entity) &key)
   (check-type (entity-body entity) pathname)
   (let ((pathname (entity-body entity)))
+    (when (directory-pathname-p pathname)
+      (error "Pathname ~S should denote a file" pathname))
     (let ((file (make-instance 'file :pathname pathname)))
       (setf (entity-file entity) file))))
 

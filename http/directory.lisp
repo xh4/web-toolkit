@@ -12,7 +12,9 @@
 
 (defmethod initialize-instance :after ((directory directory) &key)
   (with-slots (pathname) directory
-    (check-type pathname pathname)))
+    (check-type pathname pathname)
+    (unless (directory-pathname-p pathname)
+      (error "Pathname ~S should denote a directory" pathname))))
 
 (defgeneric directory-content (directory)
   (:method ((directory directory))

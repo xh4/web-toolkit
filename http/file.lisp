@@ -12,7 +12,9 @@
 
 (defmethod initialize-instance :after ((file file) &key)
   (with-slots (pathname) file
-    (check-type pathname pathname)))
+    (check-type pathname pathname)
+    (when (directory-pathname-p pathname)
+      (error "Pathname ~S should denote a file" pathname))))
 
 (defgeneric file-size (file)
   (:method ((file file))
