@@ -15,6 +15,7 @@
                :cl-fad
                :trivial-backtrace
                :trivial-gray-streams
+               #-lispworks
                :usocket
                :chunga
                :cl-cont

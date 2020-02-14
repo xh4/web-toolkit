@@ -42,6 +42,7 @@
 (defun process-request-content (content)
   )
 
+#-lispworks
 (defun open-connection (uri)
   (let ((host (uri-host uri))
         (port (or (uri-port uri) 80)))
@@ -50,6 +51,16 @@
                    host
                    port
                    :element-type '(unsigned-byte 8))))
+      (let ((connection (make-connection socket)))
+        connection))))
+
+#+lispworks
+(defun open-connection (uri)
+  (let ((host (uri-host uri))
+        (port (or (uri-port uri) 80)))
+    (unless host (error "Missing host in URI"))
+    (let ((socket (comm:connect-to-tcp-server
+                   host port)))
       (let ((connection (make-connection socket)))
         connection))))
 
