@@ -11,7 +11,14 @@
    (lambda (handler request)
      (with-slots (prefix root) handler
        (let ((pathname (resolve-path prefix root (uri-path (request-uri request)))))
-         (reply pathname))))))
+         (if (directory-pathname-p pathname)
+             (reply pathname)
+             (let ((pathname (probe-file pathname)))
+               (if (directory-pathname-p pathname)
+                   (let ((uri (uri (request-uri request))))
+                     (setf (uri-path uri) (format nil "~A/" (uri-path uri)))
+                     (redirect (uri-string uri)))
+                   (reply pathname)))))))))
 
 (defclass static-route (route)
   ((prefix
@@ -78,7 +85,8 @@
   (setf root (uiop:ensure-directory-pathname root))
 
   (let ((matcher (lambda (request)
-                   (and (eq (request-method request) :get)
+                   (and (or (eq (request-method request) :get)
+                            (equal (request-method request) "GET"))
                         (path-prefix-p prefix (uri-path (request-uri request))))))
         (handler (make-instance 'static-handler
                                 :prefix prefix
