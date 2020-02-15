@@ -123,7 +123,7 @@
                       (setf name (concatenate 'string name "/")))
                     (let ((path (merge-pathnames name base)))
                       (appendf paths (list path))
-                      (map-pathname (cdr form) path))))
+                      (loop for form in (cdr form) do (map-pathname form path)))))
                  ((stringp form)
                   (let ((name form))
                     (let ((path (merge-pathnames name base)))

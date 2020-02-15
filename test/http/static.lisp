@@ -98,5 +98,24 @@
       (is-false (http::route-match-p route (make-instance 'request :method :post :uri "/")))
       (is-true (http::route-match-p route (make-instance 'request :method :get :uri "/foo"))))))
 
-(test static-handler
-  )
+(test auto-redirect-to-directory
+      (it
+       (with-static-files (root ("foo" "bar"))
+         (let* ((route (http::make-static-route :root root))
+                (handler (http::route-handler route)))
+           (is-true (http::route-match-p route (make-instance 'request :method :get :uri "/")))
+           (is-true (http::route-match-p route (make-instance 'request :method :get :uri "/foo/")))
+           (is-true (http::route-match-p route (make-instance 'request :method :get :uri "/foo/bar")))
+           (is-true (http::route-match-p route (make-instance 'request :method :get :uri "/foo/bar/")))
+           (let ((response (http::invoke-handler handler (make-instance 'request :method :get :uri "/foo"))))
+             (is (equal 307 (status-code response)))
+             (is (equal "/foo/" (header-field-value (find-header-field "Location" response)))))
+           (let ((response (http::invoke-handler handler (make-instance 'request :method :get :uri "/foo/"))))
+             (is (equal 200 (status-code response)))
+             (is (equal "text/html; charset=UTF-8" (header-field-value
+                                                    (find-header-field
+                                                     "Content-Type"
+                                                     (response-header response))))))
+           (let ((response (http::invoke-handler handler (make-instance 'request :method :get :uri "/foo/bar"))))
+             (is (equal 200 (status-code response)))
+             (is (equal 'pathname (type-of (response-body response)))))))))
