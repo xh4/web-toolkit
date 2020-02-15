@@ -51,6 +51,7 @@
                                      (:file "handler-error")
                                      (:file "handler-application")
                                      (:file "handler-default")
+                                     (:file "handler-anonymous")
                                      (:file "router")
                                      (:file "static")
                                      (:file "websocket")
