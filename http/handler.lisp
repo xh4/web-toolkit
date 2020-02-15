@@ -176,7 +176,8 @@
                                                       ;; TODO: handle referer missing condition
                                                       (:back (header-field-value
                                                               (header-field request "Referer")))
-                                                      (t location))))
+                                                      (t location))
+                                         "Content-Length" 0))
                           (return)))))
         (call-next-handler)))
     *response*))
