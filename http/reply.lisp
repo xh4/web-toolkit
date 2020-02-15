@@ -37,10 +37,16 @@
   (setf (response-body *response*) data))
 
 (defmethod reply-object ((pathname pathname))
-  (setf *response* (make-instance 'file-entity
-                                  :status (response-status *response*)
-                                  :header (response-header *response*)
-                                  :body pathname)))
+  (let ((entity (if (directory-pathname-p pathname)
+                    (make-instance 'directory-entity
+                                   :status (response-status *response*)
+                                   :header (response-header *response*)
+                                   :body pathname)
+                    (make-instance 'file-entity
+                                   :status (response-status *response*)
+                                   :header (response-header *response*)
+                                   :body pathname))))
+    (setf *response* entity)))
 
 (defmethod reply-object ((nothing null)))
 
