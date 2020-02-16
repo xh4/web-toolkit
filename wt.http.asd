@@ -17,6 +17,8 @@
                :trivial-gray-streams
                #-lispworks
                :usocket
+               #-lispworks
+               :cl+ssl
                :chunga
                :cl-cont
                #+sbcl

@@ -60,15 +60,63 @@
 
 #-lispworks
 (defun open-connection (uri)
-  (let ((host (uri-host uri))
-        (port (or (uri-port uri) 80)))
-    (unless host (error "Missing host in URI"))
-    (let ((socket (usocket:socket-connect
-                   host
-                   port
-                   :element-type '(unsigned-byte 8))))
-      (let ((connection (make-connection socket)))
-        connection))))
+  (let ((https-p (equal "https" (uri-scheme uri))))
+    (let ((host (uri-host uri))
+          (port (or (uri-port uri) (if https-p 443 80))))
+      (let* ((socket (usocket:socket-connect host port
+                                             :element-type '(unsigned-byte 8)
+                                             #+sbcl :timeout #+sbcl 10
+                                             :nodelay :if-supported))
+             (stream (usocket:socket-stream socket)))
+        (when https-p
+          (setf stream (make-ssl-stream stream
+                                        :hostname host
+                                        :certificate nil
+                                        :key nil
+                                        :certificate-password nil
+                                        :verify nil
+                                        ;; :max-depth 10
+                                        :ca-file nil
+                                        :ca-directory nil)))
+        (let ((connection (make-instance 'connection
+                                         :socket socket
+                                         :input-stream stream
+                                         :output-stream stream)))
+          connection)))))
+
+#-lispworks
+(defun make-ssl-stream (stream &key hostname certificate key certificate-password verify (max-depth 10) ca-file ca-directory)
+  "Attaches SSL to the stream STREAM and returns the SSL stream
+\(which will not be equal to STREAM)."
+  (declare (ignorable stream certificate-password max-depth ca-directory hostname))
+  (check-type verify (member nil :optional :required))
+  (when (and certificate
+             (not (probe-file certificate)))
+    (error "certificate file ~A not found" certificate))
+  (when (and key
+             (not (probe-file key)))
+    (error "key file ~A not found" key))
+  (when (and ca-file
+             (not (probe-file ca-file)))
+    (error "ca file ~A not found" ca-file))
+  (let ((ctx (cl+ssl:make-context :verify-depth max-depth
+                                  :verify-mode cl+ssl:+ssl-verify-none+
+                                  :verify-callback nil
+                                  :verify-location (or (and ca-file ca-directory
+                                                            (list ca-file ca-directory))
+                                                       ca-file ca-directory
+                                                       :default))))
+    (cl+ssl:with-global-context (ctx)
+      (cl+ssl:make-ssl-client-stream
+       (cl+ssl:stream-fd stream)
+       :verify verify
+       :hostname hostname
+       :close-callback (lambda ()
+                         (close stream)
+                         (cl+ssl:ssl-ctx-free ctx))
+       :certificate certificate
+       :key key
+       :password certificate-password))))
 
 #+lispworks
 (defun open-connection (uri)
@@ -83,7 +131,8 @@
           (when https-p
             (comm:attach-ssl stream
                              :ssl-ctx t
-                             :ssl-side :client))
+                             :ssl-side :client
+                             :tlsext-host-name host))
           (setf (stream:stream-read-timeout stream) 10
                 (stream:stream-write-timeout stream) 10)
           (let ((connection (make-instance 'connection
