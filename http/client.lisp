@@ -1,14 +1,32 @@
 (in-package :http)
 
+(defvar *connection* nil)
+
+(defvar *connection-host* nil)
+
+(defmacro with-connection ((uri) &body body)
+  `(let* ((*connection* (open-connection ,uri))
+          (*connection-host* (uri-host ,uri)))
+     (unwind-protect
+          (progn ,@body)
+       (close-connection *connection*))))
+
+(defmacro receive ((response) &body body)
+  `(let ((,response (read-response (connection-input-stream *connection*))))
+     ,@body))
+
+;; (with-connection ("http://example.com")
+;;   (get "/")
+;;   (receive (response)
+;;     response))
+
 (defun request (uri &key (method :get) header content)
   (let ((request (make-request uri method header content)))
-    (let ((connection (open-connection uri)))
+    (let ((connection *connection*))
       (let ((output-stream (connection-output-stream connection))
             (input-stream (connection-input-stream connection)))
         (write-request output-stream request)
-        (force-output output-stream)
-        (let ((response (read-response input-stream)))
-          response)))))
+        (force-output output-stream)))))
 
 (defmacro define-request-method (symbol)
   `(defun ,symbol (uri)
@@ -26,7 +44,7 @@
 
 (defun make-request (uri method header content)
   (let ((request-uri (process-request-uri uri)))
-    (let ((request-header (process-request-header header uri content)))
+    (let ((request-header (process-request-header header content)))
       (let ((request-body (process-request-content content)))
         (let ((request (make-instance 'request
                                       :method method
@@ -36,16 +54,21 @@
                                       :body request-body)))
           request)))))
 
-(defun process-request-uri (uri)
+(defun process-connection-uri (uri)
   (unless (uri-host uri) (error "Missing host in URI ~S" uri))
   (typecase uri
-    (uri (setf uri (uri-string uri)))
-    (string uri)))
+    (string uri)
+    (uri (uri-string uri))))
 
-(defun process-request-header (header uri content)
+(defun process-request-uri (uri)
+  (let* ((uri (uri uri))
+         (path (uri-path uri))
+         (query (uri-query uri)))
+    (concatenate 'string path (when query "?") query)))
+
+(defun process-request-header (header content)
   (let ((new-header (make-instance 'header)))
-    (set-header-field new-header (header-field "Host" (uri-host uri)))
-    (set-header-field new-header (header-field "Connection" "close"))
+    (set-header-field new-header (header-field "Host" *connection-host*))
     ;; TODO: forbid user from setting some header fields
     (typecase header
       (header (loop for header-field in (header-fields header)
@@ -60,28 +83,27 @@
 
 #-lispworks
 (defun open-connection (uri)
+  (setf uri (process-connection-uri uri))
   (let ((https-p (equal "https" (uri-scheme uri))))
     (let ((host (uri-host uri))
           (port (or (uri-port uri) (if https-p 443 80))))
-      (let* ((socket (usocket:socket-connect host port
+      (let ((socket (usocket:socket-connect host port
                                              :element-type '(unsigned-byte 8)
                                              #+sbcl :timeout #+sbcl 10
-                                             :nodelay :if-supported))
-             (stream (usocket:socket-stream socket)))
-        (when https-p
-          (setf stream (make-ssl-stream stream
-                                        :hostname host
-                                        :certificate nil
-                                        :key nil
-                                        :certificate-password nil
-                                        :verify nil
-                                        ;; :max-depth 10
-                                        :ca-file nil
-                                        :ca-directory nil)))
-        (let ((connection (make-instance 'connection
-                                         :socket socket
-                                         :input-stream stream
-                                         :output-stream stream)))
+                                             :nodelay :if-supported)))
+        (let ((connection (make-connection socket)))
+          (with-slots (input-stream output-stream) connection
+            (when https-p
+              (setf output-stream (make-ssl-stream output-stream
+                                                   :hostname host
+                                                   :certificate nil
+                                                   :key nil
+                                                   :certificate-password nil
+                                                   :verify nil
+                                                   ;; :max-depth 10
+                                                   :ca-file nil
+                                                   :ca-directory nil)
+                    input-stream output-stream)))
           connection)))))
 
 #-lispworks
@@ -120,36 +142,18 @@
 
 #+lispworks
 (defun open-connection (uri)
+  (setf uri (process-connection-uri uri))
   (let ((https-p (equal "https" (uri-scheme uri))))
     (let ((host (uri-host uri))
           (port (or (uri-port uri) (if https-p 443 80))))
       (let ((socket (comm:connect-to-tcp-server host port :timeout 10)))
-        (let ((stream (make-instance 'comm:socket-stream
-                                     :socket socket
-                                     :direction :io
-                                     :element-type '(unsigned-byte 8))))
-          (when https-p
-            (comm:attach-ssl stream
-                             :ssl-ctx t
-                             :ssl-side :client
-                             :tlsext-host-name host))
-          (setf (stream:stream-read-timeout stream) 10
-                (stream:stream-write-timeout stream) 10)
-          (let ((connection (make-instance 'connection
-                                           :socket socket
-                                           :input-stream stream
-                                           :output-stream stream)))
-            connection))))))
-
-(defvar *connection* nil)
-
-(defmacro with-connection ((uri) &body body)
-  )
-
-(defmacro receive ((response) &body body)
-  )
-
-(with-connection ("http://example.com")
-  (get "/")
-  (receive (response)
-    response))
+        (let ((connection (make-connection socket)))
+          (let ((stream (connection-output-stream connection)))
+            (setf (stream:stream-read-timeout stream) 10
+                  (stream:stream-write-timeout stream) 10)
+            (when https-p
+              (comm:attach-ssl (connection-output-stream connection)
+                               :ssl-ctx t
+                               :ssl-side :client
+                               :tlsext-host-name host)))
+          connection)))))
