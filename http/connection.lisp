@@ -35,7 +35,7 @@
     :accessor connection-peer-address)))
 
 (defun make-and-process-connection (listener socket)
-  (let ((connection (make-connection listener socket)))
+  (let ((connection (make-connection socket listener)))
     (bt:make-thread
      (lambda ()
        (process-connection connection))
@@ -45,7 +45,7 @@
     connection))
 
 #-lispworks
-(defun make-connection (listener socket)
+(defun make-connection (socket &optional listener)
   (let ((stream (usocket:socket-stream socket)))
     (let ((local-port (usocket:get-local-port socket))
           (local-address (usocket:get-local-address socket))
@@ -64,11 +64,10 @@
                                          :local-address (format-ip-address local-address)
                                          :peer-port peer-port
                                          :peer-address (format-ip-address peer-address))))
-          (inspect connection)
           connection)))))
 
 #+lispworks
-(defun make-connection (listener socket)
+(defun make-connection (socket &optional listener)
   (let ((stream (make-instance 'comm:socket-stream
                                :socket socket
                                :direction :io
