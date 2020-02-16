@@ -26,6 +26,7 @@
   :components ((:module "http"
                         :serial t
                         :components ((:file "package")
+                                     (:file "conditions")
                                      (:file "utility")
                                      (:file "stream")
                                      (:file "header-field")
