@@ -41,10 +41,10 @@
 (defun reduce-systems (names)
   (loop for name in names
      for system = (or (ql::find-system name)
-                      (error "System ~S not found by quicklisp" name))
-     for release = (ql::release system)
-     for project = (slot-value release 'ql::project-name)
-     unless (find project projects :test 'equal)
+                      (format t "System ~S not found by quicklisp~%" name))
+     for release = (and system (ql::release system))
+     for project = (and release (slot-value release 'ql::project-name))
+     unless (or (null project) (find project projects :test 'equal))
      collect project into projects and collect name into systems
      finally (return systems)))
 

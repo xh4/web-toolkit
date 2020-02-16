@@ -1,7 +1,9 @@
 alexandria alexandria-20191227-git/alexandria.asd
 babel babel-20191130-git/babel.asd
 bordeaux-threads bordeaux-threads-v0.8.7/bordeaux-threads.asd
+cffi cffi_0.20.1/cffi.asd
 chunga chunga-20180131-git/chunga.asd
+cl+ssl cl+ssl-20191130-git/cl+ssl.asd
 cl-base64 cl-base64-20150923-git/cl-base64.asd
 cl-change-case cl-change-case-20191007-git/cl-change-case.asd
 cl-cont cl-cont-20110219-darcs/cl-cont.asd
@@ -23,5 +25,7 @@ puri puri-20180228-git/puri.asd
 split-sequence split-sequence-v2.0.0/split-sequence.asd
 trivial-backtrace trivial-backtrace-20190710-git/trivial-backtrace.asd
 trivial-features trivial-features-20190710-git/trivial-features.asd
+trivial-garbage trivial-garbage-20190521-git/trivial-garbage.asd
 trivial-gray-streams trivial-gray-streams-20181018-git/trivial-gray-streams.asd
+uiop uiop-3.3.3/uiop.asd
 usocket usocket-0.8.3/usocket.asd
