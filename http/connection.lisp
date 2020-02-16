@@ -16,7 +16,23 @@
    (output-stream
     :initarg :output-stream
     :initform nil
-    :accessor connection-output-stream)))
+    :accessor connection-output-stream)
+   (local-port
+    :initarg :local-port
+    :initform nil
+    :accessor connection-local-port)
+   (local-address
+    :initarg :local-address
+    :initform nil
+    :accessor connection-local-address)
+   (peer-port
+    :initarg :peer-port
+    :initform nil
+    :accessor connection-peer-port)
+   (peer-address
+    :initarg :peer-address
+    :initform nil
+    :accessor connection-peer-address)))
 
 (defun make-and-process-connection (listener socket)
   (let ((connection (make-connection listener socket)))
@@ -31,11 +47,25 @@
 #-lispworks
 (defun make-connection (listener socket)
   (let ((stream (usocket:socket-stream socket)))
-    (make-instance 'connection
-                   :listener listener
-                   :socket socket
-                   :input-stream stream
-                   :output-stream stream)))
+    (let ((local-port (usocket:get-local-port socket))
+          (local-address (usocket:get-local-address socket))
+          (peer-port (usocket:get-peer-port socket))
+          (peer-address (usocket:get-peer-address socket)))
+      (flet ((format-ip-address (address)
+               (unless (= 4 (length address))
+                 (error "Expect IPv4 address, got ~A" address))
+               (format nil "~{~A~,^.~}" (coerce address 'list))))
+        (let ((connection (make-instance 'connection
+                                         :listener listener
+                                         :socket socket
+                                         :input-stream stream
+                                         :output-stream stream
+                                         :local-port local-port
+                                         :local-address (format-ip-address local-address)
+                                         :peer-port peer-port
+                                         :peer-address (format-ip-address peer-address))))
+          (inspect connection)
+          connection)))))
 
 #+lispworks
 (defun make-connection (listener socket)
@@ -45,11 +75,18 @@
                                :element-type '(unsigned-byte 8))))
     (setf (stream:stream-read-timeout stream) 10
           (stream:stream-write-timeout stream) 10)
-    (make-instance 'connection
-                   :listener listener
-                   :socket socket
-                   :input-stream stream
-                   :output-stream stream)))
+    (let ((connection (make-instance 'connection
+                                     :listener listener
+                                     :socket socket
+                                     :input-stream stream
+                                     :output-stream stream)))
+      (multiple-value-bind (address port) (comm:socket-stream-address stream)
+        (setf (connection-local-port connection) port
+              (connection-local-address connection) (comm:ip-address-string address)))
+      (multiple-value-bind (address port) (comm:socket-stream-peer-address stream)
+        (setf (connection-peer-port connection) port
+              (connection-peer-address connection) (comm:ip-address-string address)))
+      connection)))
 
 (defun process-connection (connection)
   (with-slots (input-stream output-stream) connection
