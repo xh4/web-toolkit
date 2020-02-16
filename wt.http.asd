@@ -89,6 +89,7 @@
                                                            (:file "router")
                                                            (:file "file")
                                                            (:file "directory")
-                                                           (:file "static"))))))
+                                                           (:file "static")
+                                                           (:file "client"))))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :http-test)))
