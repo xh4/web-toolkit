@@ -141,5 +141,15 @@
                                            :output-stream stream)))
             connection))))))
 
-(defmacro with-persistent-connections ()
+(defvar *connection* nil)
+
+(defmacro with-connection ((uri) &body body)
   )
+
+(defmacro receive ((response) &body body)
+  )
+
+(with-connection ("http://example.com")
+  (get "/")
+  (receive (response)
+    response))
