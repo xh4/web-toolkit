@@ -61,3 +61,7 @@
                                                        :uri "/"
                                                        :version "HTTP/1.1")))))
         (is (equal 1 (length res))))))
+
+;; TODO: test connection addresses
+(test connection-address
+  )
