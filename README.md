@@ -34,7 +34,7 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
 * Overall
   * Use in production environments
   * Write [documentation](https://lisp-web-toolkit.com)
-  * Carefully design conditions
+  * Carefully design conditions and errors
   * Write more tests
   * <s>Add project build status graph</s>
   * Add code coverage informataion
