@@ -36,7 +36,7 @@
                                :if-does-not-exist :create
                                :if-exists :supersede)
          (loop for (system source) in vendors
-            do (format stream "~A ~A~%" system source)))))
+            do (format stream "~A ~A~C" system source #\Newline)))))
 
 (defun reduce-systems (names)
   (loop for name in names
