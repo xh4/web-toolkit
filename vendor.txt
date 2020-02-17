@@ -10,13 +10,11 @@ cl-fad cl-fad-20190813-git/cl-fad.asd
 cl-ppcre cl-ppcre-20190521-git/cl-ppcre.asd
 cl-ppcre-unicode cl-ppcre-20190521-git/cl-ppcre-unicode.asd
 cl-unicode cl-unicode-20190521-git/cl-unicode.asd
-cl-unicode/base cl-unicode-20190521-git/cl-unicode.asd
 closer-mop closer-mop-20191227-git/closer-mop.asd
 closure-common closure-common-20181018-git/closure-common.asd
 closure-html closure-html-20180711-git/closure-html.asd
+cxml cxml-20181018-git/cxml.asd
 cxml-dom cxml-20181018-git/cxml-dom.asd
-cxml/dom cxml-20181018-git/cxml.asd
-cxml/xml cxml-20181018-git/cxml.asd
 find-port find-port-20190710-git/find-port.asd
 fiveam fiveam-v1.4.1/fiveam.asd
 flexi-streams flexi-streams-20190107-git/flexi-streams.asd

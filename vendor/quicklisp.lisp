@@ -10,7 +10,9 @@
                         "vendor.txt"
                         (asdf:system-source-directory
                          (asdf:find-system "wt")))
-     for system-name in (system-dependencies "wt/test")
+     with processed-system-names = '()
+     for dependency in (system-dependencies "wt/test")
+     for system-name = (normalize-system-name dependency)
      for system = (ql::find-system system-name)
      for system-file = (system-file system-name)
      for release = (ql::release system)
@@ -20,13 +22,16 @@
                                  system-file
                                  (pathname-as-directory
                                   (merge-pathnames (slot-value release 'ql::prefix) vendor)))
+     unless (find system-name processed-system-names :test 'equal)
      do (format t "~S~%" (merge-pathnames (slot-value release 'ql::prefix) vendor))
+       (push system-name processed-system-names)
        (ensure-directories-exist tar)
        (ensure-directories-exist vendor)
        (ql::gunzip archive tar)
        (ql::unpack-tarball tar :directory vendor)
        (unless (probe-file system-file-pathname)
          (error "ASD file for system ~S not found: ~S" system-name system-file-pathname))
+     and
      collect (list system-name (format nil "~A/~A"
                                        (slot-value release 'ql::prefix)
                                        system-file))
@@ -40,6 +45,15 @@
                                :if-exists :supersede)
          (loop for (system path) in vendors
             do (format stream "~A ~A~C" system path #\Newline)))))
+
+(defun normalize-system-name (system-name)
+  (let ((pos (position #\/ system-name)))
+    (if pos
+        (subseq system-name 0 pos)
+        system-name)))
+
+;; (normalize-system-name "cxml/dom") -> "cxml"
+;; (normalize-system-name "cl-unicode/base") -> "cl-unicode"
 
 (defun system-file (system-name)
   (let* ((system (or (ql::find-system system-name)
