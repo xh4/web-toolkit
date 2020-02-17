@@ -6,6 +6,17 @@
 
 (uiop:delete-directory-tree asdf::*user-cache* :validate t)
 
+;; (unless *load-truename*
+;;   (error "This file must be LOADed to execute this pipeline."))
+
+(defvar *wt-home*
+  (and *load-truename*
+       (make-pathname :name nil :type nil
+                      :defaults *load-truename*)))
+
+(when *wt-home*
+  (push *wt-home* asdf:*central-registry*))
+
 (asdf:load-system :wt.vendor)
 (ql:quickload :alexandria)
 (ql:quickload :cxml)
@@ -38,17 +49,6 @@
 
 (defun output-stream-content ()
   (get-output-stream-string *output-stream*))
-
-;; (unless *load-truename*
-;;   (error "This file must be LOADed to execute this pipeline."))
-
-(defvar *wt-home*
-  (and *load-truename*
-       (make-pathname :name nil :type nil
-                      :defaults *load-truename*)))
-
-(when *wt-home*
-  (push *wt-home* asdf:*central-registry*))
 
 #+(or ccl lispworks)
 (setf *debugger-hook*
