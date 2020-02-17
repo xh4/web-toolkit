@@ -90,10 +90,11 @@
 (defun process-connection (connection)
   (with-slots (input-stream output-stream) connection
     (tagbody :start
+       ;; TODO: handle errors here
        (handler-bind ((error (lambda (error)
                                (declare (ignore error))
                                (go :end))))
-         (when-let ((request (read-request input-stream)))
+         (when-let ((request (receive-request connection)))
            (let ((response (handle-request connection request)))
              (if (equal 101 (status-code (response-status response)))
                  (go :end)
@@ -117,6 +118,30 @@
     (close input-stream)
     (close output-stream)))
 
+(defgeneric send-request (connection request)
+  (:method ((connection connection) request)
+    (let ((output-stream (connection-output-stream connection)))
+      (prog1
+          (write-request output-stream request)
+        (force-output output-stream)))))
+
+(defgeneric receive-request (connection)
+  (:method ((connection connection))
+    (let ((input-stream (connection-input-stream connection)))
+      (read-request input-stream))))
+
+(defgeneric send-response (connection response)
+  (:method ((connection connection) response)
+    (let ((output-stream (connection-output-stream connection)))
+      (prog1
+          (write-response output-stream response)
+        (force-output output-stream)))))
+
+(defgeneric receive-response (connection)
+  (:method ((connection connection))
+    (let ((input-stream (connection-input-stream connection)))
+      (read-response input-stream))))
+
 (defun handle-request (connection request)
   (let ((listener (connection-listener connection)))
     (let ((server (listener-server listener)))
@@ -131,15 +156,13 @@
           response)))))
 
 (defun handle-response (connection response)
-  (let ((stream (connection-output-stream connection)))
-    (when (null (response-status response))
-      (setf response (make-instance 'response
-                                    :status 200)))
-    (unless (equal 101 (status-code (response-status response)))
-      (prog1
-          (set-header-field response (header-field "Date" (rfc-1123-date)))
-          (write-response stream response)
-        (finish-output stream)))))
+  (when (null (response-status response))
+    (setf response (make-instance 'response
+                                  :status 200)))
+  (unless (equal 101 (status-code (response-status response)))
+    (prog1
+        (set-header-field response (header-field "Date" (rfc-1123-date)))
+      (send-response connection response))))
 
 (defgeneric keep-alive-p (object)
   (:method ((request request))

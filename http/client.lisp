@@ -12,7 +12,7 @@
        (close-connection *connection*))))
 
 (defmacro receive ((response) &body body)
-  `(let ((,response (read-response (connection-input-stream *connection*))))
+  `(let ((,response (receive-response *connection*)))
      ,@body))
 
 ;; (with-connection ("http://example.com")
@@ -22,11 +22,7 @@
 
 (defun request (uri &key (method :get) header content)
   (let ((request (make-request uri method header content)))
-    (let ((connection *connection*))
-      (let ((output-stream (connection-output-stream connection))
-            (input-stream (connection-input-stream connection)))
-        (write-request output-stream request)
-        (force-output output-stream)))))
+    (send-request *connection* request)))
 
 (defmacro define-request-method (symbol)
   `(defun ,symbol (uri)
