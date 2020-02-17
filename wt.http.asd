@@ -22,7 +22,8 @@
                :chunga
                :cl-cont
                #+sbcl
-               :sb-introspect)
+               :sb-introspect
+               :local-time)
   :defsystem-depends-on (:wt.vendor)
   :serial t
   :components ((:module "http"

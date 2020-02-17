@@ -19,6 +19,7 @@ find-port find-port-20190710-git/find-port.asd
 fiveam fiveam-v1.4.1/fiveam.asd
 flexi-streams flexi-streams-20190107-git/flexi-streams.asd
 ironclad ironclad-v0.47/ironclad.asd
+local-time local-time-20190710-git/local-time.asd
 maxpc maxpc-20171130-git/maxpc.asd
 net.didierverna.asdf-flv asdf-flv-version-2.1/net.didierverna.asdf-flv.asd
 nibbles nibbles-20180831-git/nibbles.asd
