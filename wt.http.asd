@@ -59,6 +59,7 @@
                                      (:file "static")
                                      (:file "websocket")
                                      (:file "connection")
+                                     (:file "connection-manager")
                                      (:file "listener")
                                      (:file "server")
                                      (:file "client"))))
