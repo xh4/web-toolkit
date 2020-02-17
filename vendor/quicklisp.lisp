@@ -10,23 +10,26 @@
                         "vendor.txt"
                         (asdf:system-source-directory
                          (asdf:find-system "wt")))
-     for dependency in (reduce-systems (system-dependencies "wt/test"))
-     for system = (ql::find-system dependency)
+     for system-name in (system-dependencies "wt/test")
+     for system = (ql::find-system system-name)
+     for system-file = (system-file system-name)
      for release = (ql::release system)
      for archive = (ql::ensure-local-archive-file release)
      for tar = (merge-pathnames "release-install.tar" (uiop:temporary-directory))
-     for source = (merge-pathnames
-                   (format nil "~A.asd" dependency)
-                   (pathname-as-directory
-                    (merge-pathnames (slot-value release 'ql::prefix) vendor)))
+     for system-file-pathname = (merge-pathnames
+                                 system-file
+                                 (pathname-as-directory
+                                  (merge-pathnames (slot-value release 'ql::prefix) vendor)))
      do (format t "~S~%" (merge-pathnames (slot-value release 'ql::prefix) vendor))
        (ensure-directories-exist tar)
        (ensure-directories-exist vendor)
        (ql::gunzip archive tar)
        (ql::unpack-tarball tar :directory vendor)
-       (unless (probe-file source)
-         (error "ASD file for system ~S not found: ~S" dependency source))
-     collect (list dependency (format nil "~A/~A.asd" (slot-value release 'ql::prefix) dependency))
+       (unless (probe-file system-file-pathname)
+         (error "ASD file for system ~S not found: ~S" system-name system-file-pathname))
+     collect (list system-name (format nil "~A/~A"
+                                       (slot-value release 'ql::prefix)
+                                       system-file))
      into vendors
      finally
        (setf vendors (sort vendors 'string< :key 'first))
@@ -35,18 +38,28 @@
                                :direction :output
                                :if-does-not-exist :create
                                :if-exists :supersede)
-         (loop for (system source) in vendors
-            do (format stream "~A ~A~C" system source #\Newline)))))
+         (loop for (system path) in vendors
+            do (format stream "~A ~A~C" system path #\Newline)))))
 
-(defun reduce-systems (names)
-  (loop for name in names
-     for system = (or (ql::find-system name)
-                      (format t "System ~S not found by quicklisp~%" name))
-     for release = (and system (ql::release system))
-     for project = (and release (slot-value release 'ql::project-name))
-     unless (or (null project) (find project projects :test 'equal))
-     collect project into projects and collect name into systems
-     finally (return systems)))
+(defun system-file (system-name)
+  (let* ((system (or (ql::find-system system-name)
+                     (format t "System ~S not found by quicklisp~%" system-name)))
+         (release (ql::release system)))
+    (let ((files (slot-value release 'ql::system-files)))
+      (if (= (length files) 1)
+          (first files)
+          (let ((direct-file (concatenate 'string system-name ".asd")))
+            (if (find direct-file files :test 'equal)
+                direct-file
+                (let* ((project-name (slot-value release 'ql::project-name))
+                       (project-file (concatenate 'string project-name ".asd")))
+                  (if (find project-file files :test 'equal)
+                      project-file
+                      (error "Unable to decide system file for ~S, choose between ~A" system-name files)))))))))
+
+;; (system-file "cxml-dom") -> "cxml-dom.asd"
+;; (system-file "cxml/dom") -> "cxml.asd"
+;; (system-file "cl-unicode/base") -> "cl-unicode.asd"
 
 (defun component-present-p (value)
   "Helper function for DIRECTORY-PATHNAME-P which checks whether VALUE
