@@ -175,7 +175,9 @@
                           (reply (header "Location" (case location
                                                       ;; TODO: handle referer missing condition
                                                       (:back (header-field-value
-                                                              (header-field request "Referer")))
+                                                              (find-header-field
+                                                               "Referer"
+                                                               request)))
                                                       (t location))
                                          "Content-Length" 0))
                           (return)))))
