@@ -149,3 +149,9 @@
          (unwind-protect
               (progn ,@body)
            (uiop:delete-directory-tree ,root :validate t))))))
+
+(defmacro with-input-from-form-data ((stream boundary form) &body body)
+  `(let ((octets (babel-streams:with-output-to-sequence (stream)
+                   (setf ,boundary (http::write-multipart-form-data stream ,form)))))
+     (babel-streams:with-input-from-sequence (,stream octets)
+       ,@body)))

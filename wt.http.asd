@@ -10,6 +10,7 @@
                :alexandria
                :closer-mop
                :babel
+               :babel-streams
                :cl-change-case
                :split-sequence
                :cl-fad
@@ -37,6 +38,7 @@
                                      (:file "header")
                                      (:file "mime")
                                      (:file "form")
+                                     (:file "multipart")
                                      (:file "message")
                                      (:file "request")
                                      (:file "status")
@@ -80,6 +82,7 @@
                                                            (:file "helper")
                                                            (:file "stream")
                                                            (:file "utility")
+                                                           (:file "multipart")
                                                            (:file "status")
                                                            (:file "header-field")
                                                            (:file "header")
