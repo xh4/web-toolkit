@@ -57,3 +57,13 @@
     (let ((req (make-instance 'request
                               :header (header "Transfer-Encoding" "gzip, chunked"))))
       (is-true (http::transfer-encoding-chunked-p req)))))
+
+(test read-request-urlencoded-form-data
+  (it
+    (let ((data (babel:string-to-octets "foo=bar")))
+      (babel-streams:with-input-from-sequence (stream data)
+        (let ((request (make-instance 'request
+                                      :header (header "Content-Length" (length data))
+                                      :body stream)))
+          (let ((form (http::read-request-urlencoded-form-data request)))
+            form))))))

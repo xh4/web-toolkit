@@ -128,6 +128,25 @@
   (:method ((request request))
     (pipe-message-body-chunks-as-vector request)))
 
+(defgeneric read-request-form-data (request &key as)
+  (:method ((request request) &key as)
+    (cond
+      ((string-equal "application/x-www-form-urlencoded"
+                     (find-header-field "Content-Type" request))
+       (read-request-urlencoded-form-data request :as as))
+      ((string-equal "multipart/form-data"
+                     (find-header-field "Content-Type" request))
+       (read-request-multipart-form-data request :as as))
+      (t (error "Request does not carry form data")))))
+
+(defun read-request-urlencoded-form-data (request &key as)
+  (let ((data (read-request-body-into-string request)))
+    (let ((uri (uri :query data)))
+      (uri-query uri :type :alist))))
+
+(defun read-request-multipart-form-data (request &key as)
+  )
+
 (defun write-request-body (stream request)
   (let ((body (request-body request)))
     (typecase body
