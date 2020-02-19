@@ -101,3 +101,15 @@
                                :ssl-side :client
                                :tlsext-host-name host)))
           connection)))))
+
+(defclass persistent-connection-manager (connection-mamanger)
+  ())
+
+(defmethod request-connection ((connection-mamanger persistent-connection-manager) request)
+  )
+
+(defmethod release-connection ((connection-mamanger persistent-connection-manager) connection)
+  )
+
+(defmethod shutdown-connection-manager ((connection-mamanger persistent-connection-manager))
+  )
