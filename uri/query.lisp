@@ -8,11 +8,6 @@
        for value-decoded = (percent-decode value)
        collect (cons name-decoded (when value value-decoded)))))
 
-(defun uri-query-plist (query-string)
-  (loop for (name . value) in (uri-query-alist query-string)
-     collect name
-     collect value))
-
 (defun uri-query-hash-table (query-string)
   (let ((table (make-hash-table :test 'equal)))
     (loop for (name . value) in (uri-query-alist query-string)

@@ -74,7 +74,6 @@
 (define-uri-reader (query &key type (decode nil))
   (case type
     (:alist (uri-query-alist query))
-    (:plist (uri-query-plist query))
     (:hash-table (uri-query-hash-table query))
     (t (if decode
            (percent-decode query)
