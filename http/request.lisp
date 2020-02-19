@@ -131,21 +131,29 @@
 (defgeneric read-request-form-data (request &key as)
   (:method ((request request) &key as)
     (cond
-      ((string-equal "application/x-www-form-urlencoded"
-                     (find-header-field "Content-Type" request))
+      ((search "application/x-www-form-urlencoded"
+               (header-field-value
+                (find-header-field "Content-Type" request)))
        (read-request-urlencoded-form-data request :as as))
-      ((string-equal "multipart/form-data"
-                     (find-header-field "Content-Type" request))
+      ((search "multipart/form-data"
+               (header-field-value
+                (find-header-field "Content-Type" request)))
        (read-request-multipart-form-data request :as as))
       (t (error "Request does not carry form data")))))
 
 (defun read-request-urlencoded-form-data (request &key as)
+  (let ((types '(:alist :plist :hash-table)))
+    (unless (member as types)
+      (error "The value of `AS` argument should be member of ~A" types)))
   (let ((data (read-request-body-into-string request)))
     (let ((uri (uri :query data)))
-      (uri-query uri :type :alist))))
+      (uri-query uri :type as))))
 
 (defun read-request-multipart-form-data (request &key as)
-  )
+  (let ((boundary ""))
+    (let ((stream (request-body request)))
+      (handler-bind ()
+        (read-multipart-form-data stream boundary)))))
 
 (defun write-request-body (stream request)
   (let ((body (request-body request)))
