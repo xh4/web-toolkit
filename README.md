@@ -58,6 +58,7 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * (Client) Support SOCKS Proxy
   * (Client) Support Basic Auth
   * (Client) Implement Cookie store
+  * (Client) Support caching
 * WebSocket
   * Use [Asynchronous I/O](http://www.lispworks.com/documentation/lw71/LW/html/lw-192.htm) in LispWorks
   * Use [Recursive Event Dispatching (SERVE-EVENT)](https://github.com/sbcl/sbcl/blob/master/src/code/serve-event.lisp) in SBCL
