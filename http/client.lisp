@@ -24,19 +24,28 @@
   (let ((request (make-request uri method header content)))
     (send-request *connection* request)))
 
-(defmacro define-request-method (symbol)
-  `(defun ,symbol (uri)
-     (request uri :method ,(make-keyword symbol))))
+(defmacro define-request-method (symbol lambda-list)
+  (let ((uri (first lambda-list))
+        (keyword-parameters (nth-value 3 (parse-ordinary-lambda-list lambda-list))))
+    `(defun ,symbol (,uri ,@(rest lambda-list))
+       (request uri
+                :method ,(make-keyword symbol)
+                ,@(loop for ((keyword-name name) nil nil) in keyword-parameters
+                      append `(,keyword-name ,name))))))
 
-(define-request-method get)
+(define-request-method get (uri &key header))
 
-(define-request-method post)
+(define-request-method head (uri &key header))
 
-(define-request-method put)
+(define-request-method put (uri &key header content))
 
-(define-request-method delete)
+(define-request-method post (uri &key header content))
 
-(define-request-method head)
+(define-request-method delete (uri &key header content))
+
+(define-request-method patch (uri &key header content))
+
+(define-request-method options (uri &key header))
 
 (defun make-request (uri method header content)
   (let ((request-uri (process-request-uri uri)))

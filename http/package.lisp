@@ -42,10 +42,14 @@
            :start-server
            :stop-server
            :get
+           :head
            :put
            :post
            :delete
-           :head)
+           :patch
+           :options
+           :initialize
+           :remote-address)
   (:import-from :uri
                 :uri
                 :uri-scheme
