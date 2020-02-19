@@ -58,6 +58,19 @@
                               :header (header "Transfer-Encoding" "gzip, chunked"))))
       (is-true (http::transfer-encoding-chunked-p req)))))
 
+(test read-request-form-data
+  (it
+    (let ((data (babel:string-to-octets "foo=bar")))
+      (babel-streams:with-input-from-sequence (stream data)
+        (let ((request (make-instance 'request
+                                      :header (header
+                                               "Content-Type" "application/x-www-form-urlencoded; charset=UTF-8"
+                                               "Content-Length" (length data))
+                                      :body stream)))
+          (let ((form (http::read-request-form-data request :as :alist)))
+            (is (equal "foo" (caar form)))
+            (is (equal "bar" (cdar form)))))))))
+
 (test read-request-urlencoded-form-data
   (it
     (let ((data (babel:string-to-octets "foo=bar")))
@@ -65,5 +78,6 @@
         (let ((request (make-instance 'request
                                       :header (header "Content-Length" (length data))
                                       :body stream)))
-          (let ((form (http::read-request-urlencoded-form-data request)))
-            form))))))
+          (let ((form (http::read-request-urlencoded-form-data request :as :alist)))
+            (is (equal "foo" (caar form)))
+            (is (equal "bar" (cdar form)))))))))
