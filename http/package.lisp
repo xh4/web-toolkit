@@ -48,8 +48,7 @@
            :delete
            :patch
            :options
-           :initialize
-           :remote-address)
+           :with-connections)
   (:import-from :uri
                 :uri
                 :uri-scheme

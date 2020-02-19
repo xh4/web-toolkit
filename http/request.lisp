@@ -56,7 +56,7 @@
 (defmethod set-header-field ((request request) header-field)
   (set-header-field (request-header request) header-field))
 
-(defparameter *methods* '(:get :post :put :delete :head))
+(defparameter *methods* '(:get :post :put :delete :head :patch :options))
 
 (defgeneric request-body-present-p (request)
   (:method ((request request))

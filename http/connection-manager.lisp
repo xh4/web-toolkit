@@ -12,6 +12,7 @@
       (let ((connection (open-connection uri)))
         (with-slots (connections) connection-manager
           (push connection connections))
+        (set-header-field request (header-field "Connection" "close"))
         connection))))
 
 (defgeneric release-connection (connection-manager connection)
@@ -28,7 +29,6 @@
 
 #-lispworks
 (defun open-connection (uri)
-  (setf uri (process-connection-uri uri))
   (let ((https-p (equal "https" (uri-scheme uri))))
     (let ((host (uri-host uri))
           (port (or (uri-port uri) (if https-p 443 80))))
@@ -87,7 +87,6 @@
 
 #+lispworks
 (defun open-connection (uri)
-  (setf uri (process-connection-uri uri))
   (let ((https-p (equal "https" (uri-scheme uri))))
     (let ((host (uri-host uri))
           (port (or (uri-port uri) (if https-p 443 80))))

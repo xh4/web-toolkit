@@ -1,28 +1,20 @@
 (in-package :http)
 
-(defvar *connection* nil)
-
-(defvar *connection-host* nil)
-
-(defmacro with-connection ((uri) &body body)
-  `(let* ((*connection* (open-connection ,uri))
-          (*connection-host* (uri-host ,uri)))
-     (unwind-protect
-          (progn ,@body)
-       (close-connection *connection*))))
-
-(defmacro receive ((response) &body body)
-  `(let ((,response (receive-response *connection*)))
-     ,@body))
-
-;; (with-connection ("http://example.com")
-;;   (get "/")
-;;   (receive (response)
-;;     response))
-
 (defun request (uri &key (method :get) header content)
-  (let ((request (make-request uri method header content)))
-    (send-request *connection* request)))
+  (check-request uri method header content)
+  (let ((connection-manager (make-instance 'connection-manager)))
+    (let ((request (make-request uri method header content)))
+      (let ((connection (request-connection connection-manager request)))
+        (send-request connection request)
+        (let ((response (receive-response connection)))
+          (process-response response request)
+          response)))))
+
+(defun check-request (uri method header content)
+  (unless (find method *methods*)
+    (error "Request method ~A not supported" method))
+  (when (and (find method '(:get :head :options)) content)
+    (error "Request method ~A can't carry body" method)))
 
 (defmacro define-request-method (symbol lambda-list)
   (let ((uri (first lambda-list))
@@ -48,32 +40,27 @@
 (define-request-method options (uri &key header))
 
 (defun make-request (uri method header content)
-  (let ((request-uri (process-request-uri uri)))
-    (let ((request-header (process-request-header header content)))
-      (let ((request-body (process-request-content content)))
+  (let ((uri (process-request-uri uri)))
+    (let ((header (process-request-header header content)))
+      (unless (find-header-field "Host" header)
+        (set-header-field header (header-field "Host" (uri-host uri))))
+      (let ((body (process-request-content content)))
         (let ((request (make-instance 'request
                                       :method method
-                                      :uri request-uri
+                                      :uri uri
                                       :version "HTTP/1.1"
-                                      :header request-header
-                                      :body request-body)))
+                                      :header header
+                                      :body body)))
           request)))))
 
-(defun process-connection-uri (uri)
+(defun process-request-uri (uri)
   (unless (uri-host uri) (error "Missing host in URI ~S" uri))
   (typecase uri
     (string uri)
     (uri (uri-string uri))))
 
-(defun process-request-uri (uri)
-  (let* ((uri (uri uri))
-         (path (uri-path uri))
-         (query (uri-query uri)))
-    (concatenate 'string path (when query "?") query)))
-
 (defun process-request-header (header content)
   (let ((new-header (make-instance 'header)))
-    (set-header-field new-header (header-field "Host" *connection-host*))
     ;; TODO: forbid user from setting some header fields
     (typecase header
       (header (loop for header-field in (header-fields header)
@@ -85,3 +72,15 @@
 
 (defun process-request-content (content)
   )
+
+(defun process-response (response request)
+  (when (find (request-method request) '(:head :put))
+    (setf (response-body response) nil))
+  ;; TODO: set body to nil if content-length is 0)
+  response)
+
+(defmacro with-connections (() &body body)
+  `(let ()
+     (unwind-protect
+          (progn ,@body)
+       )))
