@@ -129,7 +129,7 @@
     (pipe-message-body-chunks-as-vector request)))
 
 (defgeneric read-request-form-data (request &key as)
-  (:method ((request request) &key as)
+  (:method ((request request) &key (as :form))
     (cond
       ((search "application/x-www-form-urlencoded"
                (header-field-value
@@ -141,15 +141,22 @@
        (read-request-multipart-form-data request :as as))
       (t (error "Request does not carry form data")))))
 
-(defun read-request-urlencoded-form-data (request &key as)
-  (let ((types '(:alist :plist :hash-table)))
+(defun read-request-urlencoded-form-data (request &key (as :form))
+  (let ((types '(:form :alist :hash-table)))
     (unless (member as types)
       (error "The value of `AS` argument should be member of ~A" types)))
   (let ((data (read-request-body-into-string request)))
     (let ((uri (uri :query data)))
-      (uri-query uri :type as))))
+      (case as
+        ((or :alist :hash-table) (uri-query uri :type as))
+        (:form (let ((alist (uri-query uri :type :alist)))
+                 (let ((form (make-instance 'form)))
+                   (loop for (name . value) in alist
+                      do (appendf (form-fields form)
+                                  (list (form-field name value))))
+                   form)))))))
 
-(defun read-request-multipart-form-data (request &key as)
+(defun read-request-multipart-form-data (request &key (as :form))
   (let ((boundary ""))
     (let ((stream (request-body request)))
       (handler-bind ()

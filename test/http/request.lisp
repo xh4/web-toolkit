@@ -58,7 +58,7 @@
                               :header (header "Transfer-Encoding" "gzip, chunked"))))
       (is-true (http::transfer-encoding-chunked-p req)))))
 
-(test read-request-form-data
+(test read-request-urlencoded-form-data
   (it
     (let ((data (babel:string-to-octets "foo=bar")))
       (babel-streams:with-input-from-sequence (stream data)
@@ -67,17 +67,33 @@
                                                "Content-Type" "application/x-www-form-urlencoded; charset=UTF-8"
                                                "Content-Length" (length data))
                                       :body stream)))
-          (let ((form (http::read-request-form-data request :as :alist)))
-            (is (equal "foo" (caar form)))
-            (is (equal "bar" (cdar form)))))))))
+          (let ((form (http::read-request-form-data request)))
+            (is (equal 1 (length (http::form-fields form))))
+            (let ((field (first (http::form-fields form))))
+              (is (equal "foo" (http::form-field-name field)))
+              (is (equal "bar" (http::form-field-value field))))))))))
 
-(test read-request-urlencoded-form-data
+(test read-request-urlencoded-form-data/alist
   (it
     (let ((data (babel:string-to-octets "foo=bar")))
       (babel-streams:with-input-from-sequence (stream data)
         (let ((request (make-instance 'request
-                                      :header (header "Content-Length" (length data))
+                                      :header (header
+                                               "Content-Type" "application/x-www-form-urlencoded; charset=UTF-8"
+                                               "Content-Length" (length data))
                                       :body stream)))
-          (let ((form (http::read-request-urlencoded-form-data request :as :alist)))
-            (is (equal "foo" (caar form)))
-            (is (equal "bar" (cdar form)))))))))
+          (let ((alist (http::read-request-form-data request :as :alist)))
+            (is (equal "foo" (caar alist)))
+            (is (equal "bar" (cdar alist)))))))))
+
+(test read-request-urlencoded-form-data/hash-table
+  (it
+    (let ((data (babel:string-to-octets "foo=bar")))
+      (babel-streams:with-input-from-sequence (stream data)
+        (let ((request (make-instance 'request
+                                      :header (header
+                                               "Content-Type" "application/x-www-form-urlencoded; charset=UTF-8"
+                                               "Content-Length" (length data))
+                                      :body stream)))
+          (let ((ht (http::read-request-form-data request :as :hash-table)))
+            (is (equal "bar" (gethash "foo" ht)))))))))
