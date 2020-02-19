@@ -52,7 +52,11 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Implement [HTTP/2](https://tools.ietf.org/html/rfc7540)
   * Implement common handlers
   * Implement virtual host
-  * Support HTTPS for both client and server
+  * <s>(Client) Support HTTPS</s>
+  * (Client) Support decompression
+  * (Client) Support HTTP Proxy
+  * (Client) Support SOCKS Proxy
+  * (Client) Support Basic Auth
 * WebSocket
   * Use [Asynchronous I/O](http://www.lispworks.com/documentation/lw71/LW/html/lw-192.htm) in LispWorks
   * Use [Recursive Event Dispatching (SERVE-EVENT)](https://github.com/sbcl/sbcl/blob/master/src/code/serve-event.lisp) in SBCL
