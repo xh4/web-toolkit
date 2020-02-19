@@ -7,6 +7,7 @@
       (let ((connection (request-connection connection-manager request)))
         (send-request connection request)
         (let ((response (receive-response connection)))
+          (release-connection connection-manager connection)
           (process-response response request)
           response)))))
 
