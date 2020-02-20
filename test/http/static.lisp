@@ -119,3 +119,15 @@
            (let ((response (http::invoke-handler handler (make-instance 'request :method :get :uri "/foo/bar"))))
              (is (equal 200 (status-code response)))
              (is (equal 'pathname (type-of (response-body response)))))))))
+
+(test make-static-route
+  (it
+    (let ((route (route :static '(:static :prefix "/" :root #p"/"))))
+      (is (equal 'http::static-route (type-of route))))
+
+    (let ((route (route :static '(:static
+                                  :prefix (format nil "/~A" "foo")
+                                  :root (merge-pathnames
+                                         #p"foo/"
+                                         #p"/")))))
+      (is (equal 'http::static-route (type-of route))))))

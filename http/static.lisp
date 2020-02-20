@@ -77,6 +77,8 @@
       pathname)))
 
 (defun make-static-route (&key prefix root)
+  (setf prefix (eval prefix))
+  (setf root (eval root))
   (check-type root (or string pathname))
   (when (stringp root)
     (setf root (pathname root)))
