@@ -8,8 +8,8 @@
 (defgeneric construct (constructor &rest arguments))
 
 
-
-(defclass document (rune-dom::document) ())
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defclass document (rune-dom::document) ()))
 
 (define-constant +document+ (make-instance 'document)
   :test (constantly t))
