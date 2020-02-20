@@ -11,11 +11,10 @@
 
 (defclass document (rune-dom::document) ())
 
-(defparameter *document* (make-instance 'document))
+(define-constant +document+ (make-instance 'document-constructor)
+  :test (constantly t))
 
 (defclass document-constructor (constructor) ())
-
-(defparameter document (make-instance 'document-constructor))
 
 (defun document (&optional child)
   (let ((document (rune-dom:create-document child)))
@@ -36,7 +35,7 @@
   (let ((data (first arguments)))
     (make-instance 'text
                    :data data
-                   :owner *document*)))
+                   :owner +document+)))
 
 
 
@@ -61,7 +60,7 @@
 (defmethod construct ((constructor element-constructor) &rest arguments)
   (let* ((element-class (constructor-element-class constructor))
          (element-tag-name (string-downcase (symbol-name element-class)))
-         (element (dom:create-element *document* element-tag-name)))
+         (element (dom:create-element +document+ element-tag-name)))
     (change-class element element-class)
     (multiple-value-bind (attributes children)
         (segment-attributes-children arguments)
@@ -141,7 +140,6 @@
 (define-element figure)
 (define-element hr)
 (define-element li)
-(define-element main)
 (define-element ol)
 (define-element p)
 (define-element pre)
