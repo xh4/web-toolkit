@@ -11,7 +11,7 @@
 
 (defclass document (rune-dom::document) ())
 
-(define-constant +document+ (make-instance 'document-constructor)
+(define-constant +document+ (make-instance 'document)
   :test (constantly t))
 
 (defclass document-constructor (constructor) ())
