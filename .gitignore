@@ -23,9 +23,6 @@ tramp
 /chrome
 /wt.chrome.asd
 
-/component
-/test/component
-/wt.component.asd
 /form
 /test/form
 /wt.form.asd

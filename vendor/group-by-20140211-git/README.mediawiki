@@ -1,0 +1,129 @@
+= group-by = 
+A Common Lisp library to help group data into trees (of various
+formats) based on common/shared values
+
+== API ==
+
+=== group-by ===
+
+groups the list into an alist using the key function and value function to group by key,
+with a list of all values for that key.
+
+''key'': is used to determine the key in the a-list <br />
+''value'': is used to determine the value in the a-list <br />
+''key-fn'': is passed as the :key to assoc (essentially the key of your key) <br />
+''test'': is passed as the :test to assoc <br />
+
+eg: (group-by '((a 1 2) (a 3 4) (b 5 6)))<br />
+=> ((A (1 2) (3 4)) (B (5 6)))<br />
+
+eg: (group-by '((a 1 2) (a 3 4) (b 5 6)) :value #'identity)<br />
+=> ((A (A 1 2) (A 3 4)) (B (B 5 6)))<br />
+
+=== make-grouped-list, grouped-list ===
+
+Given a list of input, produce a grouped-list CLOS object that contains
+the original list, configuration about the groupings and the result tree
+of grouped-list objects
+
+''keys'': a list of keys to group by<br />
+''tests'': a list of tests to compare the keys with<br />
+
+''grouping-implmentation'': What data structure should be used to perform the grouping<br />
+'':list, :hash-table''<br />
+The implementation doesnt change the output, but it does change
+the performance characteristics of the grouped-object (see:
+grouped-list-speed-tester for help deciding which to use)
+
+----
+
+<pre>
+For the following docs consider the grouped list (as from examples)
+
+grouped-list
+  russ
+    PROJ-A
+      (list of timeclock records)
+    PROJ-B
+      (list of timeclock records)
+    PROJ-C
+      (list of timeclock records)
+  bob
+    PROJ-A
+      (list of timeclock records)
+    PROJ-B
+      (list of timeclock records)
+    PROJ-C
+      (list of timeclock records)
+
+</pre>
+
+==== key-value ====
+
+Returns the key-value that this grouped-list represents
+
+nil for the root <br />
+the key we are grouping under otherwise  <br />
+
+EG: the &lt;gl russ&gt; node returns the string "russ"
+
+==== child-groupings ====
+
+Returns the direct child grouped-lists of the current grouped-list
+
+If called on the root grouped list, will return a list of (&lt;gl russ> &lt;gl bob>) <br />
+If called on the "russ" grouped list, will return a list of (&lt;gl PROJ-A> &lt;gl PROJ-B> &lt;gl PROJ-C>) <br />
+
+==== items-in-group ====
+
+Returns all the items in a grouped list. 
+
+''key-values'':If specified, return only items that match
+
+When called on the root (items-in-group gl) of a grouped-list returns all 
+of the items that list groups (leaf nodes of the tree).
+
+When called as (items-in-group gl "russ" :proj-a) returns the items under
+the key proj-A that are found under toplevel key "russ"
+
+=== group-by-repeated ===
+Sames as group-by, but groups on multiple keys and tests (into an alist tree)
+
+== Examples ==
+
+* The [https://github.com/bobbysmith007/group-by/blob/master/examples/examples.lisp#L1 examples file] contains some examples increasing in complexity 
+* [https://github.com/bobbysmith007/group-by/blob/master/tests/group-by.lisp#L83 The tests file also contains running examples]
+
+== Authors ==
+* [http://www.acceleration.net/ Acceleration.net] [http://www.acceleration.net/programming/donate-to-acceleration-net/ Donate]
+** [http://russ.unwashedmeme.com/blog Russ Tyndall]
+** [http://the.unwashedmeme.com/blog Nathan Bird]
+** [http://ryepup.unwashedmeme.com/blog Ryan Davis]
+
+<pre>
+;; Copyright (c) 2011 Russ Tyndall , Acceleration.net http://www.acceleration.net
+;; All rights reserved.
+;;
+;; Redistribution and use in source and binary forms, with or without
+;; modification, are permitted provided that the following conditions are
+;; met:
+;;
+;;  - Redistributions of source code must retain the above copyright
+;;    notice, this list of conditions and the following disclaimer.
+;;
+;;  - Redistributions in binary form must reproduce the above copyright
+;;    notice, this list of conditions and the following disclaimer in the
+;;    documentation and/or other materials provided with the distribution.
+;;
+;; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;; A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT
+;; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+;; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+;; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+;; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+;; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+;; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+</pre>
