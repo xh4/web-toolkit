@@ -12,6 +12,7 @@
           (process-response response request)
           response)))))
 
+;; TODO: add method related generic functions
 (defun check-request (uri method header content)
   (unless (find method *methods*)
     (error "Request method ~A not supported" method))
@@ -43,17 +44,16 @@
 
 (defun make-request (uri method header content)
   (let ((uri (process-request-uri uri)))
-    (let ((header (process-request-header header content)))
+    (let ((header (process-request-header header)))
       (unless (find-header-field "Host" header)
         (set-header-field header (header-field "Host" (uri-host uri))))
-      (let ((body (process-request-content content)))
-        (let ((request (make-instance 'request
-                                      :method method
-                                      :uri uri
-                                      :version "HTTP/1.1"
-                                      :header header
-                                      :body body)))
-          request)))))
+      (let ((request (make-instance 'request
+                                    :method method
+                                    :uri uri
+                                    :version "HTTP/1.1"
+                                    :header header)))
+        (process-request-content request content)
+        request))))
 
 (defun process-request-uri (uri)
   (unless (uri-host uri) (error "Missing host in URI ~S" uri))
@@ -61,7 +61,7 @@
     (string uri)
     (uri (uri-string uri))))
 
-(defun process-request-header (header content)
+(defun process-request-header (header)
   (let ((new-header (make-instance 'header)))
     ;; TODO: forbid user from setting some header fields
     (typecase header
@@ -72,8 +72,16 @@
                  do (set-header-field new-header (header-field name value))))))
     new-header))
 
-(defun process-request-content (content)
-  )
+;; TODO: process request content
+(defgeneric process-request-content (request content))
+
+(defmethod process-request-content (request (nothing null)))
+
+(defmethod process-request-content (request (object json:object))
+  (set-header-field request (header-field "Content-Type" "application/json"))
+  (setf (request-body request) (babel:string-to-octets (json:encode object)))
+  (set-header-field request (header-field "Content-Length"
+                                          (length (request-body request))))a)
 
 (defun process-response (response request)
   (when (find (request-method request) '(:head :put))
