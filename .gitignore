@@ -43,8 +43,6 @@ tramp
 /wt.style.asd
 /todomvc
 /wt.todomvc.asd
-/dom
-/wt.dom.asd
 
 /browser
 /babel.config.js
