@@ -9,11 +9,11 @@
            :append-child
            :element
            :element-class
-           :has-attributes-p
+           :has-attributes
            :get-attribute-names
            :get-attribute
            :set-attribute
            :remove-attribute
            :toggle-attribute
-           :has-attribute-p
+           :has-attribute
            :text))

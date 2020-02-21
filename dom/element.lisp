@@ -25,7 +25,7 @@
   (print-unreadable-object (object stream :type t :identity t)
     (princ (tag-name object) stream)))
 
-(defgeneric has-attributes-p (element)
+(defgeneric has-attributes (element)
   (:method ((element element))
     (not (null (attributes element)))))
 
@@ -60,7 +60,7 @@
   (:method ((element element) name &optional force)
     (error "TODO: implementation toggle-attribute")))
 
-(defgeneric has-attribute-p (element name)
+(defgeneric has-attribute (element name)
   (:method ((element element) name)
     (loop for (name0 . nil) in (attributes element)
        when (equal name0 name)
