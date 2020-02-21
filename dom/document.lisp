@@ -1,4 +1,4 @@
-(in-package :dom)
+(in-package :dom2)
 
 (defclass document (node
                     non-element-parent-node

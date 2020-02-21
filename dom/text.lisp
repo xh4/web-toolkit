@@ -1,4 +1,4 @@
-(in-package :dom)
+(in-package :dom2)
 
 (defclass character-data (node
                           non-document-type-child-node
