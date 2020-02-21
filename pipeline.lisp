@@ -163,9 +163,8 @@
          unless (wt-system-p dp)
          collect dp))))
 
-(defvar *systems* '(:wt.html :wt.json :wt.uri
-                    :wt.http :wt.websocket
-                    :wt.component))
+(defvar *systems* '(:wt.uri :wt.dom :wt.html :wt.json
+                    :wt.http :wt.websocket))
 
 (defun compile-system (system)
   (make-fresh-output)
