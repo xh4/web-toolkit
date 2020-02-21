@@ -8,6 +8,7 @@
                :alexandria
                :closer-mop
                :group-by)
+  :defsystem-depends-on (:wt.vendor)
   :serial t
   :components ((:module "component"
                         :serial t

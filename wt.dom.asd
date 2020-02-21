@@ -5,6 +5,7 @@
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
   :depends-on (:alexandria)
+  :defsystem-depends-on (:wt.vendor)
   :serial t
   :components ((:module "dom"
                         :serial t

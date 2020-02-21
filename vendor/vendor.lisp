@@ -9,13 +9,15 @@
                  (loop for dep in deps
                     do (let ((dep-name
                               (cond
-                                ;; (:VERSION "fare-utils" "1.0.0")
-                                ((consp dep)
+                                ;; (:version :fare-utils "1.0.0")
+                                ;; (:feature (:or :sbcl :ccl) :cl+ssl)
+                                ((listp dep)
                                  (case (car dep)
                                    (:version (second dep))
-                                   (otherwise (car (last dep)))))
+                                   (:feature (when (stringp (third dep))
+                                               (third dep))) ;; ignore (:require "...")
+                                   (t (error "Don't know how to handle dependency ~A" dep))))
                                 ((stringp dep) dep))))
-
                          (when (stringp dep-name)
                            (unless (search "wt." dep-name)
                              (pushnew dep-name all-deps :test 'string-equal))

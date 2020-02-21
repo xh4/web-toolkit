@@ -12,8 +12,7 @@
                :cl-cont
                :closer-mop
                :usocket
-               #+sbcl
-               :sb-introspect
+               (:feature :sbcl (:require :sb-introspect))
                :cl-base64)
   :defsystem-depends-on (:wt.vendor)
   :serial t

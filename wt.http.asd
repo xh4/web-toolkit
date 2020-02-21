@@ -16,14 +16,11 @@
                :cl-fad
                :trivial-backtrace
                :trivial-gray-streams
-               #-lispworks
-               :usocket
-               #-lispworks
-               :cl+ssl
+               (:feature (:or :sbcl :ccl) :usocket)
+               (:feature (:or :sbcl :ccl) :cl+ssl)
                :chunga
                :cl-cont
-               #+sbcl
-               :sb-introspect
+               (:feature :sbcl (:require :sb-introspect))
                :local-time)
   :defsystem-depends-on (:wt.vendor)
   :serial t
