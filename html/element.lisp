@@ -1,45 +1,22 @@
 (in-package :html)
 
-(defclass constructor () ())
-
-(defmethod print-object ((constructor constructor) stream)
-  (print-unreadable-object (constructor stream :type t)))
-
-(defgeneric construct (constructor &rest arguments))
-
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defclass document (rune-dom::document) ()))
-
-(define-constant +document+ (make-instance 'document)
-  :test (constantly t))
-
-(defclass document-constructor (constructor) ())
-
-(defun document (&optional child)
-  (let ((document (rune-dom:create-document child)))
-    (change-class document 'document)))
-
-
-
-(defclass text (rune-dom::text) ())
-
-(defclass text-constructor (constructor) ())
-
-(defparameter text (make-instance 'text-constructor))
-
-(defun text (&optional data)
-  (construct text data))
-
-(defmethod construct ((constructor text-constructor) &rest arguments)
-  (let ((data (first arguments)))
-    (make-instance 'text
-                   :data data
-                   :owner +document+)))
-
-
-
-(defclass element (rune-dom::element) ())
+(defclass element (dom:element)
+  ((title
+    :initarg :title
+    :initform nil
+    :accessor element-title)
+   (lang
+    :initarg :lang
+    :initform nil
+    :accessor element-lang)
+   (translate
+    :initarg :translate
+    :initform nil
+    :accessor element-translate)
+   (dir
+    :initarg :dir
+    :initform nil
+    :accessor element-dir)))
 
 (defmethod print-object ((element element) stream)
   (print-unreadable-object (element stream :type t :identity t)))
@@ -60,19 +37,18 @@
 (defmethod construct ((constructor element-constructor) &rest arguments)
   (let* ((element-class (constructor-element-class constructor))
          (element-tag-name (string-downcase (symbol-name element-class)))
-         (element (dom:create-element +document+ element-tag-name)))
-    (change-class element element-class)
+         (element (make-instance element-class :tag-name element-tag-name)))
     (multiple-value-bind (attributes children)
         (segment-attributes-children arguments)
       (loop for (_name _value) on attributes by #'cddr
          for name = (string-downcase (symbol-name _name))
          for value = (if (eq _value t)
-                       ""
-                       (typecase _value
-                         (null nil)
-                         (string _value)
-                         (list (format nil "~{~A~^ ~}" _value))
-                         (t (format nil "~A" _value))))
+                         ""
+                         (typecase _value
+                           (null nil)
+                           (string _value)
+                           (list (format nil "~{~A~^ ~}" _value))
+                           (t (format nil "~A" _value))))
          when value
          do (dom:set-attribute element name value))
       (loop for child in (flatten children)
