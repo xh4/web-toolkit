@@ -9,7 +9,11 @@
   :components ((:module "dom"
                         :serial t
                         :components ((:file "package")
-                                     )))
+                                     (:file "mixin")
+                                     (:file "node")
+                                     (:file "document")
+                                     (:file "element")
+                                     (:file "text"))))
   :in-order-to ((test-op (test-op :wt.dom/test))))
 
 (defsystem wt.dom/test
