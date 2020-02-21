@@ -1,4 +1,4 @@
-(in-package :dom2)
+(in-package :dom)
 
 (defclass attribute (node)
   ((name        :initarg :name          :reader name)

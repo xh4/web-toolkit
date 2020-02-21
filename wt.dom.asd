@@ -4,7 +4,7 @@
   :version "0.0.0"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
-  :depends-on ()
+  :depends-on (:alexandria)
   :serial t
   :components ((:module "dom"
                         :serial t
@@ -24,6 +24,6 @@
                         :components ((:module "dom"
                                               :serial t
                                               :components ((:file "package")
-                                                           )))))
+                                                           (:file "element"))))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :dom-test)))

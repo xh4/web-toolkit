@@ -1,4 +1,4 @@
-(in-package :dom2)
+(in-package :dom)
 
 (defclass node ()
   ((parent
@@ -44,7 +44,10 @@
 
 (defgeneric insert-before (node child))
 
-(defgeneric append-child (node))
+(defgeneric append-child (node child)
+  (:method ((node node) child)
+    (with-slots (children) node
+      (appendf children (list child)))))
 
 (defgeneric replace-child (node child))
 

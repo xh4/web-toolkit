@@ -1,14 +1,12 @@
-(in-package :dom2)
+(in-package :dom)
 
 (defclass character-data (node
                           non-document-type-child-node
                           child-node)
-  ((value
+  ((data
     :initarg :data
+    :initform nil
     :reader data)))
 
 (defclass text (character-data)
-  ())
-
-(defclass comment (character-data)
   ())

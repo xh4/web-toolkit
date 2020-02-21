@@ -1,8 +1,19 @@
 (in-package :cl-user)
 
-(defpackage :dom2
+(defpackage :dom
   (:nicknames :wt.dom)
-  (:use :cl)
+  (:use :cl :alexandria)
   (:shadow :length :append :remove)
-  (:export
-   ))
+  (:export :document
+           :node
+           :append-child
+           :element
+           :element-class
+           :has-attributes-p
+           :get-attribute-names
+           :get-attribute
+           :set-attribute
+           :remove-attribute
+           :toggle-attribute
+           :has-attribute-p
+           :text))
