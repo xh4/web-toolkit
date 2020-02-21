@@ -33,18 +33,20 @@
      do (return (list (subseq line 0 index) (subseq line (1+ index) (length line))))))
 
 (defun read-vendor-file ()
-  (with-open-file (stream (merge-pathnames
-                           "vendor.txt"
-                           (asdf:system-source-directory
-                            (asdf:find-system "wt"))))
-    (loop for line = (read-line stream nil nil)
-       while line
-       for (system path) = (parse-vendor-line line)
-       when (and system path)
-       collect (list system (merge-pathnames
-                             (format nil "vendor/~A" path)
-                             (asdf:system-source-directory
-                              (asdf:find-system "wt")))))))
+  (let ((vendor.txt (merge-pathnames
+                     "vendor.txt"
+                     (asdf:system-source-directory
+                      (asdf:find-system "wt")))))
+    (when (probe-file vendor.txt)
+      (with-open-file (stream vendor.txt)
+        (loop for line = (read-line stream nil nil)
+           while line
+           for (system path) = (parse-vendor-line line)
+           when (and system path)
+           collect (list system (merge-pathnames
+                                 (format nil "vendor/~A" path)
+                                 (asdf:system-source-directory
+                                  (asdf:find-system "wt")))))))))
 
 (defun register ()
   (loop for (name pathname) in (read-vendor-file)
