@@ -29,4 +29,6 @@
            :create-node-iterator
            :node-iterator
            :next-node
-           :previous-node))
+           :previous-node
+           :tree-walker
+           :current-node))
