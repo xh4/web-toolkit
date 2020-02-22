@@ -5,6 +5,7 @@
   (:use :cl :alexandria)
   (:export :define-endpoint
            :define-session
+           :session-class
            :session-opening-uri
            :session-opening-header
            :session-open-p
