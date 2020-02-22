@@ -6,7 +6,16 @@
   (:shadow :length :append :remove)
   (:export :document
            :node
+           :root
            :append-child
+           :first-child
+           :last-child
+           :sibling
+           :index
+           :previous-sibling
+           :next-sibling
+           :preceding
+           :following
            :element
            :element-class
            :has-attributes
@@ -16,4 +25,8 @@
            :remove-attribute
            :toggle-attribute
            :has-attribute
-           :text))
+           :text
+           :create-node-iterator
+           :node-iterator
+           :next-node
+           :previous-node))

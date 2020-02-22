@@ -2,7 +2,8 @@
 
 (defpackage :dom-test
   (:nicknames :wt.dom-test)
-  (:use :cl :dom :test)
+  (:use :cl :alexandria :dom :test :utility)
+  (:shadow :node)
   (:export :run!))
 
 (in-package :dom-test)

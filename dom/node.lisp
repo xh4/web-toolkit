@@ -22,13 +22,57 @@
 
 (defgeneric child-nodes (node))
 
-(defgeneric first-child (node))
+(defmethod root ((node node))
+  (if-let ((parent (parent node)))
+    (root parent)
+    node))
 
-(defgeneric last-child (node))
+(defmethod first-child ((node node))
+  (first (children node)))
 
-(defgeneric previous-sibling (node))
+(defmethod last-child ((node node))
+  (car (last (children node))))
 
-(defgeneric next-sibling (node))
+(defmethod sibling ((node node))
+  (when-let ((parent (parent node)))
+    (cl:remove node (children parent))))
+
+(defmethod index ((node node))
+  (if-let ((parent (parent node)))
+    (or (position node (children parent)) 0)
+    0))
+
+(defmethod previous-sibling ((node node))
+  (when-let ((parent (parent node)))
+    (let ((index (index node)))
+      (if (> index 0)
+          (nth (1- index) (children parent))))))
+
+(defmethod next-sibling ((node node))
+  (when-let ((parent (parent node)))
+    (let ((index (index node)))
+      (if (< index (1- (cl:length (children parent))))
+          (nth (1+ index) (children parent))))))
+
+(defmethod preceding ((node node))
+  (let ((index (index node)))
+    (labels ((down (node)
+               (if-let ((last-child (last-child node)))
+                 (down last-child)
+                 node)))
+      (if (= index 0)
+          (parent node)
+          (down (previous-sibling node))))))
+
+(defmethod following ((node node))
+  (labels ((up (node)
+              (if-let ((parent (parent node)))
+                (or (next-sibling parent)
+                    (up parent)))))
+    (if (children node)
+        (first (children node))
+        (or (next-sibling node)
+            (up node)))))
 
 (defgeneric node-value (node))
 
@@ -47,7 +91,8 @@
 (defgeneric append-child (node child)
   (:method ((node node) child)
     (with-slots (children) node
-      (appendf children (list child)))))
+      (appendf children (list child))
+      (setf (parent child) node))))
 
 (defgeneric replace-child (node child))
 

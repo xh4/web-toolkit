@@ -5,13 +5,13 @@
 (test attributes
   (it
     (let ((el (make-instance 'element :tag-name "p")))
-      (is-false (has-attributes-p el))))
+      (is-false (has-attributes el))))
 
   (it
     (let ((el (make-instance 'element :tag-name "p")))
       (set-attribute el "foo" "bar")
-      (is-true (has-attributes-p el))
-      (is-true (has-attribute-p el "foo"))
+      (is-true (has-attributes el))
+      (is-true (has-attribute el "foo"))
       (is (equal "bar" (get-attribute el "foo")))
       (is (equal '("foo") (get-attribute-names el)))))
 
@@ -28,16 +28,16 @@
       (set-attribute el "foo" "bar")
       (set-attribute el "goo" "gle")
       (remove-attribute el "foo")
-      (is-false (has-attribute-p el "foo"))
+      (is-false (has-attribute el "foo"))
       (remove-attribute el "goo")
-      (is-false (has-attributes-p el))))
+      (is-false (has-attributes el))))
 
   (it
     (let ((el (make-instance 'element :tag-name "p")))
       (set-attribute el "foo" "bar1")
       (set-attribute el "foo" "bar2")
-      (is-true (has-attribute-p el "foo"))
+      (is-true (has-attribute el "foo"))
       (is (equal "bar2" (get-attribute el "foo")))
       (remove-attribute el "foo")
-      (is-false (has-attribute-p el "foo"))
-      (is-false (has-attributes-p el)))))
+      (is-false (has-attribute el "foo"))
+      (is-false (has-attributes el)))))
