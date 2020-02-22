@@ -2,10 +2,8 @@
 
 (defpackage :test
   (:nicknames :wt.test)
-  (:use :cl :fiveam)
-  (:export :walk-tree
-           :map-tree
-           :def-suite
+  (:use :cl :fiveam :utility)
+  (:export :def-suite
            :in-suite
            :test
            :is :is-true

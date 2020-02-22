@@ -6,13 +6,13 @@
   :mailto "xh@coobii.com"
   :depends-on (:wt.http
                :wt.uri
+               :wt.utility
                :alexandria
                :ironclad
                :bordeaux-threads
                :cl-cont
                :closer-mop
                :usocket
-               (:feature :sbcl (:require :sb-introspect))
                :cl-base64)
   :defsystem-depends-on (:wt.vendor)
   :serial t
@@ -33,6 +33,7 @@
   :depends-on (:wt.websocket
                :wt.json
                :wt.test
+               :wt.utility
                :cl-ppcre
                :split-sequence
                :cl-fad

@@ -7,6 +7,7 @@
   :depends-on (:wt.uri
                :wt.json
                :wt.html
+               :wt.utility
                :alexandria
                :closer-mop
                :babel
@@ -20,7 +21,6 @@
                (:feature (:or :sbcl :ccl) :cl+ssl)
                :chunga
                :cl-cont
-               (:feature :sbcl (:require :sb-introspect))
                :local-time)
   :defsystem-depends-on (:wt.vendor)
   :serial t

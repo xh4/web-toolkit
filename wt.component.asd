@@ -5,6 +5,7 @@
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
   :depends-on (:wt.html
+               :wt.utility
                :alexandria
                :closer-mop
                :group-by)
