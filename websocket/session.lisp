@@ -1,14 +1,38 @@
 (in-package :websocket)
 
 (defclass session-class (standard-class)
-  ((message-handler
+  ((open-handler
+    :initarg :open-handler
+    :initform nil
+    :accessor open-handler)
+   (open-handler-lambda-list
+    :initarg :open-handler-lambda-list
+    :initform nil
+    :accessor open-handler-lambda-list)
+   (close-handler
+    :initarg :close-handler
+    :initform nil
+    :accessor close-handler)
+   (close-handler-lambda-list
+    :initarg :close-handler-lambda-list
+    :initform nil
+    :accessor close-handler-lambda-list)
+   (error-handler
+    :initarg :error-handler
+    :initform nil
+    :accessor error-handler)
+   (error-handler-lambda-list
+    :initarg :error-handler-lambda-list
+    :initform nil
+    :accessor error-handler-lambda-list)
+   (message-handler
     :initarg :message-handler
     :initform nil
-    :accessor session-message-handler)
+    :accessor message-handler)
    (message-handler-lambda-list
     :initarg :message-handler-lambda-list
     :initform nil
-    :accessor session-message-handler-lambda-list)))
+    :accessor message-handler-lambda-list)))
 
 (defmethod validate-superclass ((class session-class) (super-class standard-class))
   t)
@@ -32,9 +56,27 @@
                                       &rest args
                                       &key name direct-slots direct-superclasses location
                                         extra-initargs direct-default-initargs documentation
-                                        on-message
+                                        on-open on-close on-error on-message
                                         &allow-other-keys)
   (declare (ignore slot-names))
+  (when on-open
+    (let* ((handler (eval (car on-open)))
+           (handler-lambda-list (function-lambda-list handler)))
+      (check-open-handler-lambda-list handler-lambda-list)
+      (setf (slot-value class 'open-handler) handler
+            (slot-value class 'open-handler-lambda-list) handler-lambda-list)))
+  (when on-close
+    (let* ((handler (eval (car on-close)))
+           (handler-lambda-list (function-lambda-list handler)))
+      (check-close-handler-lambda-list handler-lambda-list)
+      (setf (slot-value class 'close-handler) handler
+            (slot-value class 'close-handler-lambda-list) handler-lambda-list)))
+  (when on-error
+    (let* ((handler (eval (car on-error)))
+           (handler-lambda-list (function-lambda-list handler)))
+      (check-error-handler-lambda-list handler-lambda-list)
+      (setf (slot-value class 'error-handler) handler
+            (slot-value class 'error-handler-lambda-list) handler-lambda-list)))
   (when on-message
     (let* ((handler (eval (car on-message)))
            (handler-lambda-list (function-lambda-list handler)))
@@ -92,7 +134,8 @@
   (let* ((superclasses (if (find 'session superclasses)
                            superclasses
                            (append superclasses (list 'session)))))
-    (rewrite-class-option options :metaclass session-class)
+    (unless (find :metaclass options :key 'first)
+      (rewrite-class-option options :metaclass session-class))
     `(progn
        (eval-when (:compile-toplevel :load-toplevel :execute)
          (defclass ,session-name ,superclasses
@@ -100,3 +143,43 @@
            ,@options))
        (eval-when (:load-toplevel :execute)
          (find-class ',session-name)))))
+
+(defmethod open-handler ((session session))
+  (open-handler (class-of session)))
+
+(defmethod open-handler (session))
+
+(defmethod open-handler-lambda-list ((session session))
+  (open-handler-lambda-list (class-of session)))
+
+(defmethod open-handler-lambda-list (session))
+
+(defmethod close-handler ((session session))
+  (close-handler (class-of session)))
+
+(defmethod close-handler (session))
+
+(defmethod close-handler-lambda-list ((session session))
+  (close-handler-lambda-list (class-of session)))
+
+(defmethod close-handler-lambda-list (session))
+
+(defmethod error-handler ((session session))
+  (error-handler (class-of session)))
+
+(defmethod error-handler (session))
+
+(defmethod error-handler-lambda-list ((session session))
+  (error-handler-lambda-list (class-of session)))
+
+(defmethod error-handler-lambda-list (session))
+
+(defmethod message-handler ((session session))
+  (message-handler (class-of session)))
+
+(defmethod message-handler (session))
+
+(defmethod message-handler-lambda-list ((session session))
+  (message-handler-lambda-list (class-of session)))
+
+(defmethod message-handler-lambda-list (session))

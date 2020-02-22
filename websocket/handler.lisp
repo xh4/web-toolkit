@@ -39,9 +39,9 @@
 (define-handler-lambda-list-checker open-handler
     :max-length 2)
 
-(defun invoke-open-handler/1 (endpoint-class endpoint session)
-  (when-let ((open-handler (endpoint-open-handler endpoint-class))
-             (open-handler-lambda-list (endpoint-open-handler-lambda-list endpoint-class)))
+(defun invoke-open-handler/1 (class endpoint session)
+  (when-let ((open-handler (open-handler class))
+             (open-handler-lambda-list (open-handler-lambda-list class)))
     (let ((lambda-list-groups (multiple-value-list
                                (parse-ordinary-lambda-list
                                 open-handler-lambda-list))))
@@ -58,15 +58,19 @@
   (let ((endpoint-classes (reverse
                            (compute-endpoint-class-precedence-list endpoint))))
     (loop for endpoint-class in endpoint-classes
-       do (invoke-open-handler/1 endpoint-class endpoint session))))
+       do (invoke-open-handler/1 endpoint-class endpoint session)))
+  (let ((session-classes (reverse
+                          (compute-session-class-precedence-list session))))
+    (loop for session-class in session-classes
+       do (invoke-open-handler/1 session-class endpoint session))))
 
 (define-handler-lambda-list-checker close-handler
     :max-length 2
     :allowed-keys '(:code :reason))
 
-(defun invoke-close-handler/1 (endpoint-class endpoint session code reason)
-  (when-let ((close-handler (endpoint-close-handler endpoint-class))
-             (close-handler-lambda-list (endpoint-close-handler-lambda-list endpoint-class)))
+(defun invoke-close-handler/1 (class endpoint session code reason)
+  (when-let ((close-handler (close-handler class))
+             (close-handler-lambda-list (close-handler-lambda-list class)))
     (let ((lambda-list-groups (multiple-value-list
                                (parse-ordinary-lambda-list
                                 close-handler-lambda-list))))
@@ -87,6 +91,10 @@
               (apply close-handler arguments))))))))
 
 (defun invoke-close-handler (endpoint session code reason)
+  (let ((session-classes (reverse
+                          (compute-session-class-precedence-list endpoint))))
+    (loop for session-class in session-classes
+       do (invoke-close-handler/1 session-class endpoint session code reason)))
   (let ((endpoint-classes (reverse
                            (compute-endpoint-class-precedence-list endpoint))))
     (loop for endpoint-class in endpoint-classes
@@ -95,9 +103,9 @@
 (define-handler-lambda-list-checker error-handler
     :max-length 3)
 
-(defun invoke-error-handler/1 (endpoint-class endpoint session error)
-  (when-let ((error-handler (endpoint-error-handler endpoint-class))
-             (error-handler-lambda-list (endpoint-error-handler-lambda-list endpoint-class)))
+(defun invoke-error-handler/1 (class endpoint session error)
+  (when-let ((error-handler (error-handler class))
+             (error-handler-lambda-list (error-handler-lambda-list class)))
     (let ((lambda-list-groups (multiple-value-list
                                (parse-ordinary-lambda-list
                                 error-handler-lambda-list))))
@@ -110,6 +118,7 @@
             ((= 2 (length required-parameters)) (funcall error-handler session error))
             ((= 3 (length required-parameters)) (funcall error-handler endpoint session error))))))))
 
+;; 处理 error-handler 的调用顺序问题
 (defun invoke-error-handler (endpoint session error)
   (let ((endpoint-classes (reverse
                            (compute-endpoint-class-precedence-list endpoint))))
@@ -119,9 +128,9 @@
 (define-handler-lambda-list-checker message-handler
     :max-length 2)
 
-(defun invoke-message-handler/1 (endpoint session-class session message)
-  (when-let ((message-handler (session-message-handler session-class))
-             (message-handler-lambda-list (session-message-handler-lambda-list session-class)))
+(defun invoke-message-handler/1 (class endpoint session message)
+  (when-let ((message-handler (message-handler class))
+             (message-handler-lambda-list (message-handler-lambda-list class)))
     (let ((lambda-list-groups (multiple-value-list
                                (parse-ordinary-lambda-list
                                 message-handler-lambda-list))))
@@ -135,7 +144,11 @@
               ((= 2 (length required-parameters)) (funcall message-handler session message)))))))))
 
 (defun invoke-message-handler (endpoint session message)
+  (let ((endpoint-classes (reverse
+                          (compute-endpoint-class-precedence-list session))))
+    (loop for endpoint-class in endpoint-classes
+       do (invoke-message-handler/1 endpoint-class endpoint session message)))
   (let ((session-classes (reverse
                           (compute-session-class-precedence-list session))))
     (loop for session-class in session-classes
-       do (invoke-message-handler/1 endpoint session-class session message))))
+       do (invoke-message-handler/1 session-class endpoint session message))))

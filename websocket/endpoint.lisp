@@ -8,27 +8,35 @@
    (open-handler
     :initarg :open-handler
     :initform nil
-    :accessor endpoint-open-handler)
+    :accessor open-handler)
    (open-handler-lambda-list
     :initarg :open-handler-lambda-list
     :initform nil
-    :accessor endpoint-open-handler-lambda-list)
+    :accessor open-handler-lambda-list)
    (close-handler
     :initarg :close-handler
     :initform nil
-    :accessor endpoint-close-handler)
+    :accessor close-handler)
    (close-handler-lambda-list
     :initarg :close-handler-lambda-list
     :initform nil
-    :accessor endpoint-close-handler-lambda-list)
+    :accessor close-handler-lambda-list)
    (error-handler
     :initarg :error-handler
     :initform nil
-    :accessor endpoint-error-handler)
+    :accessor error-handler)
    (error-handler-lambda-list
     :initarg :error-handler-lambda-list
     :initform nil
-    :accessor endpoint-error-handler-lambda-list)))
+    :accessor error-handler-lambda-list)
+   (message-handler
+    :initarg :message-handler
+    :initform nil
+    :accessor message-handler)
+   (message-handler-lambda-list
+    :initarg :message-handler-lambda-list
+    :initform nil
+    :accessor message-handler-lambda-list)))
 
 (defmethod validate-superclass ((class endpoint-class) (super-class standard-class))
   t)
@@ -37,11 +45,12 @@
   ()
   (:metaclass endpoint-class))
 
+;; TODO: signal error when unknown class options passed
 (defmethod shared-initialize :around ((class endpoint-class) slot-names
                                       &rest args
                                       &key name direct-slots direct-superclasses location
                                         extra-initargs direct-default-initargs documentation
-                                        on-open on-close on-error session-class function
+                                        on-open on-close on-error on-message session-class function
                                         &allow-other-keys)
   (declare (ignore slot-names))
   ;; (format t "Shared-initialize :around (endpoint-class): ~A~%" args)
@@ -63,6 +72,12 @@
       (check-error-handler-lambda-list handler-lambda-list)
       (setf (slot-value class 'error-handler) handler
             (slot-value class 'error-handler-lambda-list) handler-lambda-list)))
+  (when on-message
+    (let* ((handler (eval (car on-message)))
+           (handler-lambda-list (function-lambda-list handler)))
+      (check-message-handler-lambda-list handler-lambda-list)
+      (setf (slot-value class 'message-handler) handler
+            (slot-value class 'message-handler-lambda-list) handler-lambda-list)))
   (when session-class
     (setf (slot-value class 'session-class) (eval (car session-class))))
   (if (getf args :name)
@@ -109,32 +124,42 @@
 (defmethod endpoint-session-class (endpoint)
   'session)
 
-(defmethod endpoint-open-handler ((endpoint endpoint))
-  (endpoint-open-handler (class-of endpoint)))
+(defmethod open-handler ((endpoint endpoint))
+  (open-handler (class-of endpoint)))
 
-(defmethod endpoint-open-handler (endpoint))
+(defmethod open-handler (endpoint))
 
-(defmethod endpoint-open-handler-lambda-list ((endpoint endpoint))
-  (endpoint-open-handler-lambda-list (class-of endpoint)))
+(defmethod open-handler-lambda-list ((endpoint endpoint))
+  (open-handler-lambda-list (class-of endpoint)))
 
-(defmethod endpoint-open-handler--lambda-list (endpoint))
+(defmethod open-handler-lambda-list (endpoint))
 
-(defmethod endpoint-close-handler ((endpoint endpoint))
-  (endpoint-close-handler (class-of endpoint)))
+(defmethod close-handler ((endpoint endpoint))
+  (close-handler (class-of endpoint)))
 
-(defmethod endpoint-close-handler (endpoint))
+(defmethod close-handler (endpoint))
 
-(defmethod endpoint-close-handler-lambda-list ((endpoint endpoint))
-  (endpoint-close-handler-lambda-list (class-of endpoint)))
+(defmethod close-handler-lambda-list ((endpoint endpoint))
+  (close-handler-lambda-list (class-of endpoint)))
 
-(defmethod endpoint-close-handler-lambda-list (endpoint))
+(defmethod close-handler-lambda-list (endpoint))
 
-(defmethod endpoint-error-handler ((endpoint endpoint))
-  (endpoint-error-handler (class-of endpoint)))
+(defmethod error-handler ((endpoint endpoint))
+  (error-handler (class-of endpoint)))
 
-(defmethod endpoint-error-handler (endpoint))
+(defmethod error-handler (endpoint))
 
-(defmethod endpoint-error-handler-lambda-list ((endpoint endpoint))
-  (endpoint-error-handler-lambda-list (class-of endpoint)))
+(defmethod error-handler-lambda-list ((endpoint endpoint))
+  (error-handler-lambda-list (class-of endpoint)))
 
-(defmethod endpoint-error-handler-lambda-list (endpoint))
+(defmethod error-handler-lambda-list (endpoint))
+
+(defmethod message-handler ((endpoint endpoint))
+  (message-handler (class-of endpoint)))
+
+(defmethod message-handler (endpoint))
+
+(defmethod message-handler-lambda-list ((endpoint endpoint))
+  (message-handler-lambda-list (class-of endpoint)))
+
+(defmethod message-handler-lambda-list (endpoint))
