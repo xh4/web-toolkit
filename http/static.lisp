@@ -89,7 +89,9 @@
   (let ((matcher (lambda (request)
                    (and (or (eq (request-method request) :get)
                             (equal (request-method request) "GET"))
-                        (path-prefix-p prefix (uri-path (request-uri request))))))
+                        (and (path-prefix-p prefix (uri-path (request-uri request)))
+                             (let ((pathname (resolve-path prefix root (uri-path (request-uri request)))))
+                               (probe-file pathname))))))
         (handler (make-instance 'static-handler
                                 :prefix prefix
                                 :root root)))
