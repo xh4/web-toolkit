@@ -47,7 +47,7 @@
     (error "Expect even arguments when initialize object, got ~D" (length arguments)))
   (let* ((object (make-instance 'object))
          (pairs (slot-value object 'pairs)))
-    (loop for (name0 value0) on arguments by 'cddr
+    (loop for (name0 value0) on arguments by #'cddr
        for name = (typecase name0
                     (string name0)
                     (symbol (lisp-name-to-object-key name0))
