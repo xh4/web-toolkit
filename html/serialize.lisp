@@ -92,7 +92,8 @@
   (declare (ignore document))
   (write-string "<!DOCTYPE html>" stream))
 
-(defun serialize (root &optional (stream *standard-output*))
+(defun serialize (root &optional (stream *standard-output* stream-present-p))
+  (unless stream-present-p (setf stream (make-string-output-stream)))
   (handler-bind
       ((event
         (lambda (event)
@@ -105,4 +106,6 @@
               (:leave (unless (typep node 'void-element)
                         (typecase node
                           (element (write-element-end-tag node stream))))))))))
-    (traverse root)))
+    (traverse root))
+  (unless stream-present-p
+    (get-output-stream-string stream)))
