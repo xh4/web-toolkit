@@ -94,9 +94,6 @@
 (defun write-request-header (stream header)
   (write-header stream header))
 
-(defun write-request-body (stream body)
-  (write-sequence body stream))
-
 (defun read-request-body (stream request)
   (let ((request-header (request-header request)))
     (let ((content-length (header-field-value
