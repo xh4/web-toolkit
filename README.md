@@ -15,19 +15,22 @@ TODO: Write some introduction here
 ### Systems
 
 #### HTTP
-WT.HTTP provides HTTP construct as is defined in [RFC 7231 Hypertext Transfer Protocol (HTTP/1.1)](https://www.ietf.org/rfc/rfc7231.txt), together with implementation of server and client.
+WT.HTTP provides HTTP functionality as is defined in [RFC 7231 Hypertext Transfer Protocol (HTTP/1.1)](https://www.ietf.org/rfc/rfc7231.txt), together with implementation of server and client.
 
 #### WebSocket
 WT.WEBSOCKET provides WebSocket functionality with interfaces inspired by [JSR 356, Java API for WebSocket](https://www.oracle.com/technetwork/articles/java/jsr356-1937161.html). The system is tested against the [Autobahn WebSocket Testsuite](https://github.com/crossbario/autobahn-testsuite).
 
 #### HTML
-WT.HTML implements HTML parser, serializer and constructors.
+WT.HTML implements HTML constructor and serializer based on recent version of [HTML Living Standard](https://html.spec.whatwg.org/multipage/).
 
 #### JSON
-WT.JSON is based on [CL-JSON](https://common-lisp.net/project/cl-json/cl-json.html).
+WT.JSON implements JSON encoder and decoder based on [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html).
 
 #### URI
 WT.URI provides URI parser and constructor, with support of UTF-8 characters, IPv6 addresses and query parameters handling. It utilize recursive descent [parser combinators](https://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf) to provide a concise implementation that is close to the definition in [RFC 3986 Uniform Resource Identifier (URI): Generic Syntax](https://tools.ietf.org/html/rfc3986).
+
+#### DOM
+WT.DOM implements Document Object Model (DOM) based on recent version of [DOM Living Standard](https://dom.spec.whatwg.org/), it covers [Nodes](https://dom.spec.whatwg.org/#nodes) and [Traversal](https://dom.spec.whatwg.org/#traversal).
 
 ### Roadmap
 
@@ -53,7 +56,7 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Implement common handlers
   * Implement virtual host
   * <s>(Client) Support HTTPS</s>
-  * (Client) Support decompression
+  * (Client) Support compression and decompression
   * (Client) Support HTTP Proxy
   * (Client) Support SOCKS Proxy
   * (Client) Support Basic Auth
@@ -70,14 +73,20 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
   * Test against [Web Platform Tests](https://github.com/web-platform-tests/wpt)
 * HTML
   * Implement parser
-  * Implement pretty print
+  * Implement pretty print(?)
   * Refine element constractor error report
-  * Implement DOM, abandon CXML's DOM implementation
+  * <s>Implement DOM, abandon CXML's DOM implementation</s>
   * Test against [Web Platform Tests](https://github.com/web-platform-tests/wpt)
 * JSON
   * Test against [JSONTestSuite](https://github.com/nst/JSONTestSuite)
   * Implement accessors for object
   * Implement identical transformation for JSON values (null, false, [])
+* DOM
+  * Implement namespace
+  * Implement XPath
+* Component (Implement [Web Components](https://developer.mozilla.org/en-US/docs/Web/Web_Components))
+* Style (Implement CSS parser, generator and validator etc.)
+
 
 ### Author
 [Xiangyu He](https://xh.coobii.com) <[xh@coobii.com](mailto:xh@coobii.com)>
