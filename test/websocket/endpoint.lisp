@@ -16,5 +16,5 @@
 
 (test define-endpoint-with-handlers
   (define-endpoint foo-endpoint () () (:on-open (lambda (session))))
-  (is (functionp (ws::endpoint-open-handler foo-endpoint)))
-  (is (equal 1 (length (ws::endpoint-open-handler-lambda-list foo-endpoint)))))
+  (is (functionp (ws::open-handler foo-endpoint)))
+  (is (equal 1 (length (ws::open-handler-lambda-list foo-endpoint)))))
