@@ -3,7 +3,7 @@
 (defpackage :html
   (:nicknames :wt.html)
   (:use :cl :alexandria)
-  (:shadow :time :map)
+  (:shadow :time :map :write-char :write-string)
   (:export :document
            :document-title
            :document-body
