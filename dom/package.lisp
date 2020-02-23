@@ -7,6 +7,8 @@
   (:export :document
            :node
            :root
+           :parent
+           :children
            :append-child
            :first-child
            :last-child
@@ -17,6 +19,7 @@
            :preceding
            :following
            :element
+           :tag-name
            :element-class
            :has-attributes
            :get-attribute-names
@@ -26,6 +29,7 @@
            :toggle-attribute
            :has-attribute
            :text
+           :data
            :create-node-iterator
            :node-iterator
            :next-node
