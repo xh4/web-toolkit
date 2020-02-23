@@ -16,12 +16,8 @@
 
   (let ((el (p :class nil)))
     (is (equal nil (dom:get-attribute el "class")))
-    (is-false (dom:has-attribute-p el "class")))
+    (is-false (dom:has-attribute el "class")))
 
   (let ((el (p :class t)))
     (is (equal "" (dom:get-attribute el "class")))
-    (is-true (dom:has-attribute-p el "class"))))
-
-(test children
-  (let ((el (p (h1) (h2) (h3))))
-    ))
+    (is-true (dom:has-attribute el "class"))))
