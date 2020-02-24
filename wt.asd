@@ -11,7 +11,6 @@
                :wt.json
                :wt.http
                :wt.websocket)
-  :serial t
   :in-order-to ((test-op (test-op :wt/test))))
 
 (defsystem wt/test
@@ -22,7 +21,6 @@
                :wt.json/test
                :wt.http/test
                :wt.websocket/test)
-  :serial t
   :perform (test-op (o s)
                     (uiop:eval-input "(setf test:*on-error* :debug)")
                     (uiop:eval-input "(setf test:*on-failure* :debug)")

@@ -3,7 +3,6 @@
 (defsystem wt.utility
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
-  :serial t
   :depends-on (:alexandria
                :cl-cont
                (:feature :sbcl (:require :sb-introspect)))
