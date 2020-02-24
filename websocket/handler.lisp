@@ -92,7 +92,7 @@
 
 (defun invoke-close-handler (endpoint session code reason)
   (let ((session-classes (reverse
-                          (compute-session-class-precedence-list endpoint))))
+                          (compute-session-class-precedence-list session))))
     (loop for session-class in session-classes
        do (invoke-close-handler/1 session-class endpoint session code reason)))
   (let ((endpoint-classes (reverse
@@ -145,7 +145,7 @@
 
 (defun invoke-message-handler (endpoint session message)
   (let ((endpoint-classes (reverse
-                          (compute-endpoint-class-precedence-list session))))
+                           (compute-endpoint-class-precedence-list endpoint))))
     (loop for endpoint-class in endpoint-classes
        do (invoke-message-handler/1 endpoint-class endpoint session message)))
   (let ((session-classes (reverse
