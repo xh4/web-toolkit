@@ -33,6 +33,8 @@
 
 (defclass normal-element (element) ())
 
+(defclass custom-element (element) ())
+
 (defclass element-constructor (constructor)
   ((element-class
     :initarg :element-class
@@ -85,9 +87,7 @@
          (defclass ,element-symbol ,superclasses ())
 
          (defun ,element-symbol (&rest arguments)
-           (apply 'construct ,element-symbol arguments))
-
-         (export ',element-symbol)))))
+           (apply 'construct ,element-symbol arguments))))))
 
 ;; Main root
 (define-element html ())
@@ -158,12 +158,12 @@
 (define-element ruby ())
 (define-element s ())
 (define-element samp ())
-(define-element smail ())
+(define-element small ())
 (define-element span ())
 (define-element strong ())
 (define-element sub ())
 (define-element sup ())
-(define-element time ())
+;; (define-element time ())
 (define-element u ())
 (define-element var ())
 (define-element wbr (void-element))
@@ -172,7 +172,7 @@
 (define-element area (void-element))
 (define-element audio ())
 (define-element img (void-element))
-(define-element map ())
+;; (define-element map ())
 (define-element track (void-element))
 (define-element video ())
 
