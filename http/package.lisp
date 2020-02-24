@@ -25,6 +25,9 @@
            :response-status
            :response-header
            :response-body
+           :read-response-body-into-string
+           :read-response-body-into-vector
+           :read-response-body-into-temporary-file
            :reply
            :reply-object
            :define-handler
