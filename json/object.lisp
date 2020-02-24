@@ -32,10 +32,8 @@
                      append (list key (value-expr value)) into body
                      finally (return `(object ,@body)))))
                (t value))))
-    (if *print-pretty*
-      (pprint-object (value-expr object) stream)
-      (let ((*print-case* :downcase))
-        (print (value-expr object) stream)))))
+    (let ((*print-case* :downcase))
+      (prin1 (value-expr object) stream))))
 
 (defun lisp-name-to-object-key (name)
   (typecase name
