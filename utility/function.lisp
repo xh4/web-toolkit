@@ -6,9 +6,9 @@
                   (error () :unknown))))
     (let ((cont-function-p))
       (let ((function (etypecase function
-                        ;; (cl-cont::funcallable/cc
-                        ;;  (setf cont-function-p t)
-                        ;;  (cl-cont::f/cc-function function))
+                        (cl-cont::funcallable/cc
+                         (setf cont-function-p t)
+                         (cl-cont::f/cc-function function))
                         ((or list symbol function) function))))
         (let ((lambda-list
                #+:lispworks

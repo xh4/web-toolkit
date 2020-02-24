@@ -59,27 +59,8 @@ HANDLE-IF-MODIFIED-SINCE."
                        t
                        (return-from read-line nil))))))
 
-(defmacro replace-class-option (name key &rest values)
-  (with-gensyms (pos/s)
-    `(if-let ((,pos/s (position ,key ,name :key 'first)))
-       (setf (nth ,pos/s ,name) (list ,key ,@values))
-       (appendf ,name (list (list ,key ,@values))))))
-
-(defmacro rewrite-class-option (name key &rest values)
-  (let ((option (cons key values)))
-    (with-gensyms (pos/s)
-      `(if-let ((,pos/s (position ,key ,name :key 'first)))
-         (setf (nth ,pos/s ,name) ',option)
-         (appendf ,name (list ',option))))))
-
 (defun trim-whitespace (string)
   (string-trim
    '(#\Space #\Newline #\Backspace #\Tab
      #\Linefeed #\Page #\Return #\Rubout)
    string))
-
-(defun function-lambda-list (function)
-  (etypecase function
-    (cl-cont::funcallable/cc
-     (rest (utility:function-lambda-list (cl-cont::f/cc-function function))))
-    ((or list symbol function) (utility:function-lambda-list function))))

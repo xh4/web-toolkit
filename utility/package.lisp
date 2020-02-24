@@ -5,4 +5,6 @@
   (:use :cl :alexandria)
   (:export :walk-tree
            :map-tree
-           :function-lambda-list))
+           :function-lambda-list
+           :replace-class-option
+           :rewrite-class-option))

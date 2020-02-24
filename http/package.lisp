@@ -2,7 +2,7 @@
 
 (defpackage :http
   (:nicknames :wt.http)
-  (:use :cl :alexandria)
+  (:use :cl :alexandria :utility)
   (:shadow :get :delete :read-line :read-char :stream :directory)
   (:export :header
            :header-fields

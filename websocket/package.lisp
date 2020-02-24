@@ -2,7 +2,7 @@
 
 (defpackage :websocket
   (:nicknames :ws :wt.ws :wt.websocket)
-  (:use :cl :alexandria)
+  (:use :cl :alexandria :utility)
   (:export :define-endpoint
            :define-session
            :session-class
