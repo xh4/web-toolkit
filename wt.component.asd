@@ -27,10 +27,10 @@
   :depends-on (:wt.component
                :wt.test)
   :serial t
-  :components ((:module "test"
-                        :components ((:module "component"
-                                              :components ((:file "package")
-                                                           (:file "component")
-                                                           (:file "render"))))))
+  :components ((:module "test/component"
+                        :serial t
+                        :components ((:file "package")
+                                     (:file "component")
+                                     (:file "render"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :component-test)))

@@ -23,13 +23,12 @@
   :depends-on (:wt.dom
                :wt.test)
   :serial t
-  :components ((:module "test"
-                        :components ((:module "dom"
-                                              :serial t
-                                              :components ((:file "package")
-                                                           (:file "helper")
-                                                           (:file "node")
-                                                           (:file "traversal")
-                                                           (:file "element"))))))
+  :components ((:module "test/dom"
+                        :serial t
+                        :components ((:file "package")
+                                     (:file "helper")
+                                     (:file "node")
+                                     (:file "traversal")
+                                     (:file "element"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :dom-test)))

@@ -39,14 +39,13 @@
                :cl-fad
                :find-port)
   :serial t
-  :components ((:module "test"
-                        :components ((:module "websocket"
-                                              :serial t
-                                              :components ((:file "package")
-                                                           (:file "helper")
-                                                           (:file "autobahn")
-                                                           (:file "endpoint")
-                                                           (:file "session")
-                                                           (:file "websocket"))))))
+  :components ((:module "test/websocket"
+                        :serial t
+                        :components ((:file "package")
+                                     (:file "helper")
+                                     (:file "autobahn")
+                                     (:file "endpoint")
+                                     (:file "session")
+                                     (:file "websocket"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :websocket-test)))

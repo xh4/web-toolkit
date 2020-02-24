@@ -22,13 +22,12 @@
   :depends-on (:wt.html
                :wt.test)
   :serial t
-  :components ((:module "test"
-                        :components ((:module "html"
-                                              :serial t
-                                              :components ((:file "package")
-                                                           (:file "text")
-                                                           (:file "element")
-                                                           (:file "document")
-                                                           (:file "serialize"))))))
+  :components ((:module "test/html"
+                        :serial t
+                        :components ((:file "package")
+                                     (:file "text")
+                                     (:file "element")
+                                     (:file "document")
+                                     (:file "serialize"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :html-test)))

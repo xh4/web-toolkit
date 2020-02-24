@@ -22,12 +22,8 @@
   :depends-on (:wt.json
                :wt.test)
   :serial t
-  :components ((:module "test"
+  :components ((:module "test/json"
                         :components ((:module "json"
-                                              :serial t
-                                              :components ((:file "package")
-                                                           (:file "decode")
-                                                           (:file "encode")
-                                                           (:file "object"))))))
+                                              ))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :json-test)))

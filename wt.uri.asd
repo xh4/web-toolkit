@@ -32,19 +32,18 @@
   :depends-on (:wt.uri
                :wt.test)
   :serial t
-  :components ((:module "test"
-                        :components ((:module "uri"
-                                              :serial t
-                                              :components ((:file "package")
-                                                           (:file "decode")
-                                                           (:file "encode")
-                                                           (:file "check")
-                                                           (:file "parse")
-                                                           (:file "query")
-                                                           (:file "construct")
-                                                           (:file "update")
-                                                           (:file "merge")
-                                                           (:file "render")
-                                                           (:file "uri"))))))
+  :components ((:module "test/uri"
+                        :serial t
+                        :components ((:file "package")
+                                     (:file "decode")
+                                     (:file "encode")
+                                     (:file "check")
+                                     (:file "parse")
+                                     (:file "query")
+                                     (:file "construct")
+                                     (:file "update")
+                                     (:file "merge")
+                                     (:file "render")
+                                     (:file "uri"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :uri-test)))
