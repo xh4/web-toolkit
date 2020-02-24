@@ -22,10 +22,10 @@
                                      (:file "parse")
                                      (:file "resolve")
                                      (:file "render")
+                                     (:file "uri")
                                      (:file "accessor")
                                      (:file "merge")
-                                     (:file "query")
-                                     (:file "uri"))))
+                                     (:file "query"))))
   :in-order-to ((test-op (test-op :wt.uri/test))))
 
 (defsystem wt.uri/test
@@ -44,6 +44,7 @@
                                                            (:file "construct")
                                                            (:file "update")
                                                            (:file "merge")
+                                                           (:file "render")
                                                            (:file "uri"))))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :uri-test)))

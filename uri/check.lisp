@@ -38,6 +38,15 @@
     (string path)
     (t (error "URI path must be string or null"))))
 
+(defun check-query (query)
+  (typecase query
+    (null nil)
+    (string query)
+    (list (typecase (first query)
+            (cons (alist-query query))
+            (t (plist-query query))))
+    (t (error "URI query must be string or list or null"))))
+
 (defun alist-query (alist)
   (flet ((reserve-char (char)
            (or (unreserved-p char))))
@@ -53,15 +62,6 @@
      unless value do (error "Missing value for name ~S" name)
      collect (cons name value) into alist
      finally (return (alist-query alist))))
-
-(defun check-query (query)
-  (typecase query
-    (null nil)
-    (string query)
-    (list (typecase (first query)
-            (cons (alist-query query))
-            (t (plist-query query))))
-    (t (error "URI query must be string or list or null"))))
 
 (defun check-fragment (fragment)
   (typecase fragment

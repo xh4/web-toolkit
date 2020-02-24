@@ -49,15 +49,7 @@
                             (when query
                               "?")
                             (when query
-                              (percent-encode
-                               query
-                               :reserve (lambda (c)
-                                          (or (unreserved-p c)
-                                              (sub-delim-p c)
-                                              (eq c #\:)
-                                              (eq c #\@)
-                                              (eq c #\/)
-                                              (eq c #\?)))))
+                              query)
                             (when fragment
                               "#")
                             (when fragment
