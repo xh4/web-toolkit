@@ -10,7 +10,6 @@
                :closer-mop
                :group-by)
   :defsystem-depends-on (:wt.vendor)
-  :serial t
   :components ((:module "component"
                         :serial t
                         :components ((:file "package")
@@ -26,7 +25,6 @@
 (defsystem wt.component/test
   :depends-on (:wt.component
                :wt.test)
-  :serial t
   :components ((:module "test/component"
                         :serial t
                         :components ((:file "package")
