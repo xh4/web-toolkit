@@ -23,15 +23,3 @@
            (html:head)
            (html:body
             (html:h1 "Internal Server Error")))))))))
-
-(with-gensyms (n)
-  (handler-bind ((error (lambda (e)
-                          (invoke-restart n "foo"))))
-    (restart-case (error "foo")
-      (n (v) "use value 1"))))
-
-(let ((n :foo))
-  (handler-bind ((error (lambda (e)
-                          (invoke-restart n "foo"))))
-    (restart-case (error "foo")
-      (n (v) "use value 1"))))
