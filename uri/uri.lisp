@@ -10,5 +10,6 @@
             (null (typecase (first ,values)
                     (uri (first ,values))
                     (string (parse-uri (first ,values)))))
-            ((or string uri) (merge-uri (first ,values) (second ,values)))))
+            ((or string uri) (merge-uri (first ,values) (second ,values)))
+            (keyword (apply 'update-uri (first ,values) (rest ,values)))))
          (keyword (apply 'make-uri ,values))))))

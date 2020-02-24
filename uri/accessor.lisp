@@ -87,3 +87,27 @@
       fragment))
 
 (define-uri-writer fragment)
+
+(defun update-uri (uri &key (scheme nil scheme-present-p)
+                       (userinfo nil userinfo-present-p)
+                       (host nil host-present-p)
+                       (port nil port-present-p)
+                       (path nil path-present-p)
+                       (query nil query-present-p)
+                       (fragment nil fragment-present-p))
+  (let ((uri (uri uri)))
+    (when scheme-present-p
+      (setf (uri-scheme uri) scheme))
+    (when userinfo-present-p
+      (setf (uri-userinfo uri) userinfo))
+    (when host-present-p
+      (setf (uri-host uri) host))
+    (when port-present-p
+      (setf (uri-port uri) port))
+    (when path-present-p
+      (setf (uri-path uri) path))
+    (when query-present-p
+      (setf (uri-query uri) query))
+    (when fragment-present-p
+      (setf (uri-fragment uri) fragment))
+    uri))
