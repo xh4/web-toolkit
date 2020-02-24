@@ -6,7 +6,6 @@
   :mailto "xh@coobii.com"
   :depends-on (:alexandria)
   :defsystem-depends-on (:wt.vendor)
-  :serial t
   :components ((:module "dom"
                         :serial t
                         :components ((:file "package")
@@ -22,7 +21,6 @@
 (defsystem wt.dom/test
   :depends-on (:wt.dom
                :wt.test)
-  :serial t
   :components ((:module "test/dom"
                         :serial t
                         :components ((:file "package")

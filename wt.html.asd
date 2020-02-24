@@ -7,7 +7,6 @@
   :depends-on (:wt.dom
                :alexandria)
   :defsystem-depends-on (:wt.vendor)
-  :serial t
   :components ((:module "html"
                         :serial t
                         :components ((:file "package")
@@ -21,7 +20,6 @@
 (defsystem wt.html/test
   :depends-on (:wt.html
                :wt.test)
-  :serial t
   :components ((:module "test/html"
                         :serial t
                         :components ((:file "package")

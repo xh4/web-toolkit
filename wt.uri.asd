@@ -9,7 +9,6 @@
                :maxpc
                :split-sequence)
   :defsystem-depends-on (:wt.vendor)
-  :serial t
   :components ((:module "uri"
                         :serial t
                         :components ((:file "package")
@@ -31,7 +30,6 @@
 (defsystem wt.uri/test
   :depends-on (:wt.uri
                :wt.test)
-  :serial t
   :components ((:module "test/uri"
                         :serial t
                         :components ((:file "package")

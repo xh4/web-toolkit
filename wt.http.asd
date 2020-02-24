@@ -23,7 +23,6 @@
                :cl-cont
                :local-time)
   :defsystem-depends-on (:wt.vendor)
-  :serial t
   :components ((:module "http"
                         :serial t
                         :components ((:file "package")
@@ -71,7 +70,6 @@
   :depends-on (:wt.http
                :wt.test
                :babel-streams)
-  :serial t
   :components ((:module "test/http"
                         :serial t
                         :components ((:file "package")

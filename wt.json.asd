@@ -6,7 +6,6 @@
   :mailto "xh@coobii.com"
   :depends-on (:alexandria)
   :defsystem-depends-on (:wt.vendor)
-  :serial t
   :components ((:module "json"
                         :serial t
                         :components ((:file "package")
@@ -21,7 +20,6 @@
 (defsystem wt.json/test
   :depends-on (:wt.json
                :wt.test)
-  :serial t
   :components ((:module "test/json"
                         :components ((:module "json"
                                               ))))

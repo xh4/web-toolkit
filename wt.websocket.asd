@@ -15,7 +15,6 @@
                :usocket
                :cl-base64)
   :defsystem-depends-on (:wt.vendor)
-  :serial t
   :components ((:module "websocket"
                         :serial t
                         :components ((:file "package")
@@ -38,7 +37,6 @@
                :split-sequence
                :cl-fad
                :find-port)
-  :serial t
   :components ((:module "test/websocket"
                         :serial t
                         :components ((:file "package")
