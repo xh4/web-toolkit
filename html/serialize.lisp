@@ -20,11 +20,14 @@
        do
          (case action
            (:enter (typecase node
-                     (text (signal 'event :type :enter :node node))
-                     ((or element document) (signal 'event :type :enter :node node)
+                     (text
+                      (signal 'event :type :enter :node node))
+                     ((or element document)
+                      (signal 'event :type :enter :node node)
                       (push `(:leave . ,node) stack)
-                      (loop for child in (reverse (dom:children node))
-                         do (push `(:enter . ,child) stack)))))
+                      (unless (typep node 'custom-element)
+                        (loop for child in (reverse (dom:children node))
+                           do (push `(:enter . ,child) stack))))))
            (:leave (typecase node
                      (element
                       (signal 'event :type :leave :node node))))))))
@@ -92,20 +95,24 @@
   (declare (ignore document))
   (write-string "<!DOCTYPE html>" stream))
 
-(defun serialize (root &optional (stream *standard-output* stream-present-p))
-  (unless stream-present-p (setf stream (make-string-output-stream)))
-  (handler-bind
-      ((event
-        (lambda (event)
-          (with-slots (type node) event
-            (case type
-              (:enter (typecase node
-                        (document (write-doctype node stream))
-                        (element (write-element-start-tag node stream))
-                        (text (write-text node stream))))
-              (:leave (unless (typep node 'void-element)
-                        (typecase node
-                          (element (write-element-end-tag node stream))))))))))
-    (traverse root))
-  (unless stream-present-p
-    (get-output-stream-string stream)))
+(defgeneric serialize (root &optional stream)
+  (:method ((root dom:node) &optional (stream *standard-output*))
+    (let ((string-stream-p (null stream)))
+      (when string-stream-p (setf stream (make-string-output-stream)))
+      (handler-bind
+          ((event
+            (lambda (event)
+              (with-slots (type node) event
+                (case type
+                  (:enter (typecase node
+                            (document (write-doctype node stream))
+                            (custom-element (serialize node stream))
+                            (element (write-element-start-tag node stream))
+                            (text (write-text node stream))))
+                  (:leave (unless (typep node 'void-element)
+                            (typecase node
+                              (element (unless (typep node 'custom-element)
+                                         (write-element-end-tag node stream)))))))))))
+        (traverse root))
+      (when string-stream-p
+        (get-output-stream-string stream)))))
