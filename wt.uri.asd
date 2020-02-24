@@ -22,10 +22,10 @@
                                      (:file "parse")
                                      (:file "resolve")
                                      (:file "render")
-                                     (:file "uri")
                                      (:file "accessor")
                                      (:file "merge")
-                                     (:file "query"))))
+                                     (:file "query")
+                                     (:file "uri"))))
   :in-order-to ((test-op (test-op :wt.uri/test))))
 
 (defsystem wt.uri/test
