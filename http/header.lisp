@@ -19,17 +19,16 @@
       (let ((object (first objects)))
         (typecase object
           (header-field
-           (appendf (header-fields header)
-                    (list object))
+           (set-header-field header object)
            (process-header-objects header (rest objects)))
           (header
-           (appendf (header-fields header)
-                    (header-fields object))
+           (loop for header-field in (header-fields object)
+                do (set-header-field header header-field))
            (process-header-objects header (rest objects)))
           ((or string keyword)
-           (when-let ((value (second objects)))
-             (appendf (header-fields header)
-                      (list (header-field object value))))
+           (if-let ((value (second objects)))
+             (set-header-field header (header-field object value))
+             (error "Missing header field value for name ~S" object))
            (process-header-objects header (cddr objects)))
           (t (error "Unable to use ~A as a name of header field" object))))
       header))
