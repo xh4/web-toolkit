@@ -12,8 +12,8 @@
   :components ((:module "uri"
                         :serial t
                         :components ((:file "package")
-                                     (:file "util")
-                                     (:file "error")
+                                     (:file "utility")
+                                     (:file "condition")
                                      (:file "check")
                                      (:file "class")
                                      (:file "parser")
