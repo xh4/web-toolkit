@@ -79,4 +79,17 @@
         (port (lambda ()
                 (reply (html:h1 "Hello"))))
       (let ((res (http:get (uri "http://127.0.0.1" :port port))))
-        (is (equal 'html-entity (type-of res)))))))
+        (is (equal 'html-entity (type-of res)))
+        (is (equal 200 (status-code res)))
+        ;; TODO: parse html
+        ;; (is (equal 'html:element (entity-html res)))
+        )))
+
+  (it
+    (with-simple-test-server-running
+        (port (lambda ()
+                (reply (json:object "Hello" "world"))))
+      (let ((res (http:get (uri "http://127.0.0.1" :port port))))
+        (is (equal 'json-entity (type-of res)))
+        (is (equal 200 (status-code res)))
+        (is (equal 'json:object (type-of (entity-json res))))))))
