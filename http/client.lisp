@@ -20,11 +20,13 @@
     (error "Request method ~A can't carry body" method)))
 
 (defmacro define-request-method (symbol lambda-list)
-  (let ((uri (first lambda-list))
+  (let ((required-parameters (nth-value 0 (parse-ordinary-lambda-list lambda-list)))
         (keyword-parameters (nth-value 3 (parse-ordinary-lambda-list lambda-list))))
-    `(defun ,symbol (,uri ,@(rest lambda-list))
-       (request uri
+    `(defun ,symbol (,@lambda-list)
+       (request ,(first required-parameters)
                 :method ,(make-keyword symbol)
+                ,@(when (= 2 (length required-parameters))
+                    `(:content ,(second required-parameters)))
                 ,@(loop for ((keyword-name name) nil nil) in keyword-parameters
                       append `(,keyword-name ,name))))))
 
@@ -32,13 +34,13 @@
 
 (define-request-method head (uri &key header))
 
-(define-request-method put (uri &key header content (entity t)))
+(define-request-method put (uri content &key header (entity t)))
 
-(define-request-method post (uri &key header content (entity t)))
+(define-request-method post (uri content &key header (entity t)))
 
-(define-request-method delete (uri &key header content (entity t)))
+(define-request-method delete (uri content &key header (entity t)))
 
-(define-request-method patch (uri &key header content (entity t)))
+(define-request-method patch (uri content &key header (entity t)))
 
 (define-request-method options (uri &key header))
 
