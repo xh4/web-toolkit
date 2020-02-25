@@ -13,3 +13,6 @@
             ((or string uri) (merge-uri (first ,values) (second ,values)))
             (keyword (apply 'update-uri (first ,values) (rest ,values)))))
          (keyword (apply 'make-uri ,values))))))
+
+(defmacro uri-string (&body forms)
+  `(render-uri (uri ,@forms)))
