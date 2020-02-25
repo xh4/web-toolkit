@@ -35,8 +35,11 @@
 
 (defgeneric read-message-body-into-string (message)
   (:method ((message message))
-    (let ((octets (read-message-body-into-vector message)))
-      (babel:octets-to-string octets))))
+    (let ((header (message-header message))
+          (octets (read-message-body-into-vector message)))
+      (let ((content-type (find-header-field "Content-Type" header)))
+        ;; TODO: respect charset
+        (babel:octets-to-string octets)))))
 
 (defgeneric read-message-body-into-temporary-file (message)
   (:method ((message message))
@@ -52,8 +55,10 @@
           (alexandria::copy-stream stream output-stream :end content-length :finish-output t)
           pathname)))))
 
+;; TODO: implement this
 (defgeneric pipe-message-body-chunks (message))
 
+;; TODO: implement this
 (defgeneric pipe-message-body-chunks-as-vector (message))
 
 (defgeneric write-message-header (stream message)
@@ -65,8 +70,8 @@
   (:method (stream (message message))
     (let ((body (message-body message)))
       (typecase body
-        (string (length (write-sequence (babel:string-to-octets body) stream)))
         (vector (length (write-sequence body stream)))
         (pathname (with-open-file (input-stream body :element-type '(unsigned-byte 8))
                     (alexandria::copy-stream input-stream stream)))
-        (t 0)))))
+        (null 0)
+        (t (error "Unable to write body of type ~A" (type-of body)))))))
