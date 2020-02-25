@@ -102,10 +102,6 @@
   (:method ((response response))
     (read-message-body-into-vector response)))
 
-(defgeneric read-response-body-into-string (response)
-  (:method ((response response))
-    (read-message-body-into-string response)))
-
 (defgeneric read-response-body-into-temporary-file (response)
   (:method ((response response))
     (read-message-body-into-temporary-file response)))

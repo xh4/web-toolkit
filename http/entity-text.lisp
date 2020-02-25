@@ -1,23 +1,19 @@
 (in-package :http)
 
 (defclass text-entity (entity)
-  ((octets
-    :initform nil)))
+  ((text
+    :initarg :text
+    :initform nil
+    :reader entity-text)))
 
-(defmethod initialize-instance :after ((entity text-entity) &key)
-  (with-slots (body octets) entity
-    (check-type body string)
-    (setf octets (babel:string-to-octets body))))
-
-(defmethod content-length ((entity text-entity))
-  (with-slots (octets) entity
-    (length octets)))
-
-(defmethod content-type ((entity text-entity))
-  (or (header-field-value
-       (find-header-field "Content-Type" entity))
-      "text/plain; charset=UTF-8"))
-
-(defmethod response-body ((entity text-entity))
-  (with-slots (octets) entity
-    octets))
+(defun make-text-entity (text &key status header)
+  (check-type text string)
+  (let ((body (babel:string-to-octets text)))
+    (make-instance 'text-entity
+                   :status (or status 200)
+                   :header (header
+                            header
+                            :content-type "text/plain; charset=UTF-8"
+                            :content-length (length body))
+                   :body body
+                   :text text)))

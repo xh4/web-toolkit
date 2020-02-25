@@ -2,7 +2,7 @@
 
 (defpackage :http-test
   (:nicknames :wt.http-test)
-  (:use :cl :http :test :alexandria)
+  (:use :cl :http :uri :test :alexandria)
   (:shadow :get :delete :with-output-to-string)
   (:export :run!))
 

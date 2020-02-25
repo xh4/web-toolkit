@@ -61,11 +61,11 @@
       (let ((res (http::invoke-handler router (make-instance 'request
                                                              :method "GET"
                                                              :uri "/foo"))))
-        (is (equal "foo" (http::entity-body res))))
+        (is (equal "foo" (http::entity-text res))))
       (let ((res (http::invoke-handler router (make-instance 'request
                                                              :method "GET"
                                                              :uri "/bar"))))
-        (is (equal "bar" (http::entity-body res)))))))
+        (is (equal "bar" (http::entity-text res)))))))
 
 (test route-to-absent-handler
   (let ((router (router (:get "/" xyz-handler))))

@@ -25,9 +25,15 @@
            :response-status
            :response-header
            :response-body
-           :read-response-body-into-string
            :read-response-body-into-vector
            :read-response-body-into-temporary-file
+           :entity
+           :html-entity
+           :json-entity
+           :file-entity
+           :directory-entity
+           :form-entity
+           :text-entity
            :reply
            :reply-object
            :define-handler

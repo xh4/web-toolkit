@@ -48,3 +48,19 @@
 (defgeneric directory-modify-time (directory)
   (:method ((directory directory))
     (file-write-date (directory-pathname directory))))
+
+(defgeneric directory-html (directory)
+  (:method ((directory directory))
+    (html:document
+     (html:html
+      (html:head
+       (html:title
+        ))
+      (html:body
+       (html:ul
+        (loop for content in (directory-content directory)
+           for pathname = (typecase content
+                            (file (file-pathname content))
+                            (directory (directory-pathname content)))
+           collect
+             (html:li (format nil "~S" pathname)))))))))

@@ -28,42 +28,36 @@
   (setf *response* entity))
 
 (defmethod reply-object ((text string))
-  (setf *response* (make-instance 'text-entity
-                                  :status (response-status *response*)
-                                  :header (response-header *response*)
-                                  :body text)))
+  (setf *response* (make-text-entity text
+                                     :status (response-status *response*)
+                                     :header (response-header *response*))))
 
 (defmethod reply-object ((data vector))
   (setf (response-body *response*) data))
 
 (defmethod reply-object ((pathname pathname))
   (let ((entity (if (directory-pathname-p pathname)
-                    (make-instance 'directory-entity
-                                   :status (response-status *response*)
-                                   :header (response-header *response*)
-                                   :body pathname)
-                    (make-instance 'file-entity
-                                   :status (response-status *response*)
-                                   :header (response-header *response*)
-                                   :body pathname))))
+                    (make-directory-entity pathname
+                                           :status (response-status *response*)
+                                           :header (response-header *response*))
+                    (make-file-entity pathname
+                                      :status (response-status *response*)
+                                      :header (response-header *response*)))))
     (setf *response* entity)))
 
 (defmethod reply-object ((nothing null)))
 
 (defmethod reply-object ((object json:object))
-  (setf *response* (make-instance 'json-entity
-                                  :status (response-status *response*)
-                                  :header (response-header *response*)
-                                  :body object)))
+  (setf *response* (make-json-entity object
+                                     :status (response-status *response*)
+                                     :header (response-header *response*))))
 
 (defmethod reply-object ((document html:document))
-  (setf *response* (make-instance 'html-entity
-                                  :status (response-status *response*)
-                                  :header (response-header *response*)
-                                  :body document)))
+  (setf *response* (make-html-entity document
+                                     :status (response-status *response*)
+                                     :header (response-header *response*))))
 
 (defmethod reply-object ((element html:element))
-  (setf *response* (make-instance 'html-entity
-                                  :status (response-status *response*)
-                                  :header (response-header *response*)
-                                  :body element)))
+  (setf *response* (make-html-entity element
+                                     :status (response-status *response*)
+                                     :header (response-header *response*))))

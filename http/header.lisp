@@ -22,6 +22,10 @@
            (appendf (header-fields header)
                     (list object))
            (process-header-objects header (rest objects)))
+          (header
+           (appendf (header-fields header)
+                    (header-fields object))
+           (process-header-objects header (rest objects)))
           ((or string keyword)
            (when-let ((value (second objects)))
              (appendf (header-fields header)
@@ -34,7 +38,8 @@
   (with-gensyms (header objects)
     `(let ((,header (make-instance 'header)))
        (let ((,objects (flatten (list ,@forms))))
-         (process-header-objects ,header ,objects)))))
+         (process-header-objects ,header ,objects))
+       ,header)))
 
 (defgeneric find-header-field (name header)
   (:method (name (header header))

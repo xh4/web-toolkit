@@ -95,10 +95,11 @@
         (let ((thread (bt:make-thread
                        (lambda ()
                          (handler-bind ((error (lambda (e)
+                                                 (format t "~A~%" e)
                                                  (setf errorp t))))
                            (http::process-connection connection))
                          (bt:condition-notify cvar)))))
-          (bt:condition-wait cvar lock :timeout 1)
+          (bt:condition-wait cvar lock :timeout 3)
           (unless errorp
             (ignore-errors
               (bt:destroy-thread thread))))))
@@ -155,3 +156,18 @@
                    (setf ,boundary (http::write-multipart-form-data stream ,form)))))
      (babel-streams:with-input-from-sequence (,stream octets)
        ,@body)))
+
+(defmacro with-simple-test-server-running ((port-var function) &body body)
+  (let ((port (find-port:find-port :min 5000)))
+    `(progn
+       (define-server simple-test-server ()
+         ()
+         (:handler ,function)
+         (:listener (listener :port ,port)))
+       (unwind-protect
+            (progn
+              (start-server simple-test-server)
+              (let ((,port-var ,port))
+                ,@body))
+         (stop-server simple-test-server)
+         (unintern 'simple-test-server)))))

@@ -88,30 +88,26 @@
       connection)))
 
 (defun process-connection (connection)
-  (with-slots (input-stream output-stream) connection
-    (tagbody :start
-       ;; TODO: handle errors here
-       (handler-bind ((error (lambda (error)
-                               (declare (ignore error))
-                               (go :end))))
-         (when-let ((request (receive-request connection)))
-           (let ((response (handle-request connection request)))
-             (if (equal 101 (status-code (response-status response)))
-                 (go :end)
-                 (progn
-                   (handle-response connection response)
-                   (if (or (not (keep-alive-p request))
-                           (not (keep-alive-p response))
-                           (equal 101 (status-code (response-status response)))
-                           (not (open-stream-p input-stream))
-                           (not (open-stream-p output-stream)))
-                       (go :end)
-                       (progn
-                         (let ((body (request-body request)))
-                           (typecase body
-                             (stream (stream-read-remain body))))
-                         (go :start))))))))
-     :end (close-connection connection))))
+  (tagbody :start
+     ;; TODO: handle errors here
+     (handler-bind ((error (lambda (error)
+                             (declare (ignore error))
+                             (format t "~A~%" error)
+                             (go :end))))
+       (when-let ((request (receive-request connection)))
+         (let ((response (handle-request connection request)))
+           (if (equal 101 (status-code (response-status response)))
+               (go :end)
+               (progn
+                 (handle-response connection response)
+                 (if (connection-keep-alive-p connection request response)
+                     (progn
+                       (let ((body (request-body request)))
+                         (typecase body
+                           (stream (stream-read-remain body))))
+                       (go :start))
+                     (go :end)))))))
+   :end (close-connection connection)))
 
 (defun close-connection (connection)
   (with-slots (input-stream output-stream) connection
@@ -158,7 +154,8 @@
 (defun handle-response (connection response)
   (when (null (response-status response))
     (setf response (make-instance 'response
-                                  :status 200)))
+                                  :status 200
+                                  :header (header :content-length 0))))
   (unless (equal 101 (status-code (response-status response)))
     (prog1
         (set-header-field response (header-field "Date" (rfc-1123-date)))
@@ -181,3 +178,10 @@
     (let ((header (response-header entity)))
       (not (string-equal "Close" (header-field-value
                                   (find-header-field "Connection" header)))))))
+
+(defun connection-keep-alive-p (connection request response)
+  (and (keep-alive-p request)
+       (keep-alive-p response)
+       (not (equal 101 (status-code (response-status response))))
+       (open-stream-p (connection-input-stream connection))
+       (open-stream-p (connection-output-stream connection))))

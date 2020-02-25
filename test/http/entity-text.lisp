@@ -4,8 +4,7 @@
 
 (test text-entity
   (it
-    (let ((entity (make-instance 'http::text-entity
-                                 :body "foo")))
+    (let ((entity (http::make-text-entity "foo")))
       (is (equal 3 (length (response-body entity))))
       (is (equal "text/plain; charset=UTF-8" (header-field-value
                                               (find-header-field
@@ -13,6 +12,5 @@
                                                (response-header entity)))))))
 
   (it
-    (let ((entity (make-instance 'http::text-entity
-                                 :body "你好")))
+    (let ((entity (http::make-text-entity "你好")))
       (is (equal 6 (length (response-body entity)))))))

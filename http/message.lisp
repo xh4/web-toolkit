@@ -33,14 +33,6 @@
         (alexandria::read-stream-content-into-byte-vector
          stream 'alexandria::%length content-length)))))
 
-(defgeneric read-message-body-into-string (message)
-  (:method ((message message))
-    (let ((header (message-header message))
-          (octets (read-message-body-into-vector message)))
-      (let ((content-type (find-header-field "Content-Type" header)))
-        ;; TODO: respect charset
-        (babel:octets-to-string octets)))))
-
 (defgeneric read-message-body-into-temporary-file (message)
   (:method ((message message))
     (let ((stream (message-body message)))

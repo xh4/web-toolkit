@@ -123,10 +123,6 @@
         (let ((body (make-array 1 :element-type '(unsigned-byte 8))))
           (read-sequence body stream))))))
 
-(defgeneric read-request-body-into-string (request)
-  (:method ((request request))
-    (read-message-body-into-string request)))
-
 (defgeneric read-request-body-into-vector (request)
   (:method ((request request))
     (read-message-body-into-vector request)))
@@ -160,7 +156,8 @@
   (let ((types '(:form :alist :hash-table)))
     (unless (member as types)
       (error "The value of `AS` argument should be member of ~A" types)))
-  (let ((data (read-request-body-into-string request)))
+  (let ((data (babel:octets-to-string
+               (read-request-body-into-vector request))))
     (let ((uri (uri :query data)))
       (case as
         ((or :alist :hash-table) (uri-query uri :type as))

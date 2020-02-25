@@ -2,23 +2,23 @@
 
 (defclass html-entity (entity)
   ((string
+    :initarg :string
     :initform nil)
-   (octets
-    :initform nil)))
+   (html
+    :initarg :html
+    :initform nil
+    :reader entity-html)))
 
-(defmethod initialize-instance :after ((entity html-entity) &key)
-  (with-slots (body string octets) entity
-    (check-type body (or html:document html:element html:text))
-    (setf string (html:serialize body)
-          octets (babel:string-to-octets string))))
-
-(defmethod content-length ((entity html-entity))
-  (with-slots (octets) entity
-    (length octets)))
-
-(defmethod content-type ((entity html-entity))
-  "text/html; charset=UTF-8")
-
-(defmethod response-body ((entity html-entity))
-  (with-slots (octets) entity
-    octets))
+(defun make-html-entity (html &key status header)
+  (check-type html (or html:document html:element))
+  (let ((string (html:serialize html)))
+    (let ((body (babel:string-to-octets string)))
+      (make-instance 'html-entity
+                     :status (or status 200)
+                     :header (header
+                              header
+                              :content-length (length body)
+                              :content-type "text/html; charset=UTF-8")
+                     :body body
+                     :string string
+                     :html html))))
