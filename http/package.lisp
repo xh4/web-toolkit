@@ -29,11 +29,14 @@
            :read-response-body-into-temporary-file
            :entity
            :html-entity
+           :entity-html
            :json-entity
+           :entity-json
            :file-entity
            :directory-entity
            :form-entity
            :text-entity
+           :entity-text
            :reply
            :reply-object
            :define-handler
