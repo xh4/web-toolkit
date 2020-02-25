@@ -96,7 +96,7 @@
   (write-string "<!DOCTYPE html>" stream))
 
 (defgeneric serialize (root &optional stream)
-  (:method ((root dom:node) &optional (stream *standard-output*))
+  (:method ((root dom:node) &optional stream)
     (let ((string-stream-p (null stream)))
       (when string-stream-p (setf stream (make-string-output-stream)))
       (handler-bind
