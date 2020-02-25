@@ -10,7 +10,7 @@
     :initform nil
     :reader entity-html)))
 
-(defun make-directory-entity (pathname &key status header)
+(defun make-directory-entity (pathname &key header status method uri version)
   (check-type pathname pathname)
   (unless (directory-pathname-p pathname)
     (error "Pathname ~S should denote a directory" pathname))
@@ -26,11 +26,14 @@
          (content-length (length body)))
     (make-instance 'directory-entity
                    :status status
+                   :method method
+                   :uri uri
+                   :version version
                    :header (header
-                            header
                             :content-type content-type
                             :content-length content-length
-                            :last-modified last-modified)
+                            :last-modified last-modified
+                            header)
                    :body body
                    :html html)))
 

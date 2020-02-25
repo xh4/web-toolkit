@@ -11,7 +11,7 @@
     (let ((pathname (entity-body entity)))
       (format stream "~S" pathname))))
 
-(defun make-file-entity (pathname &key status header)
+(defun make-file-entity (pathname &key header status method uri version)
   (check-type pathname pathname)
   (when (directory-pathname-p pathname)
     (error "Pathname ~S should denote a file" pathname))
@@ -27,10 +27,13 @@
          (body pathname))
     (make-instance 'file-entity
                    :status status
+                   :method method
+                   :uri uri
+                   :version version
                    :header (header
-                            header
                             :content-type content-type
                             :content-length content-length
-                            :last-modified last-modified)
+                            :last-modified last-modified
+                            header)
                    :body body
                    :file file)))

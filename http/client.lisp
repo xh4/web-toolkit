@@ -47,13 +47,16 @@
     (let ((header (process-request-header header)))
       (unless (find-header-field "Host" header)
         (set-header-field header (header-field "Host" (uri-host uri))))
-      (let ((request (make-instance 'request
-                                    :method method
-                                    :uri uri
-                                    :version "HTTP/1.1"
-                                    :header header)))
-        (process-request-content request content)
-        request))))
+      (typecase content
+        (string (make-text-entity content :header header :method method :uri uri))
+        (json:object (make-json-entity content :header header :method method :uri uri))
+        ((or null vector pathname stream) (make-instance 'request
+                                                    :method method
+                                                    :uri uri
+                                                    :version "HTTP/1.1"
+                                                    :header header
+                                                    :body content))
+        (t (error "Unable to make request using content of type ~A" (type-of content)))))))
 
 (defun process-request-uri (uri)
   (unless (uri-host uri) (error "Missing host in URI ~S" uri))
@@ -69,40 +72,6 @@
               (loop for (name . value) in header
                  do (set-header-field new-header (header-field name value))))))
     new-header))
-
-;; TODO: use entity
-(defgeneric process-request-content (request content))
-
-(defmethod process-request-content (request (nothing null)))
-
-(defmethod process-request-content (request (object json:object))
-  (set-header-field request (header-field "Content-Type" "application/json; charset=UTF-8"))
-  (setf (request-body request) (babel:string-to-octets (json:encode object)))
-  (set-header-field request (header-field "Content-Length"
-                                          (length (request-body request)))))
-
-(defmethod process-request-content (request (string string))
-  (unless (find-header-field "Content-Type" request)
-          (set-header-field request
-                            (header-field "Content-Type" "text/plain; charset=UTF-8")))
-  ;; TODO: respect user-defined charset
-  (setf (request-body request) (babel:string-to-octets string))
-  (set-header-field request (header-field "Content-Length"
-                                          (length (request-body request)))))
-
-(defmethod process-request-content (request (data vector))
-  (setf (request-body request) data)
-  (set-header-field request (header-field "Content-Length"
-                                          (length (request-body request))))
-  (unless (find-header-field "Content-Type" request)
-    (set-header-field request
-                      (header-field "Content-Type" "application/octet-stream"))))
-
-(defmethod process-request-content (request (pathname pathname))
-  )
-
-(defmethod process-request-content (request (stream stream))
-  )
 
 (defun process-response (response request &key (entity t))
   (when (or (find (request-method request) '(:head :put))
