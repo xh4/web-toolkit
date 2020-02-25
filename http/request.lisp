@@ -30,6 +30,24 @@
 
 (defgeneric (setf request-uri) (value request))
 
+(defmethod uri-scheme ((request request))
+  (uri-scheme (request-uri request)))
+
+(defmethod uri-userinfo ((request request))
+  (uri-userinfo (request-uri request)))
+
+(defmethod uri-host ((request request) &key decode)
+  (uri-host (request-uri request) :decode decode))
+
+(defmethod uri-port ((request request))
+  (uri-port (request-uri request)))
+
+(defmethod uri-path ((request request) &key decode)
+  (uri-path (request-uri request) :decode decode))
+
+(defmethod uri-query ((request request) &key type decode)
+  (uri-query (request-uri request) :type type :decode decode))
+
 (defgeneric request-version (request))
 
 (defgeneric (setf request-version) (value request))
