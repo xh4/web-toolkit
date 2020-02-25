@@ -210,13 +210,17 @@
   (.or (.uri) (.relative-ref)))
 
 (defun parse-uri (uri-string)
+  (check-type uri-string string)
+  (setf uri-string (string-trim whitespace uri-string))
   (with-parser-stack (stack :trace '(.scheme
                                      .userinfo .host .port
                                      .path-abempty .path-absolute
                                      .path-rootless .path-noscheme
                                      .path-empty
                                      .query .fragment))
-    (parse (.uri-reference) (maxpc::make-input uri-string))
+    (let ((input (parse (.uri-reference) (maxpc::make-input uri-string))))
+      (unless (maxpc::input-empty-p input)
+        (error 'uri-parsing-error :uri-string uri-string)))
     (let ((uri (make-instance 'uri)))
       (loop for parser in (reverse stack)
          for value = (parser-value parser)
@@ -235,5 +239,5 @@
                   .path-absolute)
               (setf (uri-path uri) value))
              (.query (setf (uri-query uri) value))
-             (.fragment (setf (uri-fragment uri) value))))
-      uri)))
+             (.fragment (setf (uri-fragment uri) value)))
+         finally (return uri)))))

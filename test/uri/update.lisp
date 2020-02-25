@@ -3,19 +3,23 @@
 (in-suite :uri-test)
 
 (test update-uri
-  (let ((uri (uri::make-uri :scheme "http" :host "coobii.com")))
-    (setf (uri-scheme uri) "ftp")
-    (is (equal (uri-scheme uri) "ftp"))
-    (signals error (setf (uri-scheme uri) "3ww")))
+  (it
+    (let ((uri (uri::make-uri :scheme "http" :host "coobii.com")))
+      (setf (uri-scheme uri) "ftp")
+      (is (equal "ftp" (uri-scheme uri)))
+      (signals error (setf (uri-scheme uri) "3ww"))))
 
-  (let ((uri (uri::make-uri :scheme "http" :host "coobii.com")))
-    (setf (uri-userinfo uri) "xh")
-    (is (equal (uri-userinfo uri) "xh")))
+  (it
+    (let ((uri (uri::make-uri :scheme "http" :host "coobii.com")))
+      (setf (uri-userinfo uri) "xh")
+      (is (equal "xh" (uri-userinfo uri)))))
 
-  (let ((uri (uri::make-uri :scheme "http" :host "coobii.com")))
-    (setf (uri-userinfo uri) "贺")
-    (is (equal (uri-userinfo uri) "贺")))
+  (it
+    (let ((uri (uri::make-uri :scheme "http" :host "coobii.com")))
+      (setf (uri-userinfo uri) "贺")
+      (is (equal "贺" (uri-userinfo uri)))))
 
-  (let ((uri (uri::make-uri :scheme "http" :host "coobii.com")))
-    (setf (uri-host uri) "xh.coobii.com")
-    (is (equal (uri-host uri) "xh.coobii.com"))))
+  (it
+    (let ((uri (uri::make-uri :scheme "http" :host "coobii.com")))
+      (setf (uri-host uri) "xh.coobii.com")
+      (is (equal "xh.coobii.com" (uri-host uri))))))
