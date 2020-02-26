@@ -35,6 +35,7 @@
            :file-entity
            :directory-entity
            :form-entity
+           :entity-form
            :text-entity
            :entity-text
            :reply
@@ -60,7 +61,17 @@
            :delete
            :patch
            :options
-           :with-connections)
+           :with-connections
+           :form
+           :form-field
+           :form-field-name
+           :form-field-value
+           :form-fields
+           :skip-form-field
+           :read-form-field-into-vector
+           :read-form-field-into-stream
+           :read-form-field-into-file
+           :read-form-field-into-temporary-file)
   (:import-from :uri
                 :uri
                 :uri-scheme

@@ -81,10 +81,12 @@
                                      :output-stream stream)))
       (multiple-value-bind (address port) (comm:socket-stream-address stream)
         (setf (connection-local-port connection) port
-              (connection-local-address connection) (comm:ip-address-string address)))
+              (connection-local-address connection) (when address
+                                                      (comm:ip-address-string address))))
       (multiple-value-bind (address port) (comm:socket-stream-peer-address stream)
         (setf (connection-peer-port connection) port
-              (connection-peer-address connection) (comm:ip-address-string address)))
+              (connection-peer-address connection) (when address
+                                                     (comm:ip-address-string address))))
       connection)))
 
 (defun process-connection (connection)

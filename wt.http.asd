@@ -26,7 +26,7 @@
   :components ((:module "http"
                         :serial t
                         :components ((:file "package")
-                                     (:file "conditions")
+                                     (:file "condition")
                                      (:file "utility")
                                      (:file "stream")
                                      (:file "header-field")
@@ -86,6 +86,7 @@
                                      (:file "entity")
                                      (:file "entity-text")
                                      (:file "entity-html")
+                                     (:file "entity-form")
                                      (:file "handler")
                                      (:file "connection")
                                      (:file "redirect")
@@ -94,6 +95,7 @@
                                      (:file "file")
                                      (:file "directory")
                                      (:file "static")
+                                     (:file "form")
                                      (:file "client"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :http-test)))
