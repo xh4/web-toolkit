@@ -5,10 +5,12 @@
   (:metaclass handler-class)
   (:function
    (lambda (handler request)
-     (handler-bind ((error (lambda (error)
-                             (invoke-restart :E42 (handle-error handler request error)))))
-       (restart-case (call-next-handler)
-         (:E42 (response) response))))))
+     (restart-case
+         (handler-bind ((error (lambda (error)
+                                 (invoke-restart 'reply-error handler request error))))
+           (call-next-handler))
+       (reply-error (error-handler request error)
+         (handle-error error-handler request error))))))
 
 (defgeneric handle-error (handler request error)
   (:method ((handler error-handler) (request request) error)
