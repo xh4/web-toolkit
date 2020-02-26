@@ -38,11 +38,12 @@
 (defun write-string (string &optional (stream *standard-output*) &key)
   (cl:write-string string stream))
 
+;; FIXME: rethink this
 (defun write-text (text &optional (stream *standard-output*) &key)
   (let ((parent (dom:parent text)))
     (etypecase parent
-      (normal-element (write-normal-text text stream))
-      (escapable-raw-text-element (write-escapable-raw-text text stream)))))
+      (escapable-raw-text-element (write-escapable-raw-text text stream))
+      (element (write-normal-text text stream)))))
 
 (defun write-normal-text (text &optional (stream *standard-output*) &key)
   (loop for char across (dom:data text)
