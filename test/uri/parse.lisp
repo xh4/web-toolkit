@@ -66,6 +66,20 @@
       (is (equal "/foo" (uri-path uri)))
       (is (equal "bar" (uri-query uri))))))
 
+(test parse-uri/ip-host
+  (it
+    (let ((uri (uri::parse-uri "http://1.1.1.1")))
+      (is (equal "1.1.1.1" (uri-host uri)))
+      ))
+
+  (it
+    (let ((uri (uri::parse-uri "http://192.168.42.1")))
+      (is (equal "192.168.42.1" (uri-host uri)))))
+
+  (it
+    (let ((uri (uri::parse-uri "http://42.42.42.42")))
+      (is (equal "42.42.42.42" (uri-host uri))))))
+
 (test parse-uri/percent-encoding
   (signals error (uri::parse-uri "ht%74p://coobii.com"))
   )
