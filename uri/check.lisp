@@ -51,15 +51,19 @@
   (flet ((reserve-char (char)
            (or (unreserved-p char))))
     (loop for (name . value) in alist
-       collect (format nil "~A=~A"
-                       (percent-encode name :reserve #'reserve-char)
-                       (percent-encode value :reserve #'reserve-char))
+       when value
+       collect (cond
+                 ((emptyp value) (percent-encode name :reserve #'reserve-char))
+                 (t (format nil "~A=~A"
+                            (percent-encode name :reserve #'reserve-char)
+                            (percent-encode value :reserve #'reserve-char))))
        into pairs
        finally (return (format nil "~{~A~^&~}" pairs)))))
 
 (defun plist-query (plist)
+  (unless (evenp (length plist))
+    (error "Odd number of arguments for query plist"))
   (loop for (name value) on plist by #'cddr
-     unless value do (error "Missing value for name ~S" name)
      collect (cons name value) into alist
      finally (return (alist-query alist))))
 
