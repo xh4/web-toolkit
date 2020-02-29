@@ -42,12 +42,17 @@
                             (setf (slot-value variable 'form) current-form
                                   (slot-value variable 'value) current-value))))
       (loop for v in (propagation-list variable)
-           do (reinitialize v)))))
+         do (reinitialize v)))))
+
+(defvar *dependency* nil)
 
 (defun reinitialize (variable)
   (setf (slot-value variable 'value)
-        (eval `(let ((*variable* ,variable))
-                 ,(variable-form variable)))))
+        (eval `(let ((*variable* ,variable)
+                     (*dependency* nil))
+                 (prog1
+                     ,(variable-form variable)
+                   (set-dependency ,variable *dependency*))))))
 
 (defun propagation-list (variable)
   (let ((propagation-list `(,variable)))
@@ -76,6 +81,22 @@
     (pushnew variable-2 (variable-dependency variable-1))
     (pushnew variable-1 (variable-propagation variable-2))))
 
+(defun remove-dependency (variable-1 variable-2)
+  (when (and variable-1 variable-2)
+    (setf (variable-dependency variable-1)
+          (remove variable-2 (variable-dependency variable-1)))
+    (setf (variable-propagation variable-2)
+          (remove variable-1 (variable-propagation variable-2)))))
+
+(defun set-dependency (variable dependency)
+  (let ((current-dependency (variable-dependency variable)))
+    (let ((to-add (set-difference dependency current-dependency))
+          (to-remove (set-difference current-dependency dependency)))
+      (loop for v in to-add
+         do (add-dependency variable v))
+      (loop for v in to-remove
+         do (remove-dependency variable v)))))
+
 (defmethod print-object ((variable variable) stream)
   (print-unreadable-object (variable stream :type t :identity t)
     (format stream "~A (~A)"
@@ -103,4 +124,4 @@
            (define-symbol-macro ,name (prog1
                                           (variable-value ,vname)
                                         (when *variable*
-                                          (add-dependency *variable* ,vname))))))))
+                                          (push ,vname *dependency*))))))))

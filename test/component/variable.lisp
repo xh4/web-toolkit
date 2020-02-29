@@ -113,3 +113,12 @@
       (define-variable v2 (1+ v1))
       (signals error (define-variable v1 "1"))
       (is (equal v1 1)))))
+
+(test remove-dependency
+  (it
+    (ensure-variable-cleanup ()
+      (define-variable v1 1)
+      (define-variable v2 (1+ v1))
+      (is (equal `(,(variable 'v1)) (com::variable-dependency (variable 'v2))))
+      (define-variable v2 2)
+      (is (equal nil (com::variable-dependency (variable 'v2)))))))
