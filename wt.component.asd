@@ -24,6 +24,7 @@
   :components ((:module "test/component"
                         :serial t
                         :components ((:file "package")
+                                     (:file "helper")
                                      (:file "component")
                                      (:file "render")
                                      (:file "variable"))))

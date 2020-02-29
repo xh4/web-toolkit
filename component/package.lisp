@@ -11,7 +11,8 @@
            :root
            :children
            :append-child
-           :define-variable)
+           :define-variable
+           :variable)
   (:import-from :html
                 :append-child
                 :constructor

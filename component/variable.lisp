@@ -1,7 +1,5 @@
 (in-package :component)
 
-(shadow :variable)
-
 (defclass variable ()
   ((name
     :initarg :name
@@ -10,11 +8,11 @@
    (form
     :initarg :form
     :initform nil
-    :reader variable-form)
+    :accessor variable-form)
    (value
     :initarg :value
     :initform nil
-    :accessor variable-value)
+    :reader variable-value)
    (dependency
     :initarg :dependency
     :initform nil
@@ -24,10 +22,57 @@
     :initform nil
     :accessor variable-propagation)))
 
-(defvar *variable* nil)
+(defmacro variable (name)
+  (with-gensyms (object)
+    `(let ((,object ,name))
+       (typecase ,object
+         (variable ,object)
+         (symbol (symbol-value (intern (format nil "V/~A" ,name))))
+         (t (error "Not a variable form ~A" object))))))
+
+;; TODO: better error report
+(defmethod (setf variable-form) (form (variable variable))
+  (let ((current-form (slot-value variable 'form))
+        (current-value (slot-value variable 'value))
+        (target-form form))
+    (format t "Set form of ~A from ~A to ~A~%" variable current-form target-form)
+    (setf (slot-value variable 'form) target-form)
+    (handler-bind ((error (lambda (e)
+                            (declare (ignore e))
+                            (setf (slot-value variable 'form) current-form
+                                  (slot-value variable 'value) current-value))))
+      (loop for v in (propagation-list variable)
+           do (reinitialize v)))))
+
+(defun reinitialize (variable)
+  (setf (slot-value variable 'value)
+        (eval `(let ((*variable* ,variable))
+                 ,(variable-form variable)))))
+
+(defun propagation-list (variable)
+  (let ((propagation-list `(,variable)))
+    (labels ((add-propagation (v)
+               (pushnew v propagation-list)
+               (loop for v in (variable-propagation v)
+                  do (add-propagation v))))
+      (loop for v in (variable-propagation variable)
+         do (add-propagation v)))
+    (reverse propagation-list)))
+
+(defun detect-cycle (variable dependency)
+  (labels ((walk (v path)
+             (push v path)
+             (if (eq v variable)
+                 (error "Cycle variable dependency from ~A, path: ~A" variable (reverse path))
+                 (loop for v in (variable-dependency v)
+                    do (walk v path)))))
+    (loop for v in dependency
+         do (walk v `(,v)))))
 
 (defun add-dependency (variable-1 variable-2)
   (when (and variable-1 variable-2)
+    (let ((new-dependency (cons variable-2 (variable-dependency variable-1))))
+      (detect-cycle variable-1 new-dependency))
     (pushnew variable-2 (variable-dependency variable-1))
     (pushnew variable-1 (variable-propagation variable-2))))
 
@@ -37,21 +82,25 @@
             (variable-name variable)
             (variable-value variable))))
 
+(defvar *variable* nil)
+
 (defmacro define-variable (name form)
-  (let ((vname (intern (format nil "V_~A" name))))
+  (let ((vname (intern (format nil "V/~A" name))))
     `(if (boundp ',vname)
-         ',name
+         (let ((variable (variable ',name)))
+           (if (equal ',form (variable-form variable))
+               ',name
+               (setf (variable-form ,vname) ',form)))
          (progn
            (defvar ,vname (make-instance 'variable
                                          :name ',name
                                          :form ',form))
            (handler-case
-                (setf (variable-value ,vname)
-                      (let ((*variable* ,vname))
-                        ,form))
+                (setf (variable-form ,vname) ',form)
              (error (e)
                (declare (ignore e))
-               (unintern ',vname)))
+               (makunbound ',vname)))
            (define-symbol-macro ,name (prog1
                                           (variable-value ,vname)
-                                        (add-dependency *variable* ,vname)))))))
+                                        (when *variable*
+                                          (add-dependency *variable* ,vname))))))))
