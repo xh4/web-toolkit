@@ -2,7 +2,7 @@
 
 (defpackage :component-test
   (:nicknames :com-test :wt.component-test :wt.com-test)
-  (:use :cl :component :test)
+  (:use :cl :component :html :test)
   (:export :run!))
 
 (in-package :component-test)

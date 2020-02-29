@@ -2,39 +2,59 @@
 
 (in-suite :component-test)
 
-(define-component button ()
-  ((size
-    :initarg :size))
-  (:tag-option tag)
-  (:class-option class :default "btn"))
-
 (test render
+  (it "should copy root"
+      (define-component foo () () (:tag :div))
+      (let ((com (foo))
+            (render (com::make-render '(lambda (com) ))))
+        (let ((root-0 (root com))
+              (root-1 (progn (funcall render com) (root com)))
+              (root-2 (progn (funcall render com) (root com))))
+          (is-false (eq root-0 root-1))
+          (is-false (eq root-1 root-2)))))
 
-  (define-render button (tag)
-    tag)
+  (it "should copy children"
+      (define-component foo () () (:tag :div))
+      (let ((com (foo (h1) (h2)))
+            (render (com::make-render '(lambda (com) ))))
+        (let ((children-0 (children com))
+              (children-1 (progn (funcall render com) (children com)))
+              (children-2 (progn (funcall render com) (children com))))
+          (is-false (eq (first children-0) (first children-1)))
+          (is-false (eq (first children-1) (first children-2))))))
 
-  (is (render (button :tag :span)) :span)
+  (it "should be able to use root symbol macro"
+      (define-component foo () () (:tag :div))
+      (let ((com (foo :class "foo" (h1) (h2)))
+            (render (com::make-render '(lambda (com) root))))
+        (let ((root (funcall render com)))
+          (is (equal 'div (type-of root)))
+          (is (equal "foo" (dom:get-attribute root "class"))))))
 
+  (it "should be able to use children symbol macro"
+      (define-component foo () () (:tag :div))
+      (let ((com (foo :class "foo" (h1) (h2)))
+            (render (com::make-render '(lambda (com) children))))
+        (let ((children (funcall render com)))
+          (is-true (listp children))
+          (is (equal 'h1 (type-of (first children))))
+          (is (equal 'h2 (type-of (second children)))))))
 
-  (define-render button (tag)
-    (tag))
+  (it "should be able to use root macro (1)"
+      (define-component foo () () (:tag :div))
+      (let ((com (foo :class "foo" (h1) (h2)))
+            (render (com::make-render '(lambda (com) (root)))))
+        (let ((root (funcall render com)))
+          (is (equal 'div (type-of root)))
+          (is (equal "foo" (dom:get-attribute root "class"))))))
 
-  (is (type-of (render (button :tag :span))) 'html:span)
-
-
-  (define-render button (tag)
-    (setf tag 'html:input)
-    (tag))
-
-  (is (type-of (render (button :tag :span))) 'html:input)
-
-
-  (define-render button (size)
-    size)
-
-  (is (render (button :size :large)) :large)
-
-  (define-render button (class)
-    class)
-
-  (is (render (button)) '("btn")))
+  (it "should be able to use root macro (2)"
+    (define-component foo () () (:tag :div))
+      (let ((com (foo :class "foo" (h1) (h2)))
+            (render (com::make-render '(lambda (com) (root children)))))
+        (let ((root (funcall render com)))
+          (is (equal 'div (type-of root)))
+          (is (equal "foo" (dom:get-attribute root "class")))
+          (is (equal 2 (length (children root))))
+          (is (equal 'h1 (type-of (first (children root)))))
+          (is (equal 'h2 (type-of (second (children root)))))))))

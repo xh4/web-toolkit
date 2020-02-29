@@ -14,12 +14,8 @@
                         :serial t
                         :components ((:file "package")
                                      (:file "utility")
-                                     (:file "class")
                                      (:file "component")
-                                     (:file "tag-option")
-                                     (:file "class-option")
-                                     (:file "render")
-                                     (:file "element"))))
+                                     (:file "variable"))))
   :in-order-to ((test-op (test-op :wt.component/test))))
 
 (defsystem wt.component/test
@@ -29,6 +25,7 @@
                         :serial t
                         :components ((:file "package")
                                      (:file "component")
-                                     (:file "render"))))
+                                     (:file "render")
+                                     (:file "variable"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :component-test)))
