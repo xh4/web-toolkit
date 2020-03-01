@@ -17,7 +17,10 @@
                                      (:file "utility")
                                      (:file "component")
                                      (:file "variable"))))
-  :in-order-to ((test-op (test-op :wt.component/test))))
+  :in-order-to ((test-op (test-op :wt.component/test)))
+  :perform (load-op :after (o c)
+                    #+lispworks
+                    (pushnew :component hcl:*packages-for-warn-on-redefinition*)))
 
 (defsystem wt.component/test
   :depends-on (:wt.component
