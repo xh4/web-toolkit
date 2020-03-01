@@ -46,14 +46,9 @@
   (:metaclass endpoint-class))
 
 ;; TODO: signal error when unknown class options passed
-(defmethod shared-initialize :around ((class endpoint-class) slot-names
-                                      &rest args
-                                      &key name direct-slots direct-superclasses location
-                                        extra-initargs direct-default-initargs documentation
-                                        on-open on-close on-error on-message session-class function
-                                        &allow-other-keys)
+(defmethod shared-initialize :after ((class endpoint-class) slot-names
+                                      &key on-open on-close on-error on-message session-class &allow-other-keys)
   (declare (ignore slot-names))
-  ;; (format t "Shared-initialize :around (endpoint-class): ~A~%" args)
   (when on-open
     (let* ((handler (eval (car on-open)))
            (handler-lambda-list (function-lambda-list handler)))
@@ -79,24 +74,7 @@
       (setf (slot-value class 'message-handler) handler
             (slot-value class 'message-handler-lambda-list) handler-lambda-list)))
   (when session-class
-    (setf (slot-value class 'session-class) (eval (car session-class))))
-  (if (getf args :name)
-      ;; First initialize
-      (call-next-method class slot-names
-                        :name name
-                        :direct-slots direct-slots
-                        :direct-superclasses direct-superclasses
-                        :location location
-                        :function function)
-      ;; Rest initialize
-      (call-next-method class slot-names
-                        :direct-slots direct-slots
-                        :direct-superclasses direct-superclasses
-                        :extra-initargs extra-initargs
-                        :direct-default-initargs direct-default-initargs
-                        :documentation documentation
-                        :location location
-                        :function function)))
+    (setf (slot-value class 'session-class) (eval (car session-class)))))
 
 (defmethod http::handler-class-precedence-list ((endpoint-class endpoint-class))
   (list endpoint-class))

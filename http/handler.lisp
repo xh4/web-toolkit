@@ -3,6 +3,8 @@
 (defclass handler-class (standard-class)
   ((function
     :initarg :function
+    :initform nil)
+   (%function
     :initform nil
     :accessor handler-function)
    (function-lambda-list
@@ -28,36 +30,16 @@
   (when (> (length lambda-list) 2)
     (error "Bad handler function lambda list ~A" lambda-list)))
 
-(defmethod shared-initialize :around ((class handler-class) slot-names
-                                      &rest args
-                                      &key name direct-slots direct-superclasses location
-                                        extra-initargs direct-default-initargs documentation
-                                        function
-                                        &allow-other-keys)
-  ;; (format t "Shared-initialize :around (handler-class): ~A~%" args)
+(defmethod shared-initialize :after ((class handler-class) slot-names &key function &allow-other-keys)
+  (declare (ignore slot-names))
   (if function
       (progn (setf function (eval (car function)))
              (check-handler-function function)
              (let ((function-lambda-list (function-lambda-list function)))
-               (setf (slot-value class 'function) function)
+               (setf (slot-value class '%function) function)
                (setf (slot-value class 'function-lambda-list) function-lambda-list)))
-      (progn (setf (slot-value class 'function) nil
-                   (slot-value class 'function-lambda-list) nil)))
-  (if (getf args :name)
-      ;; First initialize
-      (call-next-method class slot-names
-                        :name name
-                        :direct-slots direct-slots
-                        :direct-superclasses direct-superclasses
-                        :location location)
-      ;; Rest initialize
-      (call-next-method class slot-names
-                        :direct-slots direct-slots
-                        :direct-superclasses direct-superclasses
-                        :extra-initargs extra-initargs
-                        :direct-default-initargs direct-default-initargs
-                        :documentation documentation
-                        :location location)))
+      (progn (setf (slot-value class '%function) nil
+                   (slot-value class 'function-lambda-list) nil))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *request* nil)

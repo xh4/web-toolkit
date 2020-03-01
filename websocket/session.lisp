@@ -52,11 +52,8 @@
     :reader session-opening-header))
   (:metaclass session-class))
 
-(defmethod shared-initialize :around ((class session-class) slot-names
-                                      &rest args
-                                      &key name direct-slots direct-superclasses location
-                                        extra-initargs direct-default-initargs documentation
-                                        on-open on-close on-error on-message
+(defmethod shared-initialize :after ((class session-class) slot-names
+                                      &key on-open on-close on-error on-message
                                         &allow-other-keys)
   (declare (ignore slot-names))
   (when on-open
@@ -82,22 +79,7 @@
            (handler-lambda-list (function-lambda-list handler)))
       (check-message-handler-lambda-list handler-lambda-list)
       (setf (slot-value class 'message-handler) handler
-            (slot-value class 'message-handler-lambda-list) handler-lambda-list)))
-  (if (getf args :name)
-      ;; First initialize
-      (call-next-method class slot-names
-                        :name name
-                        :direct-slots direct-slots
-                        :direct-superclasses direct-superclasses
-                        :location location)
-      ;; Rest initialize
-      (call-next-method class slot-names
-                        :direct-slots direct-slots
-                        :direct-superclasses direct-superclasses
-                        :extra-initargs extra-initargs
-                        :direct-default-initargs direct-default-initargs
-                        :documentation documentation
-                        :location location)))
+            (slot-value class 'message-handler-lambda-list) handler-lambda-list))))
 
 (defgeneric close-session  (session &optional reason)
   (:method ((session session) &optional reason)

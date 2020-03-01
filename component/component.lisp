@@ -4,57 +4,32 @@
   (defclass component-class (standard-class)
     ((render
       :initarg :render
+      :initform nil)
+     (%render
       :initform nil
       :accessor component-render)
      (render-lambda-list
       :initarg :render-lambda-list
       :initform nil
-      :accessor component-render-lambda-list)
-     (allowed-tags
-      :initarg :allowed-tags
-      :initform nil
-      :accessor component-allowed-tags))))
+      :accessor component-render-lambda-list))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defmethod validate-superclass
       ((class component-class) (super-class standard-class)) t))
 
-;; TODO: write a macro
-(defmethod shared-initialize :around ((class component-class) slot-names
-                                      &rest args
-                                      &key name direct-slots direct-superclasses #+lispworks location #+sbcl source #+sbcl safe-p
-                                        extra-initargs direct-default-initargs documentation
-                                        render
-                                        &allow-other-keys)
+(defmethod shared-initialize :after ((class component-class) slot-names
+                                     &key render &allow-other-keys)
+  (declare (ignore slot-names))
   (if render
       (let ((lambda-form (car render)))
         (setf render (make-render lambda-form))
         ;; TODO: check render
         ;; (check-render render)
         (let ((render-lambda-list (function-lambda-list render)))
-          (setf (slot-value class 'render) render)
+          (setf (slot-value class '%render) render)
           (setf (slot-value class 'render-lambda-list) render-lambda-list)))
-      (progn (setf (slot-value class 'render) nil
-                   (slot-value class 'render-lambda-list) nil)))
-  (if (getf args :name)
-      ;; First initialize
-      (call-next-method class slot-names
-                        :name name
-                        :direct-slots direct-slots
-                        :direct-superclasses direct-superclasses
-                        #+lispworks :location #+lispworks location
-                        #+sbcl :source #+sbcl source
-                        #+sbcl :safe-p #+sbcl safe-p)
-      ;; Rest initialize
-      (call-next-method class slot-names
-                        :direct-slots direct-slots
-                        :direct-superclasses direct-superclasses
-                        :extra-initargs extra-initargs
-                        :direct-default-initargs direct-default-initargs
-                        :documentation documentation
-                        #+lispworks :location #+lispworks location
-                        #+sbcl :source #+sbcl source
-                        #+sbcl :safe-p #+sbcl safe-p)))
+      (progn (setf (slot-value class '%render) nil
+                   (slot-value class 'render-lambda-list) nil))))
 
 (defclass component (html:custom-element)
   ((tag
@@ -80,9 +55,6 @@
 
 (defmethod component-render-lambda-list ((component component))
   (component-render-lambda-list (class-of component)))
-
-(defmethod component-allowed-tags ((component component))
-  (component-allowed-tags (class-of component)))
 
 (defgeneric compute-component-class (component)
   (:method ((component component))
