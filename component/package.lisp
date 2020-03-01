@@ -4,6 +4,8 @@
   (:nicknames :com :wt.com :wt.component)
   (:use :cl :alexandria :utility)
   (:shadow :variable)
+  #+sb-package-locks
+  (:lock t)
   (:export :id
            :define-component
            :render
@@ -24,4 +26,5 @@
                 :allocate-instance
                 :validate-superclass
                 :class-slots
-                :slot-definition-name))
+                :slot-definition-name
+                :compute-class-precedence-list))

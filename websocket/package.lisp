@@ -3,6 +3,8 @@
 (defpackage :websocket
   (:nicknames :ws :wt.ws :wt.websocket)
   (:use :cl :alexandria :utility)
+  #+sb-package-locks
+  (:lock t)
   (:export :define-endpoint
            :define-session
            :session-class

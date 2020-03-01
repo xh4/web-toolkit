@@ -4,6 +4,8 @@
   (:nicknames :wt.http)
   (:use :cl :alexandria :utility)
   (:shadow :get :delete :read-line :read-char :stream :directory)
+  #+sb-package-locks
+  (:lock t)
   (:export :header
            :header-fields
            :header-field

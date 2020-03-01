@@ -3,6 +3,8 @@
 (defpackage :uri
   (:nicknames :wt.uri)
   (:use :cl :alexandria)
+  #+sb-package-locks
+  (:lock t)
   (:export :uri
            :uri-scheme
            :uri-userinfo

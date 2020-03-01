@@ -15,7 +15,10 @@
                                      (:file "access")
                                      (:file "encode")
                                      (:file "decode"))))
-  :in-order-to ((test-op (test-op :wt.json/test))))
+  :in-order-to ((test-op (test-op :wt.json/test)))
+  :perform (load-op :after (o c)
+                    #+lispworks
+                    (pushnew :json hcl:*packages-for-warn-on-redefinition*)))
 
 (defsystem wt.json/test
   :depends-on (:wt.json

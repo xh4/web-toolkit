@@ -64,7 +64,10 @@
                                      (:file "listener")
                                      (:file "server")
                                      (:file "client"))))
-  :in-order-to ((test-op (test-op :wt.http/test))))
+  :in-order-to ((test-op (test-op :wt.http/test)))
+  :perform (load-op :after (o c)
+                    #+lispworks
+                    (pushnew :http hcl:*packages-for-warn-on-redefinition*)))
 
 (defsystem wt.http/test
   :depends-on (:wt.http

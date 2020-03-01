@@ -4,6 +4,8 @@
   (:nicknames :wt.dom)
   (:use :cl :alexandria)
   (:shadow :length :append :remove)
+  #+sb-package-locks
+  (:lock t)
   (:export :document
            :node
            :root

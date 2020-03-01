@@ -26,7 +26,10 @@
                                      (:file "connection")
                                      (:file "protocol")
                                      (:file "client"))))
-  :in-order-to ((test-op (test-op :wt.websocket/test))))
+  :in-order-to ((test-op (test-op :wt.websocket/test)))
+  :perform (load-op :after (o c)
+                    #+lispworks
+                    (pushnew :websocket hcl:*packages-for-warn-on-redefinition*)))
 
 (defsystem wt.websocket/test
   :depends-on (:wt.websocket

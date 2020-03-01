@@ -4,6 +4,8 @@
   (:nicknames :wt.html)
   (:use :cl :alexandria)
   (:shadow :write-char :write-string)
+  #+sb-package-locks
+  (:lock t)
   (:export :constructor
            :construct
            :document

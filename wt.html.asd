@@ -15,7 +15,10 @@
                                      (:file "text")
                                      (:file "element")
                                      (:file "serialize"))))
-  :in-order-to ((test-op (test-op :wt.html/test))))
+  :in-order-to ((test-op (test-op :wt.html/test)))
+  :perform (load-op :after (o c)
+                    #+lispworks
+                    (pushnew :html hcl:*packages-for-warn-on-redefinition*)))
 
 (defsystem wt.html/test
   :depends-on (:wt.html

@@ -16,7 +16,10 @@
                                      (:file "element")
                                      (:file "text")
                                      (:file "traversal"))))
-  :in-order-to ((test-op (test-op :wt.dom/test))))
+  :in-order-to ((test-op (test-op :wt.dom/test)))
+  :perform (load-op :after (o c)
+                    #+lispworks
+                    (pushnew :dom hcl:*packages-for-warn-on-redefinition*)))
 
 (defsystem wt.dom/test
   :depends-on (:wt.dom
