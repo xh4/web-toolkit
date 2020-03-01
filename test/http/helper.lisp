@@ -158,16 +158,15 @@
        ,@body)))
 
 (defmacro with-simple-test-server-running ((port-var function) &body body)
-  (let ((port (find-port:find-port :min 5000)))
-    `(progn
-       (define-server simple-test-server ()
-         ()
-         (:handler ,function)
-         (:listener (listener :port ,port)))
-       (unwind-protect
-            (progn
-              (start-server simple-test-server)
-              (let ((,port-var ,port))
-                ,@body))
-         (stop-server simple-test-server)
-         (unintern 'simple-test-server)))))
+  `(let ((port (find-port:find-port :min 5000)))
+     (define-server simple-test-server ()
+       ()
+       (:handler ,function)
+       (:listener (listener :port port)))
+     (unwind-protect
+          (progn
+            (start-server simple-test-server)
+            (let ((,port-var port))
+              ,@body))
+       (stop-server simple-test-server)
+       (makunbound 'simple-test-server))))
