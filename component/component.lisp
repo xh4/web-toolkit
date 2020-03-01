@@ -79,6 +79,15 @@
 (defmethod component-allowed-tags ((component component))
   (component-allowed-tags (class-of component)))
 
+(defgeneric compute-component-class (component)
+  (:method ((component component))
+    (let ((classes (compute-class-precedence-list (class-of component))))
+      (loop for class in classes
+         until (eq class (find-class 'component))
+         collect (string-downcase (symbol-name (cl:class-name class)))
+         into classes
+         finally (return (reverse classes))))))
+
 (defmethod root ((component component))
   (component-root component))
 
@@ -88,11 +97,54 @@
 (defmethod serialize ((component component) &optional stream)
   (serialize (render component) stream))
 
+(defclass constructor ()
+  ((component-class
+    :initarg :component-class
+    :initform nil
+    :reader constructor-component-class)))
+
+(defgeneric construct (constructor &rest arguments)
+  (:method ((constructor constructor) &rest arguments)
+    (multiple-value-bind (attributes children)
+        (segment-attributes-children arguments)
+      (let* ((slot-names (mapcar 'slot-definition-name
+                                 (class-slots
+                                  (find-class
+                                   (constructor-component-class constructor)))))
+             (slot-attributes '())
+             (root-attributes '()))
+        (loop for (name value) on attributes by #'cddr
+           for slot-name = (find (symbol-name name) slot-names :key 'symbol-name :test 'equal)
+           if slot-name
+           do (appendf slot-attributes `((,slot-name . ,value)))
+           else do (appendf root-attributes `((,name . ,value))))
+        (loop for (_name . _value) in root-attributes
+           for name = (string-downcase (symbol-name _name))
+           for value = (if (eq _value t)
+                           ""
+                           (typecase _value
+                             (null nil)
+                             (string _value)
+                             (list (format nil "~{~A~^ ~}" _value))
+                             (t (format nil "~A" _value))))
+           when value
+           collect `(,name . ,value) into attributes
+           finally (setf root-attributes attributes))
+        (let ((component (make-instance (constructor-component-class constructor)
+                                        :attributes root-attributes
+                                        :children children)))
+          (loop for (slot-name . value) in slot-attributes
+             do (setf (slot-value component slot-name) value))
+          ;; (let ((class (compute-component-class component)))
+          ;;   (setf (component-class component) class))
+          (make-component-root component)
+          component)))))
+
 (defmacro define-component (name superclasses slots &rest options)
   `(progn
      (eval-when (:compile-toplevel :load-toplevel :execute)
        (define-component-class ,name ,superclasses ,slots ,@options)
-       (define-component-macro ,name))))
+       (define-component-constructor ,name))))
 
 (defmacro define-component-class (name superclasses slots &rest options)
   (unless (find 'component superclasses)
@@ -111,16 +163,35 @@
        ,slots
        ,@options)))
 
-(defmacro define-component-macro (component-name)
-  `(defun ,component-name (&rest arguments)
-     (multiple-value-bind (attributes children)
-         (segment-attributes-children arguments)
-       (let ((component (make-instance ',component-name
-                                       :attributes attributes
-                                       :children children)))
-         (let ((root (form-element `(,(component-tag component) ,@attributes))))
-           (setf (component-root component) root))
-         component))))
+(defmacro define-component-constructor (component-name)
+  (let* ((constructor-name (format nil "~A-CONSTRUCTOR" component-name))
+         (constructor-symbol (intern constructor-name)))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (defclass ,constructor-symbol (constructor)
+         ((component-class :initform ',component-name)))
+       ;; (defvar ,component-name (make-instance ',constructor-symbol))
+       (defun ,component-name (&rest arguments)
+         (let ((constructor (make-instance ',constructor-symbol)))
+           (apply 'construct constructor arguments))))))
+
+(defun make-component-root (component &rest arguments)
+  (let ((tag (component-tag component)))
+    (let ((constructor (html:constructor tag)))
+      (let ((root (html:construct constructor)))
+        (loop for (name . value) in (dom::attributes component)
+           do (dom:set-attribute root name value))
+        (multiple-value-bind (attributes children)
+            (segment-attributes-children arguments)
+          (loop for (name value) on attributes by #'cddr
+             do (dom:set-attribute root name value))
+          (loop for child in (flatten children)
+             do (dom:append-child root child)))
+        (let ((classes (compute-component-class component))
+              (class (dom:get-attribute root "class")))
+          (when (and class (not (find class classes :test 'equal)))
+            (appendf classes (list class)))
+          (dom:set-attribute root "class" (format nil "~{~A~^ ~}" classes)))
+        (setf (component-root component) root)))))
 
 (defgeneric render (component)
   (:method ((component component))
@@ -161,26 +232,14 @@
                         (copy-element (component-children ,component)))
                   (macrolet ((root (&rest arguments)
                                (let ((component ',component))
-                                 `(let* ((constructor (html:constructor (component-tag ,component)))
-                                         (arguments (list ,@arguments)))
-                                    (apply 'html:construct constructor arguments)))))
+                                 `(make-component-root
+                                   ,component
+                                   ,@arguments))))
                     (symbol-macrolet ((root (component-root ,component))
                                       (children (component-children ,component)))
                       ,@body)))))
           (values (eval render-lambda-form) render-lambda-form))))))
 
-(defun form-element (form)
-  (let ((tag (first form))
-        (arguments (rest form)))
-    (let ((constructor (constructor tag)))
-      (apply 'construct constructor arguments))))
-
 ;; (pprint (nth-value 1 (make-render '(lambda (compoment) (root)))))
 
 ;; (funcall (make-render '(lambda (component) (root))) (foo))
-
-(define-component foo ()
-  ()
-  (:tag :span)
-  (:render (lambda (com)
-             (root))))

@@ -8,7 +8,8 @@
                :wt.utility
                :alexandria
                :closer-mop
-               :group-by)
+               :group-by
+               :split-sequence)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "component"
                         :serial t
@@ -16,10 +17,7 @@
                                      (:file "utility")
                                      (:file "component")
                                      (:file "variable"))))
-  :in-order-to ((test-op (test-op :wt.component/test)))
-  :perform (load-op :after (o c)
-                    #+lispworks
-                    (pushnew :component hcl:*packages-for-warn-on-redefinition*)))
+  :in-order-to ((test-op (test-op :wt.component/test))))
 
 (defsystem wt.component/test
   :depends-on (:wt.component

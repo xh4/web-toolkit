@@ -3,7 +3,7 @@
 (defpackage :component-test
   (:nicknames :com-test :wt.component-test :wt.com-test)
   (:use :cl :component :html :test)
-  (:shadow :define-variable)
+  (:shadow :define-component :define-variable :variable)
   (:export :run!))
 
 (in-package :component-test)

@@ -121,6 +121,7 @@
              (error (e)
                (declare (ignore e))
                (makunbound ',vname)))
+           ;; TODO: check if `name` is already global variable
            (define-symbol-macro ,name (prog1
                                           (variable-value ,vname)
                                         (when *variable*

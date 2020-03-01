@@ -4,7 +4,7 @@
 
 (test define-variable
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable foo 42)
       (is (equal 'com::variable (type-of v/foo)))
       (is (equal 'foo (com::variable-name v/foo)))
@@ -13,7 +13,7 @@
       (is (equal 42 foo))))
 
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable foo (* 2 21))
       (is (equal 'com::variable (type-of v/foo)))
       (is (equal 'foo (com::variable-name v/foo)))
@@ -23,7 +23,7 @@
 
 (test define-variable/dependency
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable foo 21)
       (define-variable bar (* 2 foo))
       (is (equal 42 bar))
@@ -34,20 +34,20 @@
 
 (test define-variable/redefine
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable foo 21)
       (define-variable foo 42)
       (is (equal 42 foo))))
 
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable foo (+ 1 1))
       (define-variable foo (+ 2 2))
       (is (equal 4 foo)))))
 
 (test detect-cycle
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable v1 1)
       (define-variable v2 (1+ v1))
       (define-variable v3 (1+ v2))
@@ -61,7 +61,7 @@
 
 (test propagation-list
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable v1 1)
       (define-variable v2 (1+ v1))
       (define-variable v3 (1+ v2))
@@ -69,7 +69,7 @@
                  (com::propagation-list (variable 'v1))))))
 
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable v1 1)
       (define-variable v2 (1+ v1))
       (define-variable v3 (1+ v2))
@@ -79,13 +79,13 @@
 
 (test update-variable-value
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable v1 1)
       (define-variable v1 2))))
 
 (test reinitialize
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable v1 (gensym))
       (let ((value-1 v1))
         (com::reinitialize (variable 'v1))
@@ -94,13 +94,13 @@
 
 (test forbid-set-variable-value
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable v1 1)
       (signals error (setf v1 2)))))
 
 (test propagation
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable v1 1)
       (define-variable v2 (1+ v1))
       (define-variable v1 2)
@@ -108,7 +108,7 @@
 
 (test propagation/error
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable v1 1)
       (define-variable v2 (1+ v1))
       (signals error (define-variable v1 "1"))
@@ -116,7 +116,7 @@
 
 (test remove-dependency
   (it
-    (ensure-variable-cleanup ()
+    (ensure-cleanup ()
       (define-variable v1 1)
       (define-variable v2 (1+ v1))
       (is (equal `(,(variable 'v1)) (com::variable-dependency (variable 'v2))))

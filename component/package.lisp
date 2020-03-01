@@ -17,8 +17,6 @@
            :variable)
   (:import-from :html
                 :append-child
-                :constructor
-                :construct
                 :serialize
                 :root
                 :children)
@@ -27,4 +25,6 @@
                 :validate-superclass
                 :class-slots
                 :slot-definition-name
-                :compute-class-precedence-list))
+                :compute-class-precedence-list)
+  (:import-from :split-sequence
+                :split-sequence))
