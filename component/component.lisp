@@ -1,18 +1,19 @@
 (in-package :component)
 
-(defclass component-class (standard-class)
-  ((render
-    :initarg :render
-    :initform nil
-    :accessor component-render)
-   (render-lambda-list
-    :initarg :render-lambda-list
-    :initform nil
-    :accessor component-render-lambda-list)
-   (allowed-tags
-    :initarg :allowed-tags
-    :initform nil
-    :accessor component-allowed-tags)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defclass component-class (standard-class)
+    ((render
+      :initarg :render
+      :initform nil
+      :accessor component-render)
+     (render-lambda-list
+      :initarg :render-lambda-list
+      :initform nil
+      :accessor component-render-lambda-list)
+     (allowed-tags
+      :initarg :allowed-tags
+      :initform nil
+      :accessor component-allowed-tags))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defmethod validate-superclass
@@ -21,7 +22,7 @@
 ;; TODO: write a macro
 (defmethod shared-initialize :around ((class component-class) slot-names
                                       &rest args
-                                      &key name direct-slots direct-superclasses location
+                                      &key name direct-slots direct-superclasses #+lispworks location #+sbcl source #+sbcl safe-p
                                         extra-initargs direct-default-initargs documentation
                                         render
                                         &allow-other-keys)
@@ -41,7 +42,9 @@
                         :name name
                         :direct-slots direct-slots
                         :direct-superclasses direct-superclasses
-                        :location location)
+                        #+lispworks :location #+lispworks location
+                        #+sbcl :source #+sbcl source
+                        #+sbcl :safe-p #+sbcl safe-p)
       ;; Rest initialize
       (call-next-method class slot-names
                         :direct-slots direct-slots
@@ -49,7 +52,9 @@
                         :extra-initargs extra-initargs
                         :direct-default-initargs direct-default-initargs
                         :documentation documentation
-                        :location location)))
+                        #+lispworks :location #+lispworks location
+                        #+sbcl :source #+sbcl source
+                        #+sbcl :safe-p #+sbcl safe-p)))
 
 (defclass component (html:custom-element)
   ((tag
@@ -161,7 +166,8 @@
   `(progn
      (defclass ,name ,superclasses
        ,slots
-       ,@options)))
+       ,@options)
+     (ensure-finalized (find-class ',name))))
 
 (defmacro define-component-constructor (component-name)
   (let* ((constructor-name (format nil "~A-CONSTRUCTOR" component-name))
@@ -243,3 +249,11 @@
 ;; (pprint (nth-value 1 (make-render '(lambda (compoment) (root)))))
 
 ;; (funcall (make-render '(lambda (component) (root))) (foo))
+
+;; (define-component foo ()
+;;   ()
+;;   (:tag :div))
+
+;; (define-component bar (foo)
+;;   ()
+;;   (:tag :div))

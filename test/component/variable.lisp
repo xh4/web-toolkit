@@ -83,12 +83,12 @@
       (define-variable v1 1)
       (define-variable v1 2))))
 
-(test reinitialize
+(test reify
   (it
     (ensure-cleanup ()
       (define-variable v1 (gensym))
       (let ((value-1 v1))
-        (com::reinitialize (variable 'v1))
+        (com::reify (variable 'v1))
         (let ((value-2 v1))
           (is-false (equal value-1 value-2)))))))
 

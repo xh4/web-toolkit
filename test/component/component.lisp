@@ -12,8 +12,10 @@
   (it "should make root element"
       (ensure-cleanup ()
         (define-component foo () () (:tag :div))
-        (let ((foo (foo :data-aaa "bbb" (h1 (h3)) (h2 (h4)))))
-          (is (equal 'div (type-of (com::component-root foo)))))))
+        (let ((foo (foo :data-aaa "bbb"
+                        (html:h1 (html:h3))
+                        (html:h2 (html:h4)))))
+          (is (equal 'html:div (type-of (com::component-root foo)))))))
 
   (it "should compute-class"
       (ensure-cleanup ()
@@ -25,10 +27,12 @@
   (it "should make child elements"
       (ensure-cleanup ()
         (define-component foo () () (:tag :div))
-        (let ((foo (foo :data-aaa "bbb" (h1 (h3)) (h2 (h4)))))
+        (let ((foo (foo :data-aaa "bbb"
+                        (html:h1 (html:h3))
+                        (html:h2 (html:h4)))))
           (is (equal 2 (length (com:children foo))))
-          (is (equal 'h1 (type-of (first (com:children foo)))))
-          (is (equal 'h2 (type-of (second (com:children foo))))))))
+          (is (equal 'html:h1 (type-of (first (com:children foo)))))
+          (is (equal 'html:h2 (type-of (second (com:children foo))))))))
 
   (it "should capture slots & attributes"
       (ensure-cleanup ()

@@ -2,8 +2,8 @@
 
 (defmacro with-input-from-lines ((var lines &key (line-break http::+crlf+)) &body body)
   `(let* ((line-break (typecase ,line-break
-                        (vector ,line-break)
                         (string (babel:string-to-octets ,line-break))
+                        (vector ,line-break)
                         (character (babel:string-to-octets (string ,line-break)))))
           (line-octets (mapcar 'babel:string-to-octets ,lines))
           (all-octets (loop with all-octets = #()

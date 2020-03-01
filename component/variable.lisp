@@ -35,24 +35,27 @@
   (let ((current-form (slot-value variable 'form))
         (current-value (slot-value variable 'value))
         (target-form form))
-    (format t "Set form of ~A from ~A to ~A~%" variable current-form target-form)
+    ;; (format t "Set form of ~A from ~A to ~A~%" variable current-form target-form)
     (setf (slot-value variable 'form) target-form)
     (handler-bind ((error (lambda (e)
                             (declare (ignore e))
                             (setf (slot-value variable 'form) current-form
                                   (slot-value variable 'value) current-value))))
       (loop for v in (propagation-list variable)
-         do (reinitialize v)))))
+         do (reify v)))))
 
 (defvar *dependency* nil)
 
-(defun reinitialize (variable)
+(defun reify (variable)
   (setf (slot-value variable 'value)
         (eval `(let ((*variable* ,variable)
                      (*dependency* nil))
                  (prog1
                      ,(variable-form variable)
                    (set-dependency ,variable *dependency*))))))
+
+(defmethod initialize-instance :after ((variable variable) &key)
+  (reify variable))
 
 (defun propagation-list (variable)
   (let ((propagation-list `(,variable)))
@@ -116,11 +119,6 @@
            (defvar ,vname (make-instance 'variable
                                          :name ',name
                                          :form ',form))
-           (handler-case
-                (setf (variable-form ,vname) ',form)
-             (error (e)
-               (declare (ignore e))
-               (makunbound ',vname)))
            ;; TODO: check if `name` is already global variable
            (define-symbol-macro ,name (prog1
                                           (variable-value ,vname)

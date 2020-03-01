@@ -17,14 +17,15 @@
            :variable)
   (:import-from :html
                 :append-child
-                :serialize
                 :root
+                :serialize
                 :children)
   (:import-from :closer-mop
                 :allocate-instance
                 :validate-superclass
                 :class-slots
                 :slot-definition-name
-                :compute-class-precedence-list)
+                :compute-class-precedence-list
+                :ensure-finalized)
   (:import-from :split-sequence
                 :split-sequence))

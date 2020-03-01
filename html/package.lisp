@@ -10,7 +10,7 @@
            :construct
            :document
            :document-title
-           :document-body
+           :document-boyd
            :document-head
            :document-images
            :document-links
@@ -19,6 +19,7 @@
            :element
            :custom-element
            :tag-name
+           :root
            :children
            :append-child
            :text
@@ -48,4 +49,5 @@
   (:import-from :dom
                 :tag-name
                 :children
-                :append-child))
+                :append-child
+                :root))
