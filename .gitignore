@@ -10,6 +10,8 @@ tramp
 
 .svn
 
+.DS_Store
+
 *.64ofasl
 *.wx64fsl
 *.fasl
