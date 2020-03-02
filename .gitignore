@@ -11,6 +11,7 @@ tramp
 .svn
 
 *.64ofasl
+*.wx64fsl
 *.fasl
 
 /trash
