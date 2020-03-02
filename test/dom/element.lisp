@@ -40,4 +40,11 @@
       (is (equal "bar2" (get-attribute el "foo")))
       (remove-attribute el "foo")
       (is-false (has-attribute el "foo"))
-      (is-false (has-attributes el)))))
+      (is-false (has-attributes el))))
+
+  (it
+   (let ((el (make-instance 'element :tag-name "p")))
+     (set-attribute el :data-aaa "aaa")
+     (is (equal "aaa" (get-attribute el :data-aaa)))
+     (set-attribute el :data-aaa nil)
+     (is (equal nil (get-attribute el :data-aaa))))))

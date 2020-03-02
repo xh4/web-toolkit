@@ -36,12 +36,21 @@
 
 (defgeneric get-attribute (element name)
   (:method ((element element) name)
+    (check-type name (or string symbol))
+    (when (symbolp name)
+      (setf name (string-downcase (symbol-name name))))
     (loop for (name0 . value) in (attributes element)
        when (equal name name0)
        do (return value))))
 
 (defgeneric set-attribute (element name value)
   (:method ((element element) name value)
+    (check-type name (or string symbol))
+    (check-type value (or null string))
+    (when (null value)
+      (return-from set-attribute (remove-attribute element name)))
+    (when (symbolp name)
+      (setf name (string-downcase (symbol-name name))))
     (with-slots (attributes) element
       (loop with found = nil
          for attribute in attributes
@@ -53,6 +62,9 @@
 
 (defgeneric remove-attribute (element name)
   (:method ((element element) name)
+    (check-type name (or string symbol))
+    (when (symbolp name)
+      (setf name (string-downcase (symbol-name name))))
     (with-slots (attributes) element
       (setf attributes (cl:remove name attributes :test 'equal :key 'car)))))
 
@@ -62,6 +74,9 @@
 
 (defgeneric has-attribute (element name)
   (:method ((element element) name)
+    (check-type name (or string symbol))
+    (when (symbolp name)
+      (setf name (string-downcase (symbol-name name))))
     (loop for (name0 . nil) in (attributes element)
        when (equal name0 name)
        do (return t))))
