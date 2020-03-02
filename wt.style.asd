@@ -18,6 +18,7 @@
                                      (:file "frequency")
                                      (:file "resolution")
                                      (:file "color")
+                                     (:file "image")
                                      (:file "position")
                                      (:file "font")
                                      (:file "syntax")
