@@ -12,4 +12,7 @@
                                      (:file "macro")
                                      (:file "function")
                                      (:file "class")
-                                     (:file "tree")))))
+                                     (:file "tree"))))
+  :perform (load-op :after (o c)
+                    #+lispworks
+                    (pushnew :utility hcl:*packages-for-warn-on-redefinition*)))
