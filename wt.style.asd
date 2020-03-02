@@ -9,8 +9,11 @@
   :components ((:module "style"
                         :serial t
                         :components ((:file "package")
+                                     (:file "utility")
+                                     (:file "unit")
                                      (:file "color")
-                                     (:file "syntax"))))
+                                     (:file "syntax")
+                                     (:file "style"))))
   :in-order-to ((test-op (test-op :wt.style/test)))
   :perform (load-op :after (o c)
                     #+lispworks
@@ -22,6 +25,7 @@
   :components ((:module "test/style"
                         :serial t
                         :components ((:file "package")
+                                     (:file "helper")
                                      (:file "style"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :style-test)))
