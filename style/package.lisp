@@ -2,4 +2,4 @@
 
 (defpackage :style
   (:nicknames :wt.style)
-  (:use :cl))
+  (:use :cl :alexandria))
