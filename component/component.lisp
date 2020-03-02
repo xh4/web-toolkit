@@ -2,7 +2,11 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defclass component-class (standard-class)
-    ((render
+    (;; CCL require this slot to exists
+     (tag
+      :initarg :tag
+      :initform nil)
+     (render
       :initarg :render
       :initform nil)
      (%render
@@ -64,6 +68,9 @@
          collect (string-downcase (symbol-name (cl:class-name class)))
          into classes
          finally (return (reverse classes))))))
+
+(defmethod html:root ((component component))
+  (component-root component))
 
 (defmethod root ((component component))
   (component-root component))

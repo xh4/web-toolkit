@@ -110,17 +110,16 @@
 
 (defmacro define-variable (name form)
   (let ((vname (intern (format nil "V/~A" name))))
-    `(if (boundp ',vname)
-         (let ((variable (variable ',name)))
-           (if (equal ',form (variable-form variable))
-               ',name
-               (setf (variable-form ,vname) ',form)))
-         (progn
-           (defvar ,vname (make-instance 'variable
-                                         :name ',name
-                                         :form ',form))
-           ;; TODO: check if `name` is already global variable
-           (define-symbol-macro ,name (prog1
-                                          (variable-value ,vname)
-                                        (when *variable*
-                                          (push ,vname *dependency*))))))))
+    `(progn
+       (defvar ,vname (make-instance 'variable
+                                     :name ',name
+                                     :form ',form))
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+         ;; TODO: check if `name` is already global variable
+         (define-symbol-macro ,name (prog1
+                                        (variable-value ,vname)
+                                      (when *variable*
+                                        (push ,vname *dependency*)))))
+       (eval-when (:load-toplevel :execute)
+         (unless (equal ',form (variable-form ,vname))
+             (setf (variable-form ,vname) ',form))))))

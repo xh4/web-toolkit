@@ -1,23 +1,26 @@
 (in-package :component-test)
 
-(defvar *temporary-variable-names* nil)
+(defmacro ensure-cleanup (symbols &body body)
+  `(unwind-protect
+        (progn ,@body)
+     (progn
+       (mapcar 'makunbound ',symbols)
+       (mapcar 'fmakunbound ',symbols))))
 
-(defmacro ensure-cleanup (() &body body)
-  `(macrolet ((com-test::define-component (name &rest arguments)
-                `(progn
-                   (push ',name *temporary-variable-names*)
-                   (com:define-component ,name ,@arguments)))
-              (com-test::define-variable (name form)
-                `(progn
-                   (push ',name *temporary-variable-names*)
-                   (push (intern (format nil "V/~A" ',name)) *temporary-variable-names*)
-                   (com:define-variable ,name ,form))))
-     (unwind-protect
-          (progn ,@body)
-       (progn
-         (mapcar 'makunbound *temporary-variable-names*)
-         (mapcar 'fmakunbound *temporary-variable-names*)
-         (setf *temporary-variable-names* nil)))))
+(defun write-forms-to-temporary-file (forms)
+  (uiop:with-temporary-file (:stream stream :pathname pathname :type "lisp" :keep t)
+    (format stream "(in-package :component-test)")
+    (let ((*print-case* :downcase))
+      (loop for form in forms
+         do
+           (format stream "~%")
+           (pprint form stream)))
+    pathname))
+
+(defmacro compile-and-load-toplevel-forms (&rest forms)
+  `(let ((pathname (write-forms-to-temporary-file ',forms)))
+     ;; (format t "~%~A~%" (read-file-into-string pathname))
+     (load (compile-file pathname))))
 
 (defmacro variable (name)
   `(com:variable ,name))

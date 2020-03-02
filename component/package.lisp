@@ -4,8 +4,6 @@
   (:nicknames :com :wt.com :wt.component)
   (:use :cl :alexandria :utility)
   (:shadow :variable)
-  #+sb-package-locks
-  (:lock t)
   (:export :id
            :define-component
            :render
@@ -17,7 +15,6 @@
            :variable)
   (:import-from :html
                 :append-child
-                :root
                 :serialize
                 :children)
   (:import-from :closer-mop
