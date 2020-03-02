@@ -91,16 +91,16 @@
   (:method ((constructor constructor) &rest arguments)
     (multiple-value-bind (attributes children)
         (segment-attributes-children arguments)
-      (let* ((slot-names (mapcar 'slot-definition-name
-                                 (class-slots
-                                  (find-class
-                                   (constructor-component-class constructor)))))
+      (let* ((slot-initargs (flatten
+                             (mapcar 'slot-definition-initargs
+                                     (class-slots
+                                      (find-class
+                                       (constructor-component-class constructor))))))
              (slot-attributes '())
              (root-attributes '()))
         (loop for (name value) on attributes by #'cddr
-           for slot-name = (find (symbol-name name) slot-names :key 'symbol-name :test 'equal)
-           if slot-name
-           do (appendf slot-attributes `((,slot-name . ,value)))
+           if (find (symbol-name name) slot-initargs :key 'symbol-name :test 'equal)
+           do (appendf slot-attributes `(,name ,value))
            else do (appendf root-attributes `((,name . ,value))))
         (loop for (_name . _value) in root-attributes
            for name = (string-downcase (symbol-name _name))
@@ -114,14 +114,14 @@
            when value
            collect `(,name . ,value) into attributes
            finally (setf root-attributes attributes))
-        (let ((component (make-instance (constructor-component-class constructor)
-                                        :attributes root-attributes
-                                        :children children)))
-          (loop for (slot-name . value) in slot-attributes
-             do (setf (slot-value component slot-name) value))
+        (let ((component (apply 'make-instance
+                                (constructor-component-class constructor)
+                                :attributes root-attributes
+                                :children children
+                                slot-attributes)))
           ;; (let ((class (compute-component-class component)))
           ;;   (setf (component-class component) class))
-          (make-component-root component)
+          (render component)
           component)))))
 
 (defmacro define-component (name superclasses slots &rest options)
@@ -180,11 +180,12 @@
 
 (defgeneric render (component)
   (:method ((component component))
-    (when-let ((render (component-render component)))
+    (if-let ((render (component-render component)))
       (let ((lambda-list (component-render-lambda-list component)))
         (cond
           ((= 0 (length lambda-list)) (funcall render))
-          ((= 1 (length lambda-list)) (funcall render component)))))))
+          ((= 1 (length lambda-list)) (funcall render component))))
+      (funcall (make-render '(lambda (c) (declare (ignore c)) root)) component))))
 
 (defgeneric copy-element (element)
   (:method ((list list))
@@ -197,7 +198,10 @@
             (setf (slot-value new-element slot)
                   (slot-value element slot))))
         (setf (dom:children new-element) (copy-element (dom:children element)))
-        new-element))))
+        new-element)))
+  (:method ((text html:text))
+    (let ((data (dom:data text)))
+      (make-instance 'html:text :data data))))
 
 (defun make-render (lambda-form)
   (unless (eq 'lambda (car lambda-form))
@@ -211,8 +215,7 @@
       (let ((body (cddr lambda-form)))
         (let ((render-lambda-form
                `(lambda ,lambda-list
-                  (setf (component-root ,component)
-                        (copy-element (component-root ,component)))
+                  (make-component-root ,component)
                   (setf (component-children ,component)
                         (copy-element (component-children ,component)))
                   (macrolet ((root (&rest arguments)

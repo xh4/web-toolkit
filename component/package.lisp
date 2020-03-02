@@ -22,6 +22,7 @@
                 :validate-superclass
                 :class-slots
                 :slot-definition-name
+                :slot-definition-initargs
                 :compute-class-precedence-list
                 :ensure-finalized)
   (:import-from :split-sequence

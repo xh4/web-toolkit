@@ -25,7 +25,8 @@
          (define-component foo () () (:tag :div))
          (define-component bar (foo) () (:tag :div))
          (let ((bar (bar)))
-           (is (equal "foo bar" (dom:get-attribute (com::component-root bar) "class")))))))
+           (is (equal "foo bar" (dom:get-attribute (com::component-root bar)
+                                                   "class")))))))
 
   (it "should make child elements"
       (ensure-cleanup (foo)
@@ -41,7 +42,7 @@
   (it "should capture slots & attributes"
       (ensure-cleanup (foo)
         (compile-and-load-toplevel-forms
-         (define-component foo () ((a-slot)) (:tag :div))
+         (define-component foo () ((a-slot :initarg :a-slot)) (:tag :div))
          (let ((foo (foo :data-aaa "bbb" :a-slot "a-slot")))
            (is (equal "a-slot" (slot-value foo 'a-slot)))
            (is (equal "bbb" (dom:get-attribute foo "data-aaa"))))))))

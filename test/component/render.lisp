@@ -78,4 +78,4 @@
          (let ((com (foo :class "foo1" (html:h1) (html:h2)))
                (render (com::make-render '(lambda (com) (root :class "foo2")))))
            (let ((root (funcall render com)))
-             (is (equal "foo foo1" (dom:get-attribute root "class")))))))))
+             (is (equal "foo foo2" (dom:get-attribute root "class")))))))))
