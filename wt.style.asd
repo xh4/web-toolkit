@@ -21,6 +21,7 @@
                :wt.test)
   :components ((:module "test/style"
                         :serial t
-                        :components ()))
+                        :components ((:file "package")
+                                     (:file "style"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :style-test)))
