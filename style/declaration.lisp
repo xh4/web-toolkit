@@ -1,5 +1,14 @@
 (in-package :style)
 
+(defclass declaration-class (standard-class)
+  ((value
+    :initarg :value
+    :initform nil
+    :accessor declaration-class-value)))
+
+(defmethod validate-superclass ((class declaration-class) (super-class standard-class))
+  t)
+
 (defclass declaration ()
   ((name
     :initarg :name
@@ -12,7 +21,8 @@
    (important
     :initarg :important
     :initform nil
-    :accessor declaration-important)))
+    :accessor declaration-important))
+  (:metaclass declaration-class))
 
 (defmethod print-object ((declaration declaration) stream)
   (print-unreadable-object (declaration stream :type t)
@@ -21,15 +31,16 @@
 (defmacro define-declaration (name superclasses slots &rest options)
   (unless (find 'declaration superclasses)
     (appendf superclasses '(declaration)))
+  (appendf options '((:metaclass declaration-class)))
   (let ((declaration-name (make-keyword (symbol-name name))))
     `(progn
-       (defclass ,name ,superclasses ,slots)
+       (defclass ,name ,superclasses ,slots ,@options)
        (defmacro ,name (value)
          `(make-instance ',',name
                          :name ,,declaration-name
                          :value ,value)))))
 
-(defclass property (declaration) ())
+(defclass property (declaration) () (:metaclass declaration-class))
 
 (defgeneric property-name (property)
   (:method ((property property))
@@ -48,7 +59,7 @@
     (appendf superclasses '(property)))
   `(define-declaration ,name ,superclasses ,slots ,@options))
 
-(defclass descriptor (declaration) ())
+(defclass descriptor (declaration) () (:metaclass declaration-class))
 
 (defgeneric descriptor-name (descriptor)
   (:method ((descriptor descriptor))

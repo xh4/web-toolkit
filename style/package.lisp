@@ -2,4 +2,6 @@
 
 (defpackage :style
   (:nicknames :wt.style)
-  (:use :cl :alexandria))
+  (:use :cl :alexandria)
+  (:import-from :closer-mop
+                :validate-superclass))
