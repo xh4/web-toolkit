@@ -3,7 +3,7 @@
 (defpackage :style-test
   (:nicknames :wt.style-test)
   (:use :cl :style :test)
-  (:shadow :length)
+  (:shadow :rem)
   (:export :run!))
 
 (in-package :style-test)

@@ -3,6 +3,7 @@
 (defpackage :style
   (:nicknames :wt.style)
   (:use :cl :alexandria)
+  (:shadow :length :float :declaration :rem :time :position)
   (:export :em :ex :ch :rem
            :vw :vh :vmin :vmax
            :cm :mm :q :in :pt :pc :px
