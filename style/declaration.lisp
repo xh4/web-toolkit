@@ -39,6 +39,9 @@
                    ((equal type 'number) (typecase value
                                            (number value)
                                            (string (parse-integer value :junk-allowed t))))
+                   ((equal type 'integer) (typecase value
+                                            (integer value)
+                                            (string (parse-integer value :junk-allowed t))))
                    ((equal type 'percentage) (percentage value))
                    ((keywordp type) (typecase value
                                       (keyword (when (eq type value) value))

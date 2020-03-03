@@ -1,5 +1,7 @@
 (in-package :style)
 
+;; https://drafts.csswg.org/css-display
+
 (define-property display ()
   ()
   ;; TODO: https://drafts.csswg.org/css-display-3/#propdef-display
