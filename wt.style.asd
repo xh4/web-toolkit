@@ -22,6 +22,8 @@
                                      (:file "image")
                                      (:file "position")
                                      (:file "font")
+                                     (:file "box-model")
+                                     (:file "background")
                                      (:file "syntax")
                                      (:file "style"))))
   :in-order-to ((test-op (test-op :wt.style/test)))
