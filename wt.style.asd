@@ -6,7 +6,8 @@
   :mailto "xh@coobii.com"
   :depends-on (:wt.uri
                :alexandria
-               :closer-mop)
+               :closer-mop
+               :cl-ppcre)
   :components ((:module "style"
                         :serial t
                         :components ((:file "package")
