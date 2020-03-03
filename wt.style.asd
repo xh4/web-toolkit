@@ -12,8 +12,8 @@
                         :serial t
                         :components ((:file "package")
                                      (:file "utility")
-                                     (:file "declaration")
                                      (:file "dimension")
+                                     (:file "declaration")
                                      (:file "percentage")
                                      (:file "length")
                                      (:file "angle")
@@ -40,6 +40,8 @@
                         :serial t
                         :components ((:file "package")
                                      (:file "helper")
+                                     (:file "dimension")
+                                     (:file "declaration")
                                      (:file "style"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :style-test)))

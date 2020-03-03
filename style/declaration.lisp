@@ -28,6 +28,31 @@
   (print-unreadable-object (declaration stream :type t)
     (format stream "~A" (declaration-value declaration))))
 
+(defmethod initialize-instance :after ((declaration declaration) &key)
+  (with-slots (value) declaration
+    (let ((value-types (declaration-class-value (class-of declaration))))
+      (format t "~A~%" value-types)
+      (loop with final-value
+         until final-value
+         for type in value-types
+         for v = (cond                   ;; FIXME: parse number
+                   ((equal type 'number) (typecase value
+                                           (number value)
+                                           (string (parse-integer value :junk-allowed t))))
+                   ((equal type 'percentage) (percentage value))
+                   ((keywordp type) (typecase value
+                                      (keyword (when (eq type value) value))
+                                      (string (when (string-equal
+                                                     value
+                                                     (symbol-name type))
+                                                type))))
+                   ((subtypep type 'dimension) (dimension value type)))
+         when v do (setf final-value v)
+         finally (if final-value
+                     (setf value final-value)
+                     (error "Invalid value ~A for declaration ~A"
+                            value (type-of declaration)))))))
+
 (defmacro define-declaration (name superclasses slots &rest options)
   (unless (find 'declaration superclasses)
     (appendf superclasses '(declaration)))

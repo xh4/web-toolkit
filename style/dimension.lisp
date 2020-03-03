@@ -37,6 +37,10 @@
 
 (defun dimension (value &optional type)
   (typecase value
+    (number (when type
+              (loop for unit in *dimension-units*
+                 when (string-equal (symbol-name type) (symbol-name unit))
+                 do (return (funcall unit value)))))
     (dimension (if type (when (typep value type) value) value))
     (string (when-let* ((groups (coerce
                                  (nth-value 1 (cl-ppcre:scan-to-strings "([0-9.]+)([A-Za-z]+)" value))
@@ -45,5 +49,7 @@
                         (number (parse-integer (first groups) :junk-allowed t))
                         (suffix (second groups)))
               (loop for unit in *dimension-units*
-                 when (string-equal suffix (symbol-name unit))
-                 collect (funcall unit number))))))
+                 when (and (string-equal suffix (symbol-name unit))
+                           (or (null type)
+                               (subtypep unit type)))
+                 do (return (funcall unit number)))))))
