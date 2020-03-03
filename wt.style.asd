@@ -25,6 +25,7 @@
                                      (:file "position")
                                      (:file "font")
                                      (:file "box-model")
+                                     (:file "box-sizing")
                                      (:file "background")
                                      (:file "display")
                                      (:file "positioned-layout")
