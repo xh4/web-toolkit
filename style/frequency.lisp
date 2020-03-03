@@ -2,6 +2,6 @@
 
 (define-dimension frequency ())
 
-(define-dimension/unit hz (frequency))
+(define-dimension-unit hz (frequency))
 
-(define-dimension/unit khz (frequency))
+(define-dimension-unit khz (frequency))

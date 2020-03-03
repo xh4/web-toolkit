@@ -2,6 +2,6 @@
 
 (define-dimension time ())
 
-(define-dimension/unit s (time))
+(define-dimension-unit s (time))
 
-(define-dimension/unit ms (time))
+(define-dimension-unit ms (time))

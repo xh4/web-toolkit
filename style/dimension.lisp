@@ -14,7 +14,7 @@
   (unless superclass (setf superclass 'dimension))
   `(defclass ,name (,superclass) ()))
 
-(defmacro define-dimension/unit (name (&optional superclass))
+(defmacro define-dimension-unit (name (&optional superclass))
   (unless superclass (setf superclass 'dimension))
   `(defclass ,name (,superclass)
      ((unit
