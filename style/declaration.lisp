@@ -40,7 +40,7 @@
                          :name ,,declaration-name
                          :value ,value)))))
 
-(defclass property (declaration) () (:metaclass declaration-class))
+(define-declaration property () ())
 
 (defgeneric property-name (property)
   (:method ((property property))
@@ -59,7 +59,7 @@
     (appendf superclasses '(property)))
   `(define-declaration ,name ,superclasses ,slots ,@options))
 
-(defclass descriptor (declaration) () (:metaclass declaration-class))
+(define-declaration descriptor () ())
 
 (defgeneric descriptor-name (descriptor)
   (:method ((descriptor descriptor))
