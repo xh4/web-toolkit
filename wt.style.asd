@@ -10,6 +10,7 @@
                         :serial t
                         :components ((:file "package")
                                      (:file "utility")
+                                     (:file "declaration")
                                      (:file "dimension")
                                      (:file "percentage")
                                      (:file "length")
