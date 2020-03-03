@@ -16,7 +16,11 @@
    (dir
     :initarg :dir
     :initform nil
-    :accessor element-dir)))
+    :accessor element-dir)
+   (style
+    :initarg :style
+    :initform nil
+    :accessor element-style)))
 
 (defmethod print-object ((element element) stream)
   (print-unreadable-object (element stream :type t :identity t)))
@@ -63,6 +67,7 @@
                            (null nil)
                            (string _value)
                            (list (format nil "~{~A~^ ~}" _value))
+                           (style (setf (slot-value element 'style) value) nil)
                            (t (format nil "~A" _value))))
          when value
          do (dom:set-attribute element name value))

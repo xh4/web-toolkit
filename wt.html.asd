@@ -5,6 +5,7 @@
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
   :depends-on (:wt.dom
+               :wt.style
                :alexandria)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "html"
