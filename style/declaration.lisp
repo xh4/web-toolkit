@@ -42,6 +42,7 @@
                    ((equal type 'integer) (typecase value
                                             (integer value)
                                             (string (parse-integer value :junk-allowed t))))
+                   ((integerp type) (when (equal type value) value))
                    ((equal type 'percentage) (percentage value))
                    ((keywordp type) (typecase value
                                       (keyword (when (eq type value) value))

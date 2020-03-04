@@ -2,6 +2,8 @@
 
 (define-property color () ())
 
+(defclass type/color () ())
+
 (define-property opacity () ())
 
 (defclass rgb ()

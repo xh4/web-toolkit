@@ -22,7 +22,7 @@
    ;; color
    :color :opacity :rgb :rgba
    ;; box
-   :margin-top :margin-right :margin-left :margin-bottom :margin
+   :margin-top :margin-right :margin-left :margin-bottom :margin :margin-trim
    :padding-top :padding-right :padding-left :padding-bottom :padding
    ;; sizing
    :width :height :min-width :min-height
@@ -36,9 +36,13 @@
    :overflow-x :overflow-y :overflow :text-overflow
    ;; text
    :white-space :word-break :line-break :word-wrap :text-align
+   ;; fonts
+   :font-weight :font-stretch :font-style :font-size :font
    ;; flexbox
    :flex :flex-direction :flex-wrap :flex-flow :order
    :flex-grow :flex-shrink :flex-basis
-   :justify-content :align-items :align-self :align-content)
+   :justify-content :align-items :align-self :align-content
+   ;; style
+   :style :*styling-target*)
   (:import-from :closer-mop
                 :validate-superclass))
