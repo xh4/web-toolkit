@@ -27,7 +27,7 @@
   (mapcar #'trivial-garbage:weak-pointer-value (object-propagation object)))
 
 (defun propagation-list (object)
-  (let ((propagation-list `(,object)))
+  (let ((propagation-list '()))
     (labels ((add-propagation (pointer)
                (when-let ((object (trivial-garbage:weak-pointer-value pointer)))
                  (pushnew object propagation-list)
@@ -84,7 +84,31 @@
   (:method ((object reflective-object) (source reflective-object) update)))
 
 (defmethod shared-initialize :after ((class reflective-class) slot-names &rest initargs &key &allow-other-keys)
-  (update class t))
+  (labels ((update-class (class)
+             (update class t)
+             (mapcar #'update-class
+                     (closer-mop:class-direct-subclasses class))))
+    (update-class class)))
+
+(defmethod shared-initialize :around ((object reflective-object) slot-names &rest initargs &key &allow-other-keys)
+  (let ((object (call-next-method)))
+    (trivial-garbage:finalize
+     object
+     (lambda ()
+       (loop for pointer in (object-dependency object)
+          for o = (trivial-garbage:weak-pointer-value pointer)
+          when o
+          do (setf (object-propagation o)
+                   (remove object (object-propagation o)
+                           :key #'trivial-garbage:weak-pointer-value)))
+       (loop for pointer in (object-propagation object)
+          for o = (trivial-garbage:weak-pointer-value pointer)
+          when o
+          do (setf (object-dependency o)
+                   (remove object (object-dependency o)
+                           :key #'trivial-garbage:weak-pointer-value)))
+       object))
+    object))
 
 (defmethod shared-initialize :after ((object reflective-object) slot-names &rest initargs &key &allow-other-keys)
   (let ((class (class-of object)))
