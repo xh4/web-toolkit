@@ -62,12 +62,16 @@
 
 (defgeneric compute-component-class (component)
   (:method ((component component))
-    (let ((classes (compute-class-precedence-list (class-of component))))
-      (loop for class in classes
-         until (eq class (find-class 'component))
-         collect (string-downcase (symbol-name (cl:class-name class)))
-         into classes
-         finally (return (reverse classes))))))
+    (flet ((class-name-for-component-class (class)
+             (format nil "~(~A~)-~(~A~)"
+                     (package-name (symbol-package (cl:class-name class)))
+                     (symbol-name (cl:class-name class)))))
+      (let ((classes (compute-class-precedence-list (class-of component))))
+        (loop for class in classes
+           until (eq class (find-class 'component))
+           collect (class-name-for-component-class class)
+           into classes
+           finally (return (reverse classes)))))))
 
 (defmethod html:root ((component component))
   (component-root component))

@@ -25,8 +25,8 @@
          (define-component foo () () (:tag :div))
          (define-component bar (foo) () (:tag :div))
          (let ((bar (bar)))
-           (is (equal "foo bar" (dom:get-attribute (com::component-root bar)
-                                                   "class")))))))
+           (is (equal "component-test-foo component-test-bar"
+                      (dom:get-attribute (com::component-root bar) "class")))))))
 
   (it "should make child elements"
       (ensure-cleanup (foo)
@@ -53,4 +53,5 @@
       (compile-and-load-toplevel-forms
        (define-component foo () () (:tag :div))
        (define-component bar (foo) () (:tag :div))
-       (is (equal '("foo" "bar") (com::compute-component-class (bar))))))))
+       (is (equal '("component-test-foo" "component-test-bar")
+                  (com::compute-component-class (bar))))))))

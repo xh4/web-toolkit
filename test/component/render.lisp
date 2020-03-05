@@ -35,7 +35,7 @@
                (render (com::make-render '(lambda (com) root))))
            (let ((root (funcall render com)))
              (is (equal 'html:div (type-of root)))
-             (is (equal "foo" (dom:get-attribute root "class"))))))))
+             (is (equal "component-test-foo foo" (dom:get-attribute root "class"))))))))
 
   (it "should be able to use children symbol macro"
       (ensure-cleanup (foo)
@@ -56,7 +56,7 @@
                (render (com::make-render '(lambda (com) (root)))))
            (let ((root (funcall render com)))
              (is (equal 'html:div (type-of root)))
-             (is (equal "foo" (dom:get-attribute root "class"))))))))
+             (is (equal "component-test-foo foo" (dom:get-attribute root "class"))))))))
 
   (it "should be able to use root macro (2)"
       (ensure-cleanup (foo)
@@ -66,7 +66,7 @@
                (render (com::make-render '(lambda (com) (root children)))))
            (let ((root (funcall render com)))
              (is (equal 'html:div (type-of root)))
-             (is (equal "foo" (dom:get-attribute root "class")))
+             (is (equal "component-test-foo foo" (dom:get-attribute root "class")))
              (is (equal 2 (length (children root))))
              (is (equal 'html:h1 (type-of (first (children root)))))
              (is (equal 'html:h2 (type-of (second (children root))))))))))
@@ -78,4 +78,4 @@
          (let ((com (foo :class "foo1" (html:h1) (html:h2)))
                (render (com::make-render '(lambda (com) (root :class "foo2")))))
            (let ((root (funcall render com)))
-             (is (equal "foo foo2" (dom:get-attribute root "class")))))))))
+             (is (equal "component-test-foo foo2" (dom:get-attribute root "class")))))))))
