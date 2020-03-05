@@ -1,4 +1,4 @@
-(in-package :component)
+(in-package :utility)
 
 (defclass variable (reflective-object)
   ((name
@@ -73,4 +73,4 @@
                                         (push ,vname *dependency*)))))
        (eval-when (:load-toplevel :execute)
          (unless (equal ',form (variable-form ,vname))
-             (setf (variable-form ,vname) ',form))))))
+           (setf (variable-form ,vname) ',form))))))

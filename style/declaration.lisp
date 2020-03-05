@@ -31,7 +31,6 @@
 (defmethod initialize-instance :after ((declaration declaration) &key)
   (with-slots (value) declaration
     (let ((value-types (declaration-class-value (class-of declaration))))
-      (format t "~A~%" value-types)
       (loop with final-value
          until final-value
          for type in value-types

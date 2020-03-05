@@ -1,4 +1,4 @@
-(in-package :component)
+(in-package :utility)
 
 (defclass reflective-object ()
   ((dependency
@@ -14,8 +14,11 @@
 
 (defclass reflective-method (closer-mop:standard-method reflective-object) ())
 
-(defmethod validate-superclass
+(defmethod closer-mop:validate-superclass
     ((class reflective-class) (super-class standard-class)) t)
+
+(defun reflective-object-p (object)
+  (typep object 'reflective-object))
 
 (defun object-dependency/0 (object)
   (mapcar #'trivial-garbage:weak-pointer-value (object-dependency object)))
@@ -89,5 +92,6 @@
       (add-dependency object class))))
 
 (defmethod shared-initialize :after ((method reflective-method) slot-names &rest initargs &key &allow-other-keys)
-  ;; TODO: update the corresponding classes
-  (update method t))
+  (loop for class in (closer-mop:method-specializers method)
+     when (typep class 'reflective-class)
+     do (update class t)))

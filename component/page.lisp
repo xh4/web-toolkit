@@ -32,6 +32,12 @@
 (defgeneric (setf page-content) (value page)
   (:method-class reflective-method))
 
+(defmethod page-content :around ((page page))
+  (let ((result (call-next-method)))
+    (when (reflective-object-p result)
+      (add-dependency page result))
+    result))
+
 (defgeneric initialize-page (page request)
   (:method ((page page) request)))
 
@@ -70,7 +76,7 @@
                  (html:script :src "/page.js"))
                 (html:body content)))))))))))
 
-(define-session page-session ()
+(define-session page-session (reflective-object)
   ((page
     :initarg :page
     :initform nil
@@ -83,7 +89,8 @@
     :accessor endpoint-page))
   (:session-class 'page-session)
   (:on-open (lambda (endpoint session)
-              (setf (session-page session) (endpoint-page endpoint))))
+              (setf (session-page session) (endpoint-page endpoint))
+              (add-dependency session (session-page session))))
   (:instanize nil))
 
 (defmacro define-page (page-name superclasses slots &rest options)

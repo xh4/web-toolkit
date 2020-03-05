@@ -10,18 +10,14 @@
                :wt.websocket
                :wt.utility
                :alexandria
-               :closer-mop
                :group-by
-               :split-sequence
-               :trivial-garbage)
+               :split-sequence)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "component"
                         :serial t
                         :components ((:file "package")
                                      (:file "utility")
-                                     (:file "reflective")
                                      (:file "component")
-                                     (:file "variable")
                                      (:file "style")
                                      (:file "page"))))
   :in-order-to ((test-op (test-op :wt.component/test)))

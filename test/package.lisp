@@ -12,4 +12,6 @@
            :pass :fail
            :run! :run
            :*on-error* :*on-failure*
-           :it :*it* :*is* :=>))
+           :it :*it* :*is* :=>
+           :ensure-cleanup
+           :compile-and-load-toplevel-forms))
