@@ -53,6 +53,7 @@
            :listener-address
            :router
            :route
+           :make-route
            :define-server
            :start-server
            :stop-server

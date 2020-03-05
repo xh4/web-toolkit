@@ -1,6 +1,6 @@
 (in-package :component)
 
-(defclass variable ()
+(defclass variable (reflective-object)
   ((name
     :initarg :name
     :initform nil
@@ -12,15 +12,7 @@
    (value
     :initarg :value
     :initform nil
-    :reader variable-value)
-   (dependency
-    :initarg :dependency
-    :initform nil
-    :accessor variable-dependency)
-   (propagation
-    :initarg :propagation
-    :initform nil
-    :accessor variable-propagation)))
+    :reader variable-value)))
 
 (defmacro variable (name)
   (with-gensyms (object)
@@ -41,8 +33,10 @@
                             (declare (ignore e))
                             (setf (slot-value variable 'form) current-form
                                   (slot-value variable 'value) current-value))))
-      (loop for v in (propagation-list variable)
-         do (reify v)))))
+      (update variable t))))
+
+(defmethod reflect ((variable variable) object update)
+  (reify variable))
 
 (defvar *dependency* nil)
 
@@ -56,49 +50,6 @@
 
 (defmethod initialize-instance :after ((variable variable) &key)
   (reify variable))
-
-(defun propagation-list (variable)
-  (let ((propagation-list `(,variable)))
-    (labels ((add-propagation (v)
-               (pushnew v propagation-list)
-               (loop for v in (variable-propagation v)
-                  do (add-propagation v))))
-      (loop for v in (variable-propagation variable)
-         do (add-propagation v)))
-    (reverse propagation-list)))
-
-(defun detect-cycle (variable dependency)
-  (labels ((walk (v path)
-             (push v path)
-             (if (eq v variable)
-                 (error "Cycle variable dependency from ~A, path: ~A" variable (reverse path))
-                 (loop for v in (variable-dependency v)
-                    do (walk v path)))))
-    (loop for v in dependency
-         do (walk v `(,v)))))
-
-(defun add-dependency (variable-1 variable-2)
-  (when (and variable-1 variable-2)
-    (let ((new-dependency (cons variable-2 (variable-dependency variable-1))))
-      (detect-cycle variable-1 new-dependency))
-    (pushnew variable-2 (variable-dependency variable-1))
-    (pushnew variable-1 (variable-propagation variable-2))))
-
-(defun remove-dependency (variable-1 variable-2)
-  (when (and variable-1 variable-2)
-    (setf (variable-dependency variable-1)
-          (remove variable-2 (variable-dependency variable-1)))
-    (setf (variable-propagation variable-2)
-          (remove variable-1 (variable-propagation variable-2)))))
-
-(defun set-dependency (variable dependency)
-  (let ((current-dependency (variable-dependency variable)))
-    (let ((to-add (set-difference dependency current-dependency))
-          (to-remove (set-difference current-dependency dependency)))
-      (loop for v in to-add
-         do (add-dependency variable v))
-      (loop for v in to-remove
-         do (remove-dependency variable v)))))
 
 (defmethod print-object ((variable variable) stream)
   (print-unreadable-object (variable stream :type t :identity t)

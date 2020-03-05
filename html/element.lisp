@@ -17,7 +17,7 @@
     :initarg :dir
     :initform nil
     :accessor element-dir)
-   (style
+   (style:style
     :initarg :style
     :initform nil
     :accessor element-style)))
@@ -67,15 +67,17 @@
                            (null nil)
                            (string _value)
                            (list (format nil "~{~A~^ ~}" _value))
-                           (style (setf (slot-value element 'style) value) nil)
+                           (style:style (setf (slot-value element 'style:style) value) nil)
                            (t (format nil "~A" _value))))
          when value
          do (dom:set-attribute element name value))
       (loop for child in (flatten children)
          do
-           (when (stringp child)
-             (setf child (text child)))
-           (dom:append-child element child)))
+           (typecase child
+             (string (dom:append-child element (text child)))
+             (element (dom:append-child element child))
+             (style (setf (slot-value element 'style)
+                          (style:merge-style (slot-value element 'style) child))))))
     element))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

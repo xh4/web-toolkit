@@ -6,10 +6,10 @@
     :initform nil
     :accessor style-declarations)))
 
-(defvar *styling-target* nil)
+(defmethod style-declarations ((nothing null)))
 
 (defun style (&rest objects)
-  (loop with target = *styling-target*
+  (loop with target = nil
      with declarations = nil
      for object in objects
      do (typecase object
@@ -22,5 +22,13 @@
                                      (make-instance 'style
                                                     :declarations (list object))))
                            (appendf declarations (list object))))
+          (null)
           (t (setf target object)))
-     finally (return declarations)))
+     finally (unless target
+               (return (make-instance 'style
+                                      :declarations declarations)))))
+
+(defun merge-style (style-1 style-2)
+  (make-instance 'style
+                 :declarations (append (style-declarations style-1)
+                                       (style-declarations style-2))))

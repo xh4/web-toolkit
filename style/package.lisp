@@ -42,7 +42,10 @@
    :flex :flex-direction :flex-wrap :flex-flow :order
    :flex-grow :flex-shrink :flex-basis
    :justify-content :align-items :align-self :align-content
+   ;; rule
+   :rule :qualified-rule :at-rule :rule-prelude :rule-block
+   :rule-selectors :rule-declarations :rule-name
    ;; style
-   :style :*styling-target*)
+   :style :style-declarations :merge-style)
   (:import-from :closer-mop
                 :validate-superclass))

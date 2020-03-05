@@ -17,6 +17,23 @@
                 :append-child
                 :serialize
                 :children)
+  (:import-from :style
+                :style
+                :qualified-rule)
+  (:import-from :http
+                :route
+                :make-route
+                :request-method
+                :define-handler
+                :find-header-field
+                :header-field-value
+                :reply)
+  (:import-from :uri
+                :uri-path)
+  (:import-from :websocket
+                :endpoint
+                :define-endpoint
+                :define-session)
   (:import-from :closer-mop
                 :allocate-instance
                 :validate-superclass

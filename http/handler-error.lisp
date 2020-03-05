@@ -7,6 +7,7 @@
    (lambda (handler request)
      (restart-case
          (handler-bind ((error (lambda (error)
+                                 (invoke-debugger error)
                                  (invoke-restart 'reply-error handler request error))))
            (call-next-handler))
        (reply-error (error-handler request error)

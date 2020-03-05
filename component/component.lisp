@@ -173,8 +173,14 @@
             (segment-attributes-children arguments)
           (loop for (name value) on attributes by #'cddr
              do (dom:set-attribute root name value))
+          (setf (slot-value root 'style)
+                (style:merge-style (slot-value component 'style) (slot-value root 'style)))
           (loop for child in (flatten children)
-             do (dom:append-child root child)))
+             do (typecase child
+                  (string (dom:append-child root (html:text child)))
+                  (html:element (dom:append-child root child))
+                  (style (setf (slot-value root 'style)
+                               (style:merge-style (slot-value root 'style) child))))))
         (let ((classes (compute-component-class component))
               (class (dom:get-attribute root "class")))
           (when (and class (not (find class classes :test 'equal)))

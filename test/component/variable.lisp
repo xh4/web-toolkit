@@ -32,8 +32,8 @@
        (is (equal 42 bar))
        (is (equal '(* 2 foo) (com::variable-form v/bar)))
        (is (equal 42 (com::variable-value v/bar)))
-       (is (equal `(,v/foo) (com::variable-dependency v/bar)))
-       (is (equal `(,v/bar) (com::variable-propagation v/foo)))))))
+       (is (equal `(,v/foo) (com::object-dependency/0 v/bar)))
+       (is (equal `(,v/bar) (com::object-propagation/0 v/foo)))))))
 
 (test define-variable/redefine
   (it
@@ -135,6 +135,6 @@
       (compile-and-load-toplevel-forms
        (define-variable v1 1)
        (define-variable v2 (1+ v1))
-       (is (equal `(,(variable 'v1)) (com::variable-dependency (variable 'v2))))
+       (is (equal `(,(variable 'v1)) (com::object-dependency/0 (variable 'v2))))
        (define-variable v2 2)
-       (is (equal nil (com::variable-dependency (variable 'v2))))))))
+       (is (equal nil (com::object-dependency/0 (variable 'v2))))))))

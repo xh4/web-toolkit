@@ -7,39 +7,27 @@
     :accessor router-routes))
   (:instanize nil)
   (:function (lambda (router request)
-               (let ((target-route nil))
+               (let ((handler))
                  (loop for route in (router-routes router)
-                    when (route-match-p route request)
-                    do
-                      (setf target-route route)
-                      (return))
-                 (if target-route
-                     (let ((handler (route-handler target-route)))
-                       (typecase handler
-                         (handler (invoke-handler handler request))
-                         (symbol (if (boundp handler)
-                                     (progn
-                                       (setf handler (symbol-value handler))
-                                       (check-type handler handler)
-                                       (invoke-handler handler request))
-                                     (error "Handler not bound")))))
+                    do (setf handler (route route request))
+                    when handler
+                    do (return))
+                 (if handler
+                     (typecase handler
+                       (handler (invoke-handler handler request))
+                       (symbol (if (boundp handler)
+                                   (progn
+                                     (setf handler (symbol-value handler))
+                                     (check-type handler handler)
+                                     (invoke-handler handler request))
+                                   (error "Handler not bound"))))
                      (handle-missing request))))))
 
-(defclass route ()
-  ((matcher
-    :initarg :matcher
-    :initform nil
-    :accessor route-matcher)
-   (handler
-    :initarg :handler
-    :initform nil
-    :accessor route-handler)))
+(defclass route () ())
 
-(defgeneric route (type form))
+(defgeneric route (route request))
 
-(defun route-match-p (route request)
-  (let ((matcher (route-matcher route)))
-    (funcall matcher request)))
+(defgeneric make-route (type form))
 
 (defclass simple-route (route)
   ((method
@@ -49,29 +37,32 @@
    (path
     :initarg :path
     :initform nil
-    :accessor route-path)))
+    :accessor route-path)
+   (handler
+    :initarg :handler
+    :initform nil)))
 
-(defmethod route ((type (eql :get)) form)
+(defmethod route ((route simple-route) request)
+  (let ((uri (uri (request-uri request))))
+    (when (and (equal (route-path route) (uri-path uri))
+               (equal (symbol-name (route-method route))
+                      (request-method request)))
+      (slot-value route 'handler))))
+
+(defmethod make-route ((type (eql :get)) form)
   (apply 'make-simple-route form))
-(defmethod route ((type (eql :post)) form)
+(defmethod make-route ((type (eql :post)) form)
   (apply 'make-simple-route form))
-(defmethod route ((type (eql :put)) form)
+(defmethod make-route ((type (eql :put)) form)
   (apply 'make-simple-route form))
-(defmethod route ((type (eql :delete)) form)
+(defmethod make-route ((type (eql :delete)) form)
   (apply 'make-simple-route form))
 
 (defun make-simple-route (method path handler)
-  (let ((matcher (lambda (request)
-                   (let ((uri (uri (request-uri request))))
-                     (and (equal path (uri-path uri))
-                          (equal (symbol-name method)
-                                 (request-method request))))))
-        (handler (handler-form handler)))
-    (make-instance 'simple-route
-                   :method method
-                   :path path
-                   :matcher matcher
-                   :handler handler)))
+  (make-instance 'simple-route
+                 :method method
+                 :path path
+                 :handler (handler-form handler)))
 
 (defmacro router (&rest route-forms)
   (let ((make-route-forms
@@ -84,13 +75,13 @@
                   (unless (symbolp type)
                     (error "Illformed route form: ~A, expect a symbol at the head" route-form))
                   (setf type (make-keyword type))
-                  (unless (find-method #'route
+                  (unless (find-method #'make-route
                                        '()
                                        (list `(eql ,type)
                                              (find-class t))
                                        nil)
                     (error "No method found to build route for form ~A" route-form))
-                  `(route ,type ',route-form))))))
+                  `(make-route ,type ',route-form))))))
     `(make-instance 'router :routes (list ,@make-route-forms))))
 
 (defun handle-missing (request)

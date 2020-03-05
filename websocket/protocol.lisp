@@ -150,9 +150,10 @@
   *response*)
 
 (defun check-handshake-request (request)
+  ;; TODO: case insensitive
   (unless (and
-           (string-equal "Upgrade" (header-field-value
-                                    (find-header-field "Connection" request)))
+           (search "Upgrade" (header-field-value
+                              (find-header-field "Connection" request)))
            (string-equal "WebSocket" (header-field-value
                                       (find-header-field "Upgrade" request)))
            (string-equal "13" (header-field-value

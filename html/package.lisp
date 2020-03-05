@@ -21,6 +21,7 @@
            :tag-name
            :root
            :children
+           :style
            :append-child
            :text
            :serialize
@@ -50,6 +51,4 @@
                 :tag-name
                 :children
                 :append-child
-                :root)
-  (:import-from :style
-                :style))
+                :root))
