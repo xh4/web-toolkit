@@ -128,7 +128,7 @@
 
 (test make-static-route
   (it
-    (let ((route (route :static '(:static :prefix "/" :root #p"/"))))
+    (let ((route (make-route :static '(:static :prefix "/" :root #p"/"))))
       (is (equal 'http::static-route (type-of route))))
 
     (let ((route (route :static '(:static
