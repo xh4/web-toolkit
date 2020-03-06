@@ -34,6 +34,12 @@ WT.URI provides URI parser and constructor, with support of UTF-8 characters, IP
 #### DOM
 WT.DOM implements Document Object Model (DOM) based on recent version of [DOM Living Standard](https://dom.spec.whatwg.org/), it covers [Nodes](https://dom.spec.whatwg.org/#nodes) and [Traversal](https://dom.spec.whatwg.org/#traversal).
 
+#### Style
+WT.STYLE implements CSS constructor and serializer.
+
+#### Component
+WT.COMPONENT provices component abstraction, it combines [Web Components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) style strong encapsulation and [React](https://reactjs.org/) style declarative DOM synchronization.
+
 ### Roadmap
 
 * Overall
@@ -86,8 +92,7 @@ WT.DOM implements Document Object Model (DOM) based on recent version of [DOM Li
 * DOM
   * Implement namespace
   * Implement XPath
-* Component (Implement [Web Components](https://developer.mozilla.org/en-US/docs/Web/Web_Components))
-* Style (Implement CSS parser, generator and validator etc.)
+* Script (Implement JavaScript code transformer)
 
 
 ### Author
