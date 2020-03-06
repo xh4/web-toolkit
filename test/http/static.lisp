@@ -95,10 +95,10 @@
   (it
     (with-static-files (root ("foo" "bar"))
       (let ((route (http::make-static-route :root root)))
-        (is-true (http::route-match-p route (make-instance 'request :method :get :uri "/")))
-        (is-false (http::route-match-p route (make-instance 'request :method :post :uri "/")))
-        (is-true (http::route-match-p route (make-instance 'request :method :get :uri "/foo")))
-        (is-false (http::route-match-p route (make-instance 'request :method :get :uri "/xxx")))))))
+        (is-true (route route (make-instance 'request :method :get :uri "/")))
+        (is-false (route route (make-instance 'request :method :post :uri "/")))
+        (is-true (route route (make-instance 'request :method :get :uri "/foo")))
+        (is-false (route route (make-instance 'request :method :get :uri "/xxx")))))))
 
 (test auto-redirect-to-directory
       (it

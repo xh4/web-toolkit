@@ -23,12 +23,18 @@
 (defclass static-route (route)
   ((prefix
     :initarg :prefix
-    :initform nil)
+    :initform nil
+    :accessor route-prefix)
    (root
     :initarg :root
-    :initform nil)))
+    :initform nil
+    :accessor route-root)
+   (handler
+    :initarg :handler
+    :initform nil
+    :accessor route-handler)))
 
-(defmethod route ((type (eql :static)) form)
+(defmethod make-route ((type (eql :static)) form)
   (apply 'make-static-route (rest form)))
 
 ;; TODO: Check path normativity
@@ -76,6 +82,17 @@
     (let ((pathname (merge-pathnames relative-path root)))
       pathname)))
 
+(defmethod route ((route static-route) request)
+  (when (and (or (eq (request-method request) :get)
+                 (equal (request-method request) "GET"))
+             (and (path-prefix-p (route-prefix route)
+                                 (uri-path (request-uri request)))
+                  (let ((pathname (resolve-path (route-prefix route)
+                                                (route-root route)
+                                                (uri-path (request-uri request)))))
+                    (probe-file pathname))))
+    (route-handler route)))
+
 (defun make-static-route (&key prefix root)
   (setf prefix (eval prefix))
   (setf root (eval root))
@@ -85,18 +102,10 @@
   (unless (uiop:absolute-pathname-p root)
     (error "Root must be absolute"))
   (setf root (uiop:ensure-directory-pathname root))
-
-  (let ((matcher (lambda (request)
-                   (and (or (eq (request-method request) :get)
-                            (equal (request-method request) "GET"))
-                        (and (path-prefix-p prefix (uri-path (request-uri request)))
-                             (let ((pathname (resolve-path prefix root (uri-path (request-uri request)))))
-                               (probe-file pathname))))))
-        (handler (make-instance 'static-handler
+  (let ((handler (make-instance 'static-handler
                                 :prefix prefix
                                 :root root)))
     (make-instance 'static-route
                    :prefix prefix
                    :root root
-                   :matcher matcher
                    :handler handler)))

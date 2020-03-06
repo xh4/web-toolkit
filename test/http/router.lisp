@@ -37,19 +37,18 @@
            (route (first (http::router-routes router))))
       (is (equal :get (http::route-method route)))
       (is (equal "/" (http::route-path route)))
-      (is-true (functionp (http::route-matcher route)))
-      (is-true (funcall (http::route-matcher route)
-                        (make-instance 'request
-                                       :method "GET"
-                                       :uri "/")))
-      (is-false (funcall (http::route-matcher route)
-                        (make-instance 'request
-                                       :method "GET"
-                                       :uri "/foo")))
-      (is-false (funcall (http::route-matcher route)
-                         (make-instance 'request
-                                        :method "POST"
-                                        :uri "/"))))))
+      (is-true (route route
+                      (make-instance 'request
+                                     :method "GET"
+                                     :uri "/")))
+      (is-false (route route
+                       (make-instance 'request
+                                      :method "GET"
+                                      :uri "/foo")))
+      (is-false (route route
+                       (make-instance 'request
+                                      :method "POST"
+                                      :uri "/"))))))
 
 (test route
   (it
