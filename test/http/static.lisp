@@ -131,7 +131,7 @@
     (let ((route (make-route :static '(:static :prefix "/" :root #p"/"))))
       (is (equal 'http::static-route (type-of route))))
 
-    (let ((route (route :static '(:static
+    (let ((route (make-route :static '(:static
                                   :prefix (format nil "/~A" "foo")
                                   :root (merge-pathnames
                                          #p"foo/"
