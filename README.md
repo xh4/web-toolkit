@@ -4,7 +4,9 @@
     <a href="https://lisp-web-toolkit.com">lisp-web-toolkit.com</a>
 </p>
 
-TODO: Write some introduction here
+<p align="center">
+Object-oriented Lisp Systems for Rapid Web Application Development
+</p>
 
 ### Status
 
