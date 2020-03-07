@@ -92,7 +92,8 @@
   (:method ((node node) child)
     (with-slots (children) node
       (appendf children (list child))
-      (setf (parent child) node))))
+      (setf (parent child) node)))
+  (:method ((node node) (child null))))
 
 (defgeneric replace-child (node child))
 
