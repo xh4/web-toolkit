@@ -16,7 +16,7 @@
    ;; variable
    :define-variable
    ;; reflective
-   :reflective-objecty
+   :reflective-object
    :reflective-class
    :reflective-method
    :reflective-object-p
