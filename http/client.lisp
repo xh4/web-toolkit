@@ -49,6 +49,10 @@
     (let ((header (process-request-header header)))
       (unless (find-header-field "Host" header)
         (set-header-field header (header-field "Host" (uri-host uri))))
+      (unless (find-header-field "Accept" header)
+        (set-header-field header (header-field "Accept" "*/*")))
+      (unless (find-header-field "User-Agent" header)
+        (set-header-field header (header-field "User-Agent" "Lisp Web Toolkit")))
       (typecase content
         (string (make-text-entity content :header header :method method :uri uri))
         (json:object (make-json-entity content :header header :method method :uri uri))
