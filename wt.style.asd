@@ -8,6 +8,7 @@
                :alexandria
                :closer-mop
                :cl-ppcre)
+  :defsystem-depends-on (:wt.vendor)
   :components ((:module "style"
                         :serial t
                         :components ((:file "package")
