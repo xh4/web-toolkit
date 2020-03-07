@@ -72,7 +72,7 @@
        (define-variable v1 1)
        (define-variable v2 (1+ v1))
        (define-variable v3 (1+ v2))
-       (is (equal `(,(variable 'v1) ,(variable 'v2) ,(variable 'v3))
+       (is (equal `(,(variable 'v2) ,(variable 'v3))
                   (utility::propagation-list (variable 'v1)))))))
 
   (it
@@ -82,7 +82,7 @@
        (define-variable v2 (1+ v1))
        (define-variable v3 (1+ v2))
        (define-variable v4 (1+ v2))
-       (is (equal `(,(variable 'v1) ,(variable 'v2) ,(variable 'v4) ,(variable 'v3))
+       (is (equal `(,(variable 'v2) ,(variable 'v4) ,(variable 'v3))
                   (utility::propagation-list (variable 'v1))))))))
 
 (test update-variable-value

@@ -33,10 +33,12 @@
                             (declare (ignore e))
                             (setf (slot-value variable 'form) current-form
                                   (slot-value variable 'value) current-value))))
+      (reify variable)
       (update variable t))))
 
 (defmethod reflect ((variable variable) object update)
-  (reify variable))
+  (reify variable)
+  (update variable t))
 
 (defvar *dependency* nil)
 
