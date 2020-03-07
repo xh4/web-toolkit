@@ -2,7 +2,7 @@
 
 (defpackage :uri
   (:nicknames :wt.uri)
-  (:use :cl :alexandria)
+  (:use :cl :alexandria :wt.utility)
   #+sb-package-locks
   (:lock t)
   (:export :uri

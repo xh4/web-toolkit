@@ -7,7 +7,9 @@
                :cl-cont
                :closer-mop
                :trivial-garbage
+               :maxpc
                (:feature :sbcl (:require :sb-introspect)))
+  :defsystem-depends-on (:wt.vendor)
   :components ((:module "utility"
                         :serial t
                         :components ((:file "package")
@@ -16,7 +18,8 @@
                                      (:file "class")
                                      (:file "tree")
                                      (:file "reflective")
-                                     (:file "variable"))))
+                                     (:file "variable")
+                                     (:file "parser"))))
   :in-order-to ((test-op (test-op :wt.utility/test)))
   :perform (load-op :after (o c)
                     #+lispworks

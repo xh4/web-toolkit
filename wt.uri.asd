@@ -4,9 +4,9 @@
   :version "0.0.0"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
-  :depends-on (:alexandria
+  :depends-on (:wt.utility
+               :alexandria
                :babel
-               :maxpc
                :split-sequence)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "uri"
@@ -16,8 +16,6 @@
                                      (:file "condition")
                                      (:file "check")
                                      (:file "class")
-                                     (:file "parser")
-                                     (:file "primitive")
                                      (:file "parse")
                                      (:file "resolve")
                                      (:file "render")
