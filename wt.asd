@@ -4,7 +4,8 @@
   :version "3.1415"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
-  :depends-on (:wt.uri
+  :depends-on (:wt.utility
+               :wt.uri
                :wt.dom
                :wt.html
                ;; :wt.component
@@ -15,7 +16,8 @@
   :in-order-to ((test-op (test-op :wt/test))))
 
 (defsystem wt/test
-  :depends-on (:wt.uri/test
+  :depends-on (:wt.utility/test
+               :wt.uri/test
                :wt.dom/test
                :wt.html/test
                ;; :wt.component/test
