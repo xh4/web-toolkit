@@ -7,13 +7,14 @@
     (labels ((transform (node)
                (when node
                  (let ((parent (typecase node
-                                 (plump:element
+                                 (plump-dom:element
                                   (when-let* ((tag-name (plump:tag-name node))
                                               (constructor (constructor tag-name)))
                                     (construct constructor)))
-                                 (plump:text-node
-                                  (make-instance 'text :data (plump:text node))))))
-                   (when (typep node 'plump:element)
+                                 (plump-dom:text-node
+                                  (make-instance 'text :data (plump-dom:text node))))))
+                   (when (and parent
+                              (typep node 'plump-dom:element))
                      (let ((children (mapcar #'transform
                                              (coerce (plump:children node) 'list))))
                        (loop for child in children
@@ -24,13 +25,13 @@
                           do (dom:set-attribute parent name value))))
                    parent))))
       (let ((root (plump:parse source)))
-        (when (and (typep root 'plump:root)
+        (when (and (typep root 'plump-dom:root)
                    (plusp (length (plump:children root))))
           (loop for child across (plump:children root)
-             if (typep child 'plump:doctype)
+             if (typep child 'plump-dom:doctype)
              do (setf document (make-instance 'document))
-             else if (typep child 'plump:element)
-             do (let ((element (transform child)))
+             else if (typep child 'plump-dom:element)
+             do (when-let ((element (transform child)))
                   (if document
                       (append-child document element)
                       (return element)))
