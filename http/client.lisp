@@ -108,14 +108,13 @@
     entity))
 
 ;; TODO: respect charset
-;; TODO: parse html
 (defun make-html-entity-from-response (response)
   (change-class response 'html-entity)
   (let ((entity response))
     (let ((octets (read-response-body-into-vector response)))
       (with-slots (string html) entity
         (setf string (babel:octets-to-string octets)
-              html string)))
+              html (html:parse string))))
     entity))
 
 (defmacro with-connections (() &body body)
