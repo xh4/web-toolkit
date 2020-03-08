@@ -4,6 +4,7 @@
   :version "0.0.0"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
+  :license "BSD 3-Clause"
   :depends-on (:wt.dom
                :wt.style
                :alexandria)
