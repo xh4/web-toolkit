@@ -1,34 +1,35 @@
 (in-package :utility)
 
-(defclass parser ()
-  ((function
-    :initarg :function
-    :initform nil
-    :accessor parser-function)
-   (delegation
-    :initarg :delegation
-    :initform nil
-    :accessor parser-delegation)
-   (arguments
-    :initarg :arguments
-    :initform nil
-    :accessor parser-arguments)
-   (bindings
-    :initarg :bindings
-    :initform nil
-    :accessor parser-bindings)
-   (code
-    :initarg :code
-    :initform nil
-    :accessor parser-code)
-   (match-p
-    :initarg :match-p
-    :initform nil
-    :accessor parser-match-p)
-   (value
-    :initarg :value
-    :initform nil
-    :accessor parser-value)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defclass parser ()
+    ((function
+      :initarg :function
+      :initform nil
+      :accessor parser-function)
+     (delegation
+      :initarg :delegation
+      :initform nil
+      :accessor parser-delegation)
+     (arguments
+      :initarg :arguments
+      :initform nil
+      :accessor parser-arguments)
+     (bindings
+      :initarg :bindings
+      :initform nil
+      :accessor parser-bindings)
+     (code
+      :initarg :code
+      :initform nil
+      :accessor parser-code)
+     (match-p
+      :initarg :match-p
+      :initform nil
+      :accessor parser-match-p)
+     (value
+      :initarg :value
+      :initform nil
+      :accessor parser-value))))
 
 (defgeneric parse (parser input)
   (:method (parser input)
