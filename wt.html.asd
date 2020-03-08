@@ -7,7 +7,8 @@
   :license "BSD 3-Clause"
   :depends-on (:wt.dom
                :wt.style
-               :alexandria)
+               :alexandria
+               :plump)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "html"
                         :serial t
@@ -16,7 +17,8 @@
                                      (:file "document")
                                      (:file "text")
                                      (:file "element")
-                                     (:file "serialize"))))
+                                     (:file "serialize")
+                                     (:file "parse"))))
   :in-order-to ((test-op (test-op :wt.html/test)))
   :perform (load-op :after (o c)
                     #+lispworks

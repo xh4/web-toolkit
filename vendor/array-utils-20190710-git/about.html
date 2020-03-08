@@ -1,0 +1,104 @@
+<!DOCTYPE html> <html xmlns="http://www.w3.org/1999/xhtml"> <head> <meta charset="utf-8"> <title>Array-Utils</title> <meta name="viewport" content="width=device-width"> <meta name="description" content="A few utilities for working with arrays."> <meta name="author" content="Nicolas Hafner &lt;shinmera@tymoon.eu&gt;"> <style type="text/css"> body{
+          max-width: 1024px;
+          margin: 0 auto 0 auto;
+          font-family: sans-serif;
+          color: #333333;
+          font-size: 14pt;
+          padding: 5px;
+      }
+      body>header{
+          display:flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          max-width: 100%;
+          text-align: center;
+      }
+      body>header img{
+          max-width: 50%;
+      }
+      img{
+          max-width: 100%;
+          max-height: 100%;
+      }
+      code{
+          font-family: Consolas, Inconsolata, monospace;
+      }
+      a{
+          text-decoration: none;
+          color: #0055AA;
+      }
+      a img{
+          border: none;
+      }
+      #documentation{
+          text-align: justify;
+      }
+      #documentation pre{
+          margin-left: 20px;
+          overflow: auto;
+      }
+      #documentation img{
+          margin: 5px;
+      }
+      #symbol-index>ul{
+          list-style: none;
+          padding: 0;
+      }
+      #symbol-index .package>ul{
+          list-style: none;
+          padding: 0 0 0 10px;
+      }
+      #symbol-index .package .nicknames{
+          font-weight: normal;
+      }
+      #symbol-index .package h4{
+          display: inline-block;
+          margin: 0;
+      }
+      #symbol-index .package article{
+          margin: 0 0 15px 0;
+      }
+      #symbol-index .package article header{
+          font-size: 1.2em;
+          font-weight: normal;
+      }
+      #symbol-index .package .name{
+          margin-right: 5px;
+      }
+      #symbol-index .package .docstring{
+          margin: 0 0 0 15px;
+          white-space: pre-wrap;
+          font-size: 12pt;
+      }
+      @media (max-width: 800px){
+          body{font-size: 12pt;}
+      } </style> </head> <body> <header> <h1>array-utils</h1> <span class="version">1.1.1</span> <p class="description">A few utilities for working with arrays.</p> </header> <main> <article id="documentation">  <div><h2 id="about_array-utils">About Array-Utils</h2> <p>A miniature toolkit that contains some useful shifting/popping/pushing functions for arrays and vectors. This exists mostly because I've used these functions in multiple places already, so splitting it off into its own thing is a good idea. Originally from <a href="http://shinmera.github.io/plump/">Plump</a>.</p> </div>  </article> <article id="copyright">  <h2>Copyright</h2> <span>array-utils</span> is licensed under the <span><a href="https://tldrlegal.com/search?q=Artistic">Artistic</a></span> license.  © <span>Nicolas Hafner &lt;shinmera@tymoon.eu&gt;</span> .  This library can be obtained on <a href="https://github.com/Shinmera/array-utils">https://github.com/Shinmera/array-utils</a>.  </article>  <article id="symbol-index"> <h2>Package Index</h2> <ul><li class="package"> <h3> <a name="ARRAY-UTILS" href="#ARRAY-UTILS">ARRAY-UTILS</a> <span class="nicknames">(ORG.SHIRAKUMO.ARRAY-UTILS)</span> </h3> <ul><li> <a name="ARRAY-UTILS:ARRAY-SHIFT"> </a> <article id="FUNCTION ARRAY-UTILS:ARRAY-SHIFT"> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#FUNCTION%20ARRAY-UTILS%3AARRAY-SHIFT">ARRAY-SHIFT</a></code></h4> <code class="qualifiers"></code> <code class="arguments">ARRAY &amp;KEY (N 1) (FROM 0) TO (ADJUST T) (FILL NIL F-P) (CONTENTS NIL C-P)</code><code>)</code>  </header> <div class="docstring"><pre>Shifts a subset of array elements in either direction for a specified amount.
+Optionally also extends the array and fills empty space with a given element.
+
+N        --- The amount to be moved. If positive, things are shifted to the right. If
+             negative, things are shifted to the left.
+FROM     --- The left point of the region to move, inclusive.
+TO       --- The right point of the region to move, exclusive.
+ADJUST   --- Whether to adjust the fill pointer and the array bounds. The array is only
+             adjusted if N is positive and the range of TO+N would exceed the ARRAY length,
+             or if N is negative and TO equals the length of the ARRAY
+FILL     --- If provided, empty spaces created by the move will be filled with this element.
+CONTENTS --- If provided, uses the contents to fill the new space. If |N| is greater than the
+             length of this sequence, FILL is used to fill the rest of the space if it is
+             provided. If not, an error is signalled. No matter whether N is negative or
+             positive, the content is filled in from left to right in the order it is given.</pre></div> </article> </li><li> <a name="ARRAY-UTILS:ENSURE-ARRAY-SIZE"> </a> <article id="FUNCTION ARRAY-UTILS:ENSURE-ARRAY-SIZE"> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#FUNCTION%20ARRAY-UTILS%3AENSURE-ARRAY-SIZE">ENSURE-ARRAY-SIZE</a></code></h4> <code class="qualifiers"></code> <code class="arguments">ARRAY NEW-SPACE</code><code>)</code>  </header> <div class="docstring"><i>No docstring provided.</i></div> </article> </li><li> <a name="ARRAY-UTILS:VECTOR-APPEND"> </a> <article id="FUNCTION ARRAY-UTILS:VECTOR-APPEND"> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#FUNCTION%20ARRAY-UTILS%3AVECTOR-APPEND">VECTOR-APPEND</a></code></h4> <code class="qualifiers"></code> <code class="arguments">VECTOR SEQUENCE &amp;OPTIONAL POSITION</code><code>)</code>  </header> <div class="docstring"><pre>Appends all elements of the sequence at position of the vector and returns it.
+ This is potentially very costly as all elements after the given position
+need to be shifted back as per ARRAY-SHIFT.</pre></div> </article> </li><li> <a name="ARRAY-UTILS:VECTOR-POP-FRONT"> </a> <article id="FUNCTION ARRAY-UTILS:VECTOR-POP-FRONT"> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#FUNCTION%20ARRAY-UTILS%3AVECTOR-POP-FRONT">VECTOR-POP-FRONT</a></code></h4> <code class="qualifiers"></code> <code class="arguments">VECTOR</code><code>)</code>  </header> <div class="docstring"><pre>Pops the first element off the vector and returns it.
+This operation is very costly and takes O(n) time as each element needs to
+be shifted as per ARRAY-SHIFT.
+
+See <a href="#ARRAY-UTILS:VECTOR-POP-POSITION">VECTOR-POP-POSITION</a></pre></div> </article> </li><li> <a name="ARRAY-UTILS:VECTOR-POP-POSITION"> </a> <article id="FUNCTION ARRAY-UTILS:VECTOR-POP-POSITION"> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#FUNCTION%20ARRAY-UTILS%3AVECTOR-POP-POSITION">VECTOR-POP-POSITION</a></code></h4> <code class="qualifiers"></code> <code class="arguments">VECTOR POSITION</code><code>)</code>  </header> <div class="docstring"><pre>Pops the element at the given position of the vector and returns it.
+This is potentially very costly as all elements after the given position
+need to be shifted back as per ARRAY-SHIFT.</pre></div> </article> </li><li> <a name="ARRAY-UTILS:VECTOR-PUSH-EXTEND-FRONT"> </a> <article id="FUNCTION ARRAY-UTILS:VECTOR-PUSH-EXTEND-FRONT"> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#FUNCTION%20ARRAY-UTILS%3AVECTOR-PUSH-EXTEND-FRONT">VECTOR-PUSH-EXTEND-FRONT</a></code></h4> <code class="qualifiers"></code> <code class="arguments">ELEMENT VECTOR</code><code>)</code>  </header> <div class="docstring"><pre>Pushes the element onto the front of the vector and extends if necessary.
+This operation is very costly and takes O(n) time as each element needs to
+be shifted as per ARRAY-SHIFT.
+
+See <a href="#ARRAY-UTILS:VECTOR-PUSH-EXTEND-POSITION">VECTOR-PUSH-EXTEND-POSITION</a></pre></div> </article> </li><li> <a name="ARRAY-UTILS:VECTOR-PUSH-EXTEND-POSITION"> </a> <article id="FUNCTION ARRAY-UTILS:VECTOR-PUSH-EXTEND-POSITION"> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#FUNCTION%20ARRAY-UTILS%3AVECTOR-PUSH-EXTEND-POSITION">VECTOR-PUSH-EXTEND-POSITION</a></code></h4> <code class="qualifiers"></code> <code class="arguments">ELEMENT VECTOR POSITION</code><code>)</code>  </header> <div class="docstring"><pre>Pushes the element into the specified position and shifts everything
+to the right to make space. This is potentially very costly as all
+elements after the given position need to be shifted as per ARRAY-SHIFT.</pre></div> </article> </li></ul> </li></ul> </article>  </main> </body> </html> 
