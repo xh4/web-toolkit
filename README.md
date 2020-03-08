@@ -10,9 +10,7 @@ Object-oriented Lisp Systems for Rapid Web Application Development
 
 ### Status
 
-<a href="https://lisp-web-toolkit.com/status">
-    <img src="https://lisp-web-toolkit.com/status.png" width="750">
-</a>
+[![Build Status](https://travis-ci.org/xh4/web-toolkit.svg?branch=master)](https://travis-ci.org/xh4/web-toolkit)
 
 ### Systems
 
@@ -94,6 +92,8 @@ WT.COMPONENT provices component abstraction, it combines [Web Components](https:
   * Implement XPath
 * Script (Implement JavaScript code transformer)
 
-
 ### Author
 [Xiangyu He](https://xh.coobii.com) <[xh@coobii.com](mailto:xh@coobii.com)>
+
+### License
+Copyright 2018-2020 Xiangyu He. Released under the 3-Clause BSD License.
