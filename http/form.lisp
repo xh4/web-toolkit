@@ -68,7 +68,7 @@
                     collect (cons (form-field-name field)
                                   (form-field-value field)))))
       (when query
-        (let ((data (subseq (uri-string :query query) 1)))
+        (let ((data (uri-string :query query)))
           (babel:string-to-octets data))))))
 
 
