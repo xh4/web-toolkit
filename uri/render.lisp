@@ -63,6 +63,9 @@
                                             (eq c #\@)
                                             (eq c #\/)
                                             (eq c #\?))))))))
+        (when (and (plusp (length uri-string))
+                   (eq #\? (char uri-string 0)))
+          (setf uri-string (subseq uri-string 1)))
         (setf (slot-value uri 'string) uri-string)))))
 
 (defmethod print-object ((uri uri) stream)
