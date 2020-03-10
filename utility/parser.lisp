@@ -122,7 +122,8 @@
        do (loop for parser in (reverse branch-stack)
              do (push parser *parser-stack*))
        and
-       return (values rest value match-p))))
+       return (values rest value match-p)
+       finally (return (values input nil nil)))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defmacro .test ((test &rest arguments) &optional (parser '(.element))
