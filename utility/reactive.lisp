@@ -1,6 +1,6 @@
 (in-package :utility)
 
-(defclass reflective-object ()
+(defclass reactive-object ()
   ((dependency
     :initarg :dependency
     :initform nil
@@ -10,15 +10,15 @@
     :initform nil
     :accessor object-propagation)))
 
-(defclass reflective-class (standard-class reflective-object) ())
+(defclass reactive-class (standard-class reactive-object) ())
 
-(defclass reflective-method (closer-mop:standard-method reflective-object) ())
+(defclass reactive-method (closer-mop:standard-method reactive-object) ())
 
 (defmethod closer-mop:validate-superclass
-    ((class reflective-class) (super-class standard-class)) t)
+    ((class reactive-class) (super-class standard-class)) t)
 
-(defun reflective-object-p (object)
-  (typep object 'reflective-object))
+(defun reactive-object-p (object)
+  (typep object 'reactive-object))
 
 (defun object-dependency/0 (object)
   (mapcar #'trivial-garbage:weak-pointer-value (object-dependency object)))
@@ -76,21 +76,24 @@
          do (remove-dependency object o)))))
 
 (defgeneric update (source update)
-  (:method ((source reflective-object) update)
-    (loop for object in (propagation-list source)
+  (:method ((source reactive-object) update)
+    ;; (reflect object object update)
+    (loop for pointer in (object-propagation source)
+       for object = (trivial-garbage:weak-pointer-value pointer)
+       when object
        do (reflect object source update))))
 
 (defgeneric reflect (object source update)
-  (:method ((object reflective-object) (source reflective-object) update)))
+  (:method ((object reactive-object) (source reactive-object) update)))
 
-(defmethod shared-initialize :after ((class reflective-class) slot-names &rest initargs &key &allow-other-keys)
+(defmethod shared-initialize :after ((class reactive-class) slot-names &rest initargs &key &allow-other-keys)
   (labels ((update-class (class)
              (update class t)
              (mapcar #'update-class
                      (closer-mop:class-direct-subclasses class))))
     (update-class class)))
 
-(defmethod shared-initialize :around ((object reflective-object) slot-names &rest initargs &key &allow-other-keys)
+(defmethod shared-initialize :around ((object reactive-object) slot-names &rest initargs &key &allow-other-keys)
   (let ((object (call-next-method)))
     (trivial-garbage:finalize
      object
@@ -110,12 +113,12 @@
        object))
     object))
 
-(defmethod shared-initialize :after ((object reflective-object) slot-names &rest initargs &key &allow-other-keys)
+(defmethod shared-initialize :after ((object reactive-object) slot-names &rest initargs &key &allow-other-keys)
   (let ((class (class-of object)))
-    (when (typep class 'reflective-class)
+    (when (typep class 'reactive-class)
       (add-dependency object class))))
 
-(defmethod shared-initialize :after ((method reflective-method) slot-names &rest initargs &key &allow-other-keys)
+(defmethod shared-initialize :after ((method reactive-method) slot-names &rest initargs &key &allow-other-keys)
   (loop for class in (closer-mop:method-specializers method)
-     when (typep class 'reflective-class)
+     when (typep class 'reactive-class)
      do (update class t)))

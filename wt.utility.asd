@@ -19,7 +19,7 @@
                                      (:file "function")
                                      (:file "class")
                                      (:file "tree")
-                                     (:file "reflective")
+                                     (:file "reactive")
                                      (:file "variable")
                                      (:file "parser"))))
   :in-order-to ((test-op (test-op :wt.utility/test)))

@@ -15,11 +15,15 @@
    :rewrite-class-option
    ;; variable
    :define-variable
-   ;; reflective
-   :reflective-object
-   :reflective-class
-   :reflective-method
-   :reflective-object-p
+   :variable
+   :variable-name
+   :variable-form
+   :variable-value
+   ;; reactive
+   :reactive-object
+   :reactive-class
+   :reactive-method
+   :reactive-object-p
    :update
    :reflect
    :add-dependency
