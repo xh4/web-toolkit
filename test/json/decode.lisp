@@ -38,16 +38,15 @@ returned!"
               (json::value
                (decode "[]")))))
 
-(test decode/json-object
-  (let ((input " { \"hello\" : \"hej\" ,
-                       \"hi\" : \"tjena\" ,
-                       \"start_XPos\" : 98
-                  }"))
-    ;; (is (equalp '(("hello" . "hej") ("hi" . "tjena") ("start_XPos" . 98))
-    ;;             (decode input)))
-    ;; (is-false (decode " {  } "))
-    ;; (is-false (decode "{}"))
-    ))
+;; (test decode/json-object
+;;   (let ((input " { \"hello\" : \"hej\" ,
+;;                        \"hi\" : \"tjena\" ,
+;;                        \"start_XPos\" : 98
+;;                   }"))
+;;     (is (equalp '(("hello" . "hej") ("hi" . "tjena") ("start_XPos" . 98))
+;;                 (decode input)))
+;;     (is-false (decode " {  } "))
+;;     (is-false (decode "{}"))))
 
 (defmacro with-fp-overflow-handler (handler-expr &body body)
   (let ((err (gensym)))
@@ -141,11 +140,11 @@ returned!"
       (read-sequence s stream)
       s)))
 
-(test decode/non-strict-json
-   (let ((not-strictly-valid "\"right\\'s of man\""))
-     (5am:signals json::json-syntax-error
-       (decode not-strictly-valid))
-     (let ((json::*use-strict-json-rules* nil))
-       (declare (special json::*use-strict-json-rules*))
-       (is (string= (decode not-strictly-valid)
-                    "right's of man")))))
+;; (test decode/non-strict-json
+;;    (let ((not-strictly-valid "\"right\\'s of man\""))
+;;      (5am:signals json::json-syntax-error
+;;        (decode not-strictly-valid))
+;;      (let ((json::*use-strict-json-rules* nil))
+;;        (declare (special json::*use-strict-json-rules*))
+;;        (is (string= (decode not-strictly-valid)
+;;                     "right's of man")))))
