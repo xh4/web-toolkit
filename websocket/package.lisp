@@ -5,17 +5,21 @@
   (:use :cl :alexandria)
   #+sb-package-locks
   (:lock t)
-  (:export :define-endpoint
-           :define-session
-           :session-class
-           :session-opening-uri
-           :session-opening-header
-           :session-open-p
-           :send-text
-           :send-binary
-           :ping
-           :close-session
-           :connect)
+  (:export
+   ;; endpoint
+   :define-endpoint
+   ;; session
+   :define-session
+   :session-class
+   :session-opening-uri
+   :session-opening-header
+   :session-open-p
+   :send-text
+   :send-binary
+   :ping
+   :close-session
+   ;; client
+   :connect)
   (:import-from :http
                 :request
                 :request-uri
