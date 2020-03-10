@@ -12,21 +12,9 @@
    :construct
    ;; document
    :document
-   :document-title
-   :document-boyd
-   :document-head
-   :document-images
-   :document-links
-   :document-forms
-   :document-scripts
    ;; element
    :element
    :custom-element
-   :tag-name
-   :root
-   :children
-   :style
-   :append-child
    ;; text
    :text
    ;; serialize
@@ -50,7 +38,8 @@
    :p :param :picture :pre :progress
    :q
    :rb :rp :rt :rtc :ruby
-   :s :samp :script :section :select :slot :small :source :span :strong :style :sub :summary :sup
+   :s :samp :script :section :select :slot :small :source
+   :span :strong :style :sub :summary :sup
    :table :tbody :td :template :textarea :tfoot :th :thead :title :tr :track
    :u :ul
    :var :video

@@ -43,7 +43,8 @@
   (let ((parent (dom:parent text)))
     (etypecase parent
       (escapable-raw-text-element (write-escapable-raw-text text stream))
-      (element (write-normal-text text stream)))))
+      (element (write-normal-text text stream))
+      (t (write-normal-text text stream)))))
 
 (defun write-normal-text (text &optional (stream *standard-output*) &key)
   (loop for char across (dom:data text)
