@@ -5,28 +5,36 @@
 (test uri-query
   (it
     (let ((uri "http://coobii.com?foo=bar"))
-      (is (equal "foo" (caar (uri-query uri :type :alist))))
-      (is (equal "bar" (cdar (uri-query uri :type :alist))))))
+      (is (equal "foo" (caar (uri-query uri))))
+      (is (equal "bar" (cdar (uri-query uri))))))
 
   (it
     (let ((uri "http://coobii.com?foo="))
-      (is (equal "" (cdar (uri-query uri :type :alist))))))
+      (is (equal "" (cdar (uri-query uri))))))
 
   (it
     (let ((uri "http://coobii.com?foo"))
-      (is (equal nil (cdar (uri-query uri :type :alist))))))
+      (is (equal nil (cdar (uri-query uri))))))
 
   (it
     (let ((uri "http://coobii.com?foo&goo=gle"))
-      (is (equal nil (cdar (uri-query uri :type :alist))))))
+      (is (equal nil (cdar (uri-query uri))))))
 
   (it
     (let ((uri "http://coobii.com?foo=%E7%88%B1"))
-      (is (equal "爱" (cdar (uri-query uri :type :alist))))))
+      (is (equal "爱" (cdar (uri-query uri))))))
 
   (it
     (let ((uri "http://coobii.com?%E7%88%B1=%E4%BD%A0"))
-      (is (equal "你" (cdar (uri-query uri :type :alist)))))))
+      (is (equal "你" (cdar (uri-query uri))))))
+
+  (it
+    (let ((uri "http://coobii.com?%E7%88%B1=%E4%BD%A0"))
+      (is (equal "%E7%88%B1=%E4%BD%A0" (uri-query uri :type nil)))))
+
+  (it
+    (let ((uri "http://coobii.com?%E7%88%B1=%E4%BD%A0"))
+      (is (equal "爱=你" (uri-query uri :type nil :decode t))))))
 
 (test uri-query-bad-encoding
   (it
@@ -38,4 +46,8 @@
 
   (is (equal "foo" (uri::alist-query '(("foo" . "")))))
 
-  (is (equal "foo=bar" (uri::alist-query '(("foo" . "bar"))))))
+  (is (equal "foo=bar" (uri::alist-query '(("foo" . "bar")))))
+
+  (is (equal "foo=4" (uri::alist-query '(("foo" . 4)))))
+
+  (is (equal "foo=BAR" (uri::alist-query '(("foo" . bar))))))

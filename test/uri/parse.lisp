@@ -38,16 +38,16 @@
 
   (it
     (let ((uri (uri::parse-uri "http://coobii.com/foo/bar?abc=def")))
-      (is (equal "abc=def" (uri-query uri)))))
+      (is (equal "abc=def" (uri-query uri :type :string)))))
 
   (it
     (let ((uri (uri::parse-uri "http://coobii.com/?abc=def")))
-      (is (equal "abc=def" (uri-query uri)))
+      (is (equal "abc=def" (uri-query uri :type :string)))
       (is (equal "/" (uri-path uri)))))
 
   (it
     (let ((uri (uri::parse-uri "http://coobii.com?abc=def")))
-      (is (equal "abc=def" (uri-query uri)))
+      (is (equal "abc=def" (uri-query uri :type :string)))
       (is (equal nil (uri-path uri)))))
 
   (it
@@ -64,7 +64,7 @@
     (let ((uri (uri::parse-uri "http://coobii.com/foo?bar#fragment")))
       (is (equal "fragment" (uri-fragment uri)))
       (is (equal "/foo" (uri-path uri)))
-      (is (equal "bar" (uri-query uri))))))
+      (is (equal "bar" (uri-query uri :type :string))))))
 
 (test parse-uri/ip-host
   (it

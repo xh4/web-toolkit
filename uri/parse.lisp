@@ -230,22 +230,22 @@
          for value = (parser-value parser)
          do
            (typecase parser
-             (.scheme (setf (uri-scheme uri)
+             (.scheme (setf (slot-value uri 'scheme)
                             (when value (string-downcase value))))
-             (.userinfo (setf (uri-userinfo uri) value))
+             (.userinfo (setf (slot-value uri 'userinfo) value))
              (.host (when value
                       (setf value (string-downcase value))
                       (when (eq #\[ (char value 0))
                         (setf value (subseq value 1 (1- (length value)))))
-                      (setf (uri-host uri) value)))
-             (.port (setf (uri-port uri)
+                      (setf (slot-value uri 'host) value)))
+             (.port (setf (slot-value uri 'port)
                           (parse-integer value)))
              ((or .path-abempty
                   .path-noscheme
                   .path-rootless
                   .path-absolute)
               (when (plusp (length value))
-                (setf (uri-path uri) value)))
-             (.query (setf (uri-query uri) value))
-             (.fragment (setf (uri-fragment uri) value)))
+                (setf (slot-value uri 'path) value)))
+             (.query (setf (slot-value uri 'query) value))
+             (.fragment (setf (slot-value uri 'fragment) value)))
          finally (return uri)))))

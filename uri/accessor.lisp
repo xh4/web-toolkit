@@ -71,13 +71,14 @@
 
 (define-uri-writer path)
 
-(define-uri-reader (query &key type (decode nil))
+(define-uri-reader (query &key (type :alist) (decode nil))
   (case type
     (:alist (uri-query-alist query))
     (:hash-table (uri-query-hash-table query))
-    (t (if decode
-           (percent-decode query)
-           query))))
+    ((or nil :string) (if decode
+                            (percent-decode query)
+                            query))
+    (t (error "Bad type ~A" type))))
 
 (define-uri-writer query)
 

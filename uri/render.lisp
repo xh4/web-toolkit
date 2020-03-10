@@ -5,13 +5,13 @@
   (unless uri (return-from render-uri nil))
   (if-let ((uri-string (slot-value uri 'string)))
     uri-string
-    (let ((scheme (uri-scheme uri))
-          (host (uri-host uri))
-          (userinfo (uri-userinfo uri))
-          (port (uri-port uri))
-          (path (uri-path uri))
-          (query (uri-query uri))
-          (fragment (uri-fragment uri)))
+    (let ((scheme (slot-value uri 'scheme))
+          (host (slot-value uri 'host))
+          (userinfo (slot-value uri 'userinfo))
+          (port (slot-value uri 'port))
+          (path (slot-value uri 'path))
+          (query (slot-value uri 'query))
+          (fragment (slot-value uri 'fragment)))
       (let ((uri-string
              (concatenate 'string
                           (when scheme
@@ -19,50 +19,21 @@
                           (when scheme ":")
                           (when host
                             "//")
-                          (when userinfo
-                            (percent-encode
-                             userinfo
-                             :reserve (lambda (c)
-                                        (or (unreserved-p c)
-                                            (sub-delim-p c)
-                                            (eq c #\:)))))
+                          userinfo
                           (when userinfo
                             "@")
-                          (when host
-                            (percent-encode
-                             host
-                             :reserve (lambda (c)
-                                        (or (unreserved-p c)
-                                            (sub-delim-p c)))))
+                          host
                           (when port
                             ":")
                           (when port
                             (format nil "~A" port))
-                          (when path
-                            (percent-encode
-                             path
-                             :reserve (lambda (c)
-                                        (or (unreserved-p c)
-                                            (sub-delim-p c)
-                                            (eq c #\:)
-                                            (eq c #\@)
-                                            (eq c #\/)))))
+                          path
                           (when query
                             "?")
-                          (when query
-                            query)
+                          query
                           (when fragment
                             "#")
-                          (when fragment
-                            (percent-encode
-                             fragment
-                             :reserve (lambda (c)
-                                        (or (unreserved-p c)
-                                            (sub-delim-p c)
-                                            (eq c #\:)
-                                            (eq c #\@)
-                                            (eq c #\/)
-                                            (eq c #\?))))))))
+                          fragment)))
         (when (and (plusp (length uri-string))
                    (eq #\? (char uri-string 0)))
           (setf uri-string (subseq uri-string 1)))
