@@ -109,7 +109,11 @@
                            (stream (stream-read-remain body))))
                        (go :start))
                      (go :end)))))))
-   :end (close-connection connection)))
+   :end (handler-case
+            (close-connection connection)
+          (error (e)
+            ;; TODO: handler error
+            (declare (ignore e))))))
 
 (defun close-connection (connection)
   (with-slots (input-stream output-stream) connection
