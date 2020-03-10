@@ -48,4 +48,6 @@
                 :tag-name
                 :children
                 :append-child
-                :root))
+                :root)
+  (:import-from :css
+                :style))
