@@ -2,7 +2,7 @@
 
 (defpackage :http
   (:nicknames :wt.http)
-  (:use :cl :alexandria :utility)
+  (:use :cl :alexandria)
   (:shadow :get :delete :read-line :read-char :stream :directory)
   #+sb-package-locks
   (:lock t)
@@ -75,6 +75,9 @@
            :read-form-field-into-stream
            :read-form-field-into-file
            :read-form-field-into-temporary-file)
+  (:import-from :utility
+                :function-lambda-list
+                :rewrite-class-option)
   (:import-from :uri
                 :uri
                 :uri-scheme
