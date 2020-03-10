@@ -8,7 +8,6 @@
   (:lock t)
   (:export
    ;; null
-   :maybe-null
    :null
    ;; array
    :array

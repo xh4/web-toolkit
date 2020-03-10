@@ -74,12 +74,6 @@ and the result is written as String."
         (let ((s (funcall *lisp-identifier-name-to-json* (symbol-name s))))
           (write-json-string s stream)))))
 
-(defmethod encode-json ((maybe-null maybe-null) &optional (stream *json-output*))
-  (with-slots (value) maybe-null
-    (if value
-        (encode-json value stream)
-        (encode-json null stream))))
-
 (defmethod encode-json ((value null) &optional (stream *json-output*))
   (format stream "null"))
 

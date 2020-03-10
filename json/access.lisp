@@ -30,7 +30,6 @@
                    (values
                     (typecase current-value
                       (array (value current-value))
-                      (maybe-null (value current-value))
                       (null nil)
                       (t current-value))
                     found-p)

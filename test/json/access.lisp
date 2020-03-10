@@ -23,6 +23,6 @@
 
   (is (equal nil (json:get (object "aaa" nil) "aaa")))
 
-  (is (equal 42 (json:get (object "aaa" (json:maybe-null 42)) "aaa")))
+  (is (equal 42 (json:get (object "aaa" (json:null 42)) "aaa")))
 
-  (is (equal nil (json:get (object "aaa" (json:maybe-null nil)) "aaa"))))
+  (is (equal nil (json:get (object "aaa" (json:null nil)) "aaa"))))
