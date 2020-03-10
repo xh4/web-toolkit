@@ -13,9 +13,7 @@
 (defgeneric message-body-present-p (message)
   (:method ((message message))
     (or (find-header-field "Content-Length" message)
-        (find-header-field "Transfer-Encoding" message)
-        (search "close" (header-field-value
-                         (find-header-field "Connection" message))))))
+        (find-header-field "Transfer-Encoding" message))))
 
 (defgeneric transfer-encoding-chunked-p (message)
   (:method ((message message))
