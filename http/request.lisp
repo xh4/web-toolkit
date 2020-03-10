@@ -190,16 +190,17 @@
                 (request-version request) version))
         (let ((request-header (read-header stream)))
           (setf (request-header request) request-header))
-        (if (message-body-present-p request)
+        (if (or (message-body-present-p request)
+                (search "close" (header-field-value
+                                 (find-header-field "Connection" request))))
             (if (transfer-encoding-chunked-p request)
                 (setf (request-body request)
                       (make-instance 'stream :upstream (chunga:make-chunked-stream stream)))
-                (if-let ((content-length (header-field-value
-                                       (find-header-field "Content-Length" request))))
+                (when-let ((content-length (header-field-value
+                                            (find-header-field "Content-Length" request))))
                   (progn (setf content-length (parse-integer content-length))
                          (setf (request-body request)
-                               (make-instance 'stream :upstream stream :length content-length)))
-                  (error "Require content length")))
+                               (make-instance 'stream :upstream stream :length content-length)))))
             (setf (request-body request) stream))
         request))))
 
