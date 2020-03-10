@@ -13,7 +13,9 @@
 (defgeneric message-body-present-p (message)
   (:method ((message message))
     (or (find-header-field "Content-Length" message)
-        (find-header-field "Transfer-Encoding" message))))
+        (find-header-field "Transfer-Encoding" message)
+        (search "close" (header-field-value
+                         (find-header-field "Connection" message))))))
 
 (defgeneric transfer-encoding-chunked-p (message)
   (:method ((message message))
@@ -29,7 +31,8 @@
         ;; TODO: read chunked stream
         (unless content-length
           (error "Missing content length when read message body into vector"))
-        (setf content-length (parse-integer content-length))
+        (when content-length
+          (setf content-length (parse-integer content-length)))
         (alexandria::read-stream-content-into-byte-vector
          stream 'alexandria::%length content-length)))))
 
