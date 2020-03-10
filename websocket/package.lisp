@@ -2,7 +2,7 @@
 
 (defpackage :websocket
   (:nicknames :ws :wt.ws :wt.websocket)
-  (:use :cl :alexandria :utility)
+  (:use :cl :alexandria)
   #+sb-package-locks
   (:lock t)
   (:export :define-endpoint
@@ -36,6 +36,9 @@
                 :uri-scheme
                 :uri-host
                 :uri-port)
+  (:import-from :utility
+                :function-lambda-list
+                :rewrite-class-option)
   (:import-from :closer-mop
                 :compute-class-precedence-list
                 :shared-initialize
