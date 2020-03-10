@@ -21,7 +21,7 @@ WT.HTTP provides HTTP functionality as is defined in [RFC 7231 Hypertext Transfe
 WT.WEBSOCKET provides WebSocket functionality with interfaces inspired by [JSR 356, Java API for WebSocket](https://www.oracle.com/technetwork/articles/java/jsr356-1937161.html). The system is tested against the [Autobahn WebSocket Testsuite](https://github.com/crossbario/autobahn-testsuite).
 
 #### HTML
-WT.HTML implements HTML constructor and serializer based on recent version of [HTML Living Standard](https://html.spec.whatwg.org/multipage/).
+WT.HTML implements HTML constructor, parser and serializer based on recent version of [HTML Living Standard](https://html.spec.whatwg.org/multipage/).
 
 #### JSON
 WT.JSON implements JSON encoder and decoder based on [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html). It distinguishes `null`, `false` and `[]` from Lisp's `NIL` thus supports identical transformation between JSON values.
