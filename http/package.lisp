@@ -6,75 +6,96 @@
   (:shadow :get :delete :read-line :read-char :stream :directory)
   #+sb-package-locks
   (:lock t)
-  (:export :header
-           :header-fields
-           :header-field
-           :header-field-name
-           :header-field-value
-           :find-header-field
-           :set-header-field
-           :request
-           :request-method
-           :request-uri
-           :request-version
-           :request-header
-           :request-body
-           :status
-           :status-keyword
-           :status-code
-           :status-reason-phrase
-           :response
-           :response-status
-           :response-header
-           :response-body
-           :read-response-body-into-vector
-           :read-response-body-into-temporary-file
-           :entity
-           :html-entity
-           :entity-html
-           :json-entity
-           :entity-json
-           :file-entity
-           :directory-entity
-           :form-entity
-           :entity-form
-           :text-entity
-           :entity-text
-           :reply
-           :reply-object
-           :define-handler
-           :*request*
-           :*response*
-           :call-next-handler
-           :abort-handler
-           :redirect
-           :listener
-           :listener-port
-           :listener-address
-           :router
-           :route
-           :make-route
-           :define-server
-           :start-server
-           :stop-server
-           :get
-           :head
-           :put
-           :post
-           :delete
-           :patch
-           :options
-           :with-connections
-           :form
-           :form-field
-           :form-field-name
-           :form-field-value
-           :form-fields
-           :skip-form-field
-           :read-form-field-into-vector
-           :read-form-field-into-stream
-           :read-form-field-into-file
-           :read-form-field-into-temporary-file)
+  (:export
+   ;; header-field
+   :header-field
+   :header-field-name
+   :header-field-value
+   ;; header
+   :header
+   :header-fields
+   :find-header-field
+   :set-header-field
+   ;; request
+   :request
+   :request-method
+   :request-uri
+   :request-version
+   :request-header
+   :request-body
+   ;; status
+   :status
+   :status-keyword
+   :status-code
+   :status-reason-phrase
+   ;; response
+   :response
+   :response-status
+   :response-header
+   :response-body
+   :read-response-body-into-vector
+   :read-response-body-into-temporary-file
+   ;; entity
+   :entity
+   ;; entity-html
+   :html-entity
+   :entity-html
+   ;; entity-json
+   :json-entity
+   :entity-json
+   ;; entity-file
+   :file-entity
+   ;; entity-directory
+   :directory-entity
+   ;; entity-form
+   :form-entity
+   :entity-form
+   ;; entity-text
+   :text-entity
+   :entity-text
+   ;; reply
+   :reply
+   :reply-object
+   ;; handler
+   :define-handler
+   :*request*
+   :*response*
+   :call-next-handler
+   :abort-handler
+   ;; redirect
+   :redirect
+   ;; listener
+   :listener
+   :listener-port
+   :listener-address
+   ;; router
+   :router
+   :route
+   :make-route
+   ;; server
+   :define-server
+   :start-server
+   :stop-server
+   ;; client
+   :get
+   :head
+   :put
+   :post
+   :delete
+   :patch
+   :options
+   :with-connections
+   ;; form
+   :form
+   :form-field
+   :form-field-name
+   :form-field-value
+   :form-fields
+   :skip-form-field
+   :read-form-field-into-vector
+   :read-form-field-into-stream
+   :read-form-field-into-file
+   :read-form-field-into-temporary-file)
   (:import-from :utility
                 :function-lambda-list
                 :rewrite-class-option)
