@@ -52,7 +52,7 @@
                     (t (error "Value ~A of type ~A can't be a name of object" name0 (type-of name0))))
        for value = (typecase value0
                      ((or string symbol number
-                          sequence object) value0)
+                          sequence object array maybe-null null) value0)
                      (t (format nil "~A" value0)))
        do
          (setf (gethash name pairs) value))

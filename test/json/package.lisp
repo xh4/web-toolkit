@@ -3,7 +3,7 @@
 (defpackage :json-test
   (:nicknames :wt.json-test)
   (:use :cl :json :test)
-  (:shadow :get)
+  (:shadow :null :array :get)
   (:export :run!))
 
 (in-package :json-test)

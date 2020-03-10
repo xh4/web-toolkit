@@ -1,25 +1,10 @@
 (in-package :json)
 
-(define-condition json-syntax-error (simple-error stream-error)
-  ((stream-file-position :reader stream-error-stream-file-position
-                         :initarg :stream-file-position))
-  (:report
-   (lambda (condition stream)
-     (format stream "~? [in ~S~@[ at position ~D~]]"
-             (simple-condition-format-control condition)
-             (simple-condition-format-arguments condition)
-             (stream-error-stream condition)
-             (stream-error-stream-file-position condition))))
-  (:documentation
-   "Signalled when non-well-formed JSON data are encountered."))
-
-(defun json-syntax-error (stream format-control &rest format-arguments)
-  "Signal a JSON-SYNTAX-ERROR condition."
-  (error 'json-syntax-error
-         :stream stream
-         :stream-file-position (file-position stream)
-         :format-control format-control
-         :format-arguments format-arguments))
+(defparameter +json-lisp-symbol-tokens+
+  `(("true" . t)
+    ("null" . ,null)
+    ("false" . nil))
+  "Mapping between JSON literal names and Lisp boolean values.")
 
 (defun read-json-token (stream)
   "Read a JSON token (literal name, number or punctuation char) from
@@ -488,7 +473,7 @@ double quote, calling string handlers as it goes."
 (defun accumulator-get-sequence ()
   "Return all values accumulated so far in the list accumulator as
 *JSON-ARRAY-TYPE*."
-  (coerce (cdr *accumulator*) *json-array-type*))
+  (array (coerce (cdr *accumulator*) *json-array-type*)))
 
 (defun accumulator-get-string ()
   "Return all values accumulated so far in the list accumulator as
@@ -561,5 +546,5 @@ is such as set by SET-DECODER-SEMANTICS."
   (typecase source
     (string (decode-json-from-string source))
     ((or pathname stream) (decode-json-from-source source))
-    (null nil)
+    (cl:null nil)
     (t (error "unknown source"))))

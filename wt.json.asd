@@ -1,7 +1,7 @@
 ;;;; -*- Mode: LISP -*-
 
 (defsystem wt.json
-  :version "0.9.0"
+  :version "0.0.0"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
   :license "BSD 3-Clause"
@@ -10,8 +10,11 @@
   :components ((:module "json"
                         :serial t
                         :components ((:file "package")
-                                     (:file "camel-case")
+                                     (:file "utility")
+                                     (:file "condition")
                                      (:file "common")
+                                     (:file "null")
+                                     (:file "array")
                                      (:file "object")
                                      (:file "access")
                                      (:file "encode")
@@ -25,7 +28,10 @@
   :depends-on (:wt.json
                :wt.test)
   :components ((:module "test/json"
-                        :components ((:module "json"
-                                              ))))
+                        :components ((:file "package")
+                                     (:file "object")
+                                     (:file "access")
+                                     (:file "encode")
+                                     (:file "decode"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :json-test)))

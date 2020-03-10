@@ -7,13 +7,15 @@
                (error "Can't get ~A in ~A" accessor value))
              (get1 (value accessor)
                (typecase value
-                 (list (typecase accessor
-                         (integer (if (> accessor (1- (length value)))
-                                      (setf found-p nil
-                                            current-value nil)
-                                      (setf found-p t
-                                            current-value (nth accessor value))))
-                         (t (fail value accessor))))
+                 (cl:null nil)
+                 (array (let ((list (value value)))
+                          (typecase accessor
+                            (integer (if (> accessor (1- (length list)))
+                                         (setf found-p nil
+                                               current-value nil)
+                                         (setf found-p t
+                                               current-value (nth accessor list))))
+                            (t (fail value accessor)))))
                  (object (typecase accessor
                            ((or string symbol)
                             (with-slots (pairs) value
@@ -24,7 +26,13 @@
                            (t (get1 value (format nil "~A" accessor)))))
                  (t (fail value accessor))))
              (get2 (value accessors)
-               (if (null accessors)
-                   (values current-value found-p)
+               (if (cl:null accessors)
+                   (values
+                    (typecase current-value
+                      (array (value current-value))
+                      (maybe-null (value current-value))
+                      (null nil)
+                      (t current-value))
+                    found-p)
                    (get2 (get1 value (car accessors)) (cdr accessors)))))
       (get2 value (alexandria:flatten accessors)))))

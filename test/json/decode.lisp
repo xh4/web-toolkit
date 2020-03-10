@@ -4,16 +4,16 @@
 
 ;; Test decoder
 
-(test json-literal
+(test decode/json-literal
   (is-true (decode "  true"))
   (is-true (decode "  true "))
   (is-true (decode "true "))
   (is-true (decode "true"))
   (signals error (decode "trUe "))
   (is-false (decode "false"))
-  (is-false (decode "null")))
+  (is (eq json:null (decode "null"))))
 
-(test json-string
+(test decode/json-string
   (is (string= "hello"
               (decode "  \"hello\"")))
   (is (string= "new-line
@@ -22,19 +22,23 @@ returned!"
   (is (string= (make-string 1 :initial-element (code-char (+ (* 10 16) 11)))
                (decode "  \"\\u00ab\""))))
 
-(test json-array
+(test decode/json-array
   (is (equalp
        '("hello" "hej" "ciao")
-       (decode " [ \"hello\",  \"hej\",
-                   \"ciao\" ]")))
+       (json::value
+        (decode " [ \"hello\",  \"hej\",
+                   \"ciao\" ]"))))
   (is (equalp '(1 2 3)
-              (decode "[1,2,3]")))
-  (is (equalp '(t nil nil)
-              (decode "[true,null,false]")))
+              (json::value
+               (decode "[1,2,3]"))))
+  (is (equalp `(t ,json:null nil)
+              (json::value
+               (decode "[true,null,false]"))))
   (is (equalp '()
-              (decode "[]"))))
+              (json::value
+               (decode "[]")))))
 
-(test json-object
+(test decode/json-object
   (let ((input " { \"hello\" : \"hej\" ,
                        \"hi\" : \"tjena\" ,
                        \"start_XPos\" : 98
@@ -61,30 +65,31 @@ returned!"
                        ,handler-expr)))
        ,@body)))
 
-(test json-number
+(test decode/json-number
   (is (= 100 (decode "100")))
   (is (= 10.01 (decode "10.01")))
   (is (= -2.3 (decode "-2.3")))
   (is (= -2.3e3 (decode "-2.3e3")))
   (is (= -3e4 (decode "-3e4")))
   (is (= 3e4 (decode "3e4")))
-  (let ((*read-default-float-format* 'double-float))
-    (is (= 2d40 (decode "2e40"))))
-  #-(or (and sbcl darwin) (and allegro macosx))
-  (is (equalp "BIG:2e444"
-              (with-fp-overflow-handler
-                  (invoke-restart 'json::bignumber-string "BIG:")
-                (decode "2e444"))))
-  #-(or (and sbcl darwin) (and allegro macosx))
-  (is (= (* 2 (expt 10 444))
-         (with-fp-overflow-handler
-             (invoke-restart 'json::rational-approximation)
-           (decode "2e444"))))
+  ;; (let ((*read-default-float-format* 'double-float))
+  ;;   (is (= 2d40 (decode "2e40"))))
+  ;; #-(or (and sbcl darwin) (and allegro macosx))
+  ;; (is (equalp "BIG:2e444"
+  ;;             (with-fp-overflow-handler
+  ;;                 (invoke-restart 'json::bignumber-string "BIG:")
+  ;;               (decode "2e444"))))
+  ;; #-(or (and sbcl darwin) (and allegro macosx))
+  ;; (is (= (* 2 (expt 10 444))
+  ;;        (with-fp-overflow-handler
+  ;;            (invoke-restart 'json::rational-approximation)
+  ;;          (decode "2e444"))))
   ;; In SBCL on Darwin, constructing the float from parts by explicit
   ;; operations yields #.SB-EXT:SINGLE-FLOAT-POSITIVE-INFINITY.
-  #+(and sbcl darwin)
-  (is (= (* 2.0 (expt 10.0 444))
-         (decode "2e444"))))
+  ;; #+(and sbcl darwin)
+  ;; (is (= (* 2.0 (expt 10.0 444))
+  ;;        (decode "2e444")))
+  )
 
 
 (defparameter *json-test-files-path*
@@ -101,13 +106,13 @@ returned!"
 
 ;; All test files are taken from http://www.crockford.com/JSON/JSON_checker/test/
 
-(test pass-1
+(test decode/pass-1
   (decode-file (test-file "pass1")))
 
-(test pass-2
+(test decode/pass-2
   (decode-file (test-file "pass2")))
 
-(test pass-3
+(test decode/pass-3
   (decode-file (test-file "pass3")))
 
 (defparameter *ignore-tests* '(
@@ -123,20 +128,20 @@ returned!"
   18; says [[[[[[[[[[[[[[[[[[[["Too deep"]]]]]]]]]]]]]]]]]]]], but there is no formal limit
 ))
 
-(test fail-files
+(test decode/fail-files
   (dotimes (x 24)
     (if (member x *ignore-tests-strict*)
         (is-true t)
         (5am:signals error
           (decode-file (test-file (format nil "fail~a" x)))))))
 
-(defun contents-of-file(file)
+(defun contents-of-file (file)
   (with-open-file (stream file :direction :input)
      (let ((s (make-string (file-length stream))))
       (read-sequence s stream)
       s)))
 
-(test non-strict-json
+(test decode/non-strict-json
    (let ((not-strictly-valid "\"right\\'s of man\""))
      (5am:signals json::json-syntax-error
        (decode not-strictly-valid))

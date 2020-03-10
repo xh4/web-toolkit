@@ -74,7 +74,25 @@ and the result is written as String."
         (let ((s (funcall *lisp-identifier-name-to-json* (symbol-name s))))
           (write-json-string s stream)))))
 
-(defmethod encode-json ((object object) &optional stream)
+(defmethod encode-json ((maybe-null maybe-null) &optional (stream *json-output*))
+  (with-slots (value) maybe-null
+    (if value
+        (encode-json value stream)
+        (encode-json null stream))))
+
+(defmethod encode-json ((value null) &optional (stream *json-output*))
+  (format stream "null"))
+
+(defmethod encode-json ((value cl:null) &optional (stream *json-output*))
+  (format stream "false"))
+
+(defmethod encode-json ((array array) &optional (stream *json-output*))
+  (with-slots (value) array
+    (if value
+        (encode-json value stream)
+        (format stream "[]"))))
+
+(defmethod encode-json ((object object) &optional (stream *json-output*))
   (let ((pairs (slot-value object 'pairs)))
     (encode-json pairs stream)))
 
@@ -324,7 +342,7 @@ characters in string S to STREAM."
 
 (defun encode (value &optional target &key)
   (typecase target
-    (null (encode-json-to-string value))
+    (cl:null (encode-json-to-string value))
     (stream (encode-json value target))
     ((or string pathname)
      (with-open-file (stream target

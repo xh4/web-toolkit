@@ -2,15 +2,26 @@
 
 (defpackage :json
   (:nicknames :wt.json)
-  (:use :cl)
-  (:shadow :get)
+  (:use :cl :alexandria)
+  (:shadow :null :array :get)
   #+sb-package-locks
   (:lock t)
-  (:export :encode
-           :decode
-           :object
-           :alist-object
-           :plist-object
-           :get
-           :do-object
-           :json-syntax-error))
+  (:export
+   ;; null
+   :maybe-null
+   :null
+   ;; array
+   :array
+   ;; object
+   :object
+   :alist-object
+   :plist-object
+   :do-object
+   ;; access
+   :get
+   ;; encode
+   :encode
+   ;; decode
+   :decode
+   ;; condition
+   :json-syntax-error))
