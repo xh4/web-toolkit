@@ -15,13 +15,13 @@ Object-oriented Lisp Systems for Rapid Web Application Development
 ### Systems
 
 #### HTTP
-WT.HTTP provides HTTP functionality as is defined in [RFC 7231 Hypertext Transfer Protocol (HTTP/1.1)](https://www.ietf.org/rfc/rfc7231.txt), together with implementation of server and client.
+WT.HTTP provides HTTP functionality based on [RFC 7231 Hypertext Transfer Protocol (HTTP/1.1)](https://www.ietf.org/rfc/rfc7231.txt), together with implementation of server and client.
 
 #### WebSocket
 WT.WEBSOCKET provides WebSocket functionality with interfaces inspired by [JSR 356, Java API for WebSocket](https://www.oracle.com/technetwork/articles/java/jsr356-1937161.html). The system is tested against the [Autobahn WebSocket Testsuite](https://github.com/crossbario/autobahn-testsuite).
 
 #### HTML
-WT.HTML implements HTML constructor, parser and serializer based on recent version of [HTML Living Standard](https://html.spec.whatwg.org/multipage/).
+WT.HTML implements HTML constructor, parser and serializer based on recent version of [HTML Living Standard](https://html.spec.whatwg.org/multipage/). It uses the Document Object Model (DOM) provided by WT.DOM.
 
 #### JSON
 WT.JSON implements JSON encoder and decoder based on [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html). It distinguishes `null`, `false` and `[]` from Lisp's `NIL` thus supports identical transformation between JSON values. It provides object constructor and accessor to build and access nesting JSON objects.
