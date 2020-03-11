@@ -24,7 +24,7 @@ WT.WEBSOCKET provides WebSocket functionality with interfaces inspired by [JSR 3
 WT.HTML implements HTML constructor, parser and serializer based on recent version of [HTML Living Standard](https://html.spec.whatwg.org/multipage/).
 
 #### JSON
-WT.JSON implements JSON encoder and decoder based on [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html). It distinguishes `null`, `false` and `[]` from Lisp's `NIL` thus supports identical transformation between JSON values.
+WT.JSON implements JSON encoder and decoder based on [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html). It distinguishes `null`, `false` and `[]` from Lisp's `NIL` thus supports identical transformation between JSON values. It provides object constructor and accessor to build and access nesting JSON objects.
 
 #### [URI](https://lisp-web-toolkit.com/#chapter-uri)
 WT.URI provides URI parser and constructor, with support for UTF-8 characters, IPv6 addresses and query parameters handling. It utilizes recursive descent [parser combinators](https://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf) to provide a concise implementation that is close to the definition in [RFC 3986 Uniform Resource Identifier (URI): Generic Syntax](https://tools.ietf.org/html/rfc3986).
