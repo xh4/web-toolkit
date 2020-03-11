@@ -7,6 +7,8 @@
   #+sb-package-locks
   (:lock t)
   (:export
+   ;; value
+   :value
    ;; null
    :null
    ;; array

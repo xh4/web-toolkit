@@ -13,6 +13,7 @@
                                      (:file "utility")
                                      (:file "condition")
                                      (:file "common")
+                                     (:file "value")
                                      (:file "null")
                                      (:file "array")
                                      (:file "object")

@@ -12,6 +12,6 @@
       (format stream "~A" value))))
 
 (defun array (&optional value)
-  (unless (listp value)
+  (unless (typep value 'sequence)
     (error "Can't build JSON array from value ~A" value))
   (make-instance 'array :value value))
