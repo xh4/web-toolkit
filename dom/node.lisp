@@ -91,12 +91,14 @@
     (let ((i (position child (children parent))))
       (unless i
         (error "Child ~A not found" child))
+      (setf (parent node) parent)
       (setf (children parent)
             (cl:append (subseq (children parent) 0 i)
                        (cons node
                              (subseq (children parent) i)))))
     node)
   (:method ((parent node) (node node) (child null))
+    (setf (parent node) parent)
     (setf (children parent) (cons node (children parent)))
     node))
 
@@ -104,7 +106,8 @@
   (:method ((node node) (child node))
     (with-slots (children) node
       (appendf children (list child))
-      (setf (parent child) node))))
+      (setf (parent child) node))
+    child))
 
 (defgeneric replace-child (node child))
 
