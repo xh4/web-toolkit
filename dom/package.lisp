@@ -23,10 +23,10 @@
    :next-sibling
    :preceding
    :following
+   :insert-before
+   ;; element
    :element
    :tag-name
-   :element-class
-   ;; attribute
    :has-attributes
    :get-attribute-names
    :get-attribute
