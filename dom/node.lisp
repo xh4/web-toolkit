@@ -1,14 +1,6 @@
 (in-package :dom)
 
-(defclass node ()
-  ((parent
-    :initarg :parent
-    :initform nil
-    :accessor parent)
-   (children
-    :initarg :children
-    :initform nil
-    :accessor children)))
+(defclass node () ())
 
 (defgeneric node-type (node))
 

@@ -1,6 +1,6 @@
 (in-package :dom-test)
 
-(defclass node (dom:node)
+(defclass node (dom:node dom:parent-node dom:child-node)
   ((name
     :initarg :name
     :initform nil)))

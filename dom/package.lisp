@@ -11,6 +11,8 @@
    :document
    ;; node
    :node
+   :parent-node
+   :child-node
    :root
    :parent
    :children

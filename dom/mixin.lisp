@@ -12,11 +12,11 @@
     :initform nil
     :accessor children)))
 
-(defgeneric first-element-child (node))
+(defgeneric first-child (node))
 
-(defgeneric last-element-child (node))
+(defgeneric last-child (node))
 
-(defgeneric child-element-count (node))
+(defgeneric child-count (node))
 
 (defgeneric prepend (node nodes))
 
@@ -27,16 +27,20 @@
 (defgeneric query-selector-all (node selectors))
 
 (defclass non-document-type-child-node ()
-  ((previous-element-sibling
-    :initarg previous-element-sibling
+  ((previous-sibling
+    :initarg previous-sibling
     :initform nil
-    :accessor previous-element-sibling)
-   (next-element-sibling
-    :initarg next-element-sibling
+    :accessor previous-sibling)
+   (next-sibling
+    :initarg next-sibling
     :initform nil
-    :accessor next-element-sibling)))
+    :accessor next-sibling)))
 
-(defclass child-node () ())
+(defclass child-node ()
+  ((parent
+    :initarg :parent
+    :initform nil
+    :accessor parent)))
 
 (defgeneric before (node nodes))
 
