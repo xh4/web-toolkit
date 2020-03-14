@@ -50,7 +50,9 @@
                             for index from 0
                             when (equal accessor name)
                             do (return (setf (cdr (nth index pairs)) value))
-                            finally (error "Object name ~A not found" accessor))))
+                            finally
+                              (appendf pairs (list (cons accessor value)))
+                              (return value))))
                (t (error "Can't set ~A to ~A, accessor: ~A" value thing accessor))))
            (set2 (thing accessors)
              (if (= 1 (length accessors))

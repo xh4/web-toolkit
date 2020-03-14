@@ -97,7 +97,9 @@
   (it
     (let ((thing (object "foo" (object "goo" "gle"))))
       (is (equal "gle2" (setf (json:get thing "foo" "goo") "gle2")))
-      (is (equal "gle2" (json:get thing "foo" "goo")))))
+      (is (equal "gle2" (json:get thing "foo" "goo")))
+      (is (equal "bii" (setf (json:get thing "foo" "coo") "bii")))
+      (is (equal "bii" (json:get thing "foo" "coo")))))
 
   (it
     (let ((thing (json:array '(1 2 3))))
@@ -105,7 +107,8 @@
 
   (it
     (let ((thing (object "foo" "bar")))
-      (signals error (setf (json:get thing "fxx") 42))))
+      (is (equal "gle" (setf (json:get thing "goo") "gle")))
+      (is (equal "gle" (json:get thing "goo")))))
 
   (it
     (let ((thing (object "foo" (json:array '(1 2 3)))))
