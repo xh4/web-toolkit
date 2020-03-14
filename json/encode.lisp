@@ -33,66 +33,6 @@ and execute BODY."
                      nil)))
          (write-json-string repr ,stream)))))
 
-(defgeneric encode-json (object &optional stream)
-  (:documentation "Write a JSON representation of OBJECT to STREAM and
-return NIL."))
-
-(defun encode-json-to-string (object)
-  "Return the JSON representation of OBJECT as a string."
-  (with-output-to-string (stream)
-    (encode-json object stream)))
-
-(defmethod encode-object (anything &optional (stream *json-output*))
-  "If OBJECT is not handled by any specialized encoder signal an error
-which the user can correct by choosing to encode the string which is
-the printed representation of the OBJECT."
-  (declare (ignore stream))
-  (unencodable-value-error anything 'encode-json))
-
-(defmethod encode-json ((nr number) &optional (stream *json-output*))
-  "Write the JSON representation of the number NR to STREAM (or to
-*JSON-OUTPUT*)."
-  (write-json-number nr stream))
-
-(defmethod encode-json ((s string) &optional (stream *json-output*))
-  "Write the JSON representation of the string S to STREAM (or to
-*JSON-OUTPUT*)."
-  (write-json-string s stream))
-
-(defmethod encode-json ((c character) &optional (stream *json-output*))
-  "JSON does not define a character type, we encode characters as Strings."
-  (encode-json (string c) stream))
-
-(defmethod encode-json ((s symbol) &optional (stream *json-output*))
-  "Write the JSON representation of the symbol S to STREAM (or to
-*JSON-OUTPUT*).  If S is boolean, a boolean literal is written.
-Otherwise, the name of S is passed to *LISP-IDENTIFIER-NAME-TO-JSON*
-and the result is written as String."
-  (let ((mapped (car (rassoc s +json-lisp-symbol-tokens+))))
-    (if mapped
-        (progn (write-string mapped stream) nil)
-        (let ((s (funcall *lisp-identifier-name-to-json* (symbol-name s))))
-          (write-json-string s stream)))))
-
-(defmethod encode-json ((value null) &optional (stream *json-output*))
-  (format stream "null"))
-
-(defmethod encode-json ((value cl:null) &optional (stream *json-output*))
-  (format stream "false"))
-
-(defmethod encode-json ((array array) &optional (stream *json-output*))
-  (with-slots (value) array
-    (if value
-        (encode-json value stream)
-        (format stream "[]"))))
-
-(defmethod encode-json ((object object) &optional (stream *json-output*))
-  (let ((pairs (slot-value object 'pairs)))
-    (with-object (stream)
-      (loop for (name . value) in pairs
-         do (as-object-member (name stream)
-              (encode-json value stream))))))
-
 (defvar *json-aggregate-context* nil
   "NIL outside of any aggregate environment, 'ARRAY or 'OBJECT within
 the respective environments.")
@@ -251,6 +191,66 @@ as itself, or a nil value as a json null-value"
 (defmacro with-explicit-encoder  (&body body)
   `(with-local-encoder (use-explicit-encoder)
                        ,@body))
+
+(defgeneric encode-json (object &optional stream)
+  (:documentation "Write a JSON representation of OBJECT to STREAM and
+return NIL."))
+
+(defun encode-json-to-string (object)
+  "Return the JSON representation of OBJECT as a string."
+  (with-output-to-string (stream)
+    (encode-json object stream)))
+
+(defmethod encode-object (anything &optional (stream *json-output*))
+  "If OBJECT is not handled by any specialized encoder signal an error
+which the user can correct by choosing to encode the string which is
+the printed representation of the OBJECT."
+  (declare (ignore stream))
+  (unencodable-value-error anything 'encode-json))
+
+(defmethod encode-json ((nr number) &optional (stream *json-output*))
+  "Write the JSON representation of the number NR to STREAM (or to
+*JSON-OUTPUT*)."
+  (write-json-number nr stream))
+
+(defmethod encode-json ((s string) &optional (stream *json-output*))
+  "Write the JSON representation of the string S to STREAM (or to
+*JSON-OUTPUT*)."
+  (write-json-string s stream))
+
+(defmethod encode-json ((c character) &optional (stream *json-output*))
+  "JSON does not define a character type, we encode characters as Strings."
+  (encode-json (string c) stream))
+
+(defmethod encode-json ((s symbol) &optional (stream *json-output*))
+  "Write the JSON representation of the symbol S to STREAM (or to
+*JSON-OUTPUT*).  If S is boolean, a boolean literal is written.
+Otherwise, the name of S is passed to *LISP-IDENTIFIER-NAME-TO-JSON*
+and the result is written as String."
+  (let ((mapped (car (rassoc s +json-lisp-symbol-tokens+))))
+    (if mapped
+        (progn (write-string mapped stream) nil)
+        (let ((s (funcall *lisp-identifier-name-to-json* (symbol-name s))))
+          (write-json-string s stream)))))
+
+(defmethod encode-json ((value null) &optional (stream *json-output*))
+  (format stream "null"))
+
+(defmethod encode-json ((value cl:null) &optional (stream *json-output*))
+  (format stream "false"))
+
+(defmethod encode-json ((array array) &optional (stream *json-output*))
+  (with-slots (value) array
+    (if value
+        (encode-json value stream)
+        (format stream "[]"))))
+
+(defmethod encode-json ((object object) &optional (stream *json-output*))
+  (let ((pairs (slot-value object 'pairs)))
+    (with-object (stream)
+      (loop for (name . value) in pairs
+         do (as-object-member (name stream)
+              (encode-json value stream))))))
 
 (defmethod encode-json ((s list) &optional (stream *json-output*))
   "Write the JSON representation of the list S to STREAM (or to
