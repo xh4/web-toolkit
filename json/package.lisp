@@ -15,8 +15,6 @@
    :array
    ;; object
    :object
-   :alist-object
-   :plist-object
    :do-object
    ;; access
    :get

@@ -19,10 +19,11 @@
                  (object (typecase accessor
                            ((or string symbol)
                             (with-slots (pairs) value
-                              (multiple-value-bind (value0 present-p)
-                                  (gethash (lisp-name-to-object-key accessor) pairs)
-                                (setf found-p present-p
-                                      current-value value0))))
+                              (if-let ((cons (assoc accessor pairs :test 'equal)))
+                                (setf found-p t
+                                      current-value (cdr cons))
+                                (setf found-p nil
+                                      current-value nil))))
                            (t (get1 value (format nil "~A" accessor)))))
                  (t (fail value accessor))))
              (get2 (value accessors)

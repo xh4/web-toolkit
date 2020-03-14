@@ -3,7 +3,7 @@
 (defclass object ()
   ((pairs
     :initarg :pairs
-    :initform (make-hash-table :test 'equal))))
+    :initform nil)))
 
 (defun pprint-object (list &optional (stream *standard-output*))
   (let ((*print-case* :downcase)
@@ -26,10 +26,9 @@
   (labels ((value-expr (value)
              (typecase value
                (object
-                (let ((pairs-hash-table (slot-value value 'pairs)))
-                  (loop for key being the hash-keys of pairs-hash-table
-                     using (hash-value value)
-                     append (list key (value-expr value)) into body
+                (let ((pairs (slot-value value 'pairs)))
+                  (loop for (name . value) in pairs
+                     append (list name (value-expr value)) into body
                      finally (return `(object ,@body)))))
                (t value))))
     (let ((*print-case* :downcase))
@@ -43,8 +42,7 @@
 (defun object (&rest arguments)
   (when (oddp (length arguments))
     (error "Expect even arguments when initialize object, got ~D" (length arguments)))
-  (let* ((object (make-instance 'object))
-         (pairs (slot-value object 'pairs)))
+  (let* ((object (make-instance 'object)))
     (loop for (name0 value0) on arguments by #'cddr
        for name = (typecase name0
                     (string name0)
@@ -54,29 +52,12 @@
                      ((or string symbol number
                           sequence object array null) value0)
                      (t (format nil "~A" value0)))
-       do
-         (setf (gethash name pairs) value))
+       collect (cons name value) into pairs
+       finally (setf (slot-value object 'pairs) pairs))
     object))
 
-(defun alist-object (alist)
-  (let ((values (loop for (name . value) in alist
-                     append (list name value))))
-    (apply 'object values)))
-
-(defun plist-object (plist)
-  (let ((values (loop for (name value) on plist by #'cddr
-                   append (list name value))))
-    (apply 'object values)))
-
 (defmacro do-object ((name value object &optional result-form) &body body)
-  `(loop :for ,name :being :the :hash-keys :of (slot-value ,object 'pairs)
-      :using (hash-value ,value)
+  `(loop :for (,name . ,value) :in (slot-value ,object 'pairs)
       :do
         ,@body
       :finally (return ,result-form)))
-
-(defun object-alist (object)
-  (let ((list '()))
-    (do-object (name value object list)
-      (push (cons name value) list))
-    (reverse list)))

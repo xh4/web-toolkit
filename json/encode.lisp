@@ -88,7 +88,10 @@ and the result is written as String."
 
 (defmethod encode-json ((object object) &optional (stream *json-output*))
   (let ((pairs (slot-value object 'pairs)))
-    (encode-json pairs stream)))
+    (with-object (stream)
+      (loop for (name . value) in pairs
+         do (as-object-member (name stream)
+              (encode-json value stream))))))
 
 (defvar *json-aggregate-context* nil
   "NIL outside of any aggregate environment, 'ARRAY or 'OBJECT within
