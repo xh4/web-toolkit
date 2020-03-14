@@ -82,3 +82,36 @@
         (json:get (json:array '(1 2 3)) 3)
       (is (equal nil value))
       (is-false present-p))))
+
+(test set
+  (it
+    (let ((thing (object "foo" "bar")))
+      (is (equal "bar2" (setf (json:get thing "foo") "bar2")))
+      (is (equal "bar2" (json:get thing "foo")))))
+
+  (it
+    (let ((thing (json:array '(1 2 3))))
+      (is (equal 42 (setf (json:get thing 0) 42)))
+      (is (equal 42 (json:get thing 0)))))
+
+  (it
+    (let ((thing (object "foo" (object "goo" "gle"))))
+      (is (equal "gle2" (setf (json:get thing "foo" "goo") "gle2")))
+      (is (equal "gle2" (json:get thing "foo" "goo")))))
+
+  (it
+    (let ((thing (json:array '(1 2 3))))
+      (signals error (setf (json:get thing 3) 42))))
+
+  (it
+    (let ((thing (object "foo" "bar")))
+      (signals error (setf (json:get thing "fxx") 42))))
+
+  (it
+    (let ((thing (object "foo" (json:array '(1 2 3)))))
+      (is (equal 42 (setf (json:get thing "foo" 0) 42)))
+      (is (equal 42 (json:get thing "foo" 0)))))
+
+  (it
+    (let ((thing (object "foo" nil)))
+      (signals error (setf (json:get thing "foo" "bar") 42)))))
