@@ -3,26 +3,82 @@
 (in-suite :json-test)
 
 (test get
-  (is (equal "bar" (json:get (object "foo" "bar") "foo")))
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (object "foo" "bar") "foo")
+      (is (equal "bar" value))
+      (is-true present-p)))
 
-  (is (equal "ccc" (json:get (object "aaa"
-                                     (object "bbb" "ccc"))
-                             "aaa" "bbb")))
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (object "aaa"
+                          (object "bbb" "ccc"))
+                  "aaa" "bbb")
+      (is (equal "ccc" value))
+      (is-true present-p)))
 
-  (is (equal nil (json:get (object "aaa" "bbb") "ccc")))
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (object "aaa" "bbb") "ccc")
+      (is (equal nil value))
+      (is-false present-p)))
 
-  (is (equal nil (json:get (object "aaa" "bbb") "ccc" "ddd")))
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (object "aaa" "bbb") "ccc" "ddd")
+      (is (equal nil value))
+      (is-false present-p)))
 
-  (is (equal '(1 2 3) (json:get (object "aaa" (json:array '(1 2 3))) "aaa")))
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (object "aaa" (json:array '(1 2 3))) "aaa")
+      (is (equal '(1 2 3) value))
+      (is-true present-p)))
 
-  (is (equal 2 (json:get (object "aaa" (json:array '(1 2 3))) "aaa" 1)))
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (object "aaa" (json:array nil)) "aaa")
+      (is (equal nil value))
+      (is-true present-p)))
 
-  (is (equal nil (json:get (object "aaa" (json:array nil)) "aaa" 1)))
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (object "aaa" (json:array '(1 2 3))) "aaa" 1)
+      (is (equal 2 value))
+      (is-true present-p)))
 
-  (is (equal nil (json:get (object "aaa" (json:null)) "aaa")))
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (object "aaa" (json:array '(1 2 3))) "aaa" 3)
+      (is (equal nil value))
+      (is-false present-p)))
 
-  (is (equal nil (json:get (object "aaa" nil) "aaa")))
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (object "aaa" (json:array nil)) "aaa" 1)
+      (is (equal nil value))
+      (is-false present-p)))
 
-  (is (equal 42 (json:get (object "aaa" (json:null 42)) "aaa")))
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (object "aaa" (json:null)) "aaa")
+      (is (equal nil value))
+      (is-true present-p)))
 
-  (is (equal nil (json:get (object "aaa" (json:null nil)) "aaa"))))
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (object "aaa" nil) "aaa")
+      (is (equal nil value))
+      (is-true present-p)))
+
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (json:array '(1 2 3)) 0)
+      (is (equal 1 value))
+      (is-true present-p)))
+
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (json:array '(1 2 3)) 3)
+      (is (equal nil value))
+      (is-false present-p))))
