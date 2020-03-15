@@ -3,11 +3,30 @@
 (defclass object ()
   ((pairs
     :initarg :pairs
-    :initform nil)))
+    :initform nil
+    :accessor object-pairs)))
 
-(defun pprint-object (list &optional (stream *standard-output*))
+(defun object-form (object)
+  (check-type object object)
+  (labels ((value-expr (value)
+             (typecase value
+               (object
+                (let ((pairs (slot-value value 'pairs)))
+                  (loop for (name . value) in pairs
+                     append (list name (value-expr value)) into body
+                     finally (return `(object ,@body)))))
+               (t value))))
+    (value-expr object)))
+
+(defmethod print-object ((object object) stream)
+  (let ((*print-case* :downcase))
+    (prin1 (object-form object) stream)))
+
+(defun pprint-object (object &optional (stream *standard-output*))
+  (check-type object object)
   (let ((*print-case* :downcase)
-        (*print-pretty* t))
+        (*print-pretty* t)
+        (list (object-form object)))
     (pprint-logical-block (nil list :prefix "(" :suffix ")")
       (write (first list))
       (loop for (key value) on (rest list) by #'cddr
@@ -21,23 +40,6 @@
                    (eq (car value) 'object))
               (pprint-object value stream))
              (t (write value)))))))
-
-(defmethod print-object ((object object) stream)
-  (labels ((value-expr (value)
-             (typecase value
-               (object
-                (let ((pairs (slot-value value 'pairs)))
-                  (loop for (name . value) in pairs
-                     append (list name (value-expr value)) into body
-                     finally (return `(object ,@body)))))
-               (t value))))
-    (let ((*print-case* :downcase))
-      (prin1 (value-expr object) stream))))
-
-(defun lisp-name-to-object-key (name)
-  (typecase name
-    (string name)
-    (symbol (lisp-to-camel-case (symbol-name name)))))
 
 (defun object (&rest arguments)
   (when (oddp (length arguments))

@@ -37,6 +37,7 @@
                    (get2 (get1 value (car accessors)) (cdr accessors)))))
       (get2 object (flatten accessors)))))
 
+;; TODO: check value
 (defun (setf get) (value object &rest accessors)
   (labels ((set1 (thing accessor)
              (typecase thing
