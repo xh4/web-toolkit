@@ -6,8 +6,6 @@
 
 (define-property opacity () ())
 
-(defun opacity (value))
-
 (define-parser .alpha ()
   (lambda (input)
     (multiple-value-bind (value n)
@@ -23,6 +21,9 @@
                   value
                   t)
           (values input nil nil)))))
+
+(defun parse-alpha (string)
+  (nth-value 1 (parse (.alpha) string)))
 
 (define-parser .color-hex ()
   (lambda (input)
@@ -204,11 +205,14 @@
                  ((or rgb rgba) value)
                  (keyword (cond
                             ((eq value :transparent) (rgba 0 0 0 0))
+                            ((eq value :inherit) value)
                             (t (loop for (name nil (r g b)) in *colors*
                                   when (eq value name)
                                   do (return (rgba r g b 1))))))
                  (string (or (and (string-equal value "transparent")
                                   (rgba 0 0 0 0))
+                             (and (string-equal value "inherit")
+                                  :inherit)
                              (parse-rgb value)
                              (parse-rgba value)
                              (parse-color-hex value)
@@ -218,3 +222,14 @@
                              (error "Unable to parse color value ~S" value)))
                  (t (error "Bad color value ~A" value)))))
     (make-instance 'color :value value)))
+
+(defun opacity (value)
+  (let ((value (typecase value
+                 (number (if (<= 0 value 1) value (error "Bad opacity value ~A" value)))
+                 (keyword (if (eq value :inherit)
+                              value
+                              (error "Bad opacity value ~A" value)))
+                 (string (or (parse-alpha value)
+                             (and (string-equal value "inherit") :inherit)
+                             (error "Bad opacity value ~A" value))))))
+    (make-instance 'opacity :value value)))
