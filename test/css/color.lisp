@@ -58,3 +58,17 @@
       (is (equal 2 (css::rgb-green rgba)))
       (is (equal 3 (css::rgb-blue rgba)))
       (is (equal 0.4 (css::rgba-alpha rgba))))))
+
+(test .color-hex
+  (it
+    (let ((rgb (nth-value 1 (parse (css::.color-hex) "#abc"))))
+      (is (equal 'rgb (type-of rgb)))
+      (is (equal 170 (css::rgb-red rgb)))
+      (is (equal 187 (css::rgb-green rgb)))
+      (is (equal 204 (css::rgb-blue rgb))))
+
+    (let ((rgb (nth-value 1 (parse (css::.color-hex) "#aabbcc"))))
+      (is (equal 'rgb (type-of rgb)))
+      (is (equal 170 (css::rgb-red rgb)))
+      (is (equal 187 (css::rgb-green rgb)))
+      (is (equal 204 (css::rgb-blue rgb))))))

@@ -58,7 +58,8 @@
                 :.or
                 :.some
                 :.some/s
-                :.maybe)
+                :.maybe
+                :.end)
   (:import-from :parse-float
                 :parse-float)
   (:import-from :closer-mop
