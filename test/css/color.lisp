@@ -72,3 +72,22 @@
       (is (equal 170 (css::rgb-red rgb)))
       (is (equal 187 (css::rgb-green rgb)))
       (is (equal 204 (css::rgb-blue rgb))))))
+
+(defmacro test-color (value r g b a)
+  `(let ((color (color ,value)))
+     (is (equal 'color (type-of color)))
+     (is (equal ,r (css::rgba-red (css::declaration-value color))))
+     (is (equal ,g (css::rgba-green (css::declaration-value color))))
+     (is (equal ,b (css::rgba-blue (css::declaration-value color))))
+     (is (equal ,a (css::rgba-alpha (css::declaration-value color))))))
+
+(test color
+  (it (test-color "red" 255 0 0 1))
+  (it (test-color :red 255 0 0 1))
+  (it (test-color "transparent" 0 0 0 0))
+  (it (test-color :transparent 0 0 0 0))
+  (it (test-color (rgb 1 2 3) 1 2 3 1))
+  (it (test-color "rgb(1, 2, 3)" 1 2 3 1))
+  (it (test-color (rgba 1 2 3 0.4) 1 2 3 0.4))
+  (it (test-color "rgba(1, 2, 3, .4)" 1 2 3 0.4))
+  (it (test-color "#ff0000" 255 0 0 1)))

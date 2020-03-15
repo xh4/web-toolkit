@@ -24,16 +24,6 @@
                   t)
           (values input nil nil)))))
 
-;; (color "red")
-;; (color :red)
-;; (color "transparent")
-;; (color :transparent)
-;; (color (rgb 255 255 255))
-;; (color "rbg(255, 255, 255)")
-;; (color (rgba 255 255 255 0))
-;; (color "rbga(255, 255, 255, 0)")
-;; (color "#000000")
-
 (define-parser .color-hex ()
   (lambda (input)
     (multiple-value-bind (rest value match-p)
@@ -59,8 +49,8 @@
                          t))))
           (values input nil nil)))))
 
-(defun color (&rest values)
-  )
+(defun parse-color-hex (string)
+  (nth-value 1 (parse (.color-hex) string)))
 
 (defclass rgb ()
   ((red
@@ -142,14 +132,26 @@
     (with-slots (red green blue alpha) rgba
       (format stream "~A ~A ~A ~A" red green blue alpha))))
 
+(defmethod rgba-red ((rgb rgb))
+  (rgb-red rgb))
+
 (defmethod rgba-red ((rgba rgba))
   (rgb-red rgba))
+
+(defmethod rgba-green ((rgb rgb))
+  (rgb-green rgb))
 
 (defmethod rgba-green ((rgba rgba))
   (rgb-green rgba))
 
+(defmethod rgba-blue ((rgb rgb))
+  (rgb-blue rgb))
+
 (defmethod rgba-blue ((rgba rgba))
   (rgb-blue rgba))
+
+(defmethod rgba-alpha ((rgb rgb))
+  1)
 
 (defun rgba (red green blue alpha)
   (check-type red integer)
@@ -196,3 +198,23 @@
 
 (defun parse-rgba (string)
   (nth-value 1 (parse (.rgba) string)))
+
+(defun color (value)
+  (let ((value (typecase value
+                 ((or rgb rgba) value)
+                 (keyword (cond
+                            ((eq value :transparent) (rgba 0 0 0 0))
+                            (t (loop for (name nil (r g b)) in *colors*
+                                  when (eq value name)
+                                  do (return (rgba r g b 1))))))
+                 (string (or (and (string-equal value "transparent")
+                                  (rgba 0 0 0 0))
+                             (parse-rgb value)
+                             (parse-rgba value)
+                             (parse-color-hex value)
+                             (loop for (name nil (r g b)) in *colors*
+                                when (string-equal value (symbol-name name))
+                                do (return (rgba r g b 1)))
+                             (error "Unable to parse color value ~S" value)))
+                 (t (error "Bad color value ~A" value)))))
+    (make-instance 'color :value value)))
