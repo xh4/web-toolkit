@@ -25,7 +25,7 @@
    :margin-top :margin-right :margin-left :margin-bottom :margin :margin-trim
    :padding-top :padding-right :padding-left :padding-bottom :padding
    ;; sizing
-   :width :height :min-width :min-height
+   :width :height :min-width :min-height :max-width :max-height :box-sizing
    ;; display
    :display
    ;; position
