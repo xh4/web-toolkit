@@ -47,5 +47,19 @@
    :rule-selectors :rule-declarations :rule-name
    ;; style
    :style :style-declarations :merge-style)
+  (:import-from :utility
+                :define-parser
+                :parse
+                :.seq
+                :.seq/s
+                :.s
+                :.m/s
+                :.satisfies
+                :.or
+                :.some
+                :.some/s
+                :.maybe)
+  (:import-from :parse-float
+                :parse-float)
   (:import-from :closer-mop
                 :validate-superclass))

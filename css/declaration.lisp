@@ -63,10 +63,11 @@
   (let ((declaration-name (make-keyword (symbol-name name))))
     `(progn
        (defclass ,name ,superclasses ,slots ,@options)
-       (defmacro ,name (value)
-         `(make-instance ',',name
-                         :name ,,declaration-name
-                         :value ,value)))))
+       ,(when (find :value options :key 'first)
+          `(defmacro ,name (value)
+             `(make-instance ',',name
+                             :name ,,declaration-name
+                             :value ,value))))))
 
 (define-declaration property () ())
 

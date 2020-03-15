@@ -8,12 +8,14 @@
   :depends-on (:wt.uri
                :alexandria
                :closer-mop
-               :cl-ppcre)
+               :cl-ppcre
+               :parse-float)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "css"
                         :serial t
                         :components ((:file "package")
                                      (:file "utility")
+                                     (:file "parser")
                                      (:file "dimension")
                                      (:file "declaration")
                                      (:file "percentage")
@@ -22,6 +24,7 @@
                                      (:file "time")
                                      (:file "frequency")
                                      (:file "resolution")
+                                     (:file "colors")
                                      (:file "color")
                                      (:file "image")
                                      (:file "font")
@@ -51,6 +54,7 @@
                                      (:file "helper")
                                      (:file "dimension")
                                      (:file "declaration")
+                                     (:file "color")
                                      (:file "box")
                                      (:file "style"))))
   :perform (test-op (o c)
