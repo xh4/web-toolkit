@@ -46,11 +46,11 @@
     (loop for (name0 value0) on arguments by #'cddr
        for name = (typecase name0
                     (string name0)
-                    (symbol (lisp-name-to-object-key name0))
-                    (t (error "Value ~A of type ~A can't be a name of object" name0 (type-of name0))))
+                    (t (error "~A of type ~A can't be used as a name for object" name0 (type-of name0))))
        for value = (typecase value0
-                     ((or string symbol number
-                          sequence object array null) value0)
+                     ((or string number cl:null
+                          object array null) value0)
+                     (sequence (array value0))
                      (t (format nil "~A" value0)))
        collect (cons name value) into pairs
        finally (setf (slot-value object 'pairs) pairs))
