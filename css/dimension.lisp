@@ -35,6 +35,21 @@
        (make-instance ',name :number number))
      (pushnew ',name *dimension-units*)))
 
+(define-parser .dimension ()
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.seq (.some/s (.digit))
+                     (.some/s (.alpha)))
+               input)
+      (if match-p
+          (let ((n (parse-integer (first value)))
+                (u (second value)))
+            (loop for unit in *dimension-units*
+               when (string-equal u (symbol-name unit))
+               do (return (values rest (funcall unit n) t))
+               finally (return (values input nil nil))))
+          (values input nil nil)))))
+
 (defun dimension (value &optional type)
   (typecase value
     (number (when type

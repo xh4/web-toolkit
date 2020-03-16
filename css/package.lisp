@@ -53,13 +53,17 @@
                 :.seq
                 :.seq/s
                 :.s
+                :.n
                 :.m/s
                 :.satisfies
                 :.or
                 :.some
                 :.some/s
                 :.maybe
-                :.end)
+                :.end
+                :.alpha
+                :.digit
+                :.hexdig)
   (:import-from :parse-float
                 :parse-float)
   (:import-from :closer-mop
