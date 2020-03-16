@@ -22,6 +22,7 @@
                 :parser-value
                 :.element :.satisfies :.or :.test :.eq :.seq :.seq/s
                 :.any :.any/s :.and :.maybe :.some :.some/s :.end :.not
-                :.n :.n/s :.m :.m/s :.s)
+                :.n :.n/s :.m :.m/s :.s
+                :.alpha :.digit :.hexdig)
   (:import-from :split-sequence
                 :split-sequence))

@@ -1,27 +1,5 @@
 (in-package :uri)
 
-(defun alpha-p (char)
-  (or
-   (char<= #\a char #\z)
-   (char<= #\A char #\Z)))
-
-(define-parser .alpha ()
-  (.satisfies 'alpha-p))
-
-(defun digit-p (char)
-  (char<= #\0 char #\9))
-
-(define-parser .digit ()
-  (.satisfies 'digit-p))
-
-(defun hexdig-p (char)
-  (or (digit-p char)
-      (char<= #\a char #\f)
-      (char<= #\A char #\F)))
-
-(define-parser .hexdig ()
-  (.satisfies 'hexdig-p))
-
 (define-parser .pct-encoded ()
   (.seq/s (.eq #\%) (.hexdig) (.hexdig)))
 
