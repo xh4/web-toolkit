@@ -35,7 +35,9 @@
    ;; overflow
    :overflow-x :overflow-y :overflow :text-overflow
    ;; text
-   :white-space :word-break :line-break :word-wrap :text-align
+   :text-transform :white-space :word-break :line-break :hyphens
+   :overflow-wrap :word-wrap :text-align :text-align-all :text-align-last
+   :text-justify :word-spacing :letter-spacing :text-indent :hanging-punctuation
    ;; fonts
    :font-weight :font-stretch :font-style :font-size :font
    ;; flexbox

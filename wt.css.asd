@@ -58,6 +58,7 @@
                                      (:file "color")
                                      (:file "box")
                                      (:file "sizing")
+                                     (:file "text")
                                      (:file "style"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :css-test)))
