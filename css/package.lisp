@@ -66,5 +66,7 @@
                 :.hexdig)
   (:import-from :parse-float
                 :parse-float)
+  (:import-from :split-sequence
+                :split-sequence)
   (:import-from :closer-mop
                 :validate-superclass))
