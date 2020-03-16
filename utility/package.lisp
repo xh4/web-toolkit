@@ -40,4 +40,4 @@
    :.element :.satisfies :.or :.test :.eq :.seq :.seq/s
    :.any :.any/s :.and :.maybe :.some :.some/s :.end :.not
    :.n :.n/s :.m :.m/s :.s
-   :.alpha :.digit :.hexdig))
+   :.alpha :alpha-p :.digit :digit-p :.hexdig))
