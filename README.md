@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-Object-oriented Lisp Systems for Rapid Web Application Development
+Object-Oriented Reactive Lisp Systems for Rapid Web Application Development
 </p>
 
 ### Status
