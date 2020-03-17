@@ -2,9 +2,14 @@
 
 ;; https://drafts.csswg.org/css-backgrounds-3
 
-(define-property background-color ()
-  ()
-  (:value color))
+(define-property background-color () ())
+
+(defun background-color (value)
+  (if-let ((value (typecase value
+                 (string (parse-color value))
+                 ((or rgb rgba) value))))
+    (make-instance 'background-color :value value)
+    (error "Bad background-color value ~A" value)))
 
 (define-property box-shadow () ())
 
@@ -81,7 +86,8 @@
 (define-parser .box-shadow ()
   (lambda (input)
     (multiple-value-bind (rest value match-p)
-        (parse (.or (.seq (.shadow)
+        (parse (.or (.s "none")
+                    (.seq (.shadow)
                           (.any (.seq (.maybe (.some (.whitespace)))
                                       (.s ",")
                                       (.maybe (.some (.whitespace)))
@@ -92,7 +98,9 @@
           (values rest
                   (loop for v in (flatten value)
                      when (typep v 'shadow)
-                     collect v)
+                     collect v
+                     when (string-equal v "none")
+                     do (return :none))
                   t)
           (values input nil nil)))))
 
