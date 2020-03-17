@@ -108,6 +108,6 @@
                        (shadow (ensure-list value)))))
           (make-instance 'box-shadow :value value)))
       (loop for value in value
-         when (check-type value 'shadow)
+         when (check-type value shadow)
          collect value into shadows
          finally (return (make-instance 'box-shadow :value shadows)))))
