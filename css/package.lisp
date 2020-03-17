@@ -41,7 +41,7 @@
    ;; fonts
    :font-weight :font-stretch :font-style :font-size :font
    ;; background
-   :background-color :background-image :box-shadow :shadow
+   :background-color :background-image :background-repeat :box-shadow :shadow
    ;; flexbox
    :flex :flex-direction :flex-wrap :flex-flow :order
    :flex-grow :flex-shrink :flex-basis
