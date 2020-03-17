@@ -36,7 +36,7 @@
                     (.seq (.dimension)
                           (.maybe (.some (.whitespace)))
                           (.dimension))
-                    (.n 1 (.dimension)))
+                    (.seq (.dimension)))
                input)
       (if match-p
           (case (cl:length value)
@@ -127,7 +127,7 @@
                     (.seq (.dimension)
                           (.maybe (.some (.whitespace)))
                           (.dimension))
-                    (.n 1 (.dimension)))
+                    (.seq (.dimension)))
                input)
       (if match-p
           (case (cl:length value)

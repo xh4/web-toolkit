@@ -6,7 +6,7 @@
 
 (define-property opacity () ())
 
-(define-parser .alpha ()
+(define-parser .alphavalue ()
   (lambda (input)
     (multiple-value-bind (value n)
         (parse-float (subseq
@@ -23,7 +23,7 @@
           (values input nil nil)))))
 
 (defun parse-alpha (string)
-  (nth-value 1 (parse (.alpha) string)))
+  (nth-value 1 (parse (.alphavalue) string)))
 
 (define-parser .color-hex ()
   (lambda (input)
@@ -185,7 +185,7 @@
                           (.maybe (.some (.whitespace)))
                           (.s ",")
                           (.maybe (.some (.whitespace)))
-                          (.alpha)
+                          (.alphavalue)
                           (.maybe (.some (.whitespace)))
                           (.s ")")))
                input)
