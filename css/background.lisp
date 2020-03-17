@@ -93,6 +93,21 @@
          (make-instance 'background-repeat :value values)
          (error "Bad background-repeat values ~A" values)))))
 
+(define-property background-attachment () ())
+
+(defun background-attachment (&rest values)
+  (cond
+    ((= 1 (cl:length values))
+     (loop for value in values
+        when (and (keywordp value)
+                  (member value '(:scroll :fixed :local)))
+        collect value into vs
+        when (and (stringp value)
+                  (find value '("scroll" "fixed" "local") :test 'string-equal))
+        collect (make-keyword (string-upcase value)) into vs
+        finally (return (make-instance 'background-attachment :value vs))))
+    (t (error "Bad background-attachment values ~A" values))))
+
 (define-property box-shadow () ())
 
 (defclass shadow ()
