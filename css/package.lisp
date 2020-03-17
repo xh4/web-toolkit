@@ -42,7 +42,7 @@
    :font-weight :font-stretch :font-style :font-size :font
    ;; background
    :background-color :background-image :background-repeat :background-attachment
-   :background-position :background-clip :box-shadow :shadow
+   :background-position :background-clip :background-origin :box-shadow :shadow
    ;; flexbox
    :flex :flex-direction :flex-wrap :flex-flow :order
    :flex-grow :flex-shrink :flex-basis

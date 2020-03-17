@@ -154,6 +154,28 @@
                    values)))
     (make-instance 'background-clip :value value)))
 
+(define-property background-origin () ())
+
+(defun parse-background-origin (string)
+  (let ((parts (split-sequence #\Space string)))
+    (let ((parts (loop for part in parts
+                    when (find part '("border-box" "padding-box" "content-box") :test 'equal)
+                    collect (make-keyword (string-upcase part))
+                    else do (error "Bad background-origin value ~S" string))))
+      parts)))
+
+(defun background-origin (&rest values)
+  (let ((value (if (= 1 (cl:length values))
+                   (let ((value (first values)))
+                     (typecase value
+                       (string (parse-background-origin value))
+                       (keyword (if (member value '(:border-box :padding-box :content-box))
+                                    value
+                                    (error "Bad background-origin value ~A" value)))
+                       (t (error "Bad background-origin value ~A" value))))
+                   values)))
+    (make-instance 'background-origin :value value)))
+
 (define-property box-shadow () ())
 
 (defclass shadow ()
