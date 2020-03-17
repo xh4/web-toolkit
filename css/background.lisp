@@ -108,6 +108,29 @@
         finally (return (make-instance 'background-attachment :value vs))))
     (t (error "Bad background-attachment values ~A" values))))
 
+(define-property background-position () ())
+
+;; TODO: validate
+(defun parse-background-position (string)
+  (let ((parts (split-sequence #\Space string)))
+    (let ((parts (loop for part in parts
+                    when (find part '("left" "right" "top" "bottom" "center") :test 'equal)
+                    collect (make-keyword (string-upcase part))
+                    else collect (or (parse-length part)
+                                     (parse-percentage part)
+                                     (error "Bad background-position value ~S" string)))))
+      parts)))
+
+;; TODO: validate
+(defun background-position (&rest values)
+  (if (= 1 (cl:length values))
+      (let ((value (first values)))
+        (typecase value
+          (string (parse-background-position value))
+          (keyword value)
+          (t (error "Bad background-position value ~A" value))))
+      values))
+
 (define-property box-shadow () ())
 
 (defclass shadow ()
