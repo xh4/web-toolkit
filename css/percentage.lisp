@@ -29,6 +29,9 @@
                 (values input nil nil)))
           (values input nil nil)))))
 
+(defun parse-percentage (string)
+  (nth-value 1 (parse (.percentage) string)))
+
 (defun percentage (value)
   (typecase value
     (string (when-let* ((groups (coerce

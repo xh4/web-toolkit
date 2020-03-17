@@ -55,3 +55,6 @@
                do (return (values rest (funcall unit n) t))
                finally (return (values input nil nil))))
           (values input nil nil)))))
+
+(defun parse-length (string)
+  (nth-value 1 (parse (.length) string)))
