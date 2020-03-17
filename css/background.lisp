@@ -176,6 +176,37 @@
                    values)))
     (make-instance 'background-origin :value value)))
 
+(define-property background-size () ())
+
+(defun parse-background-size (string)
+  (cond
+    ((string= "auto" string) :auto)
+    ((string= "cover" string) :cover)
+    ((string= "contain" string) :contain)
+    (t (let ((parts (split-sequence #\Space string)))
+         (unless (= 2 (cl:length parts))
+           (error "Bad backgound-size value ~S" string))
+         (loop for part in parts
+            for value = (if (string= "auto" part)
+                            :auto
+                            (or (parse-length part)
+                                (parse-percentage part)
+                                (error "Bad backgound-size value ~S" string)))
+            collect value)))))
+
+(defun background-size (&rest values)
+  (let ((value (if (= 1 (cl:length values))
+                   (let ((value (first values)))
+                     (typecase value
+                       (string (parse-background-size value))
+                       (keyword (if (member value '(:auto :cover :contain))
+                                    value
+                                    (error "Bad background-size value ~A" value)))
+                       ((or length percentage) value)
+                       (t (error "Bad background-size value ~A" value))))
+                   values)))
+    (make-instance 'background-size :value value)))
+
 (define-property box-shadow () ())
 
 (defclass shadow ()
