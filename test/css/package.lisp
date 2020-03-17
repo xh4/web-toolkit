@@ -7,7 +7,8 @@
                           :float
                           :declaration
                           :rem
-                          :position)
+                          :position
+                          :shadow)
   (:export :run!)
   (:import-from :utility
                 :parse))
