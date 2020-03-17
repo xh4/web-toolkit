@@ -123,13 +123,36 @@
 
 ;; TODO: validate
 (defun background-position (&rest values)
-  (if (= 1 (cl:length values))
-      (let ((value (first values)))
-        (typecase value
-          (string (parse-background-position value))
-          (keyword value)
-          (t (error "Bad background-position value ~A" value))))
-      values))
+  (let ((value (if (= 1 (cl:length values))
+                   (let ((value (first values)))
+                     (typecase value
+                       (string (parse-background-position value))
+                       (keyword value)
+                       (t (error "Bad background-position value ~A" value))))
+                   values)))
+    (make-instance 'background-position :value value)))
+
+(define-property background-clip () ())
+
+(defun parse-background-clip (string)
+  (let ((parts (split-sequence #\Space string)))
+    (let ((parts (loop for part in parts
+                    when (find part '("border-box" "padding-box" "content-box") :test 'equal)
+                    collect (make-keyword (string-upcase part))
+                    else do (error "Bad background-position value ~S" string))))
+      parts)))
+
+(defun background-clip (&rest values)
+  (let ((value (if (= 1 (cl:length values))
+                   (let ((value (first values)))
+                     (typecase value
+                       (string (parse-background-clip value))
+                       (keyword (if (member value '(:border-box :padding-box :content-box))
+                                    value
+                                    (error "Bad background-clip value ~A" value)))
+                       (t (error "Bad background-clip value ~A" value))))
+                   values)))
+    (make-instance 'background-clip :value value)))
 
 (define-property box-shadow () ())
 
