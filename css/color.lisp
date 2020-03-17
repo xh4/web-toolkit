@@ -200,6 +200,12 @@
 (defun parse-rgba (string)
   (nth-value 1 (parse (.rgba) string)))
 
+(define-parser .color ()
+  (.or (.rgb) (.rgba) (.color-hex)))
+
+(defun parse-color (string)
+  (nth-value 1 (parse (.color) string)))
+
 (defun color (value)
   (let ((value (typecase value
                  ((or rgb rgba) value)
@@ -213,9 +219,7 @@
                                   (rgba 0 0 0 0))
                              (and (string-equal value "inherit")
                                   :inherit)
-                             (parse-rgb value)
-                             (parse-rgba value)
-                             (parse-color-hex value)
+                             (parse-color value)
                              (loop for (name nil (r g b)) in *colors*
                                 when (string-equal value (symbol-name name))
                                 do (return (rgba r g b 1)))
