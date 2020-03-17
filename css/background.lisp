@@ -11,6 +11,26 @@
     (make-instance 'background-color :value value)
     (error "Bad background-color value ~A" value)))
 
+(define-property background-image () ())
+
+(defun background-image (&rest values)
+  (if (= 1 (cl:length values))
+      (let ((value (first values)))
+        (if-let ((value (typecase value
+                          (string (if (string-equal "none" value)
+                                      :none
+                                      (let ((parts (split-sequence #\, value)))
+                                        (mapcar #'parse-url parts))))
+                          (keyword (if (eq :none value) value (error "Bad background-image value ~A" value)))
+                          (uri:uri value))))
+          (make-instance 'background-image :value value)
+          (error "Bad background-image value ~A" value)))
+      (loop for value in values
+         when (typep value 'uri)
+         collect value into images
+         else do (error "Bad background-image value ~A" value)
+         finally (make-instance 'background-image :value images))))
+
 (define-property box-shadow () ())
 
 (defclass shadow ()

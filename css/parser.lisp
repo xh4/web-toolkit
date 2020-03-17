@@ -57,3 +57,9 @@
 
 ;; (parse (.anyorder (.digit) (.alpha)) "a1")
 ;; (parse (.anyorder (.digit) (.alpha)) "1a")
+
+(defun parse-url (string)
+  (setf string (string-trim '(#\Space) string))
+  (when (and (string-prefix-p "url(" string)
+             (string-suffix-p ")" string))
+    (uri:uri (subseq string 4 (1- (cl:length string))))))
