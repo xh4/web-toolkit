@@ -40,6 +40,8 @@
    :text-justify :word-spacing :letter-spacing :text-indent :hanging-punctuation
    ;; fonts
    :font-weight :font-stretch :font-style :font-size :font
+   ;; background
+   :background-color :box-shadow :shadow
    ;; flexbox
    :flex :flex-direction :flex-wrap :flex-flow :order
    :flex-grow :flex-shrink :flex-basis
@@ -59,6 +61,7 @@
                 :.m/s
                 :.satisfies
                 :.or
+                :.any
                 :.some
                 :.some/s
                 :.maybe

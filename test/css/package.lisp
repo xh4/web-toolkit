@@ -3,7 +3,11 @@
 (defpackage :css-test
   (:nicknames :wt.css-test)
   (:use :cl :css :test)
-  (:shadow :length :float :declaration :rem :time :position)
+  (:shadowing-import-from :css
+                          :float
+                          :declaration
+                          :rem
+                          :position)
   (:export :run!)
   (:import-from :utility
                 :parse))
