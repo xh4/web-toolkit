@@ -39,3 +39,19 @@
 (define-dimension-unit pc (absolute-length))
 
 (define-dimension-unit px (absolute-length))
+
+(define-parser .length ()
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.seq (.some/s (.digit))
+                     (.some/s (.alpha)))
+               input)
+      (if match-p
+          (let ((n (parse-integer (first value)))
+                (u (second value)))
+            (loop for unit in '(em ex ch rem vw vh vmin vmax
+                                cm mm q in pt pc px)
+               when (string-equal u (symbol-name unit))
+               do (return (values rest (funcall unit n) t))
+               finally (return (values input nil nil))))
+          (values input nil nil)))))
