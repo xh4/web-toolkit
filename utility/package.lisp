@@ -8,6 +8,9 @@
    ;; tree
    :walk-tree
    :map-tree
+   ;; string
+   :string-prefix-p
+   :string-suffix-p
    ;; function
    :function-lambda-list
    ;; class

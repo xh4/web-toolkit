@@ -19,6 +19,7 @@
                                      (:file "function")
                                      (:file "class")
                                      (:file "tree")
+                                     (:file "string")
                                      (:file "reactive")
                                      (:file "variable")
                                      (:file "parser"))))
