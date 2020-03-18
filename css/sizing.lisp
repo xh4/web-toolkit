@@ -29,3 +29,11 @@
 (define-property box-sizing ()
   ()
   (:value :content-box :border-box))
+
+(define-property line-height ()
+  ()
+  (:value :normal number .length .percentage :inherit))
+
+;; TODO: vertical-align
+;; https://www.w3.org/TR/CSS2/visudet.html#propdef-vertical-align
+(define-property vertical-align () ())

@@ -87,3 +87,47 @@
 ;; TODO: hanging-punctuation
 (define-property hanging-punctuation ()
   ())
+
+;; TODO: text-decoration-line
+(define-property text-decoration-line ()
+  ())
+
+;; TODO: text-decoration-style
+(define-property text-decoration-style ()
+  ())
+
+;; TODO: text-decoration-color
+(define-property text-decoration-color ()
+  ())
+
+;; TODO: text-decoration
+(define-property text-decoration ()
+  ())
+
+;; TODO: text-decoration-position
+(define-property text-decoration-position ()
+  ())
+
+;; TODO: text-decoration-skip-ink
+(define-property text-decoration-skip-ink ()
+  ())
+
+;; TODO: text-emphasis-style
+(define-property text-emphasis-style ()
+  ())
+
+;; TODO: text-emphasis-color
+(define-property text-emphasis-color ()
+  ())
+
+;; TODO: text-emphasis
+(define-property text-emphasis ()
+  ())
+
+;; TODO: text-emphasis-position
+(define-property text-emphasis-position ()
+  ())
+
+;; TODO: text-shadow
+(define-property text-shadow ()
+  ())

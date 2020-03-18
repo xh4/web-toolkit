@@ -13,6 +13,33 @@
 
 (define-border-color-property border-left-color)
 
+(define-property border-color ()
+  ()
+  (:value .border-color))
+
+(define-parser .border-color ()
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.or (.seq (.color)
+                          (.some (.whitespace)) (.color)
+                          (.some (.whitespace)) (.color)
+                          (.some (.whitespace)) (.color))
+                    (.seq (.color)
+                          (.some (.whitespace)) (.color)
+                          (.some (.whitespace)) (.color))
+                    (.seq (.color)
+                          (.some (.whitespace)) (.color))
+                    (.color))
+               input)
+      (if match-p
+          (values rest (loop for v in (flatten value)
+                          when (typep v '(or rgb rgba color-hex))
+                          collect v)
+                  t)
+          (values input nil nil)))))
+
+;; (border-color "#fff #fff #fff #fff")
+
 (defmacro define-border-style-property (property-name)
   `(define-property ,property-name () ()
                     (:value .line-style)))
@@ -226,6 +253,10 @@
 
 ;; (border-radius "2em 1em 4em / 0.5em 3em")
 ;; (border-radius "1px 2px 3px 4px / 1px 2px 3px 4px")
+
+(define-property border-collapse ()
+  ()
+  (:value :collapse :separate))
 
 ;; TODO: border images
 ;; https://drafts.csswg.org/css-backgrounds-3/#border-images

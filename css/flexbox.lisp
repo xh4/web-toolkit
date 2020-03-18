@@ -2,7 +2,9 @@
 
 ;; https://drafts.csswg.org/css-flexbox-1
 
-;; TODO: flex shorthand
+;; TODO: flex
+(define-property flex ()
+  ())
 
 (define-property flex-direction ()
   ()
@@ -78,6 +80,10 @@
 (define-property align-self ()
   ()
   (:value :auto :flex-start :flex-end :center :baseline :stretch))
+
+(define-property align-content ()
+  ()
+  (:value :flex-start :flex-end :center :space-between :space-around :stretch))
 
 (define-property align-content ()
   ()

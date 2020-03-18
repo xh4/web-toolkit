@@ -151,6 +151,10 @@
 ;; (background-size "100% 100%")
 ;; (background-size "50% auto")
 
+;; TODO: background
+(define-property background ()
+  ())
+
 (defclass shadow ()
   ((horizontal-offset
     :initarg :horizontal-offset

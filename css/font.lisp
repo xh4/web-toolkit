@@ -3,6 +3,8 @@
 ;; https://drafts.csswg.org/css-fonts-3
 
 ;; TODO: font-family
+(define-property font-family ()
+  ())
 
 (define-property font-weight ()
   ()
@@ -26,4 +28,6 @@
           :larger :smaller
           .length .percentage))
 
-;; TODO: font shorthand
+;; TODO: font
+(define-property font ()
+  ())

@@ -45,9 +45,10 @@
                       (declare (ignore rest))
                       (if match-p
                           value)))
-                   ;; TODO: parse float
-                   ((equal type 'number) (parse-integer value :junk-allowed t))
-                   ((equal type 'integer) (parse-integer value :junk-allowed t))
+                   ((equal type 'number) (if (find #\. value)
+                                             (ignore-errors (parse-float value))
+                                             (ignore-errors (parse-integer value))))
+                   ((equal type 'integer) (ignore-errors (parse-integer value)))
                    ((integerp type) (when (equal (format nil "~D" type) value) value))
                    ((keywordp type) (when (string-equal
                                            value
@@ -57,18 +58,16 @@
          when v do (return (setf (slot-value declaration 'value) v))
          finally (error "Invalid value ~S for declaration ~A" value (type-of declaration))))))
 
-(defmacro define-declaration (name superclasses slots &rest options)
+(defmacro define-declaration (declaration-name superclasses slots &rest options)
   (unless (find 'declaration superclasses)
     (appendf superclasses '(declaration)))
   (appendf options '((:metaclass declaration-class)))
-  (let ((declaration-name (make-keyword (symbol-name name))))
-    `(progn
-       (defclass ,name ,superclasses ,slots ,@options)
-       ,(when (find :value options :key 'first)
-          `(defun ,name (value)
-             (make-instance ',name
-                            :name ,declaration-name
-                            :%value value))))))
+  `(progn
+     (defclass ,declaration-name ,superclasses ,slots ,@options)
+     (defun ,declaration-name (value)
+       (make-instance ',declaration-name
+                      :name (make-keyword ',declaration-name)
+                      :%value value))))
 
 (define-declaration property () ())
 

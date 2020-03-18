@@ -4,7 +4,9 @@
   (remove-duplicates
    (loop for (name . value) in (bootstrap-declarations)
       for index from 1
-      append (let* ((symbol (find-symbol (string-upcase name) :css))
+      append (let* ((symbol (multiple-value-bind (symbol scope)
+                                (find-symbol (string-upcase name) :css)
+                              symbol))
                     (function (when symbol
                                 (ignore-errors
                                   (symbol-function symbol)))))
