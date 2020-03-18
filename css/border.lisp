@@ -280,3 +280,6 @@
 ;; (border-radius (px 1) (px 2) (px 3) (px 4))
 ;; (border-radius `(,(px 1) ,(px 2) ,(px 3) ,(px 4))
 ;;                `(,(px 1) ,(px 2) ,(px 3) ,(px 4)))
+
+;; TODO: border images
+;; https://drafts.csswg.org/css-backgrounds-3/#border-images
