@@ -35,8 +35,10 @@
   (let ((parts (split-sequence #\Space string)))
     (loop for part in parts
          for i from 0
-       when (and (member part '("none" "hidden" "dotted" "dashed" "solid" "double"
-                                "groove" "ridge" "inset" "outset") :test 'equal)
+       when (and (member part '("none" "hidden" "dotted" "dashed"
+                                "solid" "double" "groove" "ridge"
+                                "inset" "outset")
+                         :test 'equal)
                  (< i 4))
        collect part
        else do (error "Bad border-style value ~S" string))))
@@ -65,3 +67,55 @@
           ,(border-bottom-style (third values))
           ,(border-left-style (fourth values))))
     (t (error "Bad border-style values ~A" values))))
+
+(define-property border-top-width ()
+  ()
+  (:value length :thin :medium :thick))
+
+(define-property border-right-width ()
+  ()
+  (:value length :thin :medium :thick))
+
+(define-property border-bottom-width ()
+  ()
+  (:value length :thin :medium :thick))
+
+(define-property border-left-width ()
+  ()
+  (:value length :thin :medium :thick))
+
+(defun parse-border-width (string)
+  (let ((parts (split-sequence #\Space string)))
+    (loop for part in parts
+       for i from 0
+       when (and (or (member part '("thin" "medium" "thick" )
+                             :test 'equal)
+                     (parse-length part))
+                 (< i 4))
+       collect part
+       else do (error "Bad border-width value ~S" string))))
+
+(defun border-width (&rest values)
+  (case (cl:length values)
+    (1 (let ((value (first values)))
+         (typecase value
+           (string (or (apply #'border-width (parse-border-width value))
+                       (error "Bad border-width value ~S" values)))
+           (keyword `(,(border-top-width value)
+                       ,(border-right-width value)
+                       ,(border-bottom-width value)
+                       ,(border-left-width value)))
+           (t (error "Bad border-width value ~A" value)))))
+    (2 `(,(border-top-width (first values))
+          ,(border-right-width (second values))
+          ,(border-bottom-width (first values))
+          ,(border-left-width (second values))))
+    (3 `(,(border-top-width (first values))
+          ,(border-right-width (second values))
+          ,(border-bottom-width (third values))
+          ,(border-left-width (second values))))
+    (4 `(,(border-top-width (first values))
+          ,(border-right-width (second values))
+          ,(border-bottom-width (third values))
+          ,(border-left-width (fourth values))))
+    (t (error "Bad border-width values ~A" values))))
