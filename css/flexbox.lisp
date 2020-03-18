@@ -12,11 +12,37 @@
   ()
   (:value :nowrap :wrap :wrap-reverse))
 
-(define-property flex-flow ()
-  ()
-  ;; TODO: https://drafts.csswg.org/css-flexbox-1/#flex-flow-property
-  (:value :row :row-reverse :column :column-reverse
-          :nowrap :wrap :wrap-reverse))
+(define-property flex-flow () ())
+
+(defun parse-flex-flow (string)
+  (loop for part in (split-sequence #\Space string)
+     for i from 1
+     when (or (and (= i 1)
+                   (member part '("row" "row-reverse" "column" "column-reverse")
+                           :test 'equal))
+              (and (= i 2)
+                   (member part '("nowrap" "wrap" "wrap-reverse")
+                           :test 'equal)))
+     collect (make-keyword (string-upcase part))
+     else do (error "Bad flex-flow value ~S" string)))
+
+(defun flex-flow (&rest values)
+  (let ((value (case (cl:length values)
+                 (1 (let ((value (first values)))
+                      (typecase value
+                        (string (parse-flex-flow value))
+                        (keyword (if (member value '(:row :row-reverse
+                                                     :column :column-reverse
+                                                     :nowrap :wrap :wrap-reverse))
+                                     value
+                                     (error "Bad flow-flow values ~A" values)))
+                        (t (error "Bad flex-flow values ~A" values)))))
+                 (2 values))))
+    (make-instance 'flex-flow :value value)))
+
+;; (flex-flow "row")
+;; (flex-flow "column wrap")
+;; (flex-flow "row-reverse wrap-reverse")
 
 (define-property order ()
   ()
