@@ -60,6 +60,8 @@
    ;; rule
    :rule :qualified-rule :at-rule :rule-prelude :rule-block
    :rule-selectors :rule-declarations :rule-name
+   ;; serialize
+   :serialize
    ;; style
    :style :style-declarations :merge-style)
   (:import-from :utility
