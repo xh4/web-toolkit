@@ -39,8 +39,10 @@
                                      (:file "display")
                                      (:file "position")
                                      (:file "logical")
+                                     (:file "content")
                                      (:file "rule")
                                      (:file "serialize")
+                                     (:file "parse")
                                      (:file "style"))))
   :in-order-to ((test-op (test-op :wt.css/test)))
   :perform (load-op :after (o c)
@@ -49,6 +51,7 @@
 
 (defsystem wt.css/test
   :depends-on (:wt.css
+               :wt.http
                :wt.test)
   :components ((:module "test/css"
                         :serial t
@@ -60,6 +63,7 @@
                                      (:file "box")
                                      (:file "sizing")
                                      (:file "text")
-                                     (:file "style"))))
+                                     (:file "style")
+                                     (:file "bootstrap"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :css-test)))
