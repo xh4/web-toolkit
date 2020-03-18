@@ -119,3 +119,164 @@
           ,(border-bottom-width (third values))
           ,(border-left-width (fourth values))))
     (t (error "Bad border-width values ~A" values))))
+
+(defun parse-border-cornor-radius (string)
+  (let ((parts (split-sequence #\Space string)))
+    (loop for part in parts
+       for i from 0
+       when (< i 4)
+       collect (or (parse-length part)
+                   (parse-percentage part)
+                   (error (error "Bad border-corner-radius value ~S" string)))
+       else do (error "Bad border-corner-radius value ~S" string))))
+
+(define-property border-top-left-radius () ())
+
+(defun border-top-left-radius (&rest values)
+  (make-instance
+   'border-top-left-radius
+   :value
+   (case (cl:length values)
+     (1 (let ((value (first values)))
+          (typecase value
+            (string (or (apply #'border-top-left-radius
+                               (parse-border-cornor-radius value))
+                        (error "Bad border-top-left-radius value ~S" values)))
+            ((or length percentage) value)
+            (t (error "Bad border-top-left-radius value ~A" value)))))
+     ;; TODO: check-type
+     (2 values)
+     (t (error "Bad border-top-left-radius values ~A" values)))))
+
+(define-property border-top-right-radius () ())
+
+(defun border-top-right-radius (&rest values)
+  (make-instance
+   'border-top-right-radius
+   :value
+   (case (cl:length values)
+     (1 (let ((value (first values)))
+          (typecase value
+            (string (or (apply #'border-top-right-radius
+                               (parse-border-cornor-radius value))
+                        (error "Bad border-top-right-radius value ~S" values)))
+            ((or length percentage) value)
+            (t (error "Bad border-top-right-radius value ~A" value)))))
+     ;; TODO: check-type
+     (2 values)
+     (t (error "Bad border-top-right-radius values ~A" values)))))
+
+(define-property border-bottom-right-radius () ())
+
+(defun border-bottom-right-radius (&rest values)
+  (make-instance
+   'border-bottom-right-radius
+   :value
+   (case (cl:length values)
+     (1 (let ((value (first values)))
+          (typecase value
+            (string (or (apply #'border-bottom-right-radius
+                               (parse-border-cornor-radius value))
+                        (error "Bad border-bottom-right-radius value ~S" values)))
+            ((or length percentage) value)
+            (t (error "Bad border-bottom-right-radius value ~A" value)))))
+     ;; TODO: check-type
+     (2 values)
+     (t (error "Bad border-bottom-right-radius values ~A" values)))))
+
+(define-property border-bottom-left-radius () ())
+
+(defun border-bottom-left-radius (&rest values)
+  (make-instance
+   'border-bottom-left-radius
+   :value
+   (case (cl:length values)
+     (1 (let ((value (first values)))
+          (typecase value
+            (string (or (apply #'border-bottom-left-radius
+                               (parse-border-cornor-radius value))
+                        (error "Bad border-bottom-left-radius value ~S" values)))
+            ((or length percentage) value)
+            (t (error "Bad border-bottom-left-radius value ~A" value)))))
+     ;; TODO: check-type
+     (2 values)
+     (t (error "Bad border-bottom-left-radius values ~A" values)))))
+
+(defun parse-border-radius (string)
+  (let* ((parts (split-sequence #\/ string))
+         (horizontal-radius (first parts))
+         (vertical-radius (second parts)))
+    (unless vertical-radius (setf vertical-radius horizontal-radius))
+    (loop for string in `(,horizontal-radius ,vertical-radius)
+       for i from 0
+       for parts = (split-sequence #\Space string)
+       for values = (loop for part in parts
+                       for j from 0
+                       when (= 0 (cl:length part))
+                       do (decf j) (continue)
+                       else when (< j 4)
+                       collect (or (parse-length part)
+                                   (parse-percentage part)
+                                   (error "Bad border-radius value ~S" string))
+                       else do (error "Bad border-radius value ~S" string))
+       when (< i 2)
+       collect values
+       else do (error "Bad border-radius value ~S" string))))
+
+;; (parse-border-radius "2em 1em 4em / 0.5em 3em")
+
+;; TODO: validate
+(defun border-radius (&rest values)
+  (typecase (first values)
+    (string (apply #'border-radius (parse-border-radius (first values))))
+    (length (case (cl:length values)
+              (1 `(,(border-top-left-radius (first values))
+                    ,(border-top-right-radius (first values))
+                    ,(border-bottom-right-radius (first values))
+                    ,(border-bottom-left-radius (first values))))
+              (2 `(,(border-top-left-radius (first values))
+                    ,(border-top-right-radius (second values))
+                    ,(border-bottom-right-radius (first values))
+                    ,(border-bottom-left-radius (second values))))
+              (3 `(,(border-top-left-radius (first values))
+                    ,(border-top-right-radius (second values))
+                    ,(border-bottom-right-radius (third values))
+                    ,(border-bottom-left-radius (second values))))
+              (4 `(,(border-top-left-radius (first values))
+                    ,(border-top-right-radius (second values))
+                    ,(border-bottom-right-radius (third values))
+                    ,(border-bottom-left-radius (fourth values))))))
+    (list (let ((horizontal-radius (first values))
+                (vertical-radius (second values)))
+            (case (cl:length horizontal-radius)
+              (1 (appendf horizontal-radius `(,(first horizontal-radius)
+                                               ,(first horizontal-radius)
+                                               ,(first horizontal-radius))))
+              (2 (appendf horizontal-radius `(,(first horizontal-radius)
+                                               ,(second horizontal-radius))))
+              (3 (appendf horizontal-radius `(,(second horizontal-radius)))))
+            (case (cl:length vertical-radius)
+              (1 (appendf vertical-radius `(,(first vertical-radius)
+                                             ,(first vertical-radius)
+                                             ,(first vertical-radius))))
+              (2 (appendf vertical-radius `(,(first vertical-radius)
+                                             ,(second vertical-radius))))
+              (3 (appendf vertical-radius `(,(second vertical-radius)))))
+            (let ((h1 (first horizontal-radius))
+                  (h2 (second horizontal-radius))
+                  (h3 (third horizontal-radius))
+                  (h4 (fourth horizontal-radius))
+                  (v1 (first vertical-radius))
+                  (v2 (second vertical-radius))
+                  (v3 (third vertical-radius))
+                  (v4 (fourth vertical-radius)))
+              `(,(border-top-left-radius h1 v1)
+                 ,(border-top-right-radius h2 v2)
+                 ,(border-bottom-right-radius h3 v3)
+                 ,(border-bottom-left-radius h4 v4)))))))
+
+;; (border-radius "2em 1em 4em / 0.5em 3em")
+;; (border-radius "1px 2px 3px 4px / 1px 2px 3px 4px")
+;; (border-radius (px 1) (px 2) (px 3) (px 4))
+;; (border-radius `(,(px 1) ,(px 2) ,(px 3) ,(px 4))
+;;                `(,(px 1) ,(px 2) ,(px 3) ,(px 4)))
