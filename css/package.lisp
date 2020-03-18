@@ -45,7 +45,8 @@
    :background-position :background-clip :background-origin :background-size
    :box-shadow :shadow
    ;; border
-
+   :border-color :border-top-style :border-right-style :border-bottom-style
+   :border-left-style :border-style
    ;; flexbox
    :flex :flex-direction :flex-wrap :flex-flow :order
    :flex-grow :flex-shrink :flex-basis
