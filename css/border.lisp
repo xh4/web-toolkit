@@ -162,19 +162,22 @@
           ,(border-left-width (fourth values))))
     (t (error "Bad border-width values ~A" values))))
 
+(defun parse-border (string)
+  (loop for part in (split-sequence #\Space string)
+     for i from 0
+     when (< i 3) ;; TODO: ensure only once
+     collect (or (ignore-errors (first (parse-border-width part)))
+                 (ignore-errors (first (parse-border-style part)))
+                 (ignore-errors (first (parse-border-color part)))
+                 (error "Bad border value ~S" string))
+     else do (error "Bad border value ~S" string)))
+
 (defmacro define-border-side-property (property-name)
   (let ((parse-function (intern (format nil "PARSE-~A" property-name))))
     `(progn
        (define-property ,property-name () ())
        (defun ,parse-function (string)
-         (loop for part in (split-sequence #\Space string)
-            for i from 0
-            when (< i 3) ;; TODO: ensure only once
-            collect (or (ignore-errors (first (parse-border-width part)))
-                        (ignore-errors (first (parse-border-style part)))
-                        (ignore-errors (first (parse-border-color part)))
-                        (error "Bad ~A value ~S" ',property-name string))
-            else do (error "Bad ~A value ~S" ',property-name string)))
+         (parse-border string))
        (defun ,property-name (value)
          (if-let ((value (typecase value
                            (string (,parse-function value))
@@ -189,6 +192,16 @@
 (define-border-side-property border-bottom)
 
 (define-border-side-property border-left)
+
+(defun border (&rest values)
+  (case (cl:length values)
+    (1 (let ((value (first values)))
+         (typecase value
+           (string `(,(border-top value)
+                      ,(border-right value)
+                      ,(border-bottom value)
+                      ,(border-left value))))))
+    (t (error "TODO: Implement later..."))))
 
 (defun parse-border-cornor-radius (string)
   (let ((parts (split-sequence #\Space string)))
