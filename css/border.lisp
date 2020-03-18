@@ -2,14 +2,53 @@
 
 ;; https://drafts.csswg.org/css-backgrounds-3/#borders
 
-(define-property border-color () ())
+(defmacro define-border-color-property (property-name)
+  `(progn
+     (define-property ,property-name () ())
+     (defun ,property-name (value)
+       (if-let ((value (typecase value
+                         (string (parse-color value))
+                         ((or rgb rgba) value))))
+         (make-instance ',property-name :value value)
+         (error "Bad ~A value ~A" ',property-name value)))))
 
-(defun border-color (value)
-  (if-let ((value (typecase value
-                    (string (parse-color value))
-                    ((or rgb rgba) value))))
-    (make-instance 'border-color :value value)
-    (error "Bad border-color value ~A" value)))
+(define-border-color-property border-top-color)
+
+(define-border-color-property border-right-color)
+
+(define-border-color-property border-bottom-color)
+
+(define-border-color-property border-left-color)
+
+(defun parse-border-color (string)
+  (loop for part in (split-sequence #\Space string)
+     for i from 0
+     when (< i 4)
+     collect (or (parse-color part)
+                 (error "Bad border-color value ~S" string))))
+
+(defun border-color (&rest values)
+  (case (cl:length values)
+    (1 (let ((value (first values)))
+         (typecase value
+           (string (apply #'border-color (parse-border-color value)))
+           ((or rgb rgba) `(,(border-top-color value)
+                             ,(border-right-color value)
+                             ,(border-bottom-color value)
+                             ,(border-left-color value)))
+           (t (error "Bad border-color value ~A" value)))))
+    (2 `(,(border-top-color (first values))
+          ,(border-right-color (second values))
+          ,(border-bottom-color (first values))
+          ,(border-left-color (second values))))
+    (3 `(,(border-top-color (first values))
+          ,(border-right-color (second values))
+          ,(border-bottom-color (third values))
+          ,(border-left-color (second values))))
+    (4 `(,(border-top-color (first values))
+          ,(border-right-color (second values))
+          ,(border-bottom-color (third values))
+          ,(border-left-color (fourth values))))))
 
 (define-property border-top-style ()
   ()

@@ -45,6 +45,7 @@
    :background-position :background-clip :background-origin :background-size
    :box-shadow :shadow
    ;; border
+   :border-top-color :border-right-color :border-bottom-color :border-left-color
    :border-color :border-top-style :border-right-style :border-bottom-style
    :border-left-style :border-style :border-top-width :border-right-width
    :border-bottom-width :border-left-width :border-width
