@@ -31,3 +31,18 @@
     :initarg :name
     :initform nil
     :accessor rule-name)))
+
+(define-serialize-method ((rule qualified-rule) stream)
+  (let ((selectors (rule-selectors rule))
+        (declarations (rule-declarations rule)))
+    (loop for first-p = t then nil
+       for selector in selectors
+       unless first-p
+       do (format stream ",~%")
+       do (format stream "~A" selector))
+    (format stream " {")
+    (loop for declaration in declarations
+       do (format stream "~%")
+         (serialize declaration stream)
+         (format stream ";"))
+    (format stream "~%}")))

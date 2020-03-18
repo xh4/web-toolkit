@@ -68,3 +68,8 @@
                            (or (null type)
                                (subtypep unit type)))
                  do (return (funcall unit number)))))))
+
+(define-serialize-method ((dimension dimension) stream)
+  (let ((number (dimension-number dimension))
+        (unit (dimension-unit dimension)))
+    (format stream "~A~(~A~)" number (symbol-name unit))))

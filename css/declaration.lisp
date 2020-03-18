@@ -106,3 +106,9 @@
   (unless (find 'descriptor superclasses)
     (appendf superclasses '(descriptor)))
   `(define-declaration ,name ,superclasses ,slots ,@options))
+
+(define-serialize-method ((declaration declaration) stream)
+  (let ((name (declaration-name declaration))
+        (value (declaration-value declaration)))
+    (format stream "~(~A~): " name)
+    (serialize value stream)))
