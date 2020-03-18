@@ -6,16 +6,16 @@
 
 (define-property top ()
   ()
-  (:value :auto lenght percentage))
+  (:value :auto .lenght .percentage))
 
 (define-property right ()
   ()
-  (:value :auto lenght percentage))
+  (:value :auto .lenght .percentage))
 
 (define-property bottom ()
   ()
-  (:value :auto lenght percentage))
+  (:value :auto .lenght .percentage))
 
 (define-property left ()
   ()
-  (:value :auto lenght percentage))
+  (:value :auto .lenght .percentage))

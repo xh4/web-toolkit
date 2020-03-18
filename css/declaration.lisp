@@ -14,6 +14,9 @@
     :initarg :name
     :initform nil
     :accessor declaration-name)
+   (%value
+    :initarg :%value
+    :initform nil)
    (value
     :initarg :value
     :initform nil
@@ -29,32 +32,30 @@
     (format stream "~A" (declaration-value declaration))))
 
 (defmethod initialize-instance :after ((declaration declaration) &key)
-  (with-slots (value) declaration
+  (with-slots (name (value %value)) declaration
+    (check-type value string)
     (when-let ((value-types (declaration-class-value (class-of declaration))))
-      (loop with final-value
-         until final-value
-         for type in value-types
+      (loop for type in value-types
          for v = (cond                   ;; FIXME: parse number
-                   ((equal type 'number) (typecase value
-                                           (number value)
-                                           (string (parse-integer value :junk-allowed t))))
-                   ((equal type 'integer) (typecase value
-                                            (integer value)
-                                            (string (parse-integer value :junk-allowed t))))
-                   ((integerp type) (when (equal type value) value))
-                   ((equal type 'percentage) (percentage value))
-                   ((keywordp type) (typecase value
-                                      (keyword (when (eq type value) value))
-                                      (string (when (string-equal
-                                                     value
-                                                     (symbol-name type))
-                                                type))))
+                   ((and (symbolp type)
+                         (not (keywordp type))
+                         (subtypep type 'parser))
+                    (multiple-value-bind (rest value match-p)
+                        (parse (funcall type) value)
+                      (declare (ignore rest))
+                      (if match-p
+                          value)))
+                   ;; TODO: parse float
+                   ((equal type 'number) (parse-integer value :junk-allowed t))
+                   ((equal type 'integer) (parse-integer value :junk-allowed t))
+                   ((integerp type) (when (equal (format nil "~D" type) value) value))
+                   ((keywordp type) (when (string-equal
+                                           value
+                                           (symbol-name type))
+                                      type))
                    ((subtypep type 'dimension) (dimension value type)))
-         when v do (setf final-value v)
-         finally (if final-value
-                     (setf value final-value)
-                     (error "Invalid value ~A for declaration ~A"
-                            value (type-of declaration)))))))
+         when v do (return (setf (slot-value declaration 'value) v))
+         finally (error "Invalid value ~S for declaration ~A" value (type-of declaration))))))
 
 (defmacro define-declaration (name superclasses slots &rest options)
   (unless (find 'declaration superclasses)
@@ -64,10 +65,10 @@
     `(progn
        (defclass ,name ,superclasses ,slots ,@options)
        ,(when (find :value options :key 'first)
-          `(defmacro ,name (value)
-             `(make-instance ',',name
-                             :name ,,declaration-name
-                             :value ,value))))))
+          `(defun ,name (value)
+             (make-instance ',name
+                            :name ,declaration-name
+                            :%value value))))))
 
 (define-declaration property () ())
 
@@ -109,6 +110,5 @@
 
 (define-serialize-method ((declaration declaration) stream)
   (let ((name (declaration-name declaration))
-        (value (declaration-value declaration)))
-    (format stream "~(~A~): " name)
-    (serialize value stream)))
+        (value (slot-value declaration '%value)))
+    (format stream "~(~A~): ~A" name value)))

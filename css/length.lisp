@@ -47,7 +47,9 @@
                      (.some/s (.alpha)))
                input)
       (if match-p
-          (let ((n (parse-float (first value) :junk-allowed t))
+          (let ((n (if (find #\. (first value))
+                       (parse-float (first value) :junk-allowed t)
+                       (parse-integer (first value) :junk-allowed t)))
                 (u (second value)))
             (loop for unit in '(em ex ch rem vw vh vmin vmax
                                 cm mm q in pt pc px)
@@ -55,6 +57,3 @@
                do (return (values rest (funcall unit n) t))
                finally (return (values input nil nil))))
           (values input nil nil)))))
-
-(defun parse-length (string)
-  (nth-value 1 (parse (.length) string)))

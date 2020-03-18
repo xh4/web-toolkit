@@ -2,9 +2,9 @@
 
 ;; https://www.w3.org/TR/css-color-3
 
-(define-property color () ())
-
-(define-property opacity () ())
+(define-property color ()
+  ()
+  (:value .color :transparent :inherit))
 
 (define-parser .alphavalue ()
   (lambda (input)
@@ -21,37 +21,6 @@
                   value
                   t)
           (values input nil nil)))))
-
-(defun parse-alpha (string)
-  (nth-value 1 (parse (.alphavalue) string)))
-
-(define-parser .color-hex ()
-  (lambda (input)
-    (multiple-value-bind (rest value match-p)
-        (parse (.or (.seq (.s "#") (.hexdig) (.hexdig) (.hexdig)
-                          (.hexdig) (.hexdig) (.hexdig))
-                    (.seq (.s "#") (.hexdig) (.hexdig) (.hexdig) (.end)))
-               input)
-      (if match-p
-          (case (cl:length value)
-            (5 (let ((r (format nil "~C~C" (nth 1 value) (nth 1 value)))
-                     (g (format nil "~C~C" (nth 2 value) (nth 2 value)))
-                     (b (format nil "~C~C" (nth 3 value) (nth 3 value))))
-                 (values rest (rgb (parse-integer r :radix 16)
-                                   (parse-integer g :radix 16)
-                                   (parse-integer b :radix 16))
-                         t)))
-            (7 (let ((r (format nil "~C~C" (nth 1 value) (nth 2 value)))
-                     (g (format nil "~C~C" (nth 3 value) (nth 4 value)))
-                     (b (format nil "~C~C" (nth 5 value) (nth 6 value))))
-                 (values rest (rgb (parse-integer r :radix 16)
-                                   (parse-integer g :radix 16)
-                                   (parse-integer b :radix 16))
-                         t))))
-          (values input nil nil)))))
-
-(defun parse-color-hex (string)
-  (nth-value 1 (parse (.color-hex) string)))
 
 (defclass rgb ()
   ((red
@@ -118,9 +87,6 @@
                 (b (nth 12 value)))
             (values rest (rgb r g b) t))
           (values input nil nil)))))
-
-(defun parse-rgb (string)
-  (nth-value 1 (parse (.rgb) string)))
 
 (defclass rgba (rgb)
   ((alpha
@@ -197,43 +163,48 @@
             (values rest (rgba r g b a) t))
           (values input nil nil)))))
 
-(defun parse-rgba (string)
-  (nth-value 1 (parse (.rgba) string)))
+(defclass color-hex (rgb)
+  ((value
+    :initarg :value
+    :initform nil)))
 
+(defmethod print-object ((color-hex color-hex) stream)
+  (print-unreadable-object (color-hex stream :type t)
+    (format stream "~S" (slot-value color-hex 'value))))
+
+(define-parser .color-hex ()
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.or (.seq (.s "#") (.hexdig) (.hexdig) (.hexdig)
+                          (.hexdig) (.hexdig) (.hexdig))
+                    (.seq (.s "#") (.hexdig) (.hexdig) (.hexdig)))
+               input)
+      (if match-p
+          (case (cl:length value)
+            (4 (let ((r (format nil "~C~C" (nth 1 value) (nth 1 value)))
+                     (g (format nil "~C~C" (nth 2 value) (nth 2 value)))
+                     (b (format nil "~C~C" (nth 3 value) (nth 3 value))))
+                 (values rest (make-instance 'color-hex
+                                             :red (parse-integer r :radix 16)
+                                             :green (parse-integer g :radix 16)
+                                             :blue (parse-integer b :radix 16)
+                                             :value (format nil "#~A~A~A" r g b))
+                         t)))
+            (7 (let ((r (format nil "~C~C" (nth 1 value) (nth 2 value)))
+                     (g (format nil "~C~C" (nth 3 value) (nth 4 value)))
+                     (b (format nil "~C~C" (nth 5 value) (nth 6 value))))
+                 (values rest (make-instance 'color-hex
+                                             :red (parse-integer r :radix 16)
+                                             :green (parse-integer g :radix 16)
+                                             :blue (parse-integer b :radix 16)
+                                             :value (format nil "#~A~A~A" r g b))
+                         t))))
+          (values input nil nil)))))
+
+;; TODO: (color "red")
 (define-parser .color ()
   (.or (.rgb) (.rgba) (.color-hex)))
 
-(defun parse-color (string)
-  (nth-value 1 (parse (.color) string)))
-
-(defun color (value)
-  (let ((value (typecase value
-                 ((or rgb rgba) value)
-                 (keyword (cond
-                            ((eq value :transparent) (rgba 0 0 0 0))
-                            ((eq value :inherit) value)
-                            (t (loop for (name nil (r g b)) in *colors*
-                                  when (eq value name)
-                                  do (return (rgba r g b 1))))))
-                 (string (or (and (string-equal value "transparent")
-                                  (rgba 0 0 0 0))
-                             (and (string-equal value "inherit")
-                                  :inherit)
-                             (parse-color value)
-                             (loop for (name nil (r g b)) in *colors*
-                                when (string-equal value (symbol-name name))
-                                do (return (rgba r g b 1)))
-                             (error "Unable to parse color value ~S" value)))
-                 (t (error "Bad color value ~A" value)))))
-    (make-instance 'color :value value)))
-
-(defun opacity (value)
-  (let ((value (typecase value
-                 (number (if (<= 0 value 1) value (error "Bad opacity value ~A" value)))
-                 (keyword (if (eq value :inherit)
-                              value
-                              (error "Bad opacity value ~A" value)))
-                 (string (or (parse-alpha value)
-                             (and (string-equal value "inherit") :inherit)
-                             (error "Bad opacity value ~A" value))))))
-    (make-instance 'opacity :value value)))
+(define-property opacity ()
+  ()
+  (:value .alphavalue :inherit))

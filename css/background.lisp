@@ -2,36 +2,22 @@
 
 ;; https://drafts.csswg.org/css-backgrounds-3
 
-(define-property background-color () ())
+(define-property background-color ()
+  ()
+  (:value .color))
 
-(defun background-color (value)
-  (if-let ((value (typecase value
-                 (string (parse-color value))
-                 ((or rgb rgba) value))))
-    (make-instance 'background-color :value value)
-    (error "Bad background-color value ~A" value)))
+(define-property background-image ()
+  ()
+  (:value .bg-image))
 
-(define-property background-image () ())
+;; TODO: .bg-image
+(define-parser .bg-image ()
+  (lambda (input)
+    (value input nil nil)))
 
-(defun background-image (&rest values)
-  (if (= 1 (cl:length values))
-      (let ((value (first values)))
-        (if-let ((value (typecase value
-                          (string (if (string-equal "none" value)
-                                      :none
-                                      (let ((parts (split-sequence #\, value)))
-                                        (mapcar #'parse-url parts))))
-                          (keyword (if (eq :none value) value (error "Bad background-image value ~A" value)))
-                          (uri:uri value))))
-          (make-instance 'background-image :value value)
-          (error "Bad background-image value ~A" value)))
-      (loop for value in values
-         when (typep value 'uri)
-         collect value into images
-         else do (error "Bad background-image value ~A" value)
-         finally (make-instance 'background-image :value images))))
-
-(define-property background-repeat () ())
+(define-property background-repeat ()
+  ()
+  (:value .background-repeat))
 
 (define-parser .background-repeat ()
   (lambda (input)
@@ -66,148 +52,104 @@
             (values rest value t))
           (values input nil nil)))))
 
-(defun parse-background-repeat (string)
-  (nth-value 1 (parse (.background-repeat) string)))
+;; (background-repeat "repeat no-repeat")
 
-(defun background-repeat (&rest values)
-  (cond
-    ((= 1 (cl:length values))
-     (let ((value (first values)))
-       (when-let ((value (typecase value
-                           (keyword (if (member value '(:repeat-x :repeat-y :repeat :space :round :no-repeat))
-                                        (case value
-                                          (:repeat-x '(:repeat :no-repeat))
-                                          (:repeat-y '(:no-repeat :repeat))
-                                          (:repeat '(:repeat :repeat))
-                                          (:space '(:space :space))
-                                          (:round '(:round :round))
-                                          (:no-repeat '(:no-repeat :no-repeat)))
-                                        (error "Bad background-repeat value ~A" value)))
-                           (string (or (parse-background-repeat value)
-                                       (error "Bad background-repeat value ~S" value)))
-                           (t (error "Bad background-repeat value ~S" value)))))
-         (make-instance 'background-repeat :value value))))
-    ((= 2 (cl:length values))
-     (if (and (member (first values) '(:repeat :space :round :no-repeat))
-              (member (second values) '(:repeat :space :round :no-repeat)))
-         (make-instance 'background-repeat :value values)
-         (error "Bad background-repeat values ~A" values)))))
+(define-property background-attachment ()
+  ()
+  (:value .background-attachment))
 
-(define-property background-attachment () ())
+(define-parser .background-attachment ()
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.some (.seq (.maybe (.some (.whitespace)))
+                            (.or (.s "scroll") (.s "fixed") (.s "local"))
+                            (.maybe (.some (.whitespace)))))
+               input)
+      (if match-p
+          (values rest
+                  (loop for v in (flatten value)
+                     when (stringp v)
+                     collect (make-keyword (string-upcase v)))
+                  t)
+          (values input nil nil)))))
 
-(defun background-attachment (&rest values)
-  (cond
-    ((= 1 (cl:length values))
-     (loop for value in values
-        when (and (keywordp value)
-                  (member value '(:scroll :fixed :local)))
-        collect value into vs
-        when (and (stringp value)
-                  (find value '("scroll" "fixed" "local") :test 'string-equal))
-        collect (make-keyword (string-upcase value)) into vs
-        finally (return (make-instance 'background-attachment :value vs))))
-    (t (error "Bad background-attachment values ~A" values))))
+;; (background-attachment "scroll fixed")
 
-(define-property background-position () ())
+(define-property background-position ()
+  ()
+  (.value .bg-position))
 
-;; TODO: validate
-(defun parse-background-position (string)
-  (let ((parts (split-sequence #\Space string)))
-    (let ((parts (loop for part in parts
-                    when (find part '("left" "right" "top" "bottom" "center") :test 'equal)
-                    collect (make-keyword (string-upcase part))
-                    else collect (or (parse-length part)
-                                     (parse-percentage part)
-                                     (error "Bad background-position value ~S" string)))))
-      parts)))
+;; TODO: .bg-position
+(define-parser .bg-position ()
+  (lambda (input)
+    (values input nil nil)))
 
-;; TODO: validate
-(defun background-position (&rest values)
-  (let ((value (if (= 1 (cl:length values))
-                   (let ((value (first values)))
-                     (typecase value
-                       (string (parse-background-position value))
-                       (keyword value)
-                       (t (error "Bad background-position value ~A" value))))
-                   values)))
-    (make-instance 'background-position :value value)))
+(define-property background-clip ()
+  ()
+  (:value .background-clip))
 
-(define-property background-clip () ())
+(define-parser .background-clip ()
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.some (.seq (.maybe (.some (.whitespace)))
+                            (.or (.s "border-box") (.s "padding-box") (.s "content-box"))
+                            (.maybe (.some (.whitespace)))))
+               input)
+      (if match-p
+          (values rest
+                  (loop for v in (flatten value)
+                     when (stringp v)
+                     collect (make-keyword (string-upcase v)))
+                  t)
+          (values input nil nil)))))
 
-(defun parse-background-clip (string)
-  (let ((parts (split-sequence #\Space string)))
-    (let ((parts (loop for part in parts
-                    when (find part '("border-box" "padding-box" "content-box") :test 'equal)
-                    collect (make-keyword (string-upcase part))
-                    else do (error "Bad background-position value ~S" string))))
-      parts)))
+(define-property background-origin ()
+  ()
+  (:value .background-origin))
 
-(defun background-clip (&rest values)
-  (let ((value (if (= 1 (cl:length values))
-                   (let ((value (first values)))
-                     (typecase value
-                       (string (parse-background-clip value))
-                       (keyword (if (member value '(:border-box :padding-box :content-box))
-                                    value
-                                    (error "Bad background-clip value ~A" value)))
-                       (t (error "Bad background-clip value ~A" value))))
-                   values)))
-    (make-instance 'background-clip :value value)))
+;; same as .background-clip
+(define-parser .background-origin ()
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.some (.seq (.maybe (.some (.whitespace)))
+                            (.or (.s "border-box") (.s "padding-box") (.s "content-box"))
+                            (.maybe (.some (.whitespace)))))
+               input)
+      (if match-p
+          (values rest
+                  (loop for v in (flatten value)
+                     when (stringp v)
+                     collect (make-keyword (string-upcase v)))
+                  t)
+          (values input nil nil)))))
 
-(define-property background-origin () ())
+(define-property background-size ()
+  ()
+  (:value .background-size))
 
-(defun parse-background-origin (string)
-  (let ((parts (split-sequence #\Space string)))
-    (let ((parts (loop for part in parts
-                    when (find part '("border-box" "padding-box" "content-box") :test 'equal)
-                    collect (make-keyword (string-upcase part))
-                    else do (error "Bad background-origin value ~S" string))))
-      parts)))
+(define-parser .background-size ()
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.oneof (.or (.seq (.or (.length) (.percentage) (.s "auto"))
+                                  (.some (.whitespace))
+                                  (.or (.length) (.percentage) (.s "auto")))
+                            (.or (.length) (.percentage) (.s "auto")))
+                       (.s "cover")
+                       (.s "contain"))
+               input)
+      (if match-p
+          (values rest
+                  (loop for v in (flatten value)
+                     when (stringp v)
+                     collect (make-keyword (string-upcase v))
+                     when (or (typep v 'length)
+                              (typep v 'percentage))
+                     collect v)
+                  t)
+          (values input nil nil)))))
 
-(defun background-origin (&rest values)
-  (let ((value (if (= 1 (cl:length values))
-                   (let ((value (first values)))
-                     (typecase value
-                       (string (parse-background-origin value))
-                       (keyword (if (member value '(:border-box :padding-box :content-box))
-                                    value
-                                    (error "Bad background-origin value ~A" value)))
-                       (t (error "Bad background-origin value ~A" value))))
-                   values)))
-    (make-instance 'background-origin :value value)))
-
-(define-property background-size () ())
-
-(defun parse-background-size (string)
-  (cond
-    ((string= "auto" string) :auto)
-    ((string= "cover" string) :cover)
-    ((string= "contain" string) :contain)
-    (t (let ((parts (split-sequence #\Space string)))
-         (unless (= 2 (cl:length parts))
-           (error "Bad backgound-size value ~S" string))
-         (loop for part in parts
-            for value = (if (string= "auto" part)
-                            :auto
-                            (or (parse-length part)
-                                (parse-percentage part)
-                                (error "Bad backgound-size value ~S" string)))
-            collect value)))))
-
-(defun background-size (&rest values)
-  (let ((value (if (= 1 (cl:length values))
-                   (let ((value (first values)))
-                     (typecase value
-                       (string (parse-background-size value))
-                       (keyword (if (member value '(:auto :cover :contain))
-                                    value
-                                    (error "Bad background-size value ~A" value)))
-                       ((or length percentage) value)
-                       (t (error "Bad background-size value ~A" value))))
-                   values)))
-    (make-instance 'background-size :value value)))
-
-(define-property box-shadow () ())
+;; (background-size "100% 100%")
+;; (background-size "50% auto")
 
 (defclass shadow ()
   ((horizontal-offset
@@ -255,7 +197,7 @@
                                 (.color)
                                 (.maybe (.some (.whitespace))))
                           (.seq (.maybe (.some (.whitespace)))
-                                (.s "inset")
+                                (.maybe (.s "inset"))
                                 (.maybe (.some (.whitespace)))))
                input)
       (if match-p
@@ -279,6 +221,13 @@
                               t)))
           (values input nil nil)))))
 
+;; (parse (.shadow) "64px 64px 12px 40px rgba(0,0,0,0.4)")
+;; (parse (.shadow) "inset 64px 64px 12px 40px rgba(0,0,0,0.4)")
+
+(define-property box-shadow ()
+  ()
+  (:value .box-shadow))
+
 (define-parser .box-shadow ()
   (lambda (input)
     (multiple-value-bind (rest value match-p)
@@ -300,18 +249,4 @@
                   t)
           (values input nil nil)))))
 
-(defun parse-box-shadow (string)
-  (nth-value 1 (parse (.box-shadow) string)))
-
-(defun box-shadow (&rest values)
-  (if (= 1 (cl:length values))
-      (let ((value (first values)))
-        (let ((value (typecase value
-                       (keyword (if (eq value :none) value (error "Bad box-shadow value ~A" value)))
-                       (string (or (parse-box-shadow value) (error "Bad box-shadow value ~S" value)))
-                       (shadow (ensure-list value)))))
-          (make-instance 'box-shadow :value value)))
-      (loop for value in value
-         when (check-type value shadow)
-         collect value into shadows
-         finally (return (make-instance 'box-shadow :value shadows)))))
+;; (box-shadow "64px 64px 12px 40px rgba(0,0,0,0.4), 12px 12px 0px 8px rgba(0,0,0,0.4) inset")

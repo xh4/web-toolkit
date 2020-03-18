@@ -41,6 +41,7 @@
           for index from 1
           for test-name = (intern (format nil "BOOTSTRAP-~A" index))
           collect `(test ,test-name
+                     (it
                        (let* ((symbol (find-symbol (string-upcase ,name) :css))
                               (function (when symbol
                                           (handler-case
@@ -48,7 +49,8 @@
                                             (error (e)
                                               (error "Declaration ~S not implemented" ,name))))))
                          (if function
-                             (is (equal 1 1))
-                             (error "Declaration ~S not implemented" ,name)))))))
+                             (let ((property (funcall function ,value)))
+                               (is (equal (format nil "~A: ~A" ,name ,value) (serialize property))))
+                             (error "Declaration ~S not implemented" ,name))))))))
 
 (test-bootstrap)

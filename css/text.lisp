@@ -2,7 +2,9 @@
 
 ;; https://drafts.csswg.org/css-text-3
 
-(define-property text-transform () ())
+(define-property text-transform ()
+  ()
+  (:value .text-transform))
 
 (define-parser .text-transform ()
   (lambda (input)
@@ -24,22 +26,7 @@
             (values rest value t))
           (values input nil nil)))))
 
-(defun parse-text-transform (string)
-  (multiple-value-bind (rest value match-p)
-      (parse (.text-transform) string)
-    (when (and match-p (maxpc::input-empty-p rest))
-        value)))
-
-;; TODO: support all keywords
-(defun text-transform (value)
-  (typecase value
-    (keyword (if (member value '(:none :capitalize :uppercase :lowercase
-                                 :full-width :full-size-kana))
-                 value
-                 (error "Bad text-transform value ~A" value)))
-    (string (or (parse-text-transform value)
-                (error "Bad text-transform value ~S" value)))
-    (t (error "Bad text-transform value ~A" value))))
+;; (text-transform "capitalize full-width full-size-kana")
 
 (define-property white-space ()
   ()
@@ -47,7 +34,7 @@
 
 (define-property tab-size ()
   ()
-  (:value number length))
+  (:value number .length))
 
 (define-property word-break ()
   ()
@@ -87,14 +74,16 @@
 
 (define-property word-spacing ()
   ()
-  (:value :normal length))
+  (:value :normal .length))
 
 (define-property letter-spacing ()
   ()
-  (:value :normal length))
+  (:value :normal .length))
 
+;; TODO: text-indent
 (define-property text-indent ()
   ())
 
+;; TODO: hanging-punctuation
 (define-property hanging-punctuation ()
   ())

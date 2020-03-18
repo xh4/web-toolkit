@@ -66,6 +66,7 @@
    :style :style-declarations :merge-style)
   (:import-from :utility
                 :define-parser
+                :parser
                 :parse
                 :.seq
                 :.seq/s

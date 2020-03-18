@@ -136,11 +136,12 @@
   (.test ('eq x) parser))
 
 (define-parser .seq (&rest parsers)
-  (lambda (input)
-    (loop for parser in parsers
+  (lambda (original-input)
+    (loop with input = original-input
+       for parser in parsers
        for (rest value match-p) = (multiple-value-list
                                    (parse parser input))
-       unless match-p return nil
+       unless match-p return (values original-input nil nil)
        collect value into results
        do (setf input rest)
        finally (return (values input

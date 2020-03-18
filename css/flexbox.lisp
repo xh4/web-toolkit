@@ -6,39 +6,45 @@
 
 (define-property flex-direction ()
   ()
-  (:value :row :row-reverse :column :column-reverse))
+  (:value .flex-direction))
+
+(define-parser .flex-direction ()
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.or (.s "row") (.s "row-reverse") (.s "column") (.s "column-reverse"))
+               input)
+      (if match-p
+          (values rest (make-keyword (string-upcase value)) t)
+          (values input nil nil)))))
 
 (define-property flex-wrap ()
   ()
-  (:value :nowrap :wrap :wrap-reverse))
+  (:value .flex-wrap))
 
-(define-property flex-flow () ())
+(define-parser .flex-wrap ()
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.or (.s "nowrap") (.s "wrap") (.s "wrap-reverse"))
+               input)
+      (if match-p
+          (values rest (make-keyword (string-upcase value)) t)
+          (values input nil nil)))))
 
-(defun parse-flex-flow (string)
-  (loop for part in (split-sequence #\Space string)
-     for i from 1
-     when (or (and (= i 1)
-                   (member part '("row" "row-reverse" "column" "column-reverse")
-                           :test 'equal))
-              (and (= i 2)
-                   (member part '("nowrap" "wrap" "wrap-reverse")
-                           :test 'equal)))
-     collect (make-keyword (string-upcase part))
-     else do (error "Bad flex-flow value ~S" string)))
+(define-property flex-flow ()
+  ()
+  (:value .flex-flow))
 
-(defun flex-flow (&rest values)
-  (let ((value (case (cl:length values)
-                 (1 (let ((value (first values)))
-                      (typecase value
-                        (string (parse-flex-flow value))
-                        (keyword (if (member value '(:row :row-reverse
-                                                     :column :column-reverse
-                                                     :nowrap :wrap :wrap-reverse))
-                                     value
-                                     (error "Bad flow-flow values ~A" values)))
-                        (t (error "Bad flex-flow values ~A" values)))))
-                 (2 values))))
-    (make-instance 'flex-flow :value value)))
+(define-parser .flex-flow ()
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.or (.seq (.flex-direction) (.some (.whitespace)) (.flex-wrap))
+                    (.seq (.flex-wrap) (.some (.whitespace)) (.flex-direction))
+                    (.flex-direction)
+                    (.flex-wrap))
+               input)
+      (if match-p
+          (values rest (remove-if-not #'keywordp (flatten (ensure-list value))) t)
+          (values input nil nil)))))
 
 ;; (flex-flow "row")
 ;; (flex-flow "column wrap")
@@ -59,7 +65,7 @@
 (define-property flex-basis ()
   ()
   ;; TODO: https://drafts.csswg.org/css-flexbox-1/#flex-basis-property
-  (:value :content length percentage :auto :inherit))
+  (:value :content .length .percentage :auto :inherit))
 
 (define-property justify-content ()
   ()

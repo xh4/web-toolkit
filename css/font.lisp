@@ -24,6 +24,6 @@
   ;; TODO: https://drafts.csswg.org/css-fonts-3/#propdef-font-size
   (:value :xx-small :x-small :small :medium :large :x-large :xx-large
           :larger :smaller
-          length percentage))
+          .length .percentage))
 
 ;; TODO: font shorthand
