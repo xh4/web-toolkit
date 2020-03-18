@@ -35,6 +35,7 @@
                                      (:file "text")
                                      (:file "flexbox")
                                      (:file "background")
+                                     (:file "border")
                                      (:file "display")
                                      (:file "position")
                                      (:file "logical")
