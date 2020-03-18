@@ -73,13 +73,14 @@
 (defun parse-border-style (string)
   (let ((parts (split-sequence #\Space string)))
     (loop for part in parts
-         for i from 0
-       when (and (member part '("none" "hidden" "dotted" "dashed"
-                                "solid" "double" "groove" "ridge"
-                                "inset" "outset")
-                         :test 'equal)
-                 (< i 4))
-       collect part
+       for i from 0
+       for value = (and (member part '("none" "hidden" "dotted" "dashed"
+                                       "solid" "double" "groove" "ridge"
+                                       "inset" "outset")
+                                :test 'equal)
+                        (make-keyword (string-upcase part)))
+       when (and value (< i 4))
+       collect value
        else do (error "Bad border-style value ~S" string))))
 
 (defun border-style (&rest values)
@@ -127,11 +128,13 @@
   (let ((parts (split-sequence #\Space string)))
     (loop for part in parts
        for i from 0
-       when (and (or (member part '("thin" "medium" "thick" )
-                             :test 'equal)
-                     (parse-length part))
-                 (< i 4))
-       collect part
+       for value = (or (and (member part '("thin" "medium" "thick" )
+                                    :test 'equal)
+                            (make-keyword (string-upcase part)))
+                       (parse-length part)
+                       (error "Bad border-width value ~S" string))
+       when (and value (< i 4))
+       collect value
        else do (error "Bad border-width value ~S" string))))
 
 (defun border-width (&rest values)
@@ -158,6 +161,34 @@
           ,(border-bottom-width (third values))
           ,(border-left-width (fourth values))))
     (t (error "Bad border-width values ~A" values))))
+
+(defmacro define-border-side-property (property-name)
+  (let ((parse-function (intern (format nil "PARSE-~A" property-name))))
+    `(progn
+       (define-property ,property-name () ())
+       (defun ,parse-function (string)
+         (loop for part in (split-sequence #\Space string)
+            for i from 0
+            when (< i 3) ;; TODO: ensure only once
+            collect (or (ignore-errors (first (parse-border-width part)))
+                        (ignore-errors (first (parse-border-style part)))
+                        (ignore-errors (first (parse-border-color part)))
+                        (error "Bad ~A value ~S" ',property-name string))
+            else do (error "Bad ~A value ~S" ',property-name string)))
+       (defun ,property-name (value)
+         (if-let ((value (typecase value
+                           (string (,parse-function value))
+                           ((or rgb rgba) value))))
+           (make-instance ',property-name :value value)
+           (error "Bad ~A value ~A" ',property-name value))))))
+
+(define-border-side-property border-top)
+
+(define-border-side-property border-right)
+
+(define-border-side-property border-bottom)
+
+(define-border-side-property border-left)
 
 (defun parse-border-cornor-radius (string)
   (let ((parts (split-sequence #\Space string)))

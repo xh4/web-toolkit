@@ -49,6 +49,7 @@
    :border-color :border-top-style :border-right-style :border-bottom-style
    :border-left-style :border-style :border-top-width :border-right-width
    :border-bottom-width :border-left-width :border-width
+   :border-top :border-right :border-bottom :border-left
    :border-top-left-radius :border-top-right-radius
    :border-bottom-right-radius :border-bottom-left-radius
    :border-radius
