@@ -77,7 +77,7 @@
 
 (define-property background-position ()
   ()
-  (.value .bg-position))
+  (:value .bg-position))
 
 ;; TODO: .bg-position
 (define-parser .bg-position ()
