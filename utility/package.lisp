@@ -8,6 +8,9 @@
    ;; tree
    :walk-tree
    :map-tree
+   ;; string
+   :string-prefix-p
+   :string-suffix-p
    ;; function
    :function-lambda-list
    ;; class
@@ -15,11 +18,15 @@
    :rewrite-class-option
    ;; variable
    :define-variable
-   ;; reflective
-   :reflective-objecty
-   :reflective-class
-   :reflective-method
-   :reflective-object-p
+   :variable
+   :variable-name
+   :variable-form
+   :variable-value
+   ;; reactive
+   :reactive-object
+   :reactive-class
+   :reactive-method
+   :reactive-object-p
    :update
    :reflect
    :add-dependency
@@ -35,4 +42,5 @@
    :parser-value
    :.element :.satisfies :.or :.test :.eq :.seq :.seq/s
    :.any :.any/s :.and :.maybe :.some :.some/s :.end :.not
-   :.n :.n/s :.s))
+   :.n :.n/s :.m :.m/s :.s
+   :.alpha :alpha-p :.digit :digit-p :.hexdig))

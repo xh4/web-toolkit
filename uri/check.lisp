@@ -12,13 +12,22 @@
 (defun check-userinfo (userinfo)
   (typecase userinfo
     (null nil)
-    (string userinfo)
+    (string (percent-encode
+             userinfo
+             :reserve (lambda (c)
+                        (or (unreserved-p c)
+                            (sub-delim-p c)
+                            (eq c #\:)))))
     (t (error "URI userinfo must be string or null"))))
 
 (defun check-host (host)
   (typecase host
     (null nil)
-    (string (string-downcase host))
+    (string (percent-encode
+             (string-downcase host)
+             :reserve (lambda (c)
+                        (or (unreserved-p c)
+                            (sub-delim-p c)))))
     (t (error "URI host must be string or null"))))
 
 (defun check-port (port)
@@ -35,7 +44,14 @@
 (defun check-path (path)
   (typecase path
     (null nil)
-    (string path)
+    (string (percent-encode
+             path
+             :reserve (lambda (c)
+                        (or (unreserved-p c)
+                            (sub-delim-p c)
+                            (eq c #\:)
+                            (eq c #\@)
+                            (eq c #\/)))))
     (t (error "URI path must be string or null"))))
 
 (defun check-query (query)
@@ -52,6 +68,9 @@
            (or (unreserved-p char))))
     (loop for (name . value) in alist
        when value
+       do (when value (not (stringp value))
+                (setf value (format nil "~A" value)))
+       and
        collect (cond
                  ((emptyp value) (percent-encode name :reserve #'reserve-char))
                  (t (format nil "~A=~A"
@@ -70,5 +89,13 @@
 (defun check-fragment (fragment)
   (typecase fragment
     (null nil)
-    (string fragment)
+    (string (percent-encode
+             fragment
+             :reserve (lambda (c)
+                        (or (unreserved-p c)
+                            (sub-delim-p c)
+                            (eq c #\:)
+                            (eq c #\@)
+                            (eq c #\/)
+                            (eq c #\?)))))
     (t (error "URI fragment must be string or null"))))

@@ -59,12 +59,6 @@
 Strings.  If nil, translate any such sequence to the char after
 slash.")
 
-(defparameter +json-lisp-symbol-tokens+
-  '(("true" . t)
-    ("null" . nil)
-    ("false" . nil))
-  "Mapping between JSON literal names and Lisp boolean values.")
-
 (defparameter *json-identifier-name-to-lisp* 'identity
   "Designator for a function which maps string (a JSON Object key) to
 string (name of a Lisp symbol).")

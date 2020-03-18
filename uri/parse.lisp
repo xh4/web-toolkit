@@ -1,27 +1,5 @@
 (in-package :uri)
 
-(defun alpha-p (char)
-  (or
-   (char<= #\a char #\z)
-   (char<= #\A char #\Z)))
-
-(define-parser .alpha ()
-  (.satisfies 'alpha-p))
-
-(defun digit-p (char)
-  (char<= #\0 char #\9))
-
-(define-parser .digit ()
-  (.satisfies 'digit-p))
-
-(defun hexdig-p (char)
-  (or (digit-p char)
-      (char<= #\a char #\f)
-      (char<= #\A char #\F)))
-
-(define-parser .hexdig ()
-  (.satisfies 'hexdig-p))
-
 (define-parser .pct-encoded ()
   (.seq/s (.eq #\%) (.hexdig) (.hexdig)))
 
@@ -93,36 +71,40 @@
           (.dec-octet)))
 
 (define-parser .h16 ()
-  (or (.n/s 4 (.hexdig))
-      (.n/s 3 (.hexdig))
-      (.n/s 2 (.hexdig))
-      (.hexdig)))
+  (.or (.n/s 4 (.hexdig))
+       (.n/s 3 (.hexdig))
+       (.n/s 2 (.hexdig))
+       (.hexdig)))
 
 (define-parser .ls32 ()
   (.or (.seq/s (.h16) (.eq #\:) (.h16))
        (.ipv4-address)))
 
+(define-parser .colon ()
+  (.and (.not (.s "::"))
+        (.s ":")))
+
 (define-parser .ipv6-address ()
-  (.or (.seq/s (.n/s 6 (.seq/s (.h16) (.eq #\:))) (.ls32))
-       (.seq/s (.s "::") (.n/s 5 (.seq/s (.h16) (.eq #\:))) (.ls32))
-       (.seq/s (.maybe (.h16)) (.s "::") (.n/s 4 (.seq/s (.h16) (.eq #\:)))
+  (.or (.seq/s (.n/s 6 (.seq/s (.h16) (.colon))) (.ls32))
+       (.seq/s (.s "::") (.n/s 5 (.seq/s (.h16) (.colon))) (.ls32))
+       (.seq/s (.maybe (.h16)) (.s "::") (.n/s 4 (.seq/s (.h16) (.colon)))
                (.ls32))
-       (.seq/s (.maybe (.seq/s (.h16) (.eq #\:) (.h16)))
+       (.seq/s (.maybe (.seq/s (.h16) (.colon) (.h16)))
                (.s "::")
-               (.n/s 3 (.seq/s (.h16) (.eq #\:))) (.ls32))
-       (.seq/s (.maybe (.seq/s (.n/s 2 (.seq/s (.h16) (.eq #\:))) (.h16)))
+               (.n/s 3 (.seq/s (.h16) (.colon))) (.ls32))
+       (.seq/s (.maybe (.seq/s (.m/s 2 (.seq/s (.h16) (.colon))) (.h16)))
                (.s "::")
-               (.n/s 2 (.seq/s (.h16) (.eq #\:))) (.ls32))
-       (.seq/s (.maybe (.seq/s (.n/s 3 (.seq/s (.h16) (.eq #\:))) (.h16)))
+               (.n/s 2 (.seq/s (.h16) (.colon))) (.ls32))
+       (.seq/s (.maybe (.seq/s (.m/s 3 (.seq/s (.h16) (.colon))) (.h16)))
                (.s "::")
-               (.seq/s (.h16) (.eq #\:)) (.ls32))
-       (.seq/s (.maybe (.seq/s (.n/s 4 (.seq/s (.h16) (.eq #\:))) (.h16)))
+               (.seq/s (.h16) (.colon)) (.ls32))
+       (.seq/s (.maybe (.seq/s (.m/s 4 (.seq/s (.h16) (.colon))) (.h16)))
                (.s "::")
                (.ls32))
-       (.seq/s (.maybe (.seq/s (.n/s 5 (.seq/s (.h16) (.eq #\:))) (.h16)))
+       (.seq/s (.maybe (.seq/s (.m/s 5 (.seq/s (.h16) (.colon))) (.h16)))
                (.s "::")
                (.h16))
-       (.seq/s (.maybe (.seq/s (.n/s 6 (.seq/s (.h16) (.eq #\:))) (.h16)))
+       (.seq/s (.maybe (.seq/s (.m/s 6 (.seq/s (.h16) (.colon))) (.h16)))
                (.s "::"))))
 
 (define-parser .ip-literal ()
@@ -226,18 +208,22 @@
          for value = (parser-value parser)
          do
            (typecase parser
-             (.scheme (setf (uri-scheme uri)
+             (.scheme (setf (slot-value uri 'scheme)
                             (when value (string-downcase value))))
-             (.userinfo (setf (uri-userinfo uri) value))
-             (.host (setf (uri-host uri)
-                          (when value (string-downcase value))))
-             (.port (setf (uri-port uri)
+             (.userinfo (setf (slot-value uri 'userinfo) value))
+             (.host (when value
+                      (setf value (string-downcase value))
+                      (when (eq #\[ (char value 0))
+                        (setf value (subseq value 1 (1- (length value)))))
+                      (setf (slot-value uri 'host) value)))
+             (.port (setf (slot-value uri 'port)
                           (parse-integer value)))
              ((or .path-abempty
                   .path-noscheme
                   .path-rootless
                   .path-absolute)
-              (setf (uri-path uri) value))
-             (.query (setf (uri-query uri) value))
-             (.fragment (setf (uri-fragment uri) value)))
+              (when (plusp (length value))
+                (setf (slot-value uri 'path) value)))
+             (.query (setf (slot-value uri 'query) value))
+             (.fragment (setf (slot-value uri 'fragment) value)))
          finally (return uri)))))

@@ -54,14 +54,18 @@
       (unless (find-header-field "User-Agent" header)
         (set-header-field header (header-field "User-Agent" "Lisp Web Toolkit")))
       (typecase content
-        (string (make-text-entity content :header header :method method :uri uri))
-        (json:object (make-json-entity content :header header :method method :uri uri))
-        ((or null vector pathname stream) (make-instance 'request
-                                                    :method method
-                                                    :uri uri
-                                                    :version "HTTP/1.1"
-                                                    :header header
-                                                    :body content))
+        (string (make-text-entity content :header header :method method :uri uri :version "HTTP/1.1"))
+        (json:object (make-json-entity content :header header :method method :uri uri :version "HTTP/1.1"))
+        (pathname (make-file-entity content :header header :method method :uri uri :version "HTTP/1.1"))
+        ((or null vector)
+         (unless (find-header-field "Content-Length" header)
+           (set-header-field header (header-field "Content-Length" (length content))))
+         (make-instance 'request
+                        :method method
+                        :uri uri
+                        :version "HTTP/1.1"
+                        :header header
+                        :body content))
         (t (error "Unable to make request using content of type ~A" (type-of content)))))))
 
 (defun process-request-uri (uri)

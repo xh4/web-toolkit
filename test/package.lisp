@@ -2,7 +2,7 @@
 
 (defpackage :test
   (:nicknames :wt.test)
-  (:use :cl :fiveam :utility)
+  (:use :cl :fiveam)
   (:export :def-suite
            :in-suite
            :test
@@ -14,4 +14,6 @@
            :*on-error* :*on-failure*
            :it :*it* :*is* :=>
            :ensure-cleanup
-           :compile-and-load-toplevel-forms))
+           :compile-and-load-toplevel-forms)
+  (:import-from :utility
+                :map-tree))

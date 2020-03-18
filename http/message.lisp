@@ -29,7 +29,8 @@
         ;; TODO: read chunked stream
         (unless content-length
           (error "Missing content length when read message body into vector"))
-        (setf content-length (parse-integer content-length))
+        (when content-length
+          (setf content-length (parse-integer content-length)))
         (alexandria::read-stream-content-into-byte-vector
          stream 'alexandria::%length content-length)))))
 

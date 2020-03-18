@@ -90,7 +90,7 @@
   (let ((https-p (equal "https" (uri-scheme uri))))
     (let ((host (uri-host uri))
           (port (or (uri-port uri) (if https-p 443 80))))
-      (let ((socket (comm:connect-to-tcp-server host port :timeout 10)))
+      (let ((socket (comm:connect-to-tcp-server host port :timeout 10 :errorp t)))
         (let ((connection (make-connection socket)))
           (let ((stream (connection-output-stream connection)))
             (setf (stream:stream-read-timeout stream) 10

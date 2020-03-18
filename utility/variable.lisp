@@ -1,6 +1,6 @@
 (in-package :utility)
 
-(defclass variable (reflective-object)
+(defclass variable (reactive-object)
   ((name
     :initarg :name
     :initform nil
@@ -15,12 +15,14 @@
     :reader variable-value)))
 
 (defmacro variable (name)
-  (with-gensyms (object)
-    `(let ((,object ,name))
-       (typecase ,object
-         (variable ,object)
-         (symbol (symbol-value (intern (format nil "V/~A" ,name))))
-         (t (error "Not a variable form ~A" object))))))
+  (typecase name
+    (symbol (intern (format nil "V/~A" name)))
+    (t (with-gensyms (object)
+         `(let ((,object ,name))
+            (typecase ,object
+              (variable ,object)
+              (symbol (symbol-value (intern (format nil "V/~A" ,name))))
+              (t (error "Not a variable form ~A" object))))))))
 
 ;; TODO: better error report
 (defmethod (setf variable-form) (form (variable variable))
@@ -43,12 +45,14 @@
 (defvar *dependency* nil)
 
 (defun reify (variable)
-  (setf (slot-value variable 'value)
-        (eval `(let ((*variable* ,variable)
-                     (*dependency* nil))
-                 (prog1
-                     ,(variable-form variable)
-                   (set-dependency ,variable *dependency*))))))
+  (let ((value (eval `(let ((*variable* ,variable)
+                            (*dependency* nil))
+                        (prog1
+                            ,(variable-form variable)
+                          (set-dependency ,variable *dependency*))))))
+    (when (reactive-object-p value)
+      (add-dependency variable value))
+    (setf (slot-value variable 'value) value)))
 
 (defmethod initialize-instance :after ((variable variable) &key)
   (reify variable))
@@ -74,5 +78,4 @@
                                       (when *variable*
                                         (push ,vname *dependency*)))))
        (eval-when (:load-toplevel :execute)
-         (unless (equal ',form (variable-form ,vname))
-           (setf (variable-form ,vname) ',form))))))
+         (setf (variable-form ,vname) ',form)))))

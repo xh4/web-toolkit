@@ -1,34 +1,35 @@
 (in-package :utility)
 
-(defclass parser ()
-  ((function
-    :initarg :function
-    :initform nil
-    :accessor parser-function)
-   (delegation
-    :initarg :delegation
-    :initform nil
-    :accessor parser-delegation)
-   (arguments
-    :initarg :arguments
-    :initform nil
-    :accessor parser-arguments)
-   (bindings
-    :initarg :bindings
-    :initform nil
-    :accessor parser-bindings)
-   (code
-    :initarg :code
-    :initform nil
-    :accessor parser-code)
-   (match-p
-    :initarg :match-p
-    :initform nil
-    :accessor parser-match-p)
-   (value
-    :initarg :value
-    :initform nil
-    :accessor parser-value)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defclass parser ()
+    ((function
+      :initarg :function
+      :initform nil
+      :accessor parser-function)
+     (delegation
+      :initarg :delegation
+      :initform nil
+      :accessor parser-delegation)
+     (arguments
+      :initarg :arguments
+      :initform nil
+      :accessor parser-arguments)
+     (bindings
+      :initarg :bindings
+      :initform nil
+      :accessor parser-bindings)
+     (code
+      :initarg :code
+      :initform nil
+      :accessor parser-code)
+     (match-p
+      :initarg :match-p
+      :initform nil
+      :accessor parser-match-p)
+     (value
+      :initarg :value
+      :initform nil
+      :accessor parser-value))))
 
 (defgeneric parse (parser input)
   (:method (parser input)
@@ -121,7 +122,8 @@
        do (loop for parser in (reverse branch-stack)
              do (push parser *parser-stack*))
        and
-       return (values rest value match-p))))
+       return (values rest value match-p)
+       finally (return (values input nil nil)))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defmacro .test ((test &rest arguments) &optional (parser '(.element))
@@ -164,7 +166,7 @@
     (let (rest value match-p)
       (loop do (setf (values rest value match-p) (parse parser input))
          if match-p do (setf input rest)
-         else return (values input list (not (null list)))
+         else return (values input list t)
          when match-p collect value into list))))
 
 (define-parser .any/s (parser)
@@ -183,17 +185,24 @@
 
 (define-parser .and (&rest parsers)
   (lambda (input)
-    (let (rest value match-p)
-      (loop for parser in parsers do
-           (setf (values rest value match-p) (parse parser input))
-         unless match-p return nil
-         finally (return (values rest value match-p))))))
+    (loop for parser in parsers
+       for (rest value match-p) = (multiple-value-list
+                                   (parse parser input))
+       unless match-p
+       return (values input nil nil)
+       else do (setf input rest)
+       finally (return (values rest value t)))))
 
 (define-parser .maybe (parser)
   (.or parser (.seq)))
 
 (define-parser .some (parser)
-  (.and parser (.any parser)))
+  (lambda (input)
+    (let (rest value match-p)
+      (loop do (setf (values rest value match-p) (parse parser input))
+         if match-p do (setf input rest)
+         else return (values input list (not (null list)))
+         when match-p collect value into list))))
 
 (define-parser .some/s (parser)
   (lambda (input)
@@ -217,7 +226,7 @@
 
 (define-parser .not (parser)
   (lambda (input)
-    (let ((result (parse parser input)))
+    (let ((result (multiple-value-list (parse parser input))))
       (if (third result)
           (values input nil nil)
           (values input t t)))))
@@ -244,12 +253,59 @@
           (values rest (format nil "~{~A~}" values) t)
           (values input nil nil)))))
 
+(define-parser .m (m parser)
+  (if (equal m 0)
+      (.not parser)
+      (lambda (original-input)
+        (let ((input original-input))
+          (loop repeat (1+ m)
+             for (rest value match-p) = (multiple-value-list
+                                         (parse parser input))
+             if match-p
+             collect value into values
+             and do (setf input rest)
+             finally (if (> (length values) m)
+                         (return (values original-input nil nil))
+                         (return (values input values t))))))))
+
+(define-parser .m/s (m parser)
+  (lambda (input)
+    (multiple-value-bind (rest values match-p)
+        (parse (.m m parser) input)
+      (if match-p
+          (values rest (format nil "~{~A~}" values) t)
+          (values input nil nil)))))
+
 (define-parser .s (string)
   (lambda (original-input)
     (let ((input original-input))
       (loop for char across string
-         for element = (maxpc.input:input-first input)
-         if (equal char element)
-         do (setf input (maxpc.input:input-rest input))
-         else do (return (values original-input nil nil))
+         do (if (maxpc::input-empty-p input)
+                (return (values original-input nil nil))
+                (let ((element (maxpc.input:input-first input)))
+                  (if (equal char element)
+                      (setf input (maxpc.input:input-rest input))
+                      (return (values original-input nil nil)))))
          finally (return (values input string t))))))
+
+(defun alpha-p (char)
+  (or
+   (char<= #\a char #\z)
+   (char<= #\A char #\Z)))
+
+(define-parser .alpha ()
+  (.satisfies 'alpha-p))
+
+(defun digit-p (char)
+  (char<= #\0 char #\9))
+
+(define-parser .digit ()
+  (.satisfies 'digit-p))
+
+(defun hexdig-p (char)
+  (or (digit-p char)
+      (char<= #\a char #\f)
+      (char<= #\A char #\F)))
+
+(define-parser .hexdig ()
+  (.satisfies 'hexdig-p))

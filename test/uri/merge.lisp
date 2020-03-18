@@ -12,7 +12,11 @@
        ,@(loop for (target-uri relative-uri) in forms
             collect `(is (equal ,target-uri
                                 (uri-string
-                                 (uri:merge-uri ,base-uri ,relative-uri))))))))
+                                  (uri::merge-uri ,base-uri ,relative-uri))))))))
+
+(uri::merge-uri "g:h" "g:h")
+
+(uri "g:h")
 
 (test-merge-uri merger-uri-normal
  ("g:h" "g:h")

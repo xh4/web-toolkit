@@ -1,14 +1,6 @@
 (in-package :dom)
 
-(defclass node ()
-  ((parent
-    :initarg :parent
-    :initform nil
-    :accessor parent)
-   (children
-    :initarg :children
-    :initform nil
-    :accessor children)))
+(defclass node () ())
 
 (defgeneric node-type (node))
 
@@ -86,13 +78,28 @@
 
 (defgeneric contains-p (node other))
 
-(defgeneric insert-before (node child))
+(defgeneric insert-before (parent node child)
+  (:method ((parent node) (node node) (child node))
+    (let ((i (position child (children parent))))
+      (unless i
+        (error "Child ~A not found" child))
+      (setf (parent node) parent)
+      (setf (children parent)
+            (cl:append (subseq (children parent) 0 i)
+                       (cons node
+                             (subseq (children parent) i)))))
+    node)
+  (:method ((parent node) (node node) (child null))
+    (setf (parent node) parent)
+    (setf (children parent) (cons node (children parent)))
+    node))
 
 (defgeneric append-child (node child)
-  (:method ((node node) child)
+  (:method ((node node) (child node))
     (with-slots (children) node
       (appendf children (list child))
-      (setf (parent child) node)))
+      (setf (parent child) node))
+    child)
   (:method ((node node) (child null))))
 
 (defgeneric replace-child (node child))

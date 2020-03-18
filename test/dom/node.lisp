@@ -62,3 +62,26 @@
       (is (equal f (following e)))
       (is (equal g (following f)))
       (is (equal nil (following g))))))
+
+(test insert-before
+  (it
+    (with-nodes (a)
+      (with-nodes (b)
+        (insert-before a b nil)
+        (is (equal 1 (length (children a))))
+        (is (eq b (first (children a))))
+        (is (eq a (parent b)))))
+
+    (with-nodes (a b d)
+      (with-nodes (c)
+        (insert-before a c d)
+        (is (equal 3 (length (children a))))
+        (is (eq c (second (children a))))
+        (is (eq a (parent c)))))
+
+    (with-nodes (a c d)
+      (with-nodes (b)
+        (insert-before a b c)
+        (is (equal 3 (length (children a))))
+        (is (eq b (first (children a))))
+        (is (eq a (parent b)))))))

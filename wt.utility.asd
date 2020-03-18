@@ -1,8 +1,10 @@
 ;;;; -*- Mode: LISP -*-
 
 (defsystem wt.utility
+  :version "0.0.0"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
+  :license "BSD 3-Clause"
   :depends-on (:alexandria
                :cl-cont
                :closer-mop
@@ -17,7 +19,8 @@
                                      (:file "function")
                                      (:file "class")
                                      (:file "tree")
-                                     (:file "reflective")
+                                     (:file "string")
+                                     (:file "reactive")
                                      (:file "variable")
                                      (:file "parser"))))
   :in-order-to ((test-op (test-op :wt.utility/test)))

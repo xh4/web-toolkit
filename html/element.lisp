@@ -1,26 +1,9 @@
 (in-package :html)
 
 (defclass element (dom:element)
-  ((title
-    :initarg :title
-    :initform nil
-    :accessor element-title)
-   (lang
-    :initarg :lang
-    :initform nil
-    :accessor element-lang)
-   (translate
-    :initarg :translate
-    :initform nil
-    :accessor element-translate)
-   (dir
-    :initarg :dir
-    :initform nil
-    :accessor element-dir)
-   (style:style
+  ((css:style
     :initarg :style
-    :initform nil
-    :accessor element-style)))
+    :initform nil)))
 
 (defmethod print-object ((element element) stream)
   (print-unreadable-object (element stream :type t :identity t)))
@@ -67,7 +50,7 @@
                            (null nil)
                            (string _value)
                            (list (format nil "~{~A~^ ~}" _value))
-                           (style:style (setf (slot-value element 'style:style) value) nil)
+                           (css:style (setf (slot-value element 'css:style) value) nil)
                            (t (format nil "~A" _value))))
          when value
          do (dom:set-attribute element name value))
@@ -76,8 +59,9 @@
            (typecase child
              (string (dom:append-child element (text child)))
              (element (dom:append-child element child))
-             (style (setf (slot-value element 'style)
-                          (style:merge-style (slot-value element 'style) child))))))
+             (css:style (setf (slot-value element 'style)
+                              (css:merge-style (slot-value element 'css:style) child)))
+             (t (dom:append-child element (text (format nil "~A" child)))))))
     element))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -94,7 +78,7 @@
          (defclass ,element-symbol ,superclasses ())
 
          (defun ,element-symbol (&rest arguments)
-           (apply 'construct ,element-symbol arguments))))))
+           (apply 'construct (make-instance ',constructor-symbol) arguments))))))
 
 ;; Main root
 (define-element html ())
