@@ -4,4 +4,4 @@
 ;; background-image
 (define-parser .image ()
   (lambda (input)
-    (value input nil nil)))
+    (values input nil nil)))
