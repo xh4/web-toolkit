@@ -32,8 +32,6 @@ tramp
 /wt.form.asd
 /bootstrap
 /wt.bootstrap.asd
-/live
-/wt.live.asd
 /package
 /wt.package.asd
 /octicons
