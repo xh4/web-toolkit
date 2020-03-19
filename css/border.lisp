@@ -33,12 +33,13 @@
                input)
       (if match-p
           (values rest (loop for v in (flatten value)
-                          when (typep v '(or rgb rgba color-hex))
+                          when (typep v '(or rgb rgba color-hex color-name transparent))
                           collect v)
                   t)
           (values input nil nil)))))
 
 ;; (border-color "#fff #fff #fff #fff")
+;; (border-color "transparent")
 
 (defmacro define-border-style-property (property-name)
   `(define-property ,property-name () ()
