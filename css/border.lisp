@@ -48,11 +48,11 @@
 (define-parser .line-style ()
   (lambda (input)
     (multiple-value-bind (rest value match-p)
-        (parse (.or (.s "none") (.s "hidden") (.s "dotted") (.s "dashed") (.s "solid")
-                    (.s "double") (.s "groove") (.s "ridge") (.s "inset") (.s "outset"))
+        (parse (.or (.k :none) (.k :hidden) (.k :dotted) (.k :dashed) (.k :solid)
+                    (.k :double) (.k :groove) (.k :ridge) (.k :inset) (.k :outset))
                input)
       (if match-p
-          (values rest (make-keyword (string-upcase value)) t)
+          (values rest value t)
           (values input nil nil)))))
 
 (define-border-style-property border-top-style)
@@ -82,7 +82,7 @@
                     (.line-style))
                input)
       (if match-p
-          (values rest (remove-if-not #'keywordp value) t)
+          (values rest (remove-if-not #'keywordp (ensure-list value)) t)
           (values input nil nil)))))
 
 ;; (border-style "dotted double ridge outset")
