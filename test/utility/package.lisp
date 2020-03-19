@@ -3,7 +3,6 @@
 (defpackage :utility-test
   (:nicknames :wt.utility-test)
   (:use :cl :utility :test :alexandria)
-  (:shadow :variable)
   (:export :run!))
 
 (in-package :utility-test)

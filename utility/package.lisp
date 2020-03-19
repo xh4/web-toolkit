@@ -3,7 +3,6 @@
 (defpackage :utility
   (:nicknames :wt.utility)
   (:use :cl :alexandria)
-  (:shadow :variable)
   (:export
    ;; tree
    :walk-tree
@@ -16,22 +15,6 @@
    ;; class
    :replace-class-option
    :rewrite-class-option
-   ;; variable
-   :define-variable
-   :variable
-   :variable-name
-   :variable-form
-   :variable-value
-   ;; reactive
-   :reactive-object
-   :reactive-class
-   :reactive-method
-   :reactive-object-p
-   :update
-   :reflect
-   :add-dependency
-   :remove-dependency
-   :set-dependency
    ;; parser
    :parser
    :define-parser

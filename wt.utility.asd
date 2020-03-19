@@ -7,8 +7,6 @@
   :license "BSD 3-Clause"
   :depends-on (:alexandria
                :cl-cont
-               :closer-mop
-               :trivial-garbage
                :maxpc
                (:feature :sbcl (:require :sb-introspect)))
   :defsystem-depends-on (:wt.vendor)
@@ -20,8 +18,6 @@
                                      (:file "class")
                                      (:file "tree")
                                      (:file "string")
-                                     (:file "reactive")
-                                     (:file "variable")
                                      (:file "parser"))))
   :in-order-to ((test-op (test-op :wt.utility/test)))
   :perform (load-op :after (o c)
