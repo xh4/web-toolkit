@@ -20,7 +20,7 @@
 (define-parser .resize ()
   (lambda (input)
     (multiple-value-bind (rest value match-p)
-        (parse (.oneof (.s "block") (.s "inline"))
+        (parse (.oneof (.k :none) (.k :both) (.k :horizontal) (.k :vertical))
                input)
       (if match-p
           (values rest (make-keyword (string-upcase value)) t)
