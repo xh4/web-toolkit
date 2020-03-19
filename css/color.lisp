@@ -226,15 +226,29 @@
                     t)
             (values input nil nil))))))
 
+(defclass transparent (rgba)
+  ((red :initform 0)
+   (green :initform 0)
+   (blue :initform 0)
+   (alpha :initform 0)))
+
+(defmethod print-object ((transparent transparent) stream)
+  (print-unreadable-object (transparent stream :type t)))
+
+(define-parser .transparent ()
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.k :transparent) input)
+      (if match-p
+          (values rest (make-instance 'transparent) t)
+          (values input nil nil)))))
+
 (define-parser .color ()
   (lambda (input)
     (multiple-value-bind (rest value match-p)
-        (parse (.or (.rgb) (.rgba) (.color-hex) (.s "transparent") (.color-name)) input)
+        (parse (.or (.rgb) (.rgba) (.color-hex) (.transparent) (.color-name)) input)
       (if match-p
-          (values rest (if (typep value 'string)
-                           (make-keyword (string-upcase value))
-                           value)
-                  t)
+          (values rest value t)
           (values input nil nil)))))
 
 (define-property opacity ()
