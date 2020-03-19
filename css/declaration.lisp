@@ -27,12 +27,6 @@
     :accessor declaration-important))
   (:metaclass declaration-class))
 
-(defmethod print-object ((declaration declaration) stream)
-  (print-unreadable-object (declaration stream :type t)
-    (format stream "~A" (declaration-value declaration))
-    (when (declaration-important declaration)
-      (format stream " !"))))
-
 (defmethod initialize-instance :after ((declaration declaration) &key)
   (check-type (slot-value declaration '%value) string)
   (let ((value (slot-value declaration '%value)))
@@ -104,6 +98,15 @@
   (unless (find 'property superclasses)
     (appendf superclasses '(property)))
   `(define-declaration ,name ,superclasses ,slots ,@options))
+
+(defmethod print-object ((property property) stream)
+  (print-unreadable-object (property stream :type t)
+    (with-slots (%value value important) property
+      (if value
+          (format stream "~A" value)
+          (format stream "~S" %value))
+      (when important
+        (format stream " !")))))
 
 (define-declaration descriptor () ())
 
