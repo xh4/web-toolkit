@@ -19,6 +19,8 @@
    :dpi :dpcm :dppx
    ;; percentage
    :%
+   ;; declaration
+   :declaration :property :descriptor
    ;; color
    :color :opacity :rgb :rgba
    ;; box
@@ -70,8 +72,6 @@
    :counter-reset :counter-increment :counter-set
    ;; content
    :content
-   ;; svg
-   :pointer-events
    ;; transition
    :transition-property :transition-duration :transition-timing-function
    :transition-delay :transition
@@ -88,7 +88,7 @@
    :mask-border-source :mask-border-mode :mask-border-slice :mask-border-width
    :mask-border-outset :mask-border-repeat :mask-border :mask-type
    ;; pointer-events
-   :touch-action
+   :touch-action :pointer-events
    ;; filter-effects
    :backdrop-filter
    ;; rule
