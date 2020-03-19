@@ -6,14 +6,9 @@
   ()
   (:value .color))
 
+;; TODO: background-image
 (define-property background-image ()
-  ()
-  (:value .bg-image))
-
-;; TODO: .bg-image
-(define-parser .bg-image ()
-  (lambda (input)
-    (value input nil nil)))
+  ())
 
 (define-property background-repeat ()
   ()
