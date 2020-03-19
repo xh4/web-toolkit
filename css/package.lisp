@@ -43,7 +43,7 @@
    :text-decoration-position :text-emphasis-style :text-emphasis-color :text-emphasis
    :text-emphasis-position :text-shadow :text-decoration-skip-ink
    ;; fonts
-   :font-weight :font-stretch :font-style :font-size :font
+   :font :font-family :font-weight :font-stretch :font-style :font-size
    ;; background
    :background :background-color :background-image :background-repeat :background-attachment
    :background-position :background-clip :background-origin :background-size
