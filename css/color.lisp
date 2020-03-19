@@ -201,9 +201,41 @@
                          t))))
           (values input nil nil)))))
 
-;; TODO: (color "red")
+(defclass color-name (rgb)
+  ((value
+    :initarg :value
+    :initform nil)))
+
+(defmethod print-object ((color-name color-name) stream)
+  (print-unreadable-object (color-name stream :type t)
+    (format stream "~S" (slot-value color-name 'value))))
+
+(define-parser .color-name ()
+  (let ((parser (apply #'.or (loop for (name nil nil) in *colors*
+                                collect (.s (string-downcase (symbol-name name)))))))
+    (lambda (input)
+      (multiple-value-bind (rest value match-p)
+          (parse parser input)
+        (if match-p
+            (values rest (let* ((name (make-keyword (string-upcase value)))
+                                (rgb (third (find name *colors* :key 'first)))
+                                (r (first rgb))
+                                (g (second rgb))
+                                (b (third rgb)))
+                           (make-instance 'color-name :value name :red r :green g :blue b))
+                    t)
+            (values input nil nil))))))
+
 (define-parser .color ()
-  (.or (.rgb) (.rgba) (.color-hex)))
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.or (.rgb) (.rgba) (.color-hex) (.s "transparent") (.color-name)) input)
+      (if match-p
+          (values rest (if (typep value 'string)
+                           (make-keyword (string-upcase value))
+                           value)
+                  t)
+          (values input nil nil)))))
 
 (define-property opacity ()
   ()
