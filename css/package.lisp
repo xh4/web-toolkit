@@ -3,7 +3,7 @@
 (defpackage :css
   (:nicknames :wt.css)
   (:use :cl :alexandria)
-  (:shadow :length :float :declaration :rem :time :position :shadow)
+  (:shadow :length :float :declaration :rem :time :position :shadow :rotate)
   (:export
    ;; length
    :em :ex :ch :rem
