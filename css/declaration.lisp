@@ -47,6 +47,11 @@
                 (equal value "revert"))
         (setf (slot-value declaration 'value) (make-keyword (string-upcase value)))
         (return-from initialize-instance))
+      (when (or (string-prefix-p "-ms-" value)
+                (string-prefix-p "-webkit-" value)
+                (search "calc" value))
+        (setf (slot-value declaration 'value) value)
+        (return-from initialize-instance))
       (loop for type in value-types
          for v = (cond
                    ((and (symbolp type)
