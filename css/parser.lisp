@@ -81,3 +81,11 @@
                     finally (if first-matched-result
                                 (return (values-list first-matched-result))
                                 (return (values input nil nil))))))))
+
+(define-parser .k (keyword)
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.s (string-downcase (symbol-name keyword))) input)
+      (if match-p
+          (values rest keyword t)
+          (values input nil nil)))))
