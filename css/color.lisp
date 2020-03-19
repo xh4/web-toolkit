@@ -4,7 +4,7 @@
 
 (define-property color ()
   ()
-  (:value .color :transparent :inherit))
+  (:value .color))
 
 (define-parser .alphavalue ()
   (lambda (input)
@@ -253,4 +253,4 @@
 
 (define-property opacity ()
   ()
-  (:value .alphavalue :inherit))
+  (:value .alphavalue))

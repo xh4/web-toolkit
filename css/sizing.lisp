@@ -32,7 +32,7 @@
 
 (define-property line-height ()
   ()
-  (:value :normal number .length .percentage :inherit))
+  (:value :normal number .length .percentage))
 
 ;; TODO: vertical-align
 ;; https://www.w3.org/TR/CSS2/visudet.html#propdef-vertical-align

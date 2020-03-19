@@ -4,11 +4,11 @@
 
 (define-property float ()
   ()
-  (:value :left :right :none :inherit))
+  (:value :left :right :none))
 
 (define-property clear ()
   ()
-  (:value :none :left :right :both :inherit))
+  (:value :none :left :right :both))
 
 ;; TODO: caption-side
 (define-property caption-side () ())

@@ -67,7 +67,7 @@
 (define-property flex-basis ()
   ()
   ;; TODO: https://drafts.csswg.org/css-flexbox-1/#flex-basis-property
-  (:value :content .length .percentage :auto :inherit))
+  (:value :content .length .percentage :auto))
 
 (define-property justify-content ()
   ()
