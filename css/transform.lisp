@@ -23,8 +23,5 @@
 ;; TODO: perspective-origin
 (define-property perspective-origin () ())
 
-;; TODO: 'translate
-(define-property translate () ())
-
 ;; TODO: backface-visibility
 (define-property backface-visibility () ())
