@@ -43,7 +43,8 @@
         (setf value (subseq value 0 pos)))
       (when (or (equal value "inherit")
                 (equal value "initial")
-                (equal value "unset"))
+                (equal value "unset")
+                (equal value "revert"))
         (setf (slot-value declaration 'value) (make-keyword (string-upcase value)))
         (return-from initialize-instance))
       (loop for type in value-types
