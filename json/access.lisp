@@ -38,9 +38,9 @@
   (cond
     ((eq value t) (setf value true))
     ((eq value nil) (setf value false))
-    ((listp value) (setf value (array value)))
+    ((listp value) (setf value (make-instance 'array :value value)))
     ((stringp value))
-    ((vectorp value) (setf value (array (coerce value 'list)))))
+    ((vectorp value) (setf value (make-instance 'array :value (coerce value 'list)))))
   (check-type value (or true false null array object number string))
   (labels ((set1 (thing accessor)
              (typecase thing

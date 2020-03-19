@@ -473,7 +473,7 @@ double quote, calling string handlers as it goes."
 (defun accumulator-get-sequence ()
   "Return all values accumulated so far in the list accumulator as
 *JSON-ARRAY-TYPE*."
-  (array (coerce (cdr *accumulator*) *json-array-type*)))
+  (make-instance 'array :value (coerce (cdr *accumulator*) *json-array-type*)))
 
 (defun accumulator-get-string ()
   "Return all values accumulated so far in the list accumulator as

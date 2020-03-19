@@ -56,9 +56,9 @@
        for value = (cond
                      ((eq value0 t) true)
                      ((eq value0 nil) false)
-                     ((listp value0) (array value0))
+                     ((listp value0) (make-instance 'array :value value0))
                      ((stringp value0) value0)
-                     ((vectorp value0) (array (coerce value0 'list)))
+                     ((vectorp value0) (make-instance 'array :value (coerce value0 'list)))
                      (t (typecase value0
                           ((or true false null array object number) value0)
                           (t (format nil "~A" value0)))))

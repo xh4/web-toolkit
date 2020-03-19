@@ -348,9 +348,9 @@ characters in string S to STREAM."
   (cond
     ((eq value t) (setf value true))
     ((eq value nil) (setf value false))
-    ((listp value) (setf value (array value)))
+    ((listp value) (setf value (make-instance 'array :value value)))
     ((stringp value))
-    ((vectorp value) (setf value (array value))))
+    ((vectorp value) (setf value (make-instance 'array :value (coerce value 'list)))))
   (typecase target
     (cl:null (encode-json-to-string value))
     (stream (encode-json value target))

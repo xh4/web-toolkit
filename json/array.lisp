@@ -6,19 +6,16 @@
     :initform nil
     :accessor value)))
 
+(defmethod initialize-instance :after ((array array) &key)
+  (check-type (value array) list))
+
+(defun array-form (array)
+  (check-type array array)
+  `(array ,@(value array)))
+
 (defmethod print-object ((array array) stream)
-  (print-unreadable-object (array stream :type t)
-    (with-slots (value) array
-      (format stream "~A" value))))
+  (let ((*print-case* :downcase))
+    (prin1 (array-form array) stream)))
 
 (defun array (&rest values)
-  (if (= 1 (length values))
-      (let ((value (first values)))
-        (cond
-          ((and (vectorp value)
-                (not (stringp value)))
-           (make-instance 'array :value (coerce value 'list)))
-          ((listp value)
-           (make-instance 'array :value value))
-          (t (error "Can't build JSON array from value ~A" value))))
-      (funcall #'array values)))
+  (make-instance 'array :value values))
