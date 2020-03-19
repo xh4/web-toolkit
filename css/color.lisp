@@ -243,10 +243,18 @@
           (values rest (make-instance 'transparent) t)
           (values input nil nil)))))
 
+(define-parser .current-color ()
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (.s "currentColor") input)
+      (if match-p
+          (values rest :current-color t)
+          (values input nil nil)))))
+
 (define-parser .color ()
   (lambda (input)
     (multiple-value-bind (rest value match-p)
-        (parse (.or (.rgb) (.rgba) (.color-hex) (.transparent) (.color-name)) input)
+        (parse (.or (.rgb) (.rgba) (.color-hex) (.transparent) (.color-name) (.current-color)) input)
       (if match-p
           (values rest value t)
           (values input nil nil)))))
