@@ -29,14 +29,25 @@
 
 (defmethod print-object ((declaration declaration) stream)
   (print-unreadable-object (declaration stream :type t)
-    (format stream "~A" (declaration-value declaration))))
+    (format stream "~A" (declaration-value declaration))
+    (when (declaration-important declaration)
+      (format stream " !"))))
 
 (defmethod initialize-instance :after ((declaration declaration) &key)
-  (with-slots (name (value %value)) declaration
-    (check-type value string)
+  (check-type (slot-value declaration '%value) string)
+  (let ((value (slot-value declaration '%value)))
+    (setf value (string-trim '(#\Space) value))
     (when-let ((value-types (declaration-class-value (class-of declaration))))
+      (when-let ((pos (cl-ppcre:scan "\\s*!important" value)))
+        (setf (declaration-important declaration) t)
+        (setf value (subseq value 0 pos)))
+      (when (or (equal value "inherit")
+                (equal value "initial")
+                (equal value "unset"))
+        (setf (slot-value declaration 'value) (make-keyword (string-upcase value)))
+        (return-from initialize-instance))
       (loop for type in value-types
-         for v = (cond                   ;; FIXME: parse number
+         for v = (cond
                    ((and (symbolp type)
                          (not (keywordp type))
                          (subtypep type 'parser))
