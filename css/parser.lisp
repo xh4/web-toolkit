@@ -89,3 +89,11 @@
       (if match-p
           (values rest keyword t)
           (values input nil nil)))))
+
+(define-parser .seq/i (i &rest parsers)
+  (lambda (input)
+    (multiple-value-bind (rest value match-p)
+        (parse (apply '.seq parsers) input)
+      (if match-p
+          (values rest (nth i value) t)
+          (values input nil nil)))))
