@@ -10,8 +10,8 @@
                :wt.uri
                :wt.dom
                :wt.html
+               :wt.css
                ;; :wt.component
-               ;; :wt.css
                :wt.json
                :wt.http
                :wt.websocket)
@@ -22,8 +22,8 @@
                :wt.uri/test
                :wt.dom/test
                :wt.html/test
+               :wt.css/test
                ;; :wt.component/test
-               ;; :wt.css/test
                :wt.json/test
                :wt.http/test
                :wt.websocket/test)
@@ -33,8 +33,8 @@
                     (uiop:symbol-call :test :run! :uri-test)
                     (uiop:symbol-call :test :run! :dom-test)
                     (uiop:symbol-call :test :run! :html-test)
+                    (uiop:symbol-call :test :run! :css-test)
                     ;; (uiop:symbol-call :test :run! :component-test)
-                    ;; (uiop:symbol-call :test :run! :css-test)
                     (uiop:symbol-call :test :run! :json-test)
                     (uiop:symbol-call :test :run! :http-test)
                     (uiop:symbol-call :test :run! :websocket-test)))
