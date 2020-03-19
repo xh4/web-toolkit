@@ -1,5 +1,7 @@
 (in-package :css)
 
+;; https://drafts.csswg.org/css-animations
+
 ;; TODO: animation
 (define-property animation () ())
 

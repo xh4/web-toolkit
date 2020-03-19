@@ -1,5 +1,7 @@
 (in-package :css)
 
+;; https://drafts.csswg.org/css-ui-3
+
 ;; TODO: outline
 (define-property outline ()
   ())

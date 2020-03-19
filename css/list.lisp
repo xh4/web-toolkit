@@ -1,5 +1,7 @@
 (in-package :css)
 
+;; https://drafts.csswg.org/css-lists-3
+
 ;; TODO: list-style-image
 (define-property list-style-image () ())
 
