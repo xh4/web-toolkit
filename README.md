@@ -29,11 +29,11 @@ WT.JSON implements JSON encoder and decoder based on [ECMA-404 The JSON Data Int
 #### [URI](https://lisp-web-toolkit.com/#uri)
 WT.URI provides URI parser and constructor, with support for UTF-8 characters, IPv6 addresses and query parameters handling. It utilizes recursive descent [parser combinators](https://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf) to provide a concise implementation that is close to the definition in [RFC 3986 Uniform Resource Identifier (URI): Generic Syntax](https://tools.ietf.org/html/rfc3986).
 
+#### [CSS](https://lisp-web-toolkit.com/#css)
+WT.CSS implements CSS constructor, parser and serializer based on specifications introduced in [CSS Snapshot 2018](https://www.w3.org/TR/css-2018/#css).
+
 #### DOM
 WT.DOM implements Document Object Model (DOM) based on recent version of [DOM Living Standard](https://dom.spec.whatwg.org/), it covers chapters on [Nodes](https://dom.spec.whatwg.org/#nodes) and [Traversal](https://dom.spec.whatwg.org/#traversal).
-
-#### CSS
-WT.CSS implements CSS constructor, parser and serializer based on specifications introduced in [CSS Snapshot 2018](https://www.w3.org/TR/css-2018/#css).
 
 #### Component
 WT.COMPONENT provices component abstraction, it combines [Web Components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) style strong encapsulation and [React](https://reactjs.org/) style declarative DOM synchronization.
