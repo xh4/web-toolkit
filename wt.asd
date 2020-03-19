@@ -12,6 +12,8 @@
                :wt.html
                :wt.css
                ;; :wt.component
+               ;; :wt.reactive
+               ;; :wt.live
                :wt.json
                :wt.http
                :wt.websocket)
@@ -24,6 +26,8 @@
                :wt.html/test
                :wt.css/test
                ;; :wt.component/test
+               ;; :wt.reactive/test
+               ;; :wt.live/test
                :wt.json/test
                :wt.http/test
                :wt.websocket/test)
@@ -35,6 +39,8 @@
                     (uiop:symbol-call :test :run! :html-test)
                     (uiop:symbol-call :test :run! :css-test)
                     ;; (uiop:symbol-call :test :run! :component-test)
+                    ;; (uiop:symbol-call :test :run! :reactive-test)
+                    ;; (uiop:symbol-call :test :run! :live-test)
                     (uiop:symbol-call :test :run! :json-test)
                     (uiop:symbol-call :test :run! :http-test)
                     (uiop:symbol-call :test :run! :websocket-test)))
