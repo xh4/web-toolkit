@@ -15,6 +15,10 @@
                   (loop for (name . value) in pairs
                      append (list name (value-expr value)) into body
                      finally (return `(object ,@body)))))
+               (true 'true)
+               (false 'false)
+               (null 'null)
+               (array `(array ,@(value value)))
                (t value))))
     (value-expr object)))
 

@@ -11,10 +11,14 @@
     (with-slots (value) array
       (format stream "~A" value))))
 
-(defun array (&optional value)
-  (typecase value
-    (string (error "Can't build JSON array from value ~S" value))
-    (vector (setf value (coerce value 'list)))
-    (list)
-    (t (error "Can't build JSON array from value ~A" value)))
-  (make-instance 'array :value value))
+(defun array (&rest values)
+  (if (= 1 (length values))
+      (let ((value (first values)))
+        (cond
+          ((and (vectorp value)
+                (not (stringp value)))
+           (make-instance 'array :value (coerce value 'list)))
+          ((listp value)
+           (make-instance 'array :value value))
+          (t (error "Can't build JSON array from value ~A" value))))
+      (funcall #'array values)))

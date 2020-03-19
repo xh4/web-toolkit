@@ -227,17 +227,18 @@ the printed representation of the OBJECT."
 *JSON-OUTPUT*).  If S is boolean, a boolean literal is written.
 Otherwise, the name of S is passed to *LISP-IDENTIFIER-NAME-TO-JSON*
 and the result is written as String."
-  (let ((mapped (car (rassoc s +json-lisp-symbol-tokens+))))
+  (let ((mapped (cdr (assoc s '((t . "true") (nil . "false"))))))
     (if mapped
         (progn (write-string mapped stream) nil)
-        (let ((s (funcall *lisp-identifier-name-to-json* (symbol-name s))))
-          (write-json-string s stream)))))
+        (unencodable-value-error s 'encode-json))))
 
 (defmethod encode-json ((value null) &optional (stream *json-output*))
   (format stream "null"))
 
 (defmethod encode-json ((value cl:null) &optional (stream *json-output*))
-  (format stream "false"))
+  (if (eq 'array *json-aggregate-context*)
+      (format stream "[]")
+      (format stream "false")))
 
 (defmethod encode-json ((value true) &optional (stream *json-output*))
   (format stream "true"))

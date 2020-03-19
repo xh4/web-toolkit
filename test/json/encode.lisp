@@ -92,15 +92,17 @@
   (decode-then-encode "[ true]"))
 
 (test encode/false
-  (is (string= (encode (decode "[false]"))
-               "[false]")))
+  (is (string= "[false]" (encode (decode "[false]")))))
 
 (test encode/null
   (decode-then-encode "[null]"))
 
 (test encode/array
-  (is (string= (encode (decode "[  ]"))
-               "[]")))
+  (is (string= "[]" (encode (decode "[  ]"))))
+  (is (string= "[1,2,3,true]" (encode `(1 2 3 t))))
+  (is (string= "[1,2,3,[]]" (encode `(1 2 3 nil))))
+  (is (string= "[1,2,3,{\"foo\":false}]"
+               (encode `(1 2 3 ,(object "foo" nil))))))
 
 (test encode/character
   ;;Characters are encoded to strings, but when decoded back to string
