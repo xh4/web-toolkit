@@ -3,7 +3,7 @@
 (defpackage :dom
   (:nicknames :wt.dom)
   (:use :cl :alexandria)
-  (:shadow :length :append :remove)
+  (:shadow :length :append :remove :append)
   #+sb-package-locks
   (:lock t)
   (:export
