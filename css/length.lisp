@@ -43,7 +43,7 @@
 (define-parser .length ()
   (lambda (input)
     (multiple-value-bind (rest value match-p)
-        (parse (.seq (.some/s (.or (.digit) (.s ".")))
+        (parse (.seq (.some/s (.or (.digit) (.s ".") (.s "-")))
                      (.maybe (.some/s (.alpha))))
                input)
       (if match-p
@@ -63,3 +63,5 @@
 ;; (parse (.length) "42px")
 ;; (parse (.length) "1.2rem")
 ;; (parse (.length) "0")
+;; (parse (.length) "-5px")
+;; (parse (.length) "-0.25")
