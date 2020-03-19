@@ -30,7 +30,6 @@
   :components ((:module "test/utility"
                         :serial t
                         :components ((:file "package")
-                                     (:file "helper")
-                                     (:file "variable"))))
+                                     (:file "helper"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :utility-test)))
