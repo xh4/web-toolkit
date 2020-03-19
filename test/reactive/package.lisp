@@ -3,6 +3,7 @@
 (defpackage :reactive-test
   (:nicknames :wt.reactive-test)
   (:use :cl :reactive :test :alexandria)
+  (:shadow :variable)
   (:export :run!))
 
 (in-package :reactive-test)

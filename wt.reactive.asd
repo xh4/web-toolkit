@@ -5,12 +5,17 @@
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
   :license "BSD 3-Clause"
-  :depends-on (:alexandria)
+  :depends-on (:alexandria
+               :closer-mop
+               :trivial-garbage)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "reactive"
                         :serial t
                         :components ((:file "package")
-                                     )))
+                                     (:file "object")
+                                     (:file "class")
+                                     (:file "method")
+                                     (:file "variable"))))
   :in-order-to ((test-op (test-op :wt.reactive/test)))
   :perform (load-op :after (o c)
                     #+lispworks
@@ -21,6 +26,7 @@
   :components ((:module "test/reactive"
                         :serial t
                         :components ((:file "package")
-                                     )))
+                                     (:file "helper")
+                                     (:file "variable"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :reactive-test)))
