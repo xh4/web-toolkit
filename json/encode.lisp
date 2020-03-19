@@ -239,6 +239,12 @@ and the result is written as String."
 (defmethod encode-json ((value cl:null) &optional (stream *json-output*))
   (format stream "false"))
 
+(defmethod encode-json ((value true) &optional (stream *json-output*))
+  (format stream "true"))
+
+(defmethod encode-json ((value false) &optional (stream *json-output*))
+  (format stream "false"))
+
 (defmethod encode-json ((array array) &optional (stream *json-output*))
   (with-slots (value) array
     (if value
@@ -338,6 +344,12 @@ characters in string S to STREAM."
     (t (unencodable-value-error nr 'write-json-number))))
 
 (defun encode (value &optional target &key)
+  (cond
+    ((eq value t) (setf value true))
+    ((eq value nil) (setf value false))
+    ((listp value) (setf value (array value)))
+    ((stringp value))
+    ((vectorp value) (setf value (array value))))
   (typecase target
     (cl:null (encode-json-to-string value))
     (stream (encode-json value target))

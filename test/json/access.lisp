@@ -43,6 +43,24 @@
 
   (it
     (multiple-value-bind (value present-p)
+        (json:get (object "aaa" json:true) "aaa")
+      (is (equal t value))
+      (is-true present-p)))
+
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (object "aaa" json:false) "aaa")
+      (is (equal nil value))
+      (is-true present-p)))
+
+  (it
+    (multiple-value-bind (value present-p)
+        (json:get (object "aaa" json:null) "aaa")
+      (is (equal nil value))
+      (is-true present-p)))
+
+  (it
+    (multiple-value-bind (value present-p)
         (json:get (object "aaa" (json:array '(1 2 3))) "aaa" 1)
       (is (equal 2 value))
       (is-true present-p)))
@@ -58,12 +76,6 @@
         (json:get (object "aaa" (json:array nil)) "aaa" 1)
       (is (equal nil value))
       (is-false present-p)))
-
-  (it
-    (multiple-value-bind (value present-p)
-        (json:get (object "aaa" (json:null)) "aaa")
-      (is (equal nil value))
-      (is-true present-p)))
 
   (it
     (multiple-value-bind (value present-p)
@@ -117,4 +129,34 @@
 
   (it
     (let ((thing (object "foo" nil)))
-      (signals error (setf (json:get thing "foo" "bar") 42)))))
+      (signals error (setf (json:get thing "foo" "bar") 42))))
+
+  (it
+    (let ((thing (object "foo" nil))
+          (v (json:array)))
+      (is (eq v (setf (json:get thing "foo") v)))
+      (is (equal nil (json:get thing "foo")))))
+
+  (it
+    (let ((thing (object "foo" nil))
+          (v json:true))
+      (is (eq v (setf (json:get thing "foo") v)))
+      (is (equal t (json:get thing "foo")))))
+
+  (it
+    (let ((thing (object "foo" nil))
+          (v json:false))
+      (is (eq v (setf (json:get thing "foo") v)))
+      (is (equal nil (json:get thing "foo")))))
+
+  (it
+    (let ((thing (object "foo" nil))
+          (v json:null))
+      (is (eq v (setf (json:get thing "foo") v)))
+      (is (equal nil (json:get thing "foo")))))
+
+  (it
+    (let ((thing (object "foo" nil))
+          (v #(1 2 3)))
+      (setf (json:get thing "foo") v)
+      (is (equal '(1 2 3) (json:get thing "foo"))))))

@@ -12,6 +12,9 @@
       (format stream "~A" value))))
 
 (defun array (&optional value)
-  (unless (typep value 'sequence)
-    (error "Can't build JSON array from value ~A" value))
+  (typecase value
+    (string (error "Can't build JSON array from value ~S" value))
+    (vector (setf value (coerce value 'list)))
+    (list)
+    (t (error "Can't build JSON array from value ~A" value)))
   (make-instance 'array :value value))

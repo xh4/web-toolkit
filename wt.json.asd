@@ -14,6 +14,8 @@
                                      (:file "condition")
                                      (:file "common")
                                      (:file "value")
+                                     (:file "true")
+                                     (:file "false")
                                      (:file "null")
                                      (:file "array")
                                      (:file "object")

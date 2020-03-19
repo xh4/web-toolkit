@@ -9,6 +9,10 @@
   (:export
    ;; value
    :value
+   ;; true
+   :true
+   ;; false
+   :false
    ;; null
    :null
    ;; array

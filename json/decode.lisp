@@ -1,9 +1,9 @@
 (in-package :json)
 
 (defparameter +json-lisp-symbol-tokens+
-  `(("true" . t)
+  `(("true" . ,true)
     ("null" . ,null)
-    ("false" . nil))
+    ("false" . ,false))
   "Mapping between JSON literal names and Lisp boolean values.")
 
 (defun read-json-token (stream)

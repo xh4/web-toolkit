@@ -5,12 +5,12 @@
 ;; Test decoder
 
 (test decode/json-literal
-  (is-true (decode "  true"))
-  (is-true (decode "  true "))
-  (is-true (decode "true "))
-  (is-true (decode "true"))
+  (is (eq json:true (decode "  true")))
+  (is (eq json:true (decode "  true ")))
+  (is (eq json:true (decode "true ")))
+  (is (eq json:true (decode "true")))
   (signals error (decode "trUe "))
-  (is-false (decode "false"))
+  (is (eq json:false (decode "false")))
   (is (eq json:null (decode "null"))))
 
 (test decode/json-string
@@ -31,7 +31,7 @@ returned!"
   (is (equalp '(1 2 3)
               (json::value
                (decode "[1,2,3]"))))
-  (is (equalp `(t ,json:null nil)
+  (is (equalp `(,json:true ,json:null ,json:false)
               (json::value
                (decode "[true,null,false]"))))
   (is (equalp '()

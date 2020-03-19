@@ -49,11 +49,15 @@
        for name = (typecase name0
                     (string name0)
                     (t (error "~A of type ~A can't be used as a name for object" name0 (type-of name0))))
-       for value = (typecase value0
-                     ((or string number cl:null
-                          object array null) value0)
-                     (sequence (array value0))
-                     (t (format nil "~A" value0)))
+       for value = (cond
+                     ((eq value0 t) true)
+                     ((eq value0 nil) false)
+                     ((listp value0) (array value0))
+                     ((stringp value0) value0)
+                     ((vectorp value0) (array (coerce value0 'list)))
+                     (t (typecase value0
+                          ((or true false null array object number) value0)
+                          (t (format nil "~A" value0)))))
        collect (cons name value) into pairs
        finally (setf (slot-value object 'pairs) pairs))
     object))

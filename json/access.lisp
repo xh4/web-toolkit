@@ -29,16 +29,19 @@
              (get2 (value accessors)
                (if (cl:null accessors)
                    (values
-                    (typecase current-value
-                      (array (value current-value))
-                      (null nil)
-                      (t current-value))
+                    (value current-value)
                     found-p)
                    (get2 (get1 value (car accessors)) (cdr accessors)))))
       (get2 object (flatten accessors)))))
 
-;; TODO: check value
 (defun (setf get) (value object &rest accessors)
+  (cond
+    ((eq value t) (setf value true))
+    ((eq value nil) (setf value false))
+    ((listp value) (setf value (array value)))
+    ((stringp value))
+    ((vectorp value) (setf value (array (coerce value 'list)))))
+  (check-type value (or true false null array object number string))
   (labels ((set1 (thing accessor)
              (typecase thing
                (array (unless (integerp accessor)
