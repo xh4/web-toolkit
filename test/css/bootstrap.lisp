@@ -51,6 +51,7 @@
                                           (handler-case
                                               (symbol-function symbol)
                                             (error (e)
+                                              (declare (ignore e))
                                               (error "Declaration ~S not implemented" ,name))))))
                          (if function
                              (let ((property (funcall function ,value)))
