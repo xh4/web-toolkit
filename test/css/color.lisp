@@ -61,17 +61,17 @@
 
 (test .color-hex
   (it
-    (let ((rgb (nth-value 1 (parse (css::.color-hex) "#abc"))))
-      (is (equal 'rgb (type-of rgb)))
-      (is (equal 170 (css::rgb-red rgb)))
-      (is (equal 187 (css::rgb-green rgb)))
-      (is (equal 204 (css::rgb-blue rgb))))
+    (let ((color (nth-value 1 (parse (css::.color-hex) "#abc"))))
+      (is (equal 'css::color-hex (type-of color)))
+      (is (equal 170 (css::rgb-red color)))
+      (is (equal 187 (css::rgb-green color)))
+      (is (equal 204 (css::rgb-blue color))))
 
-    (let ((rgb (nth-value 1 (parse (css::.color-hex) "#aabbcc"))))
-      (is (equal 'rgb (type-of rgb)))
-      (is (equal 170 (css::rgb-red rgb)))
-      (is (equal 187 (css::rgb-green rgb)))
-      (is (equal 204 (css::rgb-blue rgb))))))
+    (let ((color (nth-value 1 (parse (css::.color-hex) "#aabbcc"))))
+      (is (equal 'css::color-hex (type-of color)))
+      (is (equal 170 (css::rgb-red color)))
+      (is (equal 187 (css::rgb-green color)))
+      (is (equal 204 (css::rgb-blue color))))))
 
 (defmacro test-color (value r g b a)
   `(let ((color (color ,value)))
@@ -83,11 +83,7 @@
 
 (test color
   (it (test-color "red" 255 0 0 1))
-  (it (test-color :red 255 0 0 1))
   (it (test-color "transparent" 0 0 0 0))
-  (it (test-color :transparent 0 0 0 0))
-  (it (test-color (rgb 1 2 3) 1 2 3 1))
   (it (test-color "rgb(1, 2, 3)" 1 2 3 1))
-  (it (test-color (rgba 1 2 3 0.4) 1 2 3 0.4))
   (it (test-color "rgba(1, 2, 3, .4)" 1 2 3 0.4))
   (it (test-color "#ff0000" 255 0 0 1)))
