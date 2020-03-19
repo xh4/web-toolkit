@@ -84,7 +84,3 @@
 (define-property align-content ()
   ()
   (:value :flex-start :flex-end :center :space-between :space-around :stretch))
-
-(define-property align-content ()
-  ()
-  (:value :flex-start :flex-end :center :space-between :space-around :stretch))
