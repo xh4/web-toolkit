@@ -45,7 +45,7 @@
    ;; fonts
    :font-weight :font-stretch :font-style :font-size :font
    ;; background
-   :background-color :background-image :background-repeat :background-attachment
+   :background :background-color :background-image :background-repeat :background-attachment
    :background-position :background-clip :background-origin :background-size
    :box-shadow :shadow
    ;; border
