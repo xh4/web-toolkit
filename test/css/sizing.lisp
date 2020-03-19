@@ -9,4 +9,4 @@
   (min-height "1px")
   (max-width "1px")
   (max-height "1px")
-  (box-sizing :content-box))
+  (box-sizing "content-box"))
