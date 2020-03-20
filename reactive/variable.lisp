@@ -1,6 +1,6 @@
-(in-package :utility)
+(in-package :reactive)
 
-(defclass variable (reactive-object)
+(define-reactive-class variable ()
   ((name
     :initarg :name
     :initform nil
@@ -30,29 +30,33 @@
         (current-value (slot-value variable 'value))
         (target-form form))
     ;; (format t "Set form of ~A from ~A to ~A~%" variable current-form target-form)
-    (setf (slot-value variable 'form) target-form)
+    (without-propagation
+      (setf (slot-value variable 'form) target-form))
     (handler-bind ((error (lambda (e)
                             (declare (ignore e))
-                            (setf (slot-value variable 'form) current-form
-                                  (slot-value variable 'value) current-value))))
-      (reify variable)
-      (update variable t))))
+                            (without-propagation
+                              (setf (slot-value variable 'form) current-form
+                                    (slot-value variable 'value) current-value)))))
+      (reify variable))))
 
-(defmethod reflect ((variable variable) object update)
-  (reify variable)
-  (update variable t))
+(defmethod react ((variable variable) object)
+  (reify variable))
 
-(defvar *dependency* nil)
+(defvar *variable* nil)
+
+(defvar *variable-dependency* nil)
 
 (defun reify (variable)
   (let ((value (eval `(let ((*variable* ,variable)
-                            (*dependency* nil))
+                            (*variable-dependency* nil))
                         (prog1
                             ,(variable-form variable)
-                          (set-dependency ,variable *dependency*))))))
-    (when (reactive-object-p value)
+                          (loop for v in *variable-dependency*
+                               do (add-dependency ,variable v)))))))
+    (when (typep value 'reactive-object)
       (add-dependency variable value))
-    (setf (slot-value variable 'value) value)))
+    (with-propagation
+      (setf (slot-value variable 'value) value))))
 
 (defmethod initialize-instance :after ((variable variable) &key)
   (reify variable))
@@ -62,8 +66,6 @@
     (format stream "~A (~A)"
             (variable-name variable)
             (variable-value variable))))
-
-(defvar *variable* nil)
 
 (defmacro define-variable (name form)
   (let ((vname (intern (format nil "V/~A" name))))
@@ -76,6 +78,7 @@
          (define-symbol-macro ,name (prog1
                                         (variable-value ,vname)
                                       (when *variable*
-                                        (push ,vname *dependency*)))))
+                                        (push ,vname *variable-dependency*)))))
        (eval-when (:load-toplevel :execute)
-         (setf (variable-form ,vname) ',form)))))
+         (without-propagation
+           (setf (variable-form ,vname) ',form))))))

@@ -18,8 +18,17 @@
    :variable-form
    :variable-value
    ;; other
-   :update
-   :reflect
-   :add-dependency
-   :remove-dependency
-   :set-dependency))
+   :add-dependency)
+  (:import-from :utility
+                :rewrite-class-option)
+  (:import-from :closer-mop
+                :validate-superclass
+                :slot-value-using-class
+                :class-direct-superclasses
+                :class-direct-subclasses
+                :add-direct-subclass
+                :standard-method)
+  (:import-from :trivial-garbage
+                :finalize
+                :make-weak-pointer
+                :weak-pointer-value))
