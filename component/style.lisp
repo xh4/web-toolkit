@@ -7,9 +7,9 @@
            (rule (make-instance 'qualified-rule
                                :selectors (list selector)
                                :declarations (append
-                                              (style:style-declarations
+                                              (css:style-declarations
                                                (slot-value component 'style))
-                                              (style:style-declarations
+                                              (css:style-declarations
                                                (slot-value (component-root component) 'style))))))
       (setf (gethash component rules) rule))))
 

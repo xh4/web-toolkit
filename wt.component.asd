@@ -6,10 +6,9 @@
   :mailto "xh@coobii.com"
   :license "BSD 3-Clause"
   :depends-on (:wt.html
-               :wt.style
-               :wt.http
-               :wt.websocket
+               :wt.css
                :wt.utility
+               :wt.reactive
                :alexandria
                :group-by
                :split-sequence)
@@ -19,8 +18,7 @@
                         :components ((:file "package")
                                      (:file "utility")
                                      (:file "component")
-                                     (:file "style")
-                                     (:file "page"))))
+                                     (:file "style"))))
   :in-order-to ((test-op (test-op :wt.component/test)))
   :perform (load-op :after (o c)
                     #+lispworks

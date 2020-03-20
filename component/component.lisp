@@ -1,7 +1,7 @@
 (in-package :component)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defclass component-class (standard-class)
+  (defclass component-class (reactive-class)
     (;; CCL require this slot to exists
      (tag
       :initarg :tag
@@ -17,9 +17,9 @@
       :initform nil
       :accessor component-render-lambda-list))))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defmethod validate-superclass
-      ((class component-class) (super-class standard-class)) t))
+;; (eval-when (:compile-toplevel :load-toplevel :execute)
+;;   (defmethod validate-superclass
+;;       ((class component-class) (super-class standard-class)) t))
 
 (defmethod shared-initialize :after ((class component-class) slot-names
                                      &key render &allow-other-keys)
@@ -35,7 +35,7 @@
       (progn (setf (slot-value class '%render) nil
                    (slot-value class 'render-lambda-list) nil))))
 
-(defclass component (html:custom-element)
+(defclass component (html:custom-element reactive-object)
   ((tag
     :initarg :tag
     :initform nil
@@ -52,7 +52,9 @@
 
 (defmethod initialize-instance :after ((component component) &key)
   (unless (component-tag component)
-    (error "Tag for component ~A is not specified" component)))
+    (error "Tag for component ~A is not specified" component))
+  (when (next-method-p)
+    (call-next-method)))
 
 (defmethod component-render ((component component))
   (component-render (class-of component)))
@@ -72,9 +74,6 @@
            collect (class-name-for-component-class class)
            into classes
            finally (return (reverse classes)))))))
-
-(defmethod html:root ((component component))
-  (component-root component))
 
 (defmethod root ((component component))
   (component-root component))
@@ -174,13 +173,21 @@
           (loop for (name value) on attributes by #'cddr
              do (dom:set-attribute root name value))
           (setf (slot-value root 'style)
-                (style:merge-style (slot-value component 'style) (slot-value root 'style)))
+                (css:merge-style (slot-value component 'style) (slot-value root 'style)))
           (loop for child in (flatten children)
              do (typecase child
                   (string (dom:append-child root (html:text child)))
+                  (component (add-dependency component child)
+                             (add-dependency component (class-of child))
+                             (dom:append-child root child))
+                  (variable (add-dependency component child)
+                            (let ((value (variable-value child)))
+                              (when (typep (class-of value) 'reactive-object)
+                                (add-dependency component (class-of value)))
+                              (dom:append-child root value)))
                   (html:element (dom:append-child root child))
                   (style (setf (slot-value root 'style)
-                               (style:merge-style (slot-value root 'style) child))))))
+                               (css:merge-style (slot-value root 'style) child))))))
         (let ((classes (compute-component-class component))
               (class (dom:get-attribute root "class")))
           (when (and class (not (find class classes :test 'equal)))
@@ -200,6 +207,8 @@
 (defgeneric copy-element (element)
   (:method ((list list))
     (mapcar 'copy-element list))
+  (:method ((string string))
+    string)
   (:method ((element html:element))
     (let ((class (class-of element)))
       (let ((new-element (allocate-instance class)))
@@ -241,11 +250,3 @@
 ;; (pprint (nth-value 1 (make-render '(lambda (compoment) (root)))))
 
 ;; (funcall (make-render '(lambda (component) (root))) (foo))
-
-;; (define-component foo ()
-;;   ()
-;;   (:tag :div))
-
-;; (define-component bar (foo)
-;;   ()
-;;   (:tag :div))

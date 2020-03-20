@@ -2,38 +2,30 @@
 
 (defpackage :component
   (:nicknames :com :wt.com :wt.component)
-  (:use :cl :alexandria :utility)
-  (:shadow :variable)
-  (:export :id
-           :define-component
-           :render
-           :serialize
-           :root
-           :children
-           :append-child
-           :define-variable
-           :variable)
+  (:use :cl :alexandria)
+  (:export
+   :define-component
+   :render)
   (:import-from :html
+                :serialize)
+  (:import-from :dom
                 :append-child
-                :serialize
                 :children)
-  (:import-from :style
+  (:import-from :css
                 :style
                 :qualified-rule)
-  (:import-from :http
-                :route
-                :make-route
-                :request-method
-                :define-handler
-                :find-header-field
-                :header-field-value
-                :reply)
+  (:import-from :utility
+                :rewrite-class-option
+                :function-lambda-list)
+  (:import-from :reactive
+                :reactive-object
+                :reactive-class
+                :variable-value
+                :add-dependency)
+  (:shadowing-import-from :reactive
+                          :variable)
   (:import-from :uri
                 :uri-path)
-  (:import-from :websocket
-                :endpoint
-                :define-endpoint
-                :define-session)
   (:import-from :closer-mop
                 :allocate-instance
                 :validate-superclass
