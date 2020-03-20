@@ -9,9 +9,8 @@
           (*local-propagation-p* t))
       (let ((*record* record))
         ;; cycle
-        (if (detect-cycle object record)
-            (format t "Cycle on ~A~%" object)
-            (react object (record-object record))))
+        (unless (detect-cycle object record)
+          (react object (record-object record))))
       *local-propagation*)))
 
 (defun propagate-1 ()
