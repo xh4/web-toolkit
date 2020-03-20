@@ -83,7 +83,7 @@
       (ensure-variable-cleanup (v1)
         (compile-and-load-toplevel-forms
          (define-variable v1 1)
-         (setf v1 2))))))
+         (setf 2 v1))))))
 
 (test propagation
   (it
@@ -101,4 +101,15 @@
        (define-variable v1 1)
        (define-variable v2 (1+ v1))
        (signals error (define-variable v1 "1"))
-       (is (equal v1 1))))))
+       (is (equal 1 v1)))))
+
+  (it
+    (ensure-variable-cleanup (v1 v2)
+      (compile-and-load-toplevel-forms
+       (define-variable v1 1)
+       (define-variable v2 (if (eq v1 1) (1+ v1) (error "v1 is not 1")))
+       (define-variable v3 (1+ v2))
+       (signals error (define-variable v1 2))
+       (is (equal 1 v1))
+       (is (equal 2 v2))
+       (is (equal 3 v3))))))
