@@ -6,7 +6,10 @@
     :initform nil)))
 
 (defmethod print-object ((element element) stream)
-  (print-unreadable-object (element stream :type t :identity t)))
+  (print-unreadable-object (element stream :type t :identity t)
+    (let ((child-count (length (children element))))
+      (when (plusp child-count)
+        (format stream "{~A}" child-count)))))
 
 (defclass void-element (element) ())
 
