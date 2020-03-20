@@ -14,15 +14,8 @@
     :initform nil
     :reader variable-value)))
 
-(defmacro variable (name)
-  (typecase name
-    (symbol (intern (format nil "V/~A" name)))
-    (t (with-gensyms (object)
-         `(let ((,object ,name))
-            (typecase ,object
-              (variable ,object)
-              (symbol (symbol-value (intern (format nil "V/~A" ,name))))
-              (t (error "Not a variable form ~A" object))))))))
+(defun variable (symbol)
+  (symbol-value (intern (format nil "V/~A" (symbol-name symbol)))))
 
 ;; TODO: better error report
 (defmethod (setf variable-form) (form (variable variable))
@@ -47,12 +40,12 @@
 (defvar *variable-dependency* nil)
 
 (defun reify (variable)
-  (let ((value (eval `(let ((*variable* ,variable)
-                            (*variable-dependency* nil))
-                        (prog1
-                            ,(variable-form variable)
-                          (loop for v in *variable-dependency*
-                               do (add-dependency ,variable v)))))))
+  (let ((value (let ((*variable* variable)
+                     (*variable-dependency* nil))
+                 (prog1
+                     (eval (variable-form variable))
+                   (loop for v in *variable-dependency*
+                      do (add-dependency *variable* v))))))
     (when (typep value 'reactive-object)
       (add-dependency variable value))
     (with-propagation
