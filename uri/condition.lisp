@@ -67,5 +67,5 @@
   (:report
    (lambda (condition stream)
      (with-slots (arguments message) condition
-       (format stream "Unable to construct URI using arguments ~A" arguments)
+       (format stream "Unable to construct URI using arguments ~S" arguments)
        (when message (format stream "~%~A" message))))))
