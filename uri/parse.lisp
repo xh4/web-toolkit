@@ -202,7 +202,7 @@
                                      .query .fragment))
     (let ((input (parse (.uri-reference) (maxpc::make-input uri-string))))
       (unless (maxpc::input-empty-p input)
-        (error 'uri-parsing-error :uri-string uri-string)))
+        (error 'parse-uri-error :uri-string uri-string)))
     (let ((uri (make-instance 'uri)))
       (loop for parser in (reverse stack)
          for value = (parser-value parser)

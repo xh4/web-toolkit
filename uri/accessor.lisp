@@ -38,7 +38,14 @@
     (with-gensyms (checked-value)
       `(defgeneric (setf ,accessor-name) (value uri)
          (:method (value (uri uri))
-           (let ((,checked-value (,checker-name value)))
+           (let ((,checked-value (handler-bind
+                                     ((error
+                                       (lambda (e)
+                                         (error 'uri-component-error
+                                                :component ,(make-keyword component)
+                                                :value value
+                                                :message (format nil "~A" e)))))
+                                   (,checker-name value))))
              (setf (slot-value uri 'string) nil)
              (setf (slot-value uri ',component) ,checked-value)))))))
 
@@ -97,18 +104,21 @@
                        (query nil query-present-p)
                        (fragment nil fragment-present-p))
   (let ((uri (uri uri)))
-    (when scheme-present-p
-      (setf (uri-scheme uri) scheme))
-    (when userinfo-present-p
-      (setf (uri-userinfo uri) userinfo))
-    (when host-present-p
-      (setf (uri-host uri) host))
-    (when port-present-p
-      (setf (uri-port uri) port))
-    (when path-present-p
-      (setf (uri-path uri) path))
-    (when query-present-p
-      (setf (uri-query uri) query))
-    (when fragment-present-p
-      (setf (uri-fragment uri) fragment))
+    (handler-bind ((uri-component-error
+                    (lambda (c)
+                      (change-class c 'update-uri-error :uri uri))))
+      (when scheme-present-p
+        (setf (uri-scheme uri) scheme))
+      (when userinfo-present-p
+        (setf (uri-userinfo uri) userinfo))
+      (when host-present-p
+        (setf (uri-host uri) host))
+      (when port-present-p
+        (setf (uri-port uri) port))
+      (when path-present-p
+        (setf (uri-path uri) path))
+      (when query-present-p
+        (setf (uri-query uri) query))
+      (when fragment-present-p
+        (setf (uri-fragment uri) fragment)))
     uri))

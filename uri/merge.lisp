@@ -46,7 +46,10 @@
         relative-uri
         (progn
           (unless (uri-scheme base-uri)
-            (error "Missing scheme in base URI"))
+            (error 'merge-uri-error
+                   :base-uri base-uri
+                   :relative-uri relative-uri
+                   :message (format nil "Missing scheme component in base URI ~A" base-uri)))
           (let ((target-uri (make-instance 'uri)))
             (with-slots ((b-scheme scheme) (b-userinfo userinfo)
                          (b-host host) (b-port port) (b-path path)
