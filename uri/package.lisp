@@ -15,12 +15,7 @@
    :uri-path
    :uri-query
    :uri-fragment
-   ;; conditions
-   :uri-error
-   :parse-uri-error
-   :merge-uri-error
-   :update-uri-error
-   :construct-uri-error)
+   :uri-error)
    (:import-from :utility
                  :define-parser
                  :parse
