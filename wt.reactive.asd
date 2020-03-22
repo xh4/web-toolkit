@@ -20,7 +20,7 @@
                                      (:file "react")
                                      (:file "propagate")
                                      (:file "slot")
-                                     (:file "method")
+                                     ;; (:file "method")
                                      (:file "variable"))))
   :in-order-to ((test-op (test-op :wt.reactive/test)))
   :perform (load-op :after (o c)
