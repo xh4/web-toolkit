@@ -21,5 +21,11 @@
                   (if provided list :unknown))
                 #+:allegro
                 (with-unknown-on-error
-                    (excl:arglist function))))
+                    (excl:arglist function))
+                #+:abcl
+                (multiple-value-bind (list provided) (sys::arglist function)
+                  (if provided list :unknown))
+                #+:ecl
+                (multiple-value-bind (list provided) (ext:function-lambda-list function)
+                  (if provided list :unknown))))
           (if cont-function-p (rest lambda-list) lambda-list))))))
