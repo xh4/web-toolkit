@@ -151,16 +151,18 @@
           (unless (typep root '(or html:element null))
             (error "Render of ~A returned ~A which is not of type ELEMENT"
                    component root))
-          ;; Set tag name
-          (setf (slot-value component 'dom:tag-name) (dom:tag-name root))
-          ;; Set class
-          (add-class root (format nil "~(~A~)" (class-name (class-of component))))
-          ;; Merge attributes
-          (loop for name in (dom:get-attribute-names component)
-             for value = (dom:get-attribute component name)
-             if (equal "class" name)
-             do (add-class root value)
-             else do (dom:set-attribute root name value))
+          (without-propagation
+            ;; Set tag name
+            (setf (slot-value component 'dom:tag-name) (dom:tag-name root))
+            ;; Set class
+            ;; FIXME: handle special characters in class names
+            (add-class root (format nil "~(~A~)" (class-name (class-of component))))
+            ;; Merge attributes
+            (loop for name in (dom:get-attribute-names component)
+               for value = (dom:get-attribute component name)
+               if (equal "class" name)
+               do (add-class root value)
+               else do (dom:set-attribute root name value)))
           (setf (component-root component) root)))
       (error "Render is not specified on component ~A" component))))
 
@@ -175,5 +177,6 @@
     (let ((body (cddr lambda-form)))
       (let ((render-lambda-form
              `(lambda ,lambda-list
-                ,@body)))
+                (without-propagation
+                  ,@body))))
         (values (eval render-lambda-form) render-lambda-form)))))
