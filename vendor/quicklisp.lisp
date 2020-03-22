@@ -42,9 +42,14 @@
        (with-open-file (stream vendor.txt
                                :direction :output
                                :if-does-not-exist :create
-                               :if-exists :supersede)
-         (loop for (system path) in vendors
-            do (format stream "~A ~A~C" system path #\Newline)))))
+                               :if-exists :supersede
+                               :external-format '(:latin-1 :eol-style :lf))
+         (loop with first-line-p = t
+            for (system path) in vendors
+            do (unless first-line-p
+                 (format stream "~%"))
+              (format stream "~A ~A" system path)
+              (setf first-line-p nil)))))
 
 (defun normalize-system-name (system-name)
   (let ((pos (position #\/ system-name)))

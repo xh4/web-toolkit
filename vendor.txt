@@ -23,7 +23,7 @@ local-time local-time-20190710-git/local-time.asd
 maxpc maxpc-20171130-git/maxpc.asd
 net.didierverna.asdf-flv asdf-flv-version-2.1/net.didierverna.asdf-flv.asd
 nibbles nibbles-20180831-git/nibbles.asd
-parse-float parse-float-20171019-git/parse-float.asd
+parse-number parse-number-v1.7/parse-number.asd
 plump plump-20190710-git/plump.asd
 split-sequence split-sequence-v2.0.0/split-sequence.asd
 trivial-backtrace trivial-backtrace-20190710-git/trivial-backtrace.asd
