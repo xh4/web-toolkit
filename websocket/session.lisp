@@ -108,7 +108,7 @@
 
 (defun session-open-p (session)
   (let ((connection (session-connection session)))
-    ;; fixme: Connection çš„ state æœ‰é—®é¢˜
+    ;; fixme: Connection µÄ state ÓÐÎÊÌâ
     (let ((output-stream (slot-value connection 'output-stream)))
       (open-stream-p output-stream))))
 
