@@ -27,7 +27,8 @@
                 :class-direct-superclasses
                 :class-direct-subclasses
                 :add-direct-subclass
-                :standard-method)
+                :slot-definition
+                :slot-definition-name)
   (:import-from :trivial-garbage
                 :finalize
                 :make-weak-pointer
