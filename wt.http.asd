@@ -18,8 +18,8 @@
                :cl-fad
                :trivial-backtrace
                :trivial-gray-streams
-               (:feature (:or :sbcl :ccl) :usocket)
-               (:feature (:or :sbcl :ccl) :cl+ssl)
+               (:feature (:not :lispworks) :usocket)
+               (:feature (:not :lispworks) :cl+ssl)
                :chunga
                :cl-cont
                :local-time)
