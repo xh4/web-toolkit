@@ -14,11 +14,11 @@
                         :serial t
                         :components ((:file "package")
                                      (:file "environment")
+                                     (:file "record")
+                                     (:file "propagate")
                                      (:file "object")
                                      (:file "class")
-                                     (:file "record")
                                      (:file "react")
-                                     (:file "propagate")
                                      (:file "slot")
                                      ;; (:file "method")
                                      (:file "variable"))))
