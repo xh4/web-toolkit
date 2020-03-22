@@ -33,7 +33,12 @@
                    for declaration = (string-trim '(#\Space) dec)
                    for (name value) = (cl-ppcre:split "\\s*:\\s*" declaration)
                    unless (cl-ppcre:scan "^-" name)
-                   collect `(,name . ,value))))))
+                   collect `(,name . ,value)))
+       into declarations
+       finally (return (remove-duplicates
+                        declarations
+                        :test 'equal
+                        :key 'flatten)))))
 
 (defmacro test-bootstrap ()
   `(progn
