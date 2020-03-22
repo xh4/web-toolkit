@@ -119,8 +119,8 @@
                 :.hexdig
                 :string-prefix-p
                 :string-suffix-p)
-  (:import-from :parse-float
-                :parse-float)
+  (:import-from :parse-number
+                :parse-number)
   (:import-from :split-sequence
                 :split-sequence)
   (:import-from :closer-mop

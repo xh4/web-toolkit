@@ -38,36 +38,22 @@
 (define-parser .dimension ()
   (lambda (input)
     (multiple-value-bind (rest value match-p)
-        (parse (.seq (.some/s (.digit))
-                     (.some/s (.alpha)))
+        ;; FIXME: more strict rule
+        (parse (.seq (.some/s (.or (.digit) (.s ".") (.s "-")))
+                     (.maybe (.some/s (.alpha))))
                input)
       (if match-p
-          (let ((n (parse-integer (first value)))
+          (let ((n (ignore-errors (parse-number (first value))))
                 (u (second value)))
-            (loop for unit in *dimension-units*
-               when (string-equal u (symbol-name unit))
-               do (return (values rest (funcall unit n) t))
-               finally (return (values input nil nil))))
+            (if n
+                (if u
+                    (loop for unit in *dimension-units*
+                       when (string-equal u (symbol-name unit))
+                       do (return (values rest (funcall unit n) t))
+                       finally (return (values input nil nil)))
+                    (values rest (make-instance 'length :number n) t))
+                (values input nil nil)))
           (values input nil nil)))))
-
-(defun dimension (value &optional type)
-  (typecase value
-    (number (when type
-              (loop for unit in *dimension-units*
-                 when (string-equal (symbol-name type) (symbol-name unit))
-                 do (return (funcall unit value)))))
-    (dimension (if type (when (typep value type) value) value))
-    (string (when-let* ((groups (coerce
-                                 (nth-value 1 (cl-ppcre:scan-to-strings "([0-9.]+)([A-Za-z]+)" value))
-                                 'list))
-                        ;; FIXME: parse number
-                        (number (parse-integer (first groups) :junk-allowed t))
-                        (suffix (second groups)))
-              (loop for unit in *dimension-units*
-                 when (and (string-equal suffix (symbol-name unit))
-                           (or (null type)
-                               (subtypep unit type)))
-                 do (return (funcall unit number)))))))
 
 (define-serialize-method ((dimension dimension) stream)
   (let ((number (dimension-number dimension))

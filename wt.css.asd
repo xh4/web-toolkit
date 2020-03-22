@@ -9,7 +9,7 @@
                :alexandria
                :closer-mop
                :cl-ppcre
-               :parse-float
+               :parse-number
                :split-sequence)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "css"

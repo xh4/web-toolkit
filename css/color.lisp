@@ -8,18 +8,14 @@
 
 (define-parser .alphavalue ()
   (lambda (input)
-    (multiple-value-bind (value n)
-        (parse-float (subseq
-                      (maxpc.input.vector::index-vector-vector input)
-                      (maxpc.input.index::index-position input))
-                     :junk-allowed t)
-      (if (and value (<= 0 value 1))
-          (values (loop with rest = input
-                     repeat n
-                     do (setf rest (maxpc::input-rest rest))
-                     finally (return rest))
-                  value
-                  t)
+    (multiple-value-bind (rest value match-p)
+        ;; FIXME: more strict rule
+        (parse (.some/s (.or (.digit) (.s ".") (.s "-")))
+               input)
+      (if match-p
+          (if-let ((n (ignore-errors (parse-number value))))
+            (values rest n t)
+            (values input nil nil))
           (values input nil nil)))))
 
 (defclass rgb ()

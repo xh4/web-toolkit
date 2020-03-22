@@ -56,9 +56,7 @@
                       (declare (ignore rest))
                       (if match-p
                           value)))
-                   ((equal type 'number) (if (find #\. value)
-                                             (ignore-errors (parse-float value))
-                                             (ignore-errors (parse-integer value))))
+                   ((equal type 'number) (ignore-errors (parse-number value)))
                    ((equal type 'integer) (ignore-errors (parse-integer value)))
                    ((integerp type) (when (equal (format nil "~D" type) value) value))
                    ((keywordp type) (when (string-equal

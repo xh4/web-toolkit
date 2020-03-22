@@ -40,24 +40,26 @@
 
 (define-dimension-unit px (absolute-length))
 
+;; Same as .dimension, limit units to length related
 (define-parser .length ()
   (lambda (input)
     (multiple-value-bind (rest value match-p)
+        ;; FIXME: more strict rule
         (parse (.seq (.some/s (.or (.digit) (.s ".") (.s "-")))
                      (.maybe (.some/s (.alpha))))
                input)
       (if match-p
-          (let ((n (if (find #\. (first value))
-                       (parse-float (first value) :junk-allowed t)
-                       (parse-integer (first value) :junk-allowed t)))
+          (let ((n (ignore-errors (parse-number (first value))))
                 (u (second value)))
-            (if u
-                (loop for unit in '(em ex ch rem vw vh vmin vmax
-                                    cm mm q in pt pc px)
-                   when (string-equal u (symbol-name unit))
-                   do (return (values rest (funcall unit n) t))
-                   finally (return (values input nil nil)))
-                (values rest (make-instance 'length :number n) t)))
+            (if n
+                (if u
+                    (loop for unit in '(em ex ch rem vw vh vmin vmax
+                                        cm mm q in pt pc px)
+                       when (string-equal u (symbol-name unit))
+                       do (return (values rest (funcall unit n) t))
+                       finally (return (values input nil nil)))
+                    (values rest (make-instance 'length :number n) t))
+                (values input nil nil)))
           (values input nil nil)))))
 
 ;; (parse (.length) "42px")
