@@ -51,3 +51,29 @@
   (is (equal "foo=4" (uri::alist-query '(("foo" . 4)))))
 
   (is (equal "foo=BAR" (uri::alist-query '(("foo" . bar))))))
+
+(test get-query-parameter-empty-key
+  (it
+    (let ((query (uri-query "http://www.google.com/?=b&")))
+      (is (equal 2 (length query)))
+      (is (equal "b" (cdr (first query))))
+      (is (equal nil (cdr (second query)))))))
+
+(test get-query-parameter-empty-key-2
+  (it
+    (let ((query (uri-query "http://www.google.com/?")))
+      (is (equal 1 (length query)))
+      (is (equal "" (car (first query))))
+      (is (equal nil (cdr (first query)))))))
+
+(test get-query-parameter-names-edge-cases
+  (it
+    (let ((query (uri-query "http://foo?a=bar&b=bar&c=&&d=baz&e&f&g=buzz&&&a&b=bar&h")))
+      (is (equal 9 (length (remove-duplicates
+                            query
+                            :test 'equal :key 'car)))))))
+
+(test get-query-parameter-escaped-keys
+  (is (equal "foo" (cdr (assoc "a b"
+                               (uri-query "http://www.google.com/?a%20b=foo&c%20d=")
+                               :test 'equal)))))
