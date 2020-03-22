@@ -5,6 +5,9 @@
 
 (defmethod (setf slot-value-using-class) :around (value (class reactive-class) object slot)
   (when *propagation-p*
+    (typecase slot
+      (symbol slot)
+      (slot-definition (setf slot (slot-definition-name slot))))
     (let ((current-value (slot-value object slot)))
       (unless (eq value current-value)
         (let ((record (make-instance 'record
