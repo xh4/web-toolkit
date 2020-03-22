@@ -61,7 +61,7 @@
 
 (test .color-hex
   (it
-    (let ((color (nth-value 1 (parse (css::.color-hex) "#abc"))))o
+    (let ((color (nth-value 1 (parse (css::.color-hex) "#abc"))))
       (is (equal 'css::color-hex (type-of color)))
       (is (equal 170 (css::rgb-red color)))
       (is (equal 187 (css::rgb-green color)))
