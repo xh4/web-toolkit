@@ -7,8 +7,6 @@
   (:export :run!)
   (:import-from :split-sequence
                 :split-sequence)
-  (:import-from :find-port
-                :find-port)
   (:import-from :utility
                 :walk-tree))
 

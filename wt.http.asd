@@ -73,8 +73,7 @@
 (defsystem wt.http/test
   :depends-on (:wt.http
                :wt.test
-               :babel-streams
-               :find-port)
+               :babel-streams)
   :components ((:module "test/http"
                         :serial t
                         :components ((:file "package")

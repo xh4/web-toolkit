@@ -39,8 +39,7 @@
                :wt.utility
                :cl-ppcre
                :split-sequence
-               :cl-fad
-               :find-port)
+               :cl-fad)
   :components ((:module "test/websocket"
                         :serial t
                         :components ((:file "package")

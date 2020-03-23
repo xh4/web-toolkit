@@ -14,6 +14,7 @@
            :*on-error* :*on-failure*
            :it :*it* :*is* :=>
            :ensure-cleanup
-           :compile-and-load-toplevel-forms)
+           :compile-and-load-toplevel-forms
+           :find-port)
   (:import-from :utility
                 :map-tree))

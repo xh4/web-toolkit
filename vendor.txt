@@ -15,7 +15,6 @@ cl-ppcre-unicode cl-ppcre-20190521-git/cl-ppcre-unicode.asd
 cl-unicode cl-unicode-20190521-git/cl-unicode.asd
 closer-mop closer-mop-20191227-git/closer-mop.asd
 documentation-utils documentation-utils-20190710-git/documentation-utils.asd
-find-port find-port-20190710-git/find-port.asd
 fiveam fiveam-v1.4.1/fiveam.asd
 flexi-streams flexi-streams-20190107-git/flexi-streams.asd
 ironclad ironclad-v0.47/ironclad.asd

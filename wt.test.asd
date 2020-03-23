@@ -5,7 +5,8 @@
   :mailto "xh@coobii.com"
   :depends-on (:wt.utility
                :fiveam
-               :uiop)
+               :uiop
+               :usocket)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "test"
                         :serial t

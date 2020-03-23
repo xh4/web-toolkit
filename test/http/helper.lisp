@@ -158,7 +158,7 @@
        ,@body)))
 
 (defmacro with-simple-test-server-running ((port-var function) &body body)
-  `(let ((port (find-port:find-port :min 5000)))
+  `(let ((port (find-port :min 5000)))
      (define-server simple-test-server ()
        ()
        (:handler ,function)
