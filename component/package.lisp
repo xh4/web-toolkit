@@ -22,7 +22,11 @@
                 :reactive-object
                 :reactive-class
                 :variable-value
-                :add-dependency)
+                :object-propagation
+                :add-dependency
+                :react
+                :with-propagation
+                :without-propagation)
   (:shadowing-import-from :reactive
                           :variable)
   (:import-from :uri

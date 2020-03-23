@@ -13,35 +13,6 @@
       :initform nil
       :accessor component-render-lambda-list))))
 
-(defmethod shared-initialize :after ((class component-class) slot-names
-                                     &key render &allow-other-keys)
-  (declare (ignore slot-names))
-  (if render
-      (let ((lambda-form (car render)))
-        (setf render (make-render lambda-form))
-        (let ((render-lambda-list (function-lambda-list render)))
-          (setf (slot-value class '%render) render)
-          (setf (slot-value class 'render-lambda-list) render-lambda-list)))
-      (progn (setf (slot-value class '%render) nil
-                   (slot-value class 'render-lambda-list) nil)))
-  (loop for object in (rx:object-propagation class)
-     when (typep object 'component)
-     do (incf (component-version object))))
-
-
-(defmethod (setf slot-value-using-class) :around (value (class component-class) object slot)
-  (typecase slot
-    (symbol slot)
-    (slot-definition (setf slot (slot-definition-name slot))))
-  (if (eq 'version slot)
-      (call-next-method)
-      (prog1
-          (rx:without-propagation (call-next-method))
-        (when (and (slot-boundp object 'version)
-                   (find slot (class-direct-slots class)
-                         :key 'slot-definition-name))
-          (incf (component-version object))))))
-
 (defclass component (html:custom-element reactive-object)
   ((root
     :initarg :root
@@ -55,7 +26,9 @@
     :initarg :version
     :initform 0
     :accessor component-version))
-  (:metaclass component-class))
+  (:metaclass component-class)
+  #+lispworks
+  (:optimize-slot-access nil))
 
 (defmethod initialize-instance :after ((component component) &key)
   (when (next-method-p)
@@ -67,7 +40,36 @@
 (defmethod component-render-lambda-list ((component component))
   (component-render-lambda-list (class-of component)))
 
-(defmethod rx:react ((component-1 component) (component-2 component))
+(defmethod shared-initialize :after ((class component-class) slot-names
+                                     &key render &allow-other-keys)
+  (declare (ignore slot-names))
+  (if render
+      (let ((lambda-form (car render)))
+        (setf render (make-render lambda-form))
+        (let ((render-lambda-list (function-lambda-list render)))
+          (setf (slot-value class '%render) render)
+          (setf (slot-value class 'render-lambda-list) render-lambda-list)))
+      (progn (setf (slot-value class '%render) nil
+                   (slot-value class 'render-lambda-list) nil)))
+  (loop for object in (object-propagation class)
+     when (typep object 'component)
+     do (incf (component-version object))))
+
+(defmethod (setf slot-value-using-class) :around (value (class component-class) object slot)
+  (declare (ignore value))
+  (typecase slot
+    (symbol slot)
+    (slot-definition (setf slot (slot-definition-name slot))))
+  (if (eq 'version slot)
+      (with-propagation (call-next-method))
+      (prog1
+          (without-propagation (call-next-method))
+        (when (and (slot-boundp object 'version)
+                   (find slot (class-direct-slots class)
+                         :key 'slot-definition-name))
+          (incf (component-version object))))))
+
+(defmethod react ((component-1 component) (component-2 component))
   (incf (component-version component-1)))
 
 (defgeneric compute-component-class (component)
@@ -137,6 +139,8 @@
     (appendf superclasses '(component)))
   (unless (find :metaclass options :key 'first)
     (rewrite-class-option options :metaclass component-class))
+  #+lispworks
+  (rewrite-class-option options :optimize-slot-access nil)
   `(progn
      (defclass ,name ,superclasses
        ,slots
@@ -175,7 +179,7 @@
           (unless (typep root '(or html:element null))
             (error "Render of ~A returned ~A which is not of type ELEMENT"
                    component root))
-          (rx:without-propagation
+          (without-propagation
             ;; Set tag name
             (setf (slot-value component 'dom:tag-name) (dom:tag-name root))
             ;; Set class
@@ -201,6 +205,6 @@
     (let ((body (cddr lambda-form)))
       (let ((render-lambda-form
              `(lambda ,lambda-list
-                (rx:without-propagation
+                (without-propagation
                   ,@body))))
         (values (eval render-lambda-form) render-lambda-form)))))
