@@ -5,6 +5,7 @@
   (:use :cl :alexandria)
   (:export
    :define-component
+   :component
    :render)
   (:import-from :html
                 :serialize)
