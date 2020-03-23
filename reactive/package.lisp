@@ -7,8 +7,15 @@
   (:export
    ;; object
    :reactive-object
+   :object-dependency
+   :object-propagation
    ;; class
    :reactive-class
+   ;; propagate
+   :with-propagation
+   :without-propagation
+   ;; react
+   :react
    ;; method
    :reactive-method
    ;; variable
