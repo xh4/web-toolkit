@@ -8,9 +8,10 @@
                                :selectors (list selector)
                                :declarations (append
                                               (css:style-declarations
-                                               (slot-value component 'style))
-                                              (css:style-declarations
-                                               (slot-value (component-root component) 'style))))))
+                                               (slot-value component 'css:style))
+                                              (and (component-root component)
+                                                   (css:style-declarations
+                                                    (slot-value (component-root component) 'css:style)))))))
       (setf (gethash component rules) rule))))
 
 (defun compute-style-rules (component)
