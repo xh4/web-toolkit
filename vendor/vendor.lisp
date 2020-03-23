@@ -15,9 +15,11 @@
                                  (case (car dep)
                                    (:version (second dep))
                                    (:feature (when (stringp (third dep))
-                                               (third dep))) ;; ignore (:require "...")
+                                               (unless (string-prefix-p "sb-" (third dep))
+                                                 (third dep)))) ;; ignore (:require "...")
                                    (t (error "Don't know how to handle dependency ~A" dep))))
-                                ((stringp dep) dep))))
+                                ((stringp dep) (unless (string-prefix-p "sb-" dep)
+                                                 dep)))))
                          (when (stringp dep-name)
                            (unless (search "wt." dep-name)
                              (pushnew dep-name all-deps :test 'string-equal))
@@ -57,3 +59,7 @@
        (setf (gethash name asdf/source-registry::*source-registry*) pathname)
      else do
        (error "ASD file for system ~S not found: ~S" name pathname)))
+
+(defun string-prefix-p (prefix string)
+  (when (>= (length string) (length prefix))
+    (string= string prefix :start1 0 :end1 (length prefix))))
