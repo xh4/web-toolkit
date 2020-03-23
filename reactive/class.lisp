@@ -10,4 +10,6 @@
     (appendf superclasses '(reactive-object)))
   (unless (find :metaclass options :key 'first)
     (rewrite-class-option options :metaclass reactive-class))
+  #+lispworks
+  (rewrite-class-option options :optimize-slot-access nil)
   `(defclass ,class-name ,superclasses ,slots ,@options))
