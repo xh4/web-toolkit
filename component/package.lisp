@@ -30,9 +30,12 @@
                 :allocate-instance
                 :validate-superclass
                 :class-slots
+                :class-direct-slots
+                :slot-definition
                 :slot-definition-name
                 :slot-definition-initargs
                 :compute-class-precedence-list
-                :ensure-finalized)
+                :ensure-finalized
+                :slot-value-using-class)
   (:import-from :split-sequence
                 :split-sequence))

@@ -23,7 +23,26 @@
           (setf (slot-value class '%render) render)
           (setf (slot-value class 'render-lambda-list) render-lambda-list)))
       (progn (setf (slot-value class '%render) nil
-                   (slot-value class 'render-lambda-list) nil))))
+                   (slot-value class 'render-lambda-list) nil)))
+  (loop for object in (rx:object-propagation class)
+     when (typep object 'component)
+     do (incf (component-version object))))
+
+(defmethod (setf slot-value-using-class) :around (value (class component-class) object slot)
+  (typecase slot
+    (symbol slot)
+    (slot-definition (setf slot (slot-definition-name slot))))
+  (if (eq 'version slot)
+      (call-next-method)
+      (prog1
+          (rx:without-propagation (call-next-method))
+        (when (and (slot-boundp object 'version)
+                   (find slot (class-direct-slots class)
+                         :key 'slot-definition-name))
+          (incf (component-version object))))))
+
+(defmethod rx:react ((component-1 component) (component-2 component))
+  (incf (component-version component-1)))
 
 (defclass component (html:custom-element reactive-object)
   ((root
@@ -33,7 +52,11 @@
    (children
     :initarg :children
     :initform nil
-    :accessor component-children))
+    :accessor component-children)
+   (version
+    :initarg :version
+    :initform 0
+    :accessor component-version))
   (:metaclass component-class))
 
 (defmethod initialize-instance :after ((component component) &key)
@@ -151,7 +174,7 @@
           (unless (typep root '(or html:element null))
             (error "Render of ~A returned ~A which is not of type ELEMENT"
                    component root))
-          (without-propagation
+          (rx:without-propagation
             ;; Set tag name
             (setf (slot-value component 'dom:tag-name) (dom:tag-name root))
             ;; Set class
@@ -177,6 +200,6 @@
     (let ((body (cddr lambda-form)))
       (let ((render-lambda-form
              `(lambda ,lambda-list
-                (without-propagation
+                (rx:without-propagation
                   ,@body))))
         (values (eval render-lambda-form) render-lambda-form)))))

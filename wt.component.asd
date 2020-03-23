@@ -32,6 +32,7 @@
                         :components ((:file "package")
                                      (:file "helper")
                                      (:file "component")
-                                     (:file "render"))))
+                                     (:file "render")
+                                     (:file "reactive"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :component-test)))
