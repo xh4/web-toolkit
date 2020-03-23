@@ -33,21 +33,23 @@
   (finalize
    object
    (lambda ()
-     (with-slots (dependency propagation) object
-       (loop for pointer in dependency
-          for o = (weak-pointer-value pointer)
-          when o
-          do (setf propagation
-                   (remove object propagation :key #'weak-pointer-value)))
-       (loop for pointer in propagation
-          for o = (weak-pointer-value pointer)
-          when o
-          do (setf dependency
-                   (remove object dependency :key #'weak-pointer-value))))
+     (without-propagation
+       (with-slots (dependency propagation) object
+         (loop for pointer in dependency
+            for o = (weak-pointer-value pointer)
+            when o
+            do (setf propagation
+                     (remove object propagation :key #'weak-pointer-value)))
+         (loop for pointer in propagation
+            for o = (weak-pointer-value pointer)
+            when o
+            do (setf dependency
+                     (remove object dependency :key #'weak-pointer-value)))))
      object)))
 
 (defun add-dependency (object-1 object-2)
   (when (and object-1 object-2)
     (unless (find object-2 (object-dependency object-1))
-      (push (make-weak-pointer object-1) (slot-value object-2 'propagation))
-      (push (make-weak-pointer object-2) (slot-value object-1 'dependency)))))
+      (without-propagation
+        (push (make-weak-pointer object-1) (slot-value object-2 'propagation))
+        (push (make-weak-pointer object-2) (slot-value object-1 'dependency))))))
