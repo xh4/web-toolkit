@@ -28,6 +28,7 @@
      when (typep object 'component)
      do (incf (component-version object))))
 
+
 (defmethod (setf slot-value-using-class) :around (value (class component-class) object slot)
   (typecase slot
     (symbol slot)
@@ -40,9 +41,6 @@
                    (find slot (class-direct-slots class)
                          :key 'slot-definition-name))
           (incf (component-version object))))))
-
-(defmethod rx:react ((component-1 component) (component-2 component))
-  (incf (component-version component-1)))
 
 (defclass component (html:custom-element reactive-object)
   ((root
@@ -68,6 +66,9 @@
 
 (defmethod component-render-lambda-list ((component component))
   (component-render-lambda-list (class-of component)))
+
+(defmethod rx:react ((component-1 component) (component-2 component))
+  (incf (component-version component-1)))
 
 (defgeneric compute-component-class (component)
   (:method ((component component))
