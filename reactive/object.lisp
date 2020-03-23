@@ -3,7 +3,7 @@
 (defclass reactive-object ()
   ((dependency
     :initarg :dependency
-    :initform (make-make-hash-table :test 'eq
+    :initform (make-weak-hash-table :test 'eq
                                     :weakness :key
                                     :weakness-matters t))
    (propagation
