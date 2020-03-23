@@ -9,8 +9,8 @@
    (propagation
     :initarg :propagation
     :initform (make-weak-hash-table :test 'eq
-                               :weakness :key
-                               :weakness-matters t))))
+                                    :weakness :key
+                                    :weakness-matters t))))
 
 (defmethod object-dependency ((object reactive-object))
   (with-slots (dependency) object
