@@ -37,6 +37,4 @@
                 :slot-definition
                 :slot-definition-name)
   (:import-from :trivial-garbage
-                :finalize
-                :make-weak-pointer
-                :weak-pointer-value))
+                :make-weak-hash-table))

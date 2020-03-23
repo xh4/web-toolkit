@@ -3,22 +3,22 @@
 (defclass reactive-object ()
   ((dependency
     :initarg :dependency
-    :initform nil)
+    :initform (make-make-hash-table :test 'eq
+                                    :weakness :key
+                                    :weakness-matters t))
    (propagation
     :initarg :propagation
-    :initform nil)))
+    :initform (make-weak-hash-table :test 'eq
+                               :weakness :key
+                               :weakness-matters t))))
 
 (defmethod object-dependency ((object reactive-object))
-  (loop for pointer in (slot-value object 'dependency)
-     for object = (weak-pointer-value pointer)
-     when object
-     collect object))
+  (with-slots (dependency) object
+    (hash-table-keys dependency)))
 
 (defmethod object-propagation ((object reactive-object))
-  (loop for pointer in (slot-value object 'propagation)
-     for object = (weak-pointer-value pointer)
-     when object
-     collect object))
+  (with-slots (propagation) object
+    (hash-table-keys propagation)))
 
 (defmethod shared-initialize :around ((object reactive-object) slot-names &key &allow-other-keys)
   (declare (ignore slot-names))
@@ -29,27 +29,11 @@
   (declare (ignore slot-names))
   (let ((class (class-of object)))
     (when (typep class 'reactive-class)
-      (add-dependency object class)))
-  (finalize
-   object
-   (lambda ()
-     (without-propagation
-       (with-slots (dependency propagation) object
-         (loop for pointer in dependency
-            for o = (weak-pointer-value pointer)
-            when o
-            do (setf propagation
-                     (remove object propagation :key #'weak-pointer-value)))
-         (loop for pointer in propagation
-            for o = (weak-pointer-value pointer)
-            when o
-            do (setf dependency
-                     (remove object dependency :key #'weak-pointer-value)))))
-     object)))
+      (add-dependency object class))))
 
 (defun add-dependency (object-1 object-2)
   (when (and object-1 object-2)
-    (unless (find object-2 (object-dependency object-1))
-      (without-propagation
-        (push (make-weak-pointer object-1) (slot-value object-2 'propagation))
-        (push (make-weak-pointer object-2) (slot-value object-1 'dependency))))))
+    (with-slots (dependency) object-1
+      (setf (gethash object-2 dependency) nil))
+    (with-slots (propagation) object-2
+      (setf (gethash object-1 propagation) nil))))
