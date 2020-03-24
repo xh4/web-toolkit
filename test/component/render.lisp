@@ -118,11 +118,22 @@
   )
 
 (test component-class
-      ;; (it
-      ;;  (ensure-cleanup (foo bar)
-      ;;                  (compile-and-load-toplevel-forms
-      ;;                   (define-component foo () () (:tag :div))
-      ;;                   (define-component bar (foo) () (:tag :div))
-      ;;                   (is (equal '("component-test-foo" "component-test-bar")
-      ;;                              (com::compute-component-class (bar)))))))
-      )
+  (it
+    (ensure-cleanup (foo bar)
+      (compile-and-load-toplevel-forms
+       (define-component foo () ())
+       (define-component bar (foo) ())
+       (let ((com (bar)))
+         (is (equal '("foo" "bar")
+                    (com::compute-component-class (bar))))))))
+
+  (it
+    (ensure-cleanup (foo bar)
+      (compile-and-load-toplevel-forms
+       (define-component foo () ())
+       (define-component bar (foo) () (:render (lambda () (html:h1))))
+       (let ((com (bar :class "xxx")))
+         (render com)
+         (is (equal "xxx bar foo" (dom:get-attribute
+                                   (com::component-root com)
+                                   "class"))))))))

@@ -76,9 +76,7 @@
 (defgeneric compute-component-class (component)
   (:method ((component component))
     (flet ((class-name-for-component-class (class)
-             (format nil "~(~A~)-~(~A~)"
-                     (package-name (symbol-package (cl:class-name class)))
-                     (symbol-name (cl:class-name class)))))
+             (format nil "~(~A~)" (symbol-name (cl:class-name class)))))
       (let ((classes (compute-class-precedence-list (class-of component))))
         (loop for class in classes
            until (eq class (find-class 'component))
@@ -185,7 +183,8 @@
             (setf (slot-value component 'dom:tag-name) (dom:tag-name root))
             ;; Set class
             ;; FIXME: handle special characters in class names
-            (add-class root (format nil "~(~A~)" (class-name (class-of component))))
+            (loop for class in (compute-component-class component)
+               do (add-class root class))
             ;; Merge attributes
             (loop for name in (dom:get-attribute-names component)
                for value = (dom:get-attribute component name)
