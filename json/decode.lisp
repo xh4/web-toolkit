@@ -246,8 +246,10 @@ in the scope of every JSON aggregate value (Object, Array or String).")
       (:punct
        (case dispatch-token
          (#\" (decode-json-string stream))
-         (#\[ (decode-json-array stream))
-         (#\{ (decode-json-object stream))
+         (#\[ (let ((*decode-depth* (1+ *decode-depth*)))
+                (decode-json-array stream)))
+         (#\{ (let ((*decode-depth* (1+ *decode-depth*)))
+                (decode-json-object stream)))
          (t (json-syntax-error stream
                                "Token out of place on JSON input: `~C'"
                                dispatch-token))))
@@ -287,9 +289,15 @@ result."
   `(progv ,variables (mapcar #'symbol-value ,variables)
      ,@body))
 
+(defvar *decode-depth* 0)
+
+(defvar *max-decode-depth* 20)
+
 (defun decode-json-array (stream)
   "Read comma-separated sequence of JSON Values until a closing bracket,
 calling array handlers as it goes."
+  (when (> *decode-depth* *max-decode-depth*)
+    (error "Exceeding depth limit, give up"))
   (aggregate-scope-progv *array-scope-variables*
     (aggregate-scope-progv *aggregate-scope-variables*
       (funcall *beginning-of-array-handler*)
@@ -319,6 +327,8 @@ calling array handlers as it goes."
 (defun decode-json-object (stream)
   "Read comma-separated sequence of JSON String:Value pairs until a
 closing brace, calling object handlers as it goes."
+  (when (> *decode-depth* *max-decode-depth*)
+    (error "Exceeding depth limit, give up"))
   (aggregate-scope-progv *object-scope-variables*
     (aggregate-scope-progv *aggregate-scope-variables*
       (loop with key = nil and expect-key = t

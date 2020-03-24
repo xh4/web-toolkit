@@ -2,12 +2,11 @@
 
 (in-suite :json-test)
 
-(defparameter *pending-tests*
-  '(NUMBER-REAL-FRACTION-EXPONENT
-    NUMBER-REAL-EXPONENT
-    NUMBER
-    STRUCTURE-OPEN-ARRAY-OBJECT
-    STRUCTURE-100000-OPENING-ARRAYS))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defparameter *pending-tests*
+    '(NUMBER-REAL-FRACTION-EXPONENT
+      NUMBER-REAL-EXPONENT
+      NUMBER)))
 
 (defmacro test-parsing ()
   (let ((pathnames (directory
