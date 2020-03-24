@@ -32,3 +32,7 @@
                             (signals error (json:decode ,pathname))))))))))))
 
 (test-parsing)
+
+;; (decode "[123e45]")
+;; (decode "[123.456e78]")
+;; (decode "[123e65]")
