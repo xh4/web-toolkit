@@ -3,12 +3,11 @@
 (defpackage :live
   (:nicknames :wt.live)
   (:use :cl :alexandria)
-  (:shadow-import-from :reactive
-                       :variable)
+  (:shadowing-import-from :reactive
+                          :variable)
   (:import-from :http
                 :define-server
                 :define-handler
-                :handle
                 :request
                 :*response*
                 :response-status
@@ -16,7 +15,13 @@
                 :header-field
                 :response-body
                 :router
-                :listener)
+                :route
+                :make-route
+                :listener
+                :request-method
+                :header-field-value
+                :find-header-field
+                :reply)
   (:import-from :websocket
                 :define-endpoint
                 :define-session
@@ -24,4 +29,17 @@
                 :on-message
                 :on-close
                 :on-error
-                :send-text))
+                :send-text)
+  (:import-from :component
+                :component)
+  (:import-from :uri
+                :uri-path)
+  (:import-from :reactive
+                :define-reactive-class
+                :reactive-object
+                :reactive-class
+                :add-dependency
+                :with-propagation
+                :react)
+  (:import-from :utility
+                :rewrite-class-option))

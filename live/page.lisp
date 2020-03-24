@@ -2,7 +2,7 @@
 
 (defclass page-class (reactive-class) ())
 
-(defclass page (reactive-object)
+(define-reactive-class page ()
   ((title
     :initarg :title
     :initform nil)
@@ -15,30 +15,26 @@
   (:metaclass page-class))
 
 (defgeneric page-title (page)
-  (:method-class reactive-method))
+  (:method ((page page))
+    (symbol-name (class-name (class-of page)))))
 
-(defgeneric (setf page-title) (value page)
-  (:method-class reactive-method))
+(defgeneric (setf page-title) (value page))
 
-(defgeneric page-favicon (page)
-  (:method-class reactive-method))
+(defgeneric page-favicon (page))
 
-(defgeneric (setf page-favicon) (value page)
-  (:method-class reactive-method))
+(defgeneric (setf page-favicon) (value page))
 
 (defgeneric page-content (page)
-  (:method-class reactive-method))
+  (:method ((page page))))
 
-(defgeneric (setf page-content) (value page)
-  (:method-class reactive-method))
+(defgeneric (setf page-content) (value page))
 
 (defmethod page-content :around ((page page))
   (let ((component (call-next-method)))
-    (when (reactive-object-p component)
+    (when (typep component 'reactive-object)
       (add-dependency page component))
-    (when (reactive-object-p (class-of component))
-      (add-dependency page (class-of component)))
-    component))
+    (with-propagation
+      (setf (slot-value page 'content) component))))
 
 (defgeneric initialize-page (page request)
   (:method ((page page) request)))
@@ -51,7 +47,7 @@
       (html:meta :charset "utf-8")
       (html:title (page-title page)))
      (html:body
-      (page-content page))))
+      (slot-value page 'content))))
    stream))
 
 (define-handler page-handler ()
@@ -65,7 +61,7 @@
      (let ((page (handler-page handler)))
        (let ((title (page-title page))
              (content (page-content page)))
-         (let ((rules (compute-style-rules content)))
+         (let ((rules (com::compute-style-rules content)))
            (let ((styles (loop for rule in rules
                             collect (html:style (css::serialize rule)))))
              (reply
@@ -102,6 +98,8 @@
     (appendf superclasses '(page)))
   (unless (find :metaclass options :key 'first)
     (rewrite-class-option options :metaclass page-class))
+  #+lispworks
+  (rewrite-class-option options :optimize-slot-access nil)
   `(defclass ,page-name ,superclasses
      ,slots
      ,@options))
@@ -116,8 +114,7 @@
   (let ((page-class (find-class (route-page-class route))))
     (when (and (equal (format nil "/~(~A~)" (class-name page-class))
                       (uri-path request))
-               (equal "GET"
-                      (request-method request)))
+               (equal "GET" (request-method request)))
       (let ((page (make-instance page-class)))
         (initialize-page page request)
         ;; TODO: case insensitive
@@ -137,25 +134,10 @@
     (make-instance 'page-route
                    :page-class page-class)))
 
-;; (defmethod reflect ((component component) (class component-class) update)
-;;   (update component t))
+(defmethod react ((page page) (component component))
+  ;; (format t "Update page ~A for component ~A~%" page component)
+  (page-content page))
 
-;; (defmethod reflect ((component component) (variable variable) update)
-;;   (format t "Update component ~A for variable ~A~%" component variable)
-;;   (update component t))
-
-;; (defmethod reflect ((page page) (component component) update)
-;;   (format t "Update page ~A for component ~A~%" page component)
-;;   (update page t))
-
-;; (defmethod reflect ((page page) (class component-class) update)
-;;   (format t "Update page ~A for component class ~A~%" page class)
-;;   (update page t))
-
-;; (defmethod reflect ((page page) (class page-class) update)
-;;   (format t "Update page ~A for page class ~A~%" page class)
-;;   (update page t))
-
-;; (defmethod reflect ((session page-session) (page page) update)
-;;   (format t "Update session ~A for page ~A~%" session page)
-;;   (ws:send-text session "reload"))
+(defmethod react ((session page-session) (page page))
+  ;; (format t "Update page session ~A for page ~A~%" session page)
+  (send-text session "update"))
