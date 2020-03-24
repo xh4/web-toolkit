@@ -24,7 +24,7 @@ WT.WEBSOCKET provides WebSocket functionality based on [RFC 6455 The WebSocket P
 WT.HTML implements HTML constructor, parser and serializer based on recent version of [HTML Living Standard](https://html.spec.whatwg.org/multipage/). It uses the Document Object Model (DOM) provided by WT.DOM.
 
 #### [JSON](https://lisp-web-toolkit.com/#json)
-WT.JSON implements JSON encoder and decoder based on [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html). It distinguishes `null`, `false` and `[]` from Lisp's `NIL` thus supports identical transformation between JSON values. It provides object constructor and accessor to build and access nesting JSON objects.
+WT.JSON implements JSON encoder and decoder based on [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html). It distinguishes `null`, `false` and `[]` from Lisp's `NIL` thus supports identical transformation between JSON values. It provides object constructor and accessor to build and access nesting JSON objects. The system is tested against [JSONTestSuite](https://github.com/nst/JSONTestSuite).
 
 #### [URI](https://lisp-web-toolkit.com/#uri)
 WT.URI provides URI parser and constructor, with support for UTF-8 characters, IPv6 addresses and query parameters handling. It utilizes recursive descent [parser combinators](https://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf) to provide a concise implementation that is close to the definition in [RFC 3986 Uniform Resource Identifier (URI): Generic Syntax](https://tools.ietf.org/html/rfc3986).
@@ -79,14 +79,14 @@ WT.COMPONENT provices component abstraction, it combines [Web Components](https:
   * Test against [Web Platform Tests](https://github.com/web-platform-tests/wpt)
 * HTML
   * Implement parser
-  * Implement pretty print(?)
+  * <s>Implement pretty print(?) (NO)</s>
   * Refine element constractor error report
   * <s>Implement DOM, abandon CXML's DOM implementation</s>
   * Test against [Web Platform Tests](https://github.com/web-platform-tests/wpt)
 * JSON
-  * Test against [JSONTestSuite](https://github.com/nst/JSONTestSuite)
-  * Implement accessors for object
-  * Implement identical transformation for JSON values (null, false, [])
+  * <s>Test against [JSONTestSuite](https://github.com/nst/JSONTestSuite)</s>
+  * <s>Implement accessors for object</s>
+  * <s>Implement identical transformation for JSON values (null, false, [])</s>
 * DOM
   * Implement namespace
   * Implement XPath
