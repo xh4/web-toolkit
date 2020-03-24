@@ -3,6 +3,7 @@
 (defpackage :documentation
   (:nicknames :doc :wt.documentation :wt.doc)
   (:use :cl :alexandria)
+  (:shadow :documentation)
   (:shadowing-import-from :reactive :variable)
   (:import-from :http
                 :define-server
@@ -17,20 +18,10 @@
   (:import-from :reactive
                 :define-variable
                 :reactive-object)
-  (:import-from :uri
-                :uri
-                :uri-scheme
-                :uri-userinfo
-                :uri-host
-                :uri-port
-                :uri-path
-                :uri-query
-                :uri-fragment
-                :uri-string)
   (:import-from :component
                 :define-component
-                :render
-                :root
+                :render)
+  (:import-from :dom
                 :children)
   (:import-from :live
                 :define-page

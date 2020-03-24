@@ -84,10 +84,10 @@
                (addressable
                 (setf (no node) no)
                 (loop with i = 1
-                   for child in (children node)
+                   for child in (dom:children node)
                    when (typep child 'addressable)
                    do (walk child (append no `(,i))) (incf i)))
-               (t (loop for child in (children node)
+               (t (loop for child in (dom:children node)
                      do (walk child no))))))
     (loop with i = 1
        for child in children
@@ -95,7 +95,7 @@
        do (walk child `(,i)) (incf i))))
 
 (defun assign-chapter-articles (chapter)
-  (loop for child in (children chapter)
+  (loop for child in (dom:children chapter)
      when (or (typep child 'article)
               (typep child 'symbol/o))
      do (setf (slot-value child 'chapter) chapter)))
@@ -112,7 +112,7 @@
                      "&nbsp;"
                      (span :class "content" (title node)))
                   (let ((ol (ol :class "toc")))
-                    (loop for child in (children node)
+                    (loop for child in (dom:children node)
                        do (walk child ol))
                     ol))))
                (class/o (dom:append-child
@@ -127,7 +127,7 @@
                                    " "
                                    (format nil "~(~A~)" (slot-value node 'symbol))))
                           (let ((ol (ol :class "toc")))
-                            (loop for child in (children node)
+                            (loop for child in (dom:children node)
                                do (walk child ol))
                             ol))))
                (function/o (dom:append-child
@@ -142,7 +142,7 @@
                                       " "
                                       (format nil "~(~A~)" (slot-value node 'symbol))))
                              (let ((ol (ol :class "toc")))
-                               (loop for child in (children node)
+                               (loop for child in (dom:children node)
                                   do (walk child ol))
                                ol))))
                (accessor/o (dom:append-child
@@ -157,7 +157,7 @@
                                       " "
                                       (format nil "~(~A~)" (slot-value node 'symbol))))
                              (let ((ol (ol :class "toc")))
-                               (loop for child in (children node)
+                               (loop for child in (dom:children node)
                                   do (walk child ol))
                                ol))))
                (constant/o (dom:append-child
@@ -172,11 +172,11 @@
                                       " "
                                       (format nil "~(~A~)" (slot-value node 'symbol))))
                              (let ((ol (ol :class "toc")))
-                               (loop for child in (children node)
+                               (loop for child in (dom:children node)
                                   do (walk child ol))
                                ol))))
                (dom:parent-node (loop for i from 1
-                                   for child in (children node)
+                                   for child in (dom:children node)
                                    do (walk child ol))))))
     (html:nav
      :id "toc"

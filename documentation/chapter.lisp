@@ -4,11 +4,11 @@
   ()
   (:render
    (lambda (chapter)
-     (loop for child in children
-        when (or (typep child 'article)
-                 (typep child 'symbol/o))
-        do (setf (slot-value child 'chapter) chapter))
-     (with-slots (no title id) chapter
+     (with-slots (no title id children) chapter
+       (loop for child in children
+          when (or (typep child 'article)
+                   (typep child 'symbol/o))
+          do (setf (slot-value child 'chapter) chapter))
        (div
         (h2
          :class "heading"

@@ -13,11 +13,11 @@
   ()
   (:listener (listener :port 7000))
   (:handler (router
-             (:get "/page.js" (lambda ()
-                                (reply (merge-pathnames
-                                        "reactive/page.js"
-                                        (asdf:system-source-directory
-                                         (asdf:find-system :wt))))))
+             ;; (:get "/page.js" (lambda ()
+             ;;                    (reply (merge-pathnames
+             ;;                            "reactive/page.js"
+             ;;                            (asdf:system-source-directory
+             ;;                             (asdf:find-system :wt))))))
              (:page documentation-page))))
 
 (defun start-server ()

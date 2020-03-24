@@ -5,7 +5,7 @@
     :initform nil))
   (:render
    (lambda (article)
-     (with-slots (no title) article
+     (with-slots (no title children) article
        (div
         (h3
          :class "heading"
