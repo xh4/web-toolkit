@@ -10,12 +10,13 @@
   "Read a JSON token (literal name, number or punctuation char) from
 the given STREAM, and return 2 values: the token category (a symbol)
 and the token itself, as a string or character."
-  (let ((c (peek-char t stream)))
+  (let ((c (peek-char nil stream)))
     (case c
       ((#\{ #\[ #\] #\} #\" #\: #\,)
        (values :punct (read-char stream)))
       ((#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\-)
        (read-json-number-token stream))
+      ((#\Space #\Newline) (read-char stream) (read-json-token stream))
       (t (if (alpha-char-p c)
              (read-json-name-token stream)
              (json-syntax-error stream "Invalid char on JSON input: `~C'"
@@ -28,11 +29,14 @@ function can not discriminate between integers and reals (hence, it
 returns a single :NUMBER category), and cannot check whether the next
 available symbol is a valid boolean or not (hence, the category for
 such tokens is :SYMBOL)."
-  (let ((c (peek-char t stream)))
+  (let ((c (peek-char nil stream)))
     (values
      (case c
        ((#\{ #\[ #\] #\} #\" #\: #\,) :punct)
        ((#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\-) :number)
+       ((#\Space #\Newline) (read-char stream)
+        (return-from peek-json-token
+          (peek-json-token stream)))
        (t (if (alpha-char-p c)
               :symbol
               (json-syntax-error stream "Invalid char on JSON input: `~C'"
@@ -129,6 +133,9 @@ return NIL."
         (c (read-char stream)))
     (case c
       (#\" nil)                         ; End of string
+      ((or #\Newline #\Linefeed #\Tab #\Formfeed #\Null)
+       (json-syntax-error stream
+                          (format nil "Unescaped character ~S" c)))
       (#\\ (let ((c (read-char stream)))
              (escaped-char-dispatch
               c
@@ -232,8 +239,7 @@ in the scope of every JSON String.")
   "A list of symbols naming dynamic variables which should be re-bound
 in the scope of every JSON aggregate value (Object, Array or String).")
 
-(defun decode-json-from-stream (&optional (stream *json-input*))
-  "Read a JSON Value from STREAM and return the corresponding Lisp value."
+(defun decode-json-from-stream-0 (&optional (stream *json-input*))
   (multiple-value-bind (dispatch-token-type dispatch-token)
       (read-json-token stream)
     (ecase dispatch-token-type
@@ -249,31 +255,30 @@ in the scope of every JSON aggregate value (Object, Array or String).")
       (:real (funcall *real-handler* dispatch-token))
       (:boolean (funcall *boolean-handler* dispatch-token)))))
 
-(defun decode-json-from-string (json-string)
-  "Read a JSON Value from JSON-STRING and return the corresponding
-Lisp value."
-  (with-input-from-string (stream json-string)
-    (decode-json-from-stream stream)))
+(defun decode-json-from-stream (stream &key strict junked-allowed)
+  (when strict
+    (assert (member (peek-char t stream) '(#\{ #\[))))
+  (prog1
+      (decode-json-from-stream-0 stream)
+    (unless junked-allowed
+      (assert (eq :no-junk (peek-char t stream nil :no-junk))))))
 
-(defun decode-json-from-source (source)
-  "Decode a JSON Value from SOURCE using the value of DECODER (default
-'DECODE-JSON) as decoder function.  If the SOURCE is a string, the
-input is from this string; if it is a pathname, the input is from the
-file that it names; otherwise, a stream is expected as SOURCE."
+(defun decode-json-from-source (source &key strict junked-allowed)
   (etypecase source
     (pathname
-     (with-open-file (s source) (decode-json-from-stream s)))
+     (with-open-file (stream source)
+       (decode-json-from-stream stream
+                                :strict strict
+                                :junked-allowed junked-allowed)))
     (string
-     (with-input-from-string (s source) (decode-json-from-stream s)))
-    (stream (decode-json-from-stream source))))
-
-(defun decode-json-strict (&optional (stream *json-input*))
-  "Same as DECODE-JSON, but allow only Objects or Arrays on the top
-level, no junk afterwards."
-  (assert (member (peek-char t stream) '(#\{ #\[)))
-  (let ((object (decode-json-from-stream stream)))
-    (assert (eq :no-junk (peek-char t stream nil :no-junk)))
-    object))
+     (with-input-from-string (stream source)
+       (decode-json-from-stream stream
+                                :strict strict
+                                :junked-allowed junked-allowed)))
+    (stream
+     (decode-json-from-stream source
+                              :strict strict
+                              :junked-allowed junked-allowed))))
 
 (defmacro aggregate-scope-progv (variables &body body)
   "Establish a dynamic environment where all VARIABLES are freshly
@@ -531,7 +536,7 @@ package *JSON-SYMBOLS-PACKAGE*."
    :end-of-string #'string-stream-accumulator-get
    :aggregate-scope (union *aggregate-scope-variables*
                            '(*accumulator* *accumulator-last*))
-   :internal-decoder #'decode-json-from-stream))
+   :internal-decoder #'decode-json-from-stream-0))
 
 (defmacro with-decoder-semantics (&body body)
   "Execute BODY in a dynamic environement where the decoder semantics
@@ -542,9 +547,11 @@ is such as set by SET-DECODER-SEMANTICS."
 
 (set-decoder-semantics)
 
-(defun decode (source &key)
+(defun decode (source &key strict junked-allowed)
   (typecase source
-    (string (decode-json-from-string source))
-    ((or pathname stream) (decode-json-from-source source))
+    ((or string pathname stream) (decode-json-from-source
+                                  source
+                                  :strict strict
+                                  :junked-allowed junked-allowed))
     (cl:null nil)
     (t (error "unknown source"))))

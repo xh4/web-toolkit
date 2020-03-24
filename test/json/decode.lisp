@@ -114,25 +114,29 @@ returned!"
 (test decode/pass-3
   (decode-file (test-file "pass3")))
 
-(defparameter *ignore-tests* '(
-  1 ; says: "A JSON payload should be an object or array, not a string.", but who cares?
-  7 ; says: ["Comma after the close"],  ,but decode-file stops parsing after one object has been retrieved
-  8 ; says ["Extra close"]] ,but decode-file stops parsing after one object has been retrieved
-  10; says {"Extra value after close": true} "misplaced quoted value", but
-    ;   decode-file stops parsing after one object has been retrieved
-  18; says [[[[[[[[[[[[[[[[[[[["Too deep"]]]]]]]]]]]]]]]]]]]], but there is no formal limit
-))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defparameter *ignore-tests* '(
+                                 1 ; says: "A JSON payload should be an object or array, not a string.", but who cares?
+                                 7 ; says: ["Comma after the close"],  ,but decode-file stops parsing after one object has been retrieved
+                                 8 ; says ["Extra close"]] ,but decode-file stops parsing after one object has been retrieved
+                                 10; says {"Extra value after close": true} "misplaced quoted value", but
+                                        ;   decode-file stops parsing after one object has been retrieved
+                                 18; says [[[[[[[[[[[[[[[[[[[["Too deep"]]]]]]]]]]]]]]]]]]]], but there is no formal limit
+                                 ))
+  (defparameter *ignore-tests-strict* '(
+                                        18; says [[[[[[[[[[[[[[[[[[[["Too deep"]]]]]]]]]]]]]]]]]]]], but there is no formal limit
+                                        )))
 
-(defparameter *ignore-tests-strict* '(
-  18; says [[[[[[[[[[[[[[[[[[[["Too deep"]]]]]]]]]]]]]]]]]]]], but there is no formal limit
-))
+(defmacro test-fail-files ()
+  `(progn
+     ,@(loop for i from 1 upto 24
+          unless (or (member i *ignore-tests-strict*)
+                     (member i *ignore-tests*))
+          collect `(test ,(intern (format nil "DECODE/FAIL-~A" i))
+                     (signals error
+                       (decode-file (test-file ,(format nil "fail~A" i))))))))
 
-(test decode/fail-files
-  (dotimes (x 24)
-    (if (member x *ignore-tests-strict*)
-        (is-true t)
-        (5am:signals error
-          (decode-file (test-file (format nil "fail~a" x)))))))
+(test-fail-files)
 
 (defun contents-of-file (file)
   (with-open-file (stream file :direction :input)

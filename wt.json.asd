@@ -29,12 +29,14 @@
 
 (defsystem wt.json/test
   :depends-on (:wt.json
-               :wt.test)
+               :wt.test
+               :cl-ppcre)
   :components ((:module "test/json"
                         :components ((:file "package")
                                      (:file "object")
                                      (:file "access")
                                      (:file "encode")
-                                     (:file "decode"))))
+                                     (:file "decode")
+                                     (:file "suite"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :json-test)))
