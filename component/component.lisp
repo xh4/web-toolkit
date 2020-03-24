@@ -60,7 +60,8 @@
   (typecase slot
     (symbol slot)
     (slot-definition (setf slot (slot-definition-name slot))))
-  (if (eq 'version slot)
+  (if (and (eq 'version slot)
+           (slot-boundp object 'version))
       (with-propagation (call-next-method))
       (prog1
           (without-propagation (call-next-method))
