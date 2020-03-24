@@ -239,6 +239,10 @@ in the scope of every JSON String.")
   "A list of symbols naming dynamic variables which should be re-bound
 in the scope of every JSON aggregate value (Object, Array or String).")
 
+(defvar *decode-depth* 0)
+
+(defvar *max-decode-depth* 20)
+
 (defun decode-json-from-stream-0 (&optional (stream *json-input*))
   (multiple-value-bind (dispatch-token-type dispatch-token)
       (read-json-token stream)
@@ -293,10 +297,6 @@ bound (to their current values), and execute BODY in it, returning the
 result."
   `(progv ,variables (mapcar #'symbol-value ,variables)
      ,@body))
-
-(defvar *decode-depth* 0)
-
-(defvar *max-decode-depth* 20)
 
 (defun decode-json-array (stream)
   "Read comma-separated sequence of JSON Values until a closing bracket,
