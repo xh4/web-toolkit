@@ -22,6 +22,7 @@
                 :reactive-object
                 :reactive-class
                 :variable-value
+                :with-variable-capturing
                 :object-propagation
                 :add-dependency
                 :react

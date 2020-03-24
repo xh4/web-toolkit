@@ -70,8 +70,11 @@
                          :key 'slot-definition-name))
           (incf (component-version object))))))
 
-(defmethod react ((component-1 component) (component-2 component))
-  (incf (component-version component-1)))
+(defmethod react ((component component) (child component))
+  (incf (component-version component)))
+
+(defmethod react ((component component) (variable variable))
+  (incf (component-version component)))
 
 (defgeneric compute-component-class (component)
   (:method ((component component))
@@ -190,8 +193,8 @@
                for value = (dom:get-attribute component name)
                if (equal "class" name)
                do (add-class root value)
-               else do (dom:set-attribute root name value)))
-          (setf (component-root component) root)))
+               else do (dom:set-attribute root name value))
+            (setf (component-root component) root))))
       (error "Render is not specified on component ~A" component))))
 
 (defun make-render (lambda-form)
@@ -206,5 +209,6 @@
       (let ((render-lambda-form
              `(lambda ,lambda-list
                 (without-propagation
-                  ,@body))))
+                  (with-variable-capturing (,(car lambda-list))
+                    ,@body)))))
         (values (eval render-lambda-form) render-lambda-form)))))
