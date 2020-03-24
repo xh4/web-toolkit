@@ -24,6 +24,7 @@
    :variable-name
    :variable-form
    :variable-value
+   :with-variable-capturing
    ;; other
    :add-dependency)
   (:import-from :utility

@@ -39,13 +39,17 @@
 
 (defvar *variable-dependency* nil)
 
+(defmacro with-variable-capturing ((object) &body body)
+  `(let ((*variable* ,object)
+         (*variable-dependency* nil))
+     (prog1
+         (progn ,@body)
+       (loop for v in *variable-dependency*
+          do (add-dependency *variable* v)))))
+
 (defun reify (variable)
-  (let ((value (let ((*variable* variable)
-                     (*variable-dependency* nil))
-                 (prog1
-                     (eval (variable-form variable))
-                   (loop for v in *variable-dependency*
-                      do (add-dependency *variable* v))))))
+  (let ((value (with-variable-capturing (variable)
+                 (eval (variable-form variable)))))
     (when (typep value 'reactive-object)
       (add-dependency variable value))
     (with-propagation
