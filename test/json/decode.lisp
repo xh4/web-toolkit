@@ -101,7 +101,7 @@ returned!"
   (with-open-file (stream path :direction :input)
     (with-fp-overflow-handler (invoke-restart 'json::placeholder :infty)
       (with-no-char-handler (invoke-restart 'json::substitute-char #\?)
-        (json::decode-json-strict stream)))))
+        (json::decode stream :strict t)))))
 
 ;; All test files are taken from http://www.crockford.com/JSON/JSON_checker/test/
 
