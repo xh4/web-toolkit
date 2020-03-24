@@ -70,9 +70,32 @@
                 (html:head
                  (html:meta :charset "utf-8")
                  (html:title title)
-                 styles
-                 (html:script :src "/page.js"))
-                (html:body content)))))))))))
+                 styles)
+                (html:body
+                 content
+                 (html:script
+                  (ps*
+                   `(progn
+                      (defvar url (+ "ws://"
+                                     (@ location "host")
+                                     (@ location "pathname")))
+                      (defvar ws (new (-web-socket url)))
+                      (chain ws (add-event-listener
+                                 "open"
+                                 (lambda (m)
+                                   (chain console (log "Open" url)))))
+                      (chain ws (add-event-listener
+                                 "message"
+                                 (lambda (m)
+                                   (chain location (reload)))))
+                      (chain ws (add-event-listener
+                                 "close"
+                                 (lambda (event)
+                                   (chain console (log "Close" event)))))
+                      (chain ws (add-event-listener
+                                 "error"
+                                 (lambda (event)
+                                   (chain console (log "Error" event)))))))))))))))))))
 
 (define-session page-session (reactive-object)
   ((page

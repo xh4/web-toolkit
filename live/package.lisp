@@ -42,4 +42,9 @@
                 :with-propagation
                 :react)
   (:import-from :utility
-                :rewrite-class-option))
+                :rewrite-class-option)
+  (:import-from :parenscript
+                :ps*
+                :@
+                :new
+                :chain))

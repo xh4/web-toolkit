@@ -8,7 +8,7 @@
     ()
     (:render
      (lambda ()
-       (html:h1 "Test Page 1"))))
+       (html:h1 "Test Page 3"))))
 
   (defmethod page-content ((page test-page))
     (test-component))
@@ -17,11 +17,6 @@
     ()
     (:listener (http:listener :port 4001))
     (:handler (router
-               (:get "/page.js" (lambda () (reply
-                                            (merge-pathnames
-                                             "live/page.js"
-                                             (asdf:system-source-directory
-                                              (asdf:find-system :wt))))))
                (:page test-page)))))
 
 ;; (http:start-server test-server)
