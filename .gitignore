@@ -20,8 +20,8 @@ tramp
 /node_modules
 /dist
 
-/book
-/wt.book.asd
+/documentation/index.html
+
 /website
 /wt.website.asd
 /chrome
