@@ -16,7 +16,7 @@ and the token itself, as a string or character."
        (values :punct (read-char stream)))
       ((#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\-)
        (read-json-number-token stream))
-      ((#\Space #\Newline) (read-char stream) (read-json-token stream))
+      ((#\Space #\Newline #\Return #\Tab) (read-char stream) (read-json-token stream))
       (t (if (alpha-char-p c)
              (read-json-name-token stream)
              (json-syntax-error stream "Invalid char on JSON input: `~C'"
@@ -34,7 +34,7 @@ such tokens is :SYMBOL)."
      (case c
        ((#\{ #\[ #\] #\} #\" #\: #\,) :punct)
        ((#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\-) :number)
-       ((#\Space #\Newline) (read-char stream)
+       ((#\Space #\Newline #\Return #\Tab) (read-char stream)
         (return-from peek-json-token
           (peek-json-token stream)))
        (t (if (alpha-char-p c)
@@ -263,7 +263,12 @@ in the scope of every JSON aggregate value (Object, Array or String).")
   (prog1
       (decode-json-from-stream-0 stream)
     (unless junked-allowed
-      (assert (eq :no-junk (peek-char t stream nil :no-junk))))))
+      (tagbody :check-junk
+         (let ((c (peek-char nil stream nil nil)))
+           (case c
+             ((nil))
+             ((#\Space #\Newline #\Return #\Tab) (read-char stream) (go :check-junk))
+             (t (json-syntax-error stream "Invalid char on JSON input: `~C'" c))))))))
 
 (defun decode-json-from-source (source &key strict junked-allowed)
   (etypecase source
