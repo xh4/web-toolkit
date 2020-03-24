@@ -100,9 +100,10 @@
     (rewrite-class-option options :metaclass page-class))
   #+lispworks
   (rewrite-class-option options :optimize-slot-access nil)
-  `(defclass ,page-name ,superclasses
-     ,slots
-     ,@options))
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (defclass ,page-name ,superclasses
+       ,slots
+       ,@options)))
 
 (defclass page-route (route)
   ((page-class
