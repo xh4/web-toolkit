@@ -2,6 +2,9 @@
 
 (define-variable *style*
     "
+body {
+  background-color: re;
+}
 div.head h1 {
     margin-bottom: 0.8em;
 }

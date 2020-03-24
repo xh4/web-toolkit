@@ -60,9 +60,7 @@
 
 (defmethod print-object ((variable variable) stream)
   (print-unreadable-object (variable stream :type t :identity t)
-    (format stream "~A (~A)"
-            (variable-name variable)
-            (variable-value variable))))
+    (format stream "~A" (variable-name variable))))
 
 (defmacro define-variable (name form)
   (let ((vname (intern (format nil "V/~A" name))))

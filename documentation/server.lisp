@@ -1,7 +1,6 @@
 (in-package :documentation)
 
-(define-page documentation-page ()
-  ())
+(define-page documentation-page () ())
 
 (defmethod page-title ((page documentation-page))
   "Lisp Web Toolkit")
@@ -13,11 +12,6 @@
   ()
   (:listener (listener :port 7000))
   (:handler (router
-             ;; (:get "/page.js" (lambda ()
-             ;;                    (reply (merge-pathnames
-             ;;                            "reactive/page.js"
-             ;;                            (asdf:system-source-directory
-             ;;                             (asdf:find-system :wt))))))
              (:page documentation-page))))
 
 (defun start-server ()

@@ -60,4 +60,5 @@
                  :summary (list
                            (p "Serialize HTML Document or Element to a stream.")
                            (evil (serialize (div (span "1") (span "2"))))
-                           (evil (serialize (div (span "1") (span "2")) *standard-output*))))))
+                           (with-output-to-string (*standard-output*)
+                             (evil (serialize (div (span "1") (span "2")) *standard-output*)))))))

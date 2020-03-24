@@ -1,15 +1,18 @@
 (in-package :documentation)
 
+(defvar *doc* nil)
+
 (define-component documentation ()
   ((title
-    :initarg :title
     :initform "Lisp Web Toolkit")
    (description
-    :initarg :description
-    :initform "Object-Oriented Reactive Lisp Systems for Rapid Web Application Development"))
+    :initform "Object-Oriented Reactive Lisp Systems for Rapid Web Application Development")
+   (author
+    :initform "Xiangyu He"))
   (:render
    (lambda (doc)
-     (with-slots (title description) doc
+     (setf *doc* doc)
+     (with-slots (title description author) doc
        (let ((chapters (list
                         chapter-getting-started
                         chapter-uri
@@ -28,8 +31,7 @@
           (div
            :class "head"
            (h1 :id "title" title)
-           (h2 :id "subtitle"
-               "Object-Oriented Lisp Systems for Rapid Web Application Development")
+           (h2 :id "subtitle" description)
            (dl
             (dt "GitHub")
             (dd (a :href "https://github.com/xh4/web-toolkit"
@@ -54,7 +56,7 @@
             (dt "Author")
             (dd (a :href "https://xh.coobii.com"
                    :target "_blank"
-                   "Xiangyu He")
+                   author)
                 (span " <")
                 (a :href "mailto:xh@coobii.com"
                    "xh@coobii.com")
