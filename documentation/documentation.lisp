@@ -9,15 +9,8 @@
     :initform "Xiangyu He"))
   (:render
    (lambda (doc)
-     (with-slots (title description author) doc
-       (let ((chapters (list
-                        chapter-get-started
-                        chapter-uri
-                        chapter-html
-                        chapter-json
-                        chapter-css
-                        chapter-http
-                        chapter-websocket)))
+     (with-slots (title description author children) doc
+       (let ((chapters children))
          (assign-numbers chapters)
          (mapcar #'assign-chapter-articles chapters)
          (div
@@ -188,7 +181,14 @@
        ol))))
 
 (defun make-documentation ()
-  (let ((doc (documentation)))
+  (let ((doc (documentation
+              chapter-get-started
+              chapter-uri
+              chapter-html
+              chapter-json
+              chapter-css
+              chapter-http
+              chapter-websocket)))
     (with-slots (title description) doc
       (let ((html (html:serialize
                    (html:document

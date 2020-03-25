@@ -6,7 +6,14 @@
   "Lisp Web Toolkit")
 
 (defmethod page-content ((page documentation-page))
-  (documentation))
+  (documentation
+   chapter-get-started
+   chapter-uri
+   chapter-html
+   chapter-json
+   chapter-css
+   chapter-http
+   chapter-websocket))
 
 (define-server documentation-server ()
   ()
