@@ -28,8 +28,8 @@
      (pre
       "(asdf:load-system :wt)")))
 
-(define-variable chapter-getting-started
+(define-variable chapter-get-started
     (chapter
-     :title "Getting Started"
+     :title "Get Started"
      article-get-lisp-web-toolkit
      article-load-a-system))

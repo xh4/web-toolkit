@@ -9,9 +9,7 @@
                :wt.component
                :wt.http
                :wt.live
-               :local-time
                :cl-ppcre
-               :flexi-streams
                :closer-mop)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "documentation"
@@ -24,7 +22,7 @@
                                      (:file "symbol")
                                      (:file "chapter")
                                      (:file "article")
-                                     (:file "chapter-getting-started")
+                                     (:file "chapter-get-started")
                                      (:file "chapter-uri")
                                      (:file "chapter-http")
                                      (:file "chapter-html")

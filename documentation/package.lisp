@@ -28,34 +28,11 @@
                 :page-title
                 :page-content)
   (:import-from :html
-                :document
+                :document :text
                 :html :head :body
-                :text
-                :h1
-                :h2
-                :h3
-                :a
-                :p
-                :pre
-                :div
-                :span
-                :dl
-                :dt
-                :dd
-                :hr
-                :table
-                :thead
-                :tbody
-                :th
-                :tr
-                :td
-                :ol
-                :li
-                :br
-                :img
-                :figure
-                :figcaption
-                :section
+                :h1 :h2 :h3 :a :p :pre :div
+                :span :dl :dt :dd :hr :table :thead :tbody
+                :th :tr :td :ol :li :br :img :figure :figcaption :section
                 :serialize)
   (:import-from :closer-mop
                 :compute-class-precedence-list

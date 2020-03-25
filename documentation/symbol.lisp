@@ -34,21 +34,23 @@
        do (let* ((superclass-name (class-name superclass))
                  (superclass-package-name (package-name
                                            (symbol-package superclass-name))))
-            (appendf list (list (span
-                                 (when (and
-                                        (not (equal superclass-package-name
-                                                    (package-name
-                                                     (symbol-package
-                                                      (class-name class)))))
-                                        (not (equal "COMMON-LISP"
-                                                    superclass-package-name)))
-                                   (list
-                                    (span :class "superclass-package-name"
-                                          (string-downcase superclass-package-name))
-                                    (span :class "symbol-colon" ":")))
-                                 (span :class "superclass-name"
-                                       (string-downcase
-                                        (symbol-name superclass-name)))))))
+            (unless (equal "SB-PCL"
+                           superclass-package-name)
+              (appendf list (list (span
+                                   (when (and
+                                          (not (equal superclass-package-name
+                                                      (package-name
+                                                       (symbol-package
+                                                        (class-name class)))))
+                                          (not (equal "COMMON-LISP"
+                                                      superclass-package-name)))
+                                     (list
+                                      (span :class "superclass-package-name"
+                                            (string-downcase superclass-package-name))
+                                      (span :class "symbol-colon" ":")))
+                                   (span :class "superclass-name"
+                                         (string-downcase
+                                          (symbol-name superclass-name))))))))
        finally (return list))))
 
 (define-component class/o (symbol/o)

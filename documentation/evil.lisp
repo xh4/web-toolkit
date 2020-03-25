@@ -40,4 +40,4 @@
                                 (prin1 ,form stream)))
                             (with-output-to-string (stream)
                               (prin1 ,form stream)))))
-            (setf string (cl-ppcre:regex-replace "\\s+([A-Z0-9]+)?\\>$" string ">"))))))
+            (setf string (remove-identity string))))))

@@ -11,7 +11,7 @@
    (lambda (doc)
      (with-slots (title description author) doc
        (let ((chapters (list
-                        chapter-getting-started
+                        chapter-get-started
                         chapter-uri
                         chapter-html
                         chapter-json
@@ -188,21 +188,23 @@
        ol))))
 
 (defun make-documentation ()
-  (let ((html (html:serialize
-               (html:document
-                (html:html
-                 (html:head
-                  (html:meta :charset "utf-8")
-                  (html:title "Lisp Web Toolkit")
-                  (html:meta :name "description"
-                             :content "Object-Oriented Reactive Lisp Systems for Rapid Web Application Development"))
-                 (html:body
-                  (documentation)))))))
-    (let ((pathname (merge-pathnames
-                     "documentation/index.html"
-                     (asdf:system-source-directory (asdf:find-system :wt)))))
-      (with-open-file (stream pathname
-                       :direction :output
-                       :if-exists :supersede)
-        (format stream "~A" html))
-      pathname)))
+  (let ((doc (documentation)))
+    (with-slots (title description) doc
+      (let ((html (html:serialize
+                   (html:document
+                    (html:html
+                     (html:head
+                      (html:meta :charset "utf-8")
+                      (html:title title)
+                      (html:meta :name "description"
+                                 :content description))
+                     (html:body
+                      doc))))))
+        (let ((pathname (merge-pathnames
+                         "documentation/index.html"
+                         (asdf:system-source-directory (asdf:find-system :wt)))))
+          (with-open-file (stream pathname
+                                  :direction :output
+                                  :if-exists :supersede)
+            (format stream "~A" html))
+          pathname)))))
