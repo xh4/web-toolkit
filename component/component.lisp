@@ -55,20 +55,28 @@
      when (typep object 'component)
      do (incf (component-version object))))
 
+(defvar *component-initializing* nil)
+
+(defmethod shared-initialize :around ((class component) slot-names
+                                     &key &allow-other-keys)
+  (declare (ignore slot-names))
+  (let ((*component-initializing* t))
+    (call-next-method)))
+
 (defmethod (setf slot-value-using-class) :around (value (class component-class) object slot)
   (declare (ignore value))
   (typecase slot
     (symbol slot)
     (slot-definition (setf slot (slot-definition-name slot))))
-  (if (and (eq 'version slot)
-           (slot-boundp object 'version))
-      (with-propagation (call-next-method))
-      (prog1
-          (without-propagation (call-next-method))
-        (when (and (slot-boundp object 'version)
-                   (find slot (class-direct-slots class)
-                         :key 'slot-definition-name))
-          (incf (component-version object))))))
+  (if *component-initializing*
+      (without-propagation (call-next-method))
+      (if (eq 'version slot)
+          (call-next-method)
+          (prog1
+              (without-propagation (call-next-method))
+            (when (find slot (class-direct-slots class)
+                        :key 'slot-definition-name)
+              (incf (component-version object)))))))
 
 (defmethod react ((component component) (child component))
   (incf (component-version component)))
@@ -128,6 +136,9 @@
                                 :attributes root-attributes
                                 :children children
                                 slot-attributes)))
+          (loop for child in children
+             when (typep child 'reactive-object)
+             do (add-dependency component child))
           component)))))
 
 (defmacro define-component (name superclasses slots &rest options)
