@@ -18,7 +18,9 @@
                         :components ((:file "package")
                                      (:file "utility")
                                      (:file "component")
-                                     (:file "style"))))
+                                     (:file "render")
+                                     (:file "style")
+                                     (:file "reconciliation"))))
   :in-order-to ((test-op (test-op :wt.component/test)))
   :perform (load-op :after (o c)
                     #+lispworks
