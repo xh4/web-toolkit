@@ -6,7 +6,8 @@
   (:export
    :define-component
    :component
-   :render)
+   :render
+   :render-all)
   (:import-from :html
                 :serialize)
   (:import-from :dom
