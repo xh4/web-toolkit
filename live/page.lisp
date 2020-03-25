@@ -29,8 +29,8 @@
 
 (defgeneric (setf page-content) (value page))
 
-(defmethod page-content :around ((page page))
-  (let ((component (call-next-method)))
+(defun render-page (page)
+  (let ((component (page-content page)))
     (when (typep component 'reactive-object)
       (add-dependency page component))
     (with-propagation
@@ -60,7 +60,7 @@
    (lambda (handler request)
      (let ((page (handler-page handler)))
        (let ((title (page-title page))
-             (content (page-content page)))
+             (content (render-page page)))
          (let ((rules (com::compute-style-rules content)))
            (let ((styles (loop for rule in rules
                             collect (html:style (css::serialize rule)))))
@@ -111,8 +111,7 @@
   (:session-class 'page-session)
   (:on-open (lambda (endpoint session)
               (let ((page (endpoint-page endpoint)))
-                (let ((com (page-content page)))
-                  (com:render com))
+                (render-page page)
                 (setf (session-page session) page)
                 (add-dependency session page))))
   (:instanize nil))
@@ -161,7 +160,7 @@
 
 (defmethod react ((page page) (component component))
   ;; (format t "Update page ~A for component ~A~%" page component)
-  (page-content page))
+  (render-page page))
 
 (defmethod react ((session page-session) (page page))
   ;; (format t "Update page session ~A for page ~A~%" session page)

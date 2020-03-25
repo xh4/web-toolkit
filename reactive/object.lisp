@@ -20,11 +20,6 @@
   (with-slots (propagation) object
     (hash-table-keys propagation)))
 
-(defmethod shared-initialize :around ((object reactive-object) slot-names &key &allow-other-keys)
-  (declare (ignore slot-names))
-  (without-propagation
-    (call-next-method)))
-
 (defmethod shared-initialize :after ((object reactive-object) slot-names &key &allow-other-keys)
   (declare (ignore slot-names))
   (let ((class (class-of object)))

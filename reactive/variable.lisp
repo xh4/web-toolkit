@@ -50,8 +50,8 @@
 (defun reify (variable)
   (let ((value (with-variable-capturing (variable)
                  (eval (variable-form variable)))))
-    (when (typep value 'reactive-object)
-      (add-dependency variable value))
+    ;; (when (typep value 'reactive-object)
+    ;;   (add-dependency variable value))
     (with-propagation
       (setf (slot-value variable 'value) value))))
 
