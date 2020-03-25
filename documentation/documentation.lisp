@@ -1,7 +1,5 @@
 (in-package :documentation)
 
-(defvar *doc* nil)
-
 (define-component documentation ()
   ((title
     :initform "Lisp Web Toolkit")
@@ -11,7 +9,6 @@
     :initform "Xiangyu He"))
   (:render
    (lambda (doc)
-     (setf *doc* doc)
      (with-slots (title description author) doc
        (let ((chapters (list
                         chapter-getting-started
