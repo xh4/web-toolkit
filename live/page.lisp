@@ -97,7 +97,8 @@
                           (case type
                             ("replace" (replace (@ message 1) (@ message 2)))
                             ("update" (update (@ message 1) (@ message 2)))
-                            ("remove" (remove (@ message 1))))))
+                            ("remove" (remove (@ message 1)))
+                            ("insert" (insert (@ message 1) (@ message 2) (@ message 3))))))
 
                       (defun replace (selector node-string)
                         (let ((new-node (chain (new (-d-o-m-parser))
@@ -127,6 +128,19 @@
                                   (setf node (getprop node 'child-nodes (getprop selector i))))
                           (chain console (log "Remove" selector node))
                           (chain node parent-node (remove-child node))))
+
+                      (defun insert (selector index node-string)
+                        (let ((new-node (chain (new (-d-o-m-parser))
+                                               (parse-from-string node-string "text/html")
+                                               body
+                                               first-child)))
+                          (let ((parent-node (@ document body)))
+                            (for-in (i selector)
+                                    (setf parent-node
+                                          (getprop parent-node 'child-nodes (getprop selector i))))
+                            (chain console (log "Insert" selector parent-node index new-node))
+                            (chain parent-node (insert-before new-node
+                                                              (getprop parent-node 'children index))))))
 
                       (defvar url (+ "ws://"
                                      (@ location "host")
@@ -239,5 +253,8 @@
                                                      (loop for (name . value) in (fourth action)
                                                         do (setf (json:get object name) value))
                                                      object)))
-                             (:remove (json:array "remove" selector)))
+                             (:remove (json:array "remove" selector))
+                             (:insert (json:array "insert" selector
+                                                  (fourth action)
+                                                  (html:serialize (fifth action)))))
              do (send-text session (json:encode message))))))))
