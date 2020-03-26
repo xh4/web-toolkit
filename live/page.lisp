@@ -4,14 +4,15 @@
 
 (define-reactive-class page ()
   ((title
-    :initarg :title
     :initform nil)
    (favicon
-    :initarg :favicon
     :initform nil)
    (content
-    :initarg :content
-    :initform nil))
+    :initform nil)
+   (%content
+    :initform nil)
+   (version
+    :initform 0))
   (:metaclass page-class))
 
 (defgeneric page-title (page)
@@ -29,12 +30,13 @@
 
 (defgeneric (setf page-content) (value page))
 
-(defun render-page (page)
-  (let ((component (page-content page)))
+(defmethod page-content :around ((page page))
+  (let ((component (call-next-method)))
     (when (typep component 'reactive-object)
       (add-dependency page component))
-    (with-propagation
-      (setf (slot-value page 'content) component))))
+    (without-propagation
+      (setf (slot-value page '%content) (render-all component)
+            (slot-value page 'content) component))))
 
 (defgeneric initialize-page (page request)
   (:method ((page page) request)))
@@ -60,7 +62,7 @@
    (lambda (handler request)
      (let ((page (handler-page handler)))
        (let ((title (page-title page))
-             (content (render-page page)))
+             (content (page-content page)))
          (let ((rules (com::compute-style-rules content)))
            (let ((styles (loop for rule in rules
                             collect (html:style (css::serialize rule)))))
@@ -76,6 +78,48 @@
                  (html:script
                   (ps*
                    `(progn
+                      (defun handle-raw-message (message)
+                        (try
+                         (setf message (chain -j-s-o-n (parse message)))
+                         (:catch (e)
+                                 (chain console (error "Unable to parse message" message))
+                                 (chain console (error e))
+                                 (return)))
+                        (unless (chain -Array (is-array message))
+                          (chain console (error "Unable to handle message" message)))
+                        (when (= (@ message length) 0)
+                          (chain console (error "Unable to handle message" message)))
+                        (handle-message message))
+
+                      (defun handle-message (message)
+                        (chain console (log "Receive" message))
+                        (let ((type (@ message 0)))
+                          (case type
+                            ("replace" (replace (@ message 1) (@ message 2)))
+                            ("update" (update (@ message 1) (@ message 2))))))
+
+                      (defun replace (selector node-string)
+                        (let ((new-node (chain (new (-d-o-m-parser))
+                                           (parse-from-string node-string "text/html")
+                                           body
+                                           first-child)))
+                          (let ((old-node (@ document body)))
+                            (for-in (i selector)
+                                    (setf old-node (getprop old-node 'child-nodes (getprop selector i))))
+                            (chain console (log "Replace" selector old-node new-node))
+                            (chain old-node (replace-with new-node)))))
+
+                      (defun update (selector attributes)
+                        (let ((node (@ document body)))
+                          (for-in (i selector)
+                                  (setf node (getprop node 'child-nodes (getprop selector i))))
+                          (chain console (log "Update" selector node attributes))
+                          (for-in (name attributes)
+                                  (let ((value (getprop attributes name)))
+                                    (if value
+                                        (chain node (set-attribute name value))
+                                        (chain node (remove-attribute name)))))))
+
                       (defvar url (+ "ws://"
                                      (@ location "host")
                                      (@ location "pathname")))
@@ -86,8 +130,9 @@
                                    (chain console (log "Open" url)))))
                       (chain ws (add-event-listener
                                  "message"
-                                 (lambda (m)
-                                   (chain location (reload)))))
+                                 (lambda (event)
+                                   (chain console (log "Message" (@ event data)))
+                                   (handle-raw-message (@ event data)))))
                       (chain ws (add-event-listener
                                  "close"
                                  (lambda (event)
@@ -111,7 +156,7 @@
   (:session-class 'page-session)
   (:on-open (lambda (endpoint session)
               (let ((page (endpoint-page endpoint)))
-                (render-page page)
+                (page-content page)
                 (setf (session-page session) page)
                 (add-dependency session page))))
   (:instanize nil))
@@ -160,8 +205,30 @@
 
 (defmethod react ((page page) (component component))
   ;; (format t "Update page ~A for component ~A~%" page component)
-  (render-page page))
+  (incf (slot-value page 'version)))
+
+(defvar *actions* nil)
 
 (defmethod react ((session page-session) (page page))
   ;; (format t "Update page session ~A for page ~A~%" session page)
-  (send-text session "update"))
+  (when (session-open-p session)
+    (let* ((old-content (html:body (slot-value page '%content))))
+      (multiple-value-bind (new-content render-table)
+          (render-all (html:body (page-content page)))
+        (let ((actions (com::diff old-content new-content)))
+          (setf *actions* actions)
+          (format t "~A~%" actions)
+          (loop for action in actions
+             for type = (first action)
+             for selector = (second action)
+             for message = (case type
+                             (:replace (json:array "replace"
+                                                   selector
+                                                   (html:serialize (fourth action))))
+                             (:update (json:array "update"
+                                                  selector
+                                                   (let ((object (json:object)))
+                                                     (loop for (name . value) in (fourth action)
+                                                        do (setf (json:get object name) value))
+                                                     object))))
+             do (send-text session (json:encode message))))))))

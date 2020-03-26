@@ -29,9 +29,11 @@
                 :on-message
                 :on-close
                 :on-error
-                :send-text)
+                :send-text
+                :session-open-p)
   (:import-from :component
-                :component)
+                :component
+                :render-all)
   (:import-from :uri
                 :uri-path)
   (:import-from :reactive
@@ -40,6 +42,7 @@
                 :reactive-class
                 :add-dependency
                 :with-propagation
+                :without-propagation
                 :react)
   (:import-from :utility
                 :rewrite-class-option)
@@ -47,4 +50,7 @@
                 :ps*
                 :@
                 :new
-                :chain))
+                :chain
+                :try
+                :for-in
+                :getprop))
