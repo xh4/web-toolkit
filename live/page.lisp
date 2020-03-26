@@ -96,7 +96,8 @@
                         (let ((type (@ message 0)))
                           (case type
                             ("replace" (replace (@ message 1) (@ message 2)))
-                            ("update" (update (@ message 1) (@ message 2))))))
+                            ("update" (update (@ message 1) (@ message 2)))
+                            ("remove" (remove (@ message 1))))))
 
                       (defun replace (selector node-string)
                         (let ((new-node (chain (new (-d-o-m-parser))
@@ -119,6 +120,13 @@
                                     (if value
                                         (chain node (set-attribute name value))
                                         (chain node (remove-attribute name)))))))
+
+                      (defun remove (selector)
+                        (let ((node (@ document body)))
+                          (for-in (i selector)
+                                  (setf node (getprop node 'child-nodes (getprop selector i))))
+                          (chain console (log "Remove" selector node))
+                          (chain node parent-node (remove-child node))))
 
                       (defvar url (+ "ws://"
                                      (@ location "host")
@@ -230,5 +238,6 @@
                                                    (let ((object (json:object)))
                                                      (loop for (name . value) in (fourth action)
                                                         do (setf (json:get object name) value))
-                                                     object))))
+                                                     object)))
+                             (:remove (json:array "remove" selector)))
              do (send-text session (json:encode message))))))))
