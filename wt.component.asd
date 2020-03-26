@@ -20,7 +20,7 @@
                                      (:file "component")
                                      (:file "render")
                                      (:file "style")
-                                     (:file "reconciliation"))))
+                                     (:file "diff"))))
   :in-order-to ((test-op (test-op :wt.component/test)))
   :perform (load-op :after (o c)
                     #+lispworks
@@ -35,6 +35,7 @@
                                      (:file "helper")
                                      (:file "component")
                                      (:file "render")
+                                     (:file "diff")
                                      (:file "reactive"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :component-test)))
