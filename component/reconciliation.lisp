@@ -21,7 +21,9 @@
             (loop for (a-name . a-value) in a-attributes
                for (b-name . b-value) = (assoc a-name b-attributes :test 'equal)
                do (if b-name
-                      (unless (equal a-value b-value)
+                      (unless (if (equal a-name "class")
+                                  (class-equal a-value b-value)
+                                  (equal a-value b-value))
                         (push `(,b-name . ,b-value) attributes))
                       (push `(,a-name . nil) attributes)))
             (loop for (b-name . b-value) in b-attributes
@@ -38,6 +40,13 @@
       `((:replace ,*diff-path* ,a ,b))))
   (:method (a b)
     `((:replace ,*diff-path* ,a ,b))))
+
+(defun class-equal (a-class b-class)
+  (let ((a-classes (split-sequence #\Space a-class))
+        (b-classes (split-sequence #\Space b-class)))
+    (equal (sort a-classes #'string<) (sort b-classes #'string<))))
+
+;; (class-equal "foo bar" "bar foo")
 
 (defun diff-children (a b)
   (let ((a-children (dom:children a))
