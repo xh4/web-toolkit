@@ -61,7 +61,7 @@
          do
            (typecase child
              (string (dom:append-child element (text child)))
-             (element (dom:append-child element child))
+             ((or element text) (dom:append-child element child))
              (css:style (setf (slot-value element 'style)
                               (css:merge-style (slot-value element 'css:style) child)))
              (t (dom:append-child element (text (format nil "~A" child)))))))
