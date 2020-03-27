@@ -43,14 +43,18 @@
 
 (defun diff-children (a b)
   (let ((a-children (dom:children a))
-        (b-children (dom:children b)))
-    (loop for index from 0 to (max (length a-children) (length b-children))
+        (b-children (dom:children b))
+        (remove-count 0))
+    (loop for index upto (1- (max (length a-children) (length b-children)))
        for a-child = (nth index a-children)
        for b-child = (nth index b-children)
        append (cond
                 ((and a-child (not b-child))
-                 `((:remove ,(append *diff-path* `(,index)) ,a-child)))
+                 (prog1
+                     `((:remove ,(append *diff-path* `(,(- index remove-count))) ,a-child))
+                   (incf remove-count)))
                 ((and (not a-child) b-child)
                  `((:insert ,*diff-path* ,a ,index ,b-child)))
-                (t (let ((*diff-path* (append *diff-path* `(,index))))
-                     (diff-node a-child b-child)))))))
+                ((and a-child b-child)
+                 (let ((*diff-path* (append *diff-path* `(,index))))
+                   (diff-node a-child b-child)))))))
