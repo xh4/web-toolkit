@@ -237,7 +237,7 @@
     (let* ((old-content (html:body (slot-value page '%content))))
       (multiple-value-bind (new-content render-table)
           (render-all (html:body (page-content page)))
-        (let ((actions (com::diff old-content new-content)))
+        (let ((actions (diff old-content new-content)))
           (setf *actions* actions)
           (format t "~A~%" actions)
           (loop for action in actions

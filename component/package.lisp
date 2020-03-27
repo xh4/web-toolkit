@@ -7,7 +7,8 @@
    :define-component
    :component
    :render
-   :render-all)
+   :render-all
+   :diff)
   (:import-from :html
                 :serialize)
   (:import-from :dom
