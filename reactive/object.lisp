@@ -32,3 +32,10 @@
       (setf (gethash object-2 dependency) nil))
     (with-slots (propagation) object-2
       (setf (gethash object-1 propagation) nil))))
+
+(defun remove-dependency (object-1 object-2)
+  (when (and object-1 object-2)
+    (with-slots (dependency) object-1
+      (remhash object-2 dependency))
+    (with-slots (propagation) object-2
+      (remhash object-1 propagation))))

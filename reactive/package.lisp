@@ -26,7 +26,8 @@
    :variable-value
    :with-variable-capturing
    ;; other
-   :add-dependency)
+   :add-dependency
+   :remove-dependency)
   (:import-from :utility
                 :rewrite-class-option)
   (:import-from :closer-mop
