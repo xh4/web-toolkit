@@ -42,8 +42,8 @@
 (defun write-text (text &optional (stream *standard-output*) &key)
   (let ((parent (dom:parent text)))
     (etypecase parent
+      (raw-text-element (write-raw-text text stream))
       (escapable-raw-text-element (write-escapable-raw-text text stream))
-      (element (write-normal-text text stream))
       (t (write-normal-text text stream)))))
 
 (defun write-normal-text (text &optional (stream *standard-output*) &key)
@@ -51,6 +51,9 @@
      do (cond
           ((char= char #\<) (write-string "&lt;" stream))
           (t (write-char char stream)))))
+
+(defun write-raw-text (text &optional (stream *standard-output*) &key)
+  (write-string (dom:data text) stream))
 
 (defun write-escapable-raw-text (text &optional (stream *standard-output*) &key)
   (loop for char across (dom:data text)
