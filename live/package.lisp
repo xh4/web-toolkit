@@ -42,6 +42,7 @@
                 :reactive-object
                 :reactive-class
                 :add-dependency
+                :remove-dependency
                 :with-propagation
                 :without-propagation
                 :react)

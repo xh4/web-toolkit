@@ -31,12 +31,15 @@
 (defgeneric (setf page-content) (value page))
 
 (defmethod page-content :around ((page page))
-  (let ((component (call-next-method)))
-    (when (typep component 'reactive-object)
-      (add-dependency page component))
-    (without-propagation
-      (setf (slot-value page '%content) (render-all component)
-            (slot-value page 'content) component))))
+  (let ((current-content (slot-value page 'content)))
+    (when (typep current-content 'reactive-object)
+      (remove-dependency page current-content))
+    (let ((new-content (call-next-method)))
+      (when (typep new-content 'reactive-object)
+        (add-dependency page new-content))
+      (without-propagation
+        (setf (slot-value page '%content) (render-all new-content)
+              (slot-value page 'content) new-content)))))
 
 (defgeneric initialize-page (page request)
   (:method ((page page) request)))
@@ -240,11 +243,12 @@
 (defmethod react ((session page-session) (page page))
   ;; (format t "Update page session ~A for page ~A~%" session page)
   (when (session-open-p session)
+    ;; (format t "Page version: ~A~%" (slot-value page 'version))
     (let ((old-content (html:body (slot-value page '%content)))
           (new-content (render-all (html:body (page-content page)))))
       (let ((actions (diff old-content new-content)))
         (setf *actions* actions)
-        (format t "~A~%" actions)
+        ;; (format t "~A~%" actions)
         (loop for action in actions
            for type = (first action)
            for selector = (second action)
