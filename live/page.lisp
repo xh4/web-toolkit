@@ -89,16 +89,19 @@
                                  (chain console (error e))
                                  (return)))
                         (unless (chain -Array (is-array message))
-                          (chain console (error "Unable to handle message" message)))
+                          (chain console (error "Malformed message" message))
+                          (return))
                         (when (= (@ message length) 0)
-                          (chain console (error "Unable to handle message" message)))
+                          (chain console (error "Unable to handle empty message" message))
+                          (return))
                         (handle-message message))
 
                       (defun handle-message (message)
                         (chain console (log "Receive" message))
                         (let ((type (@ message 0)))
                           (case type
-                            ("reconciliation" (handle-reconciliation (@ message 1))))))
+                            ("reconciliation" (handle-reconciliation (@ message 1)))
+                            (t (chain console (error "Unable to handle message with type" type message))))))
 
                       (defun handle-reconciliation (actions)
                         (loop for action in actions
