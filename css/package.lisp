@@ -91,6 +91,9 @@
    :touch-action :pointer-events
    ;; filter-effects
    :backdrop-filter
+   ;; pseudo
+   :pseudo :hover :active :focus :enabled :disabled :link :visited
+   :valid :invalid :empty
    ;; rule
    :rule :qualified-rule :at-rule :rule-prelude :rule-block
    :rule-selectors :rule-declarations :rule-name

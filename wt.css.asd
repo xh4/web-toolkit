@@ -50,6 +50,7 @@
                                      (:file "svg")
                                      (:file "pointer-events")
                                      (:file "filter-effects")
+                                     (:file "pseudo")
                                      (:file "rule")
                                      (:file "parse")
                                      (:file "style"))))
