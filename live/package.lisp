@@ -33,7 +33,8 @@
                 :session-open-p)
   (:import-from :component
                 :component
-                :render-all)
+                :render-all
+                :diff)
   (:import-from :uri
                 :uri-path)
   (:import-from :reactive

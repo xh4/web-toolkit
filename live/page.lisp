@@ -95,10 +95,16 @@
                         (chain console (log "Receive" message))
                         (let ((type (@ message 0)))
                           (case type
-                            ("replace" (replace (@ message 1) (@ message 2)))
-                            ("update" (update (@ message 1) (@ message 2)))
-                            ("remove" (remove (@ message 1)))
-                            ("insert" (insert (@ message 1) (@ message 2) (@ message 3))))))
+                            ("reconciliation" (handle-reconciliation (@ message 1))))))
+
+                      (defun handle-reconciliation (actions)
+                        (loop for action in actions
+                           for type = (@ action 0)
+                           do (case type
+                                ("replace" (replace (@ action 1) (@ action 2)))
+                                ("update" (update (@ action 1) (@ action 2)))
+                                ("remove" (remove (@ action 1)))
+                                ("insert" (insert (@ action 1) (@ action 2) (@ action 3))))))
 
                       (defun replace (selector node-string)
                         (let ((new-node (chain (new (-d-o-m-parser))
@@ -234,27 +240,28 @@
 (defmethod react ((session page-session) (page page))
   ;; (format t "Update page session ~A for page ~A~%" session page)
   (when (session-open-p session)
-    (let* ((old-content (html:body (slot-value page '%content))))
-      (multiple-value-bind (new-content render-table)
-          (render-all (html:body (page-content page)))
-        (let ((actions (diff old-content new-content)))
-          (setf *actions* actions)
-          (format t "~A~%" actions)
-          (loop for action in actions
-             for type = (first action)
-             for selector = (second action)
-             for message = (case type
+    (let ((old-content (html:body (slot-value page '%content)))
+          (new-content (render-all (html:body (page-content page)))))
+      (let ((actions (diff old-content new-content)))
+        (setf *actions* actions)
+        (format t "~A~%" actions)
+        (loop for action in actions
+           for type = (first action)
+           for selector = (second action)
+           for js-action = (case type
                              (:replace (json:array "replace"
                                                    selector
                                                    (html:serialize (fourth action))))
                              (:update (json:array "update"
                                                   selector
-                                                   (let ((object (json:object)))
-                                                     (loop for (name . value) in (fourth action)
-                                                        do (setf (json:get object name) value))
-                                                     object)))
+                                                  (let ((object (json:object)))
+                                                    (loop for (name . value) in (fourth action)
+                                                       do (setf (json:get object name) value))
+                                                    object)))
                              (:remove (json:array "remove" selector))
                              (:insert (json:array "insert" selector
                                                   (fourth action)
                                                   (html:serialize (fifth action)))))
-             do (send-text session (json:encode message))))))))
+           collect js-action into js-actions
+           finally (let ((js-message (json:array "reconciliation" js-actions)))
+                     (send-text session (json:encode js-message))))))))
