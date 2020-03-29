@@ -20,7 +20,7 @@
    ;; percentage
    :%
    ;; declaration
-   :declaration :property :descriptor
+   :declaration :property :descriptor :property-name :property-value
    ;; color
    :color :opacity :rgb :rgba
    ;; box
@@ -92,8 +92,8 @@
    ;; filter-effects
    :backdrop-filter
    ;; rule
-   :rule :qualified-rule :at-rule :rule-prelude :rule-block
-   :rule-selectors :rule-declarations :rule-name
+   :rule :qualified-rule :style-rule :at-rule :rule-prelude :rule-block
+   :rule-selector :rule-declarations :rule-name
    ;; serialize
    :serialize
    ;; style
