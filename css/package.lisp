@@ -95,9 +95,7 @@
    :rule :qualified-rule :style-rule :at-rule :rule-prelude :rule-block
    :rule-selector :rule-declarations :rule-name
    ;; serialize
-   :serialize
-   ;; style
-   :style :style-declarations :merge-style)
+   :serialize)
   (:import-from :utility
                 :define-parser
                 :parser

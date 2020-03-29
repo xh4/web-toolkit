@@ -51,8 +51,7 @@
                                      (:file "pointer-events")
                                      (:file "filter-effects")
                                      (:file "rule")
-                                     (:file "parse")
-                                     (:file "style"))))
+                                     (:file "parse"))))
   :in-order-to ((test-op (test-op :wt.css/test)))
   :perform (load-op :after (o c)
                     #+lispworks

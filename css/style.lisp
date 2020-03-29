@@ -6,6 +6,11 @@
     :initform nil
     :accessor style-declarations)))
 
+(defmethod print-object ((style style) stream)
+  (print-unreadable-object (style stream :type t :identity t)
+    (with-slots (declarations) style
+      (format stream "{~A}" (cl:length declarations)))))
+
 (defmethod style-declarations ((nothing null)))
 
 (defun style (&rest objects)
@@ -29,6 +34,10 @@
                                       :declarations declarations)))))
 
 (defun merge-style (style-1 style-2)
+  (typecase style-1
+    (null (setf style-1 (make-instance 'style))))
+  (typecase style-2
+    (property (setf style-2 (make-instance 'style :declarations (list style-2)))))
   (make-instance 'style
                  :declarations (append (style-declarations style-1)
                                        (style-declarations style-2))))
