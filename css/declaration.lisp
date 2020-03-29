@@ -62,8 +62,7 @@
                    ((keywordp type) (when (string-equal
                                            value
                                            (symbol-name type))
-                                      type))
-                   ((subtypep type 'dimension) (dimension value type)))
+                                      type)))
          when v do (return (setf (slot-value declaration 'value) v))
          finally (error "Invalid value ~S for declaration ~A" value (type-of declaration))))))
 
