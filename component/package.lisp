@@ -8,7 +8,8 @@
    :component
    :render
    :render-all
-   :diff)
+   :diff
+   :component-style)
   (:import-from :html
                 :serialize)
   (:import-from :dom
@@ -39,6 +40,7 @@
                 :validate-superclass
                 :class-slots
                 :class-direct-slots
+                :class-direct-subclasses
                 :slot-definition
                 :slot-definition-name
                 :slot-definition-initargs

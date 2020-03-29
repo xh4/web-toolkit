@@ -5,7 +5,11 @@
     ((render
       :initarg :render
       :initform nil
-      :accessor component-render))))
+      :accessor component-render)
+     (style
+      :initarg :style
+      :initform nil
+      :accessor component-style))))
 
 (defclass component (html:custom-element reactive-object)
   ((root
@@ -34,12 +38,18 @@
 (defmethod component-render-lambda-list ((component component))
   (function-lambda-list (component-render (class-of component))))
 
+(defmethod component-style ((component component))
+  (component-style (class-of component)))
+
 (defmethod shared-initialize :around ((class component-class) slot-names
-                                     &rest args &key render &allow-other-keys)
+                                      &rest args &key render style &allow-other-keys)
   (declare (ignore slot-names))
   (when render
-      (let ((lambda-form (car render)))
-        (setf (getf args :render) (make-render lambda-form))))
+    (let ((lambda-form (car render)))
+      (setf (getf args :render) (make-render lambda-form))))
+  (when style
+    (let ((lambda-form (car style)))
+      (setf (getf args :style) (make-styler lambda-form))))
   (apply #'call-next-method class slot-names args))
 
 (defmethod shared-initialize :after ((class component-class) slot-names
@@ -217,3 +227,66 @@
                   (with-variable-capturing (,(car lambda-list))
                     ,@body)))))
         (values (eval render-lambda-form) render-lambda-form)))))
+
+(defun css-properties ()
+  (loop for class in (class-direct-subclasses (find-class 'css:property))
+     for name = (class-name class)
+     when (fboundp name)
+     collect name))
+
+(define-condition css-property ()
+  ((property
+    :initarg :property
+    :initform nil)))
+
+(define-condition css-rule ()
+  ((rule
+    :initarg :rule
+    :initform nil)))
+
+(defmacro with-css-as-signal (&body body)
+  (let ((properties (css-properties)))
+    `(flet ,(loop for property in properties
+               collect `(,property (value)
+                                   (let ((property (funcall (symbol-function ',property) value)))
+                                     (signal 'css-property :property property))))
+       (macrolet ((css:rule (selector &body body)
+                    `(let ((properties '()))
+                       (handler-bind ((css-property (lambda (c)
+                                                      (push (slot-value c 'property)
+                                                            properties)
+                                                      (change-class c 'condition))))
+                         ,@body
+                         (let ((rule (apply (symbol-function 'css:rule)
+                                            ,selector
+                                            properties)))
+                           (signal 'css-rule :rule rule))))))
+         ,@body))))
+
+(defun make-styler (lambda-form)
+  (unless (eq 'lambda (car lambda-form))
+    (error "Expect a LAMBDA form for style, got ~A" lambda-form))
+  (let ((lambda-list (cadr lambda-form)))
+    (unless (listp lambda-list)
+      (error "Expect a LAMBDA form for style got ~A" lambda-form))
+    (when (> (length lambda-list) 0)
+      (error "Malformed LAMBDA-LIST for style, got ~A" lambda-list))
+    (let ((body (cddr lambda-form)))
+      (let ((styler-lambda-form
+             `(lambda ,lambda-list
+                (let ((properties '())
+                      (rules '()))
+                  (handler-bind ((css-property (lambda (c)
+                                                 (push (slot-value c 'property)
+                                                       properties)))
+                                 (css-rule (lambda (c)
+                                                 (push (slot-value c 'rule)
+                                                       rules))))
+                    (with-css-as-signal
+                      ,@body))
+                  (nreverse rules)
+                  (push (make-instance 'css:style-rule
+                                       :selector (format nil ".~(~A~)" )
+                                       :declarations (reverse properties))
+                        rules)))))
+        (values (eval styler-lambda-form) styler-lambda-form)))))
