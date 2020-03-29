@@ -6,7 +6,6 @@
   :mailto "xh@coobii.com"
   :license "BSD 3-Clause"
   :depends-on (:wt.dom
-               :wt.css
                :alexandria
                :plump)
   :defsystem-depends-on (:wt.vendor)

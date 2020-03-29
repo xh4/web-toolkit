@@ -1,9 +1,6 @@
 (in-package :html)
 
-(defclass element (dom:element)
-  ((css:style
-    :initarg :style
-    :initform nil)))
+(defclass element (dom:element) ())
 
 (defmethod print-object ((element element) stream)
   (print-unreadable-object (element stream :type t :identity t)
@@ -53,7 +50,6 @@
                            (null nil)
                            (string _value)
                            (list (format nil "~{~A~^ ~}" _value))
-                           (css:style (setf (slot-value element 'css:style) value) nil)
                            (t (format nil "~A" _value))))
          when value
          do (dom:set-attribute element name value))
@@ -62,8 +58,6 @@
            (typecase child
              (string (dom:append-child element (text child)))
              ((or element text) (dom:append-child element child))
-             (css:style (setf (slot-value element 'style)
-                              (css:merge-style (slot-value element 'css:style) child)))
              (t (dom:append-child element (text (format nil "~A" child)))))))
     element))
 
