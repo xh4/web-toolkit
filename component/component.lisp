@@ -4,14 +4,8 @@
   (defclass component-class (reactive-class)
     ((render
       :initarg :render
-      :initform nil)
-     (%render
       :initform nil
-      :accessor component-render)
-     (render-lambda-list
-      :initarg :render-lambda-list
-      :initform nil
-      :accessor component-render-lambda-list))))
+      :accessor component-render))))
 
 (defclass component (html:custom-element reactive-object)
   ((root
@@ -38,19 +32,19 @@
   (component-render (class-of component)))
 
 (defmethod component-render-lambda-list ((component component))
-  (component-render-lambda-list (class-of component)))
+  (function-lambda-list (component-render (class-of component))))
+
+(defmethod shared-initialize :around ((class component-class) slot-names
+                                     &rest args &key render &allow-other-keys)
+  (declare (ignore slot-names))
+  (when render
+      (let ((lambda-form (car render)))
+        (setf (getf args :render) (make-render lambda-form))))
+  (apply #'call-next-method class slot-names args))
 
 (defmethod shared-initialize :after ((class component-class) slot-names
-                                     &key render &allow-other-keys)
+                                       &key &allow-other-keys)
   (declare (ignore slot-names))
-  (if render
-      (let ((lambda-form (car render)))
-        (setf render (make-render lambda-form))
-        (let ((render-lambda-list (function-lambda-list render)))
-          (setf (slot-value class '%render) render)
-          (setf (slot-value class 'render-lambda-list) render-lambda-list)))
-      (progn (setf (slot-value class '%render) nil
-                   (slot-value class 'render-lambda-list) nil)))
   (loop for object in (object-propagation class)
      when (typep object 'component)
      do (incf (component-version object))))
@@ -134,11 +128,11 @@
         (let ((component (apply 'make-instance
                                 (constructor-component-class constructor)
                                 :attributes root-attributes
-                                :children children
                                 slot-attributes)))
           (loop for child in children
              when (typep child 'reactive-object)
-             do (add-dependency component child))
+             do (add-dependency component child)
+             do (dom:append-child component child))
           component)))))
 
 (defmacro define-component (name superclasses slots &rest options)
