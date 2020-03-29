@@ -35,6 +35,7 @@
                                      (:file "helper")
                                      (:file "component")
                                      (:file "render")
+                                     (:file "style")
                                      (:file "diff")
                                      (:file "reactive"))))
   :perform (test-op (o c)
