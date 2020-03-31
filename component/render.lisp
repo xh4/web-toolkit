@@ -56,23 +56,23 @@
       (dom:set-attribute element "class" (add-class class new-class)))))
 
 (defun render-all (node)
-  (let ((table (make-hash-table))
-        (list '()))
-    (labels ((render-1 (node table)
+  (let ((render-table (make-hash-table))
+        (component-list '()))
+    (labels ((render-1 (node)
                (typecase node
                  (html:text node)
                  (string (html:text node))
                  (component
                   (let ((root (render node)))
-                    (setf (gethash node table) root)
-                    (pushnew node list)
+                    (setf (gethash node render-table) root)
+                    (pushnew node component-list)
                     (loop for i from 0
                        for child in (dom:children root)
-                       do (setf (nth i (dom:children root)) (render-1 child table))
+                       do (setf (nth i (dom:children root)) (render-1 child))
                        finally (return root))))
                  (html:element
                   (loop for i from 0
                      for child in (dom:children node)
-                     do (setf (nth i (dom:children node)) (render-1 child table))
+                     do (setf (nth i (dom:children node)) (render-1 child))
                      finally (return node))))))
-      (values (render-1 node table) table (reverse list)))))
+      (values (render-1 node) render-table (reverse component-list)))))
