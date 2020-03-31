@@ -26,17 +26,6 @@
 (defmethod react ((component component) (variable variable))
   (incf (slot-value component 'version)))
 
-(defgeneric compute-component-class (component)
-  (:method ((component component))
-    (flet ((class-name-for-component-class (class)
-             (format nil "~(~A~)" (symbol-name (cl:class-name class)))))
-      (let ((classes (compute-class-precedence-list (class-of component))))
-        (loop for class in classes
-           until (eq class (find-class 'component))
-           collect (class-name-for-component-class class)
-           into classes
-           finally (return (reverse classes)))))))
-
 (defmethod serialize ((component component) &optional stream)
   (serialize (render component) stream))
 

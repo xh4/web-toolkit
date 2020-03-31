@@ -27,6 +27,22 @@
            else do (dom:set-attribute root name value))
         (setf (slot-value component 'root) root)))))
 
+(defgeneric compute-component-class (component)
+  (:method ((component component))
+    (flet ((class-name-for-component-class (class)
+             (let ((package (symbol-package (class-name class))))
+               (list
+                (format nil "~(~A~)" (class-name class))
+                (format nil "~(~A~)_~(~A~)"
+                        (package-name package)
+                        (class-name class))))))
+      (let ((classes (compute-class-precedence-list (class-of component))))
+        (loop for class in classes
+           until (eq class (find-class 'component))
+           append (class-name-for-component-class class)
+           into classes
+           finally (return (reverse classes)))))))
+
 (defgeneric add-class (element class)
   (:method ((string string) class)
     (let ((classes (split-sequence #\Space string)))
