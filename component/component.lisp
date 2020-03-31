@@ -105,11 +105,10 @@
       (error "Expect a LAMBDA form for render, got ~A" lambda-form))
     (unless (<= (length lambda-list) 1)
       (error "Malformed LAMBDA-LIST for render, got ~A" lambda-list))
-    (let ((body (cddr lambda-form)))
-      `(define-render-method (,(car lambda-list) ,component-name)
-         (without-propagation
-           (with-variable-capturing (,(car lambda-list))
-             ,@body))))))
+    (let ((body (cddr lambda-form))
+          (component-variable (car lambda-list)))
+      `(define-render-method (,component-variable ,component-name)
+         ,@body))))
 
 (defmacro define-component-style (component-name lambda-form)
   (unless (eq 'lambda (car lambda-form))

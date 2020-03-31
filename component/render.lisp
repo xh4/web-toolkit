@@ -2,9 +2,11 @@
 
 (defgeneric render (component))
 
-(defmacro define-render-method (component &body body)
-  `(defmethod render (,component)
-     ,@body))
+(defmacro define-render-method ((component class) &body body)
+  `(defmethod render ((,component ,class))
+     (without-propagation
+       (with-variable-capturing (,component)
+         ,@body))))
 
 (defmethod render :around (component)
   (let ((root (call-next-method)))
