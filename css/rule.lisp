@@ -14,7 +14,7 @@
     :accessor rule-selector)
    (declarations
     :initarg :declarations
-    :accessor rule-declaratins)))
+    :accessor rule-declarations)))
 
 (defmethod rule-prelude ((rule style-rule))
   (rule-selector rule))
@@ -42,7 +42,7 @@
        do (format stream "~A" selector))
     (format stream " {")
     (loop for declaration in declarations
-       do (format stream "~%")
+       do (format stream "~%  ")
          (serialize declaration stream)
          (format stream ";"))
     (format stream "~%}")))
