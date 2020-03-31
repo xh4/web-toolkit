@@ -1,8 +1,5 @@
 (in-package :reactive)
 
-(defmethod slot-value-using-class :around ((class reactive-class) object slot)
-  (call-next-method))
-
 (defmethod (setf slot-value-using-class) :around (value (class reactive-class) object slot)
   (typecase slot
     (symbol slot)
