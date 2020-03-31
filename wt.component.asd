@@ -17,9 +17,11 @@
                         :serial t
                         :components ((:file "package")
                                      (:file "utility")
-                                     (:file "component")
+                                     (:file "environment")
                                      (:file "render")
                                      (:file "style")
+                                     (:file "component-class")
+                                     (:file "component")
                                      (:file "diff"))))
   :in-order-to ((test-op (test-op :wt.component/test)))
   :perform (load-op :after (o c)

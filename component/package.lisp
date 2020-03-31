@@ -9,15 +9,12 @@
    :render
    :render-all
    :diff
-   :component-style)
+   :component-class-style)
   (:import-from :html
                 :serialize)
   (:import-from :dom
                 :append-child
                 :children)
-  (:import-from :css
-                :style
-                :qualified-rule)
   (:import-from :utility
                 :rewrite-class-option
                 :function-lambda-list)
