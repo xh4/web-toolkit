@@ -8,6 +8,8 @@
   ((stream
     :initarg :stream
     :initform nil)
+   (buffer
+    :initform (make-array 3))
    (current-input-code-point
     :initform nil
     :reader current-input-code-point)))
@@ -22,21 +24,76 @@
   (let ((char (consume-code-point tokenizer)))
     (cond
       ((whitespace-p char) (consume-whitespace tokenizer) :whitespace)
-      ((eq #\" char) (consume-string tokenizer)))))
+      ((eq #\" char) (consume-string tokenizer))
+      ((eq #\' char) (consume-string tokenizer))
+      ((eq #\( char) :left-parenthesis)
+      ((eq #\) char) :right-parenthesis)
+      ((eq #\: char) :colon)
+      ((eq #\; char) :semicolon)
+      ((eq #\[ char) :left-square-bracket)
+      ((eq #\] char) :right-square-bracket)
+      ((eq #\{ char) :left-curly-bracket)
+      ((eq #\} char) :right-curly-bracket)
+      ((null char))
+      (t `(:delim ,char)))))
 
 (defun consume-code-point (tokenizer)
-  (with-slots (stream current-input-code-point) tokenizer
-    (let ((char (read-char stream nil nil)))
-      (setf current-input-code-point char))))
+  (with-slots (stream buffer current-input-code-point) tokenizer
+    (if-let (char (aref buffer 0))
+      (prog1
+          char
+        (setf current-input-code-point char)
+        (setf (aref buffer 0) (aref buffer 1)
+              (aref buffer 1) (aref buffer 2)
+              (aref buffer 2) nil))
+      (setf current-input-code-point (read-char stream nil nil)))))
 
 (defun next-input-code-point (tokenizer)
-  (with-slots (stream) tokenizer
-    (peek-char t stream nil nil)))
+  (with-slots (stream buffer) tokenizer
+    (or
+     (aref buffer 0)
+     (progn
+       (read-sequence buffer stream)
+       (aref buffer 0)))))
+
+(defun next-2-input-code-points (tokenizer)
+  (with-slots (stream buffer) tokenizer
+    (if (aref buffer 1)
+        (coerce (subseq buffer 0 2) 'string)
+        (progn
+          (if (aref buffer 0)
+              (read-sequence buffer stream :start 1)
+              (read-sequence buffer stream))
+          (coerce (subseq buffer 0 2) 'string)))))
+
+(defun next-3-input-code-points (tokenizer)
+  (with-slots (stream buffer) tokenizer
+    (if (aref buffer 2)
+        (coerce (subseq buffer 0 3) 'string)
+        (progn
+          (cond
+            ((aref buffer 1) (read-sequence buffer stream :start 2))
+            ((aref buffer 0) (read-sequence buffer stream :start 1))
+            (t (read-sequence buffer stream )))
+          (coerce (subseq buffer 0 3) 'string)))))
 
 (defun reconsume-current-input-code-point (tokenizer)
-  (with-slots (stream current-input-code-point) tokenizer
+  (with-slots (stream buffer current-input-code-point) tokenizer
     (when current-input-code-point
-      (unread-char current-input-code-point stream))))
+      (cond
+        ((aref buffer 2)
+         (unread-char (aref buffer 0) stream)
+         (setf (aref buffer 2) (aref buffer 1)
+               (aref buffer 1) (aref buffer 0)
+               (aref buffer 0) current-input-code-point))
+        ((aref buffer 1)
+         (unread-char (aref buffer 0) stream)
+         (setf (aref buffer 1) (aref buffer 0)
+               (aref buffer 0) current-input-code-point))
+        ((aref buffer 0)
+         (unread-char (aref buffer 0) stream)
+         (setf (aref buffer 0) current-input-code-point))
+        (t (unread-char current-input-code-point stream))))))
 
 (defun consume-comments (tokenizer)
   (let ((char (consume-code-point tokenizer)))

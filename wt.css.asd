@@ -10,7 +10,8 @@
                :closer-mop
                :cl-ppcre
                :parse-number
-               :split-sequence)
+               :split-sequence
+               :trivial-gray-streams)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "css"
                         :serial t
