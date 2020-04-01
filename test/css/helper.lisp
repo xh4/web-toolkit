@@ -13,3 +13,8 @@
                (unless function
                  (list name))))
    :test 'equal))
+
+(defmacro tokenize-string ((tokenizer string) &body body)
+  `(with-input-from-string (stream ,string)
+     (let ((,tokenizer (make-instance 'css::tokenizer :stream stream)))
+       ,@body)))

@@ -72,6 +72,7 @@
                                      (:file "sizing")
                                      (:file "text")
                                      (:file "style")
-                                     (:file "bootstrap"))))
+                                     (:file "bootstrap")
+                                     (:file "parse"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :css-test)))

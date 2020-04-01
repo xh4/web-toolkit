@@ -3,7 +3,8 @@
 (defpackage :css
   (:nicknames :wt.css)
   (:use :cl :alexandria)
-  (:shadow :length :float :declaration :rem :time :position :shadow :rotate)
+  (:shadow :length :float :declaration :rem :time :position :shadow :rotate
+           :parse-error)
   (:export
    ;; length
    :em :ex :ch :rem
@@ -95,7 +96,9 @@
    :rule :qualified-rule :style-rule :at-rule :rule-prelude :rule-block
    :rule-selector :rule-declarations :rule-name
    ;; serialize
-   :serialize)
+   :serialize
+   ;; parse
+   )
   (:import-from :utility
                 :define-parser
                 :parser
