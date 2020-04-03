@@ -1,9 +1,9 @@
 (in-package :css)
 
 (defun whitespace-p (char)
-  (or (char= #\Newline char)
-      (char= #\Tab char)
-      (char= #\Space char)))
+  (or (eq #\Newline char)
+      (eq #\Tab char)
+      (eq #\Space char)))
 
 (define-parser .whitespace ()
   (.satisfies 'whitespace-p))

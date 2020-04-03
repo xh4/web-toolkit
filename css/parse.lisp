@@ -14,40 +14,51 @@
     :initform nil
     :reader current-input-code-point)))
 
-(defun uppercase-letter-p (char)
+(defmacro define-code-point-predicate (name (char) &body body)
+  `(defun ,name (,char)
+     (when ,char
+       ,@body)))
+
+(define-code-point-predicate uppercase-letter-p (char)
   (char<= #\A char #\Z))
 
-(defun lowercase-letter-p (char)
+(define-code-point-predicate lowercase-letter-p (char)
   (char<= #\a char #\z))
 
-(defun letter-p (char)
+(define-code-point-predicate letter-p (char)
   (or (uppercase-letter-p char)
       (lowercase-letter-p char)))
 
-(defun digit-p (char)
+(define-code-point-predicate digit-p (char)
   (char<= #\0 char #\9))
 
-(defun hex-digit-p (char)
+(define-code-point-predicate hex-digit-p (char)
   (or (digit-p char)
       (char<= #\a char #\f)
       (char<= #\A char #\F)))
 
-(defun non-ascii-code-point-p (char)
+(define-code-point-predicate non-ascii-code-point-p (char)
   (char>= char #\U+0080))
 
-(defun name-start-code-point-p (char)
+(define-code-point-predicate name-start-code-point-p (char)
   (or (letter-p char)
       (non-ascii-code-point-p char)
-      (char= #\_ char)))
+      (eq #\_ char)))
 
-(defun name-code-point-p (char)
+(define-code-point-predicate name-code-point-p (char)
   (or (name-start-code-point-p char)
       (digit-p char)
-      (char= #\- char)))
+      (eq #\- char)))
+
+(define-code-point-predicate non-printable-code-point-p (char)
+  (or (<= #\Null char #\Backspace)
+      (eq #\VT char)
+      (<= #\SO char #\US)
+      (eq #\Delete char)))
 
 (defun valid-escape-p (two-chars)
-  (and (char= #\\ (char two-chars 0))
-       (not (char= #\Newline (char two-chars 1)))))
+  (and (eq #\\ (char two-chars 0))
+       (not (eq #\Newline (char two-chars 1)))))
 
 (defun start-with-a-valid-escape-p (tokenizer)
   (let ((two-chars (concatenate 'string
@@ -57,11 +68,11 @@
 
 (defun identifier-start-p (three-chars)
   (cond
-   ((char= #\- (char three-chars 0)) (or (name-start-code-point-p (char three-chars 1))
-                                         (char= #\- (char three-chars 1))
+   ((eq #\- (char three-chars 0)) (or (name-start-code-point-p (char three-chars 1))
+                                         (eq #\- (char three-chars 1))
                                          (valid-escape-p (subseq three-chars 1))))
    ((name-start-code-point-p (char three-chars 0)) t)
-   ((char= #\\ (char three-chars 0)) (valid-escape-p (subseq three-chars 0 2)))))
+   ((eq #\\ (char three-chars 0)) (valid-escape-p (subseq three-chars 0 2)))))
 
 (defun start-an-identifier-p (tokenizer)
   (let ((three-chars (concatenate 'string
@@ -71,12 +82,12 @@
 
 (defun number-start-p (three-chars)
   (cond
-   ((or (char= #\+ (char three-chars 0))
-        (char= #\- (char three-chars 0)))
+   ((or (eq #\+ (char three-chars 0))
+        (eq #\- (char three-chars 0)))
     (or (digit-p (char three-chars 1))
-        (and (char= #\. (char three-chars 1))
+        (and (eq #\. (char three-chars 1))
              (digit-p (char three-chars 2)))))
-   ((char= #\. (char three-chars 0))
+   ((eq #\. (char three-chars 0))
     (digit-p (char three-chars 1)))
    ((digit-p (char three-chars 0)) t)))
 
@@ -91,8 +102,8 @@
   (let ((char (consume-code-point tokenizer)))
     (cond
      ((whitespace-p char) (consume-whitespace tokenizer) :whitespace)
-     ((char= #\" char) (consume-string tokenizer))
-     ((char= #\# char) (if (or (name-code-point-p (next-input-code-point tokenizer))
+     ((eq #\" char) (consume-string-token tokenizer))
+     ((eq #\# char) (if (or (name-code-point-p (next-input-code-point tokenizer))
                                (valid-escape-p (next-2-input-code-points tokenizer)))
                            (let ((type (when (start-an-identifier-p
                                               (next-3-input-code-points tokenizer))
@@ -100,53 +111,53 @@
                                  (name (consume-name tokenizer)))
                              `(:hash ,type ,name))
                          `(:delim ,char)))
-     ((char= #\' char) (consume-string tokenizer))
-     ((char= #\( char) :left-parenthesis)
-     ((char= #\) char) :right-parenthesis)
-     ((char= #\+ char) (if (start-a-number-p tokenizer)
+     ((eq #\' char) (consume-string-token tokenizer))
+     ((eq #\( char) :left-parenthesis)
+     ((eq #\) char) :right-parenthesis)
+     ((eq #\+ char) (if (start-a-number-p tokenizer)
                            (progn
                              (reconsume-current-input-code-point tokenizer)
-                             (consume-number tokenizer))
+                             (consume-numeric-token tokenizer))
                          `(:delim ,char)))
-     ((char= #\, char) :comma)
-     ((char= #\- char) (if (start-a-number-p tokenizer)
+     ((eq #\, char) :comma)
+     ((eq #\- char) (if (start-a-number-p tokenizer)
                            (progn
                              (reconsume-current-input-code-point tokenizer)
-                             (consume-number tokenizer))
+                             (consume-numeric-token tokenizer))
                          (if (start-an-identifier-p tokenizer)
                              (progn
                                (reconsume-current-input-code-point tokenizer)
-                               (consume-ident-like tokenizer))
+                               (consume-ident-like-token tokenizer))
                            `(:delim ,char))))
-     ((char= #\. char) (if (start-a-number-p tokenizer)
+     ((eq #\. char) (if (start-a-number-p tokenizer)
                            (progn
                              (reconsume-current-input-code-point tokenizer)
-                             (consume-number tokenizer))
+                             (consume-numeric-token tokenizer))
                          `(:delim ,char)))
-     ((char= #\: char) :colon)
-     ((char= #\; char) :semicolon)
-     ((char= #\< char) `(:delim ,char))
-     ((char= #\@ char) (if (identifier-start-p
+     ((eq #\: char) :colon)
+     ((eq #\; char) :semicolon)
+     ((eq #\< char) `(:delim ,char))
+     ((eq #\@ char) (if (identifier-start-p
                             (next-3-input-code-points tokenizer))
                            (let ((name (consume-name tokenizer)))
                              `(:at-keyword ,name))
                          `(:delim ,char)))
-     ((char= #\[ char) :left-square-bracket)
-     ((char= #\\ char) (if (start-with-a-valid-escape-p tokenizer)
+     ((eq #\[ char) :left-square-bracket)
+     ((eq #\\ char) (if (start-with-a-valid-escape-p tokenizer)
                            (progn
                              (reconsume-current-input-code-point tokenizer)
-                             (consume-ident-like tokenizer))
+                             (consume-ident-like-token tokenizer))
                          `(:delim ,char)))
-     ((char= #\] char) :right-square-bracket)
-     ((char= #\{ char) :left-curly-bracket)
-     ((char= #\} char) :right-curly-bracket)
+     ((eq #\] char) :right-square-bracket)
+     ((eq #\{ char) :left-curly-bracket)
+     ((eq #\} char) :right-curly-bracket)
      ((digit-p char)
       (reconsume-current-input-code-point tokenizer)
-      (consume-number tokenizer))
+      (consume-numeric-token tokenizer))
      ((name-start-code-point-p char)
       (reconsume-current-input-code-point tokenizer)
-      (consume-ident-like tokenizer))
-     ((null char))
+      (consume-ident-like-token tokenizer))
+     ((null char) nil)
      (t `(:delim ,char)))))
 
 (defun consume-code-point (tokenizer)
@@ -233,18 +244,18 @@
         while (whitespace-p (next-input-code-point tokenizer))
         do (consume-code-point tokenizer)))
 
-(defun consume-string (tokenizer)
+(defun consume-string-token (tokenizer)
   (let ((ending-code-point (current-input-code-point tokenizer))
         (string ""))
     (loop for char = (consume-code-point tokenizer)
           do (cond
               ((eq ending-code-point char)
-               (return-from consume-string `(:string ,string)))
+               (return-from consume-string-token `(:string ,string)))
               ((null char)
                (error "End of input white consume string"))
               ((eq #\Newline char)
                (reconsume-current-input-code-point tokenizer)
-               (return-from consume-string :bad-string))
+               (return-from consume-string-token :bad-string))
               ((eq #\/ char)
                (let ((next-char (next-input-code-point tokenizer)))
                  (cond
@@ -295,11 +306,176 @@
               (t (reconsume-current-input-code-point tokenizer)
                  (return result))))))
 
-(defun consume-number (tokenizer)
+(defun consume-numeric-token (tokenizer)
   (let ((type :integer)
         (repr ""))
-    ))
+    (let ((char (next-input-code-point tokenizer)))
+      (when (or (eq #\+ char)
+                (eq #\- char))
+        (consume-code-point tokenizer)
+        (setf repr (concatenate 'string repr (string char)))))
+    (loop for char = (next-input-code-point tokenizer)
+          while (digit-p char)
+          do (progn
+               (consume-code-point tokenizer)
+               (setf repr (concatenate 'string repr (string char)))))
+    (let ((two-chars (next-2-input-code-points tokenizer)))
+      (when (and (eq #\. (char two-chars 0))
+                 (digit-p (char two-chars 1)))
+        (loop repeat 2 do
+              (setf repr (concatenate 'string repr
+                                      (string (consume-code-point tokenizer)))))
+        (setf type :number)
+        (loop for char = (next-input-code-point tokenizer)
+          while (digit-p char)
+          do (progn
+               (consume-code-point tokenizer)
+               (setf repr (concatenate 'string repr (string char)))))))
+    (let ((three-chars (next-3-input-code-points tokenizer))
+          (count 0))
+      (when (and (or (eq #\e (char three-chars 0))
+                     (eq #\E (char three-chars 0)))
+                 (or (and (digit-p (char three-chars 1))
+                          (setf count 2))
+                     (and (or (eq #\- (char three-chars 1))
+                              (eq #\+ (char three-chars 1)))
+                          (digit-p (char three-chars 2))
+                          (setf count 3))))
+        (loop repeat count do
+              (setf repr (concatenate 'string repr
+                                      (string (consume-code-point tokenizer)))))
+        (setf type :number)
+        (loop for char = (next-input-code-point tokenizer)
+          while (digit-p char)
+          do (progn
+               (consume-code-point tokenizer)
+               (setf repr (concatenate 'string repr (string char)))))))
+    (let ((value (convert-string-to-number repr)))
+      `(,type ,value))))
 
-(defun consume-ident-like (tokenizer)
-  )
+(defun convert-string-to-number (string)
+  (let (s i f d t_ e)
+    (let ((index 0)
+          (ending (1- (cl:length string))))
+      ;; sign
+      (cond
+       ((eq #\- (char string index)) (setf s -1) (incf index))
+       ((eq #\+ (char string index)) (setf s 1) (incf index))
+       (t (setf s 1)))
+      ;; integer part
+      (loop with start = index
+            for end from index upto ending
+            while (digit-p (char string end))
+            do (continue)
+            finally (if (plusp (- end start))
+                        (setf i (parse-integer (subseq string start end))
+                              index end)
+                      (setf i 0 index end)))
+      ;; decimal point
+      (when (and (<= index ending)
+                 (eq #\. (char string index)))
+        (incf index))
+      ;; fractional part
+      (loop with start = index
+            for end from index upto ending
+            while (digit-p (char string end))
+            do (continue)
+            finally (if (plusp (- end start))
+                        (setf f (parse-integer (subseq string start end))
+                              d (- end start)
+                              index end)
+                      (setf f 0 d 0 index end)))
+      ;; exponent indicator
+      (when (and (<= index ending)
+                 (or (eq #\e (char string index))
+                     (eq #\E (char string index))))
+        (incf index))
+      ;; exponent sign
+      (if (<= index ending)
+          (cond
+           ((eq #\- (char string index)) (setf t_ -1) (incf index))
+           ((eq #\+ (char string index)) (setf t_ 1) (incf index))
+           (t (setf t_ 1)))
+        (setf t_ 1))
+      ;; exponent
+      (loop with start = index
+            for end from index upto ending
+            while (digit-p (char string end))
+            do (continue)
+            finally (if (plusp (- end start))
+                        (setf e (parse-integer (subseq string start end)))
+                      (setf e 0))))
+    (* s
+       (+ i (* f (expt 10 (- d))))
+       (expt 10 (* t_ e)))))
 
+(defun consume-ident-like-token (tokenizer)
+  (let ((string (consume-name tokenizer)))
+    (cond
+     ((and (string= "url" string)
+           (eq #\( (next-input-code-point tokenizer)))
+      (consume-code-point tokenizer)
+      (loop for two-chars = (next-2-input-code-points tokenizer)
+            while (and (whitespace-p (char two-chars 0))
+                       (whitespace-p (char two-chars 1)))
+            do (consume-code-point tokenizer))
+      (if (or (eq #\" (next-input-code-point tokenizer))
+              (eq #\' (next-input-code-point tokenizer))
+              (let ((two-chars (next-2-input-code-points tokenizer)))
+                (and (whitespace-p (char two-chars 0))
+                     (eq #\" (char two-chars 1))
+                     (eq #\' (char two-chars 1)))))
+          `(:function ,string)
+        (consume-url-token tokenizer)))
+     ((eq #\( (next-input-code-point tokenizer))
+      (consume-code-point tokenizer)
+      `(:function ,string))
+     (t `(:ident ,string)))))
+
+(defun consume-url-token (tokenizer)
+  (let ((url ""))
+    (consume-whitespace tokenizer)
+    (loop for char = (consume-code-point tokenizer)
+          do (cond
+              ((eq #\) char) `(:url ,url))
+              ((null char) `(:url ,url))
+              ((whitespace-p char)
+               (consume-whitespace tokenizer)
+               (let ((char (next-input-code-point tokenizer)))
+                 (if (or (eq #\) char)
+                         (null char))
+                     (progn
+                       (consume-code-point tokenizer)
+                       (return-from consume-url-token `(:url ,url)))
+                   (progn
+                     (consume-remnants-of-bad-url tokenizer)
+                     (return-from consume-url-token :bad-url)))))
+              ((or (eq #\" char)
+                   (eq #\' char)
+                   (eq #\( char)
+                   (non-printable-code-point-p char))
+               (consume-remnants-of-bad-url tokenizer)
+               (return-from consume-url-token :bad-url))
+              ((eq #\\ char)
+               (if (start-with-a-valid-escape-p tokenizer)
+                   (let ((char (consume-escaped-code-point tokenizer)))
+                     (setf url (concatenate 'string url (string char))))
+                 (progn
+                   (consume-remnants-of-bad-url tokenizer)
+                   (return-from consume-url-token :bad-url))))
+              (t (setf url (concatenate 'string url (string char))))))))
+
+(defun consume-remnants-of-bad-url (tokenizer)
+  (loop for char = (consume-code-point tokenizer)
+        do (cond
+            ((or (eq #\) char)
+                 (null char)) (return-from consume-remnants-of-bad-url))
+            ((start-with-a-valid-escape-p tokenizer)
+             (consume-escaped-code-point tokenizer)))))
+
+(defun test-tokenizer ()
+  (with-input-from-string (stream ".foo {background: red;}")
+    (let ((tokenizer (make-instance 'tokenizer :stream stream)))
+      (loop for token = (consume-token tokenizer)
+            while token
+            do (format t "~A~%" token)))))
