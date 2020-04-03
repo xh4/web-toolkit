@@ -50,7 +50,7 @@
          for v = (cond
                    ((and (symbolp type)
                          (not (keywordp type))
-                         (subtypep type 'parser))
+                         (subtypep type 'utility:parser))
                     (multiple-value-bind (rest value match-p)
                         (parse (funcall type) value)
                       (declare (ignore rest))
