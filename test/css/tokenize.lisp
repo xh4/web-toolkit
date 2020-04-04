@@ -70,13 +70,17 @@
     (tokenize-string (tokenizer "41")
       (is (equal #\A (css::consume-escaped-code-point tokenizer))))))
 
-(test consume-string
+(test consume-string-token
   (it
     (tokenize-string (tokenizer "\"abc\"")
       (css::consume-code-point tokenizer)
-      (is (equal '(:string "abc") (css::consume-string tokenizer)))))
+      (let ((token (css::consume-string-token tokenizer)))
+        (is (equal 'css::string-token (type-of token)))
+        (is (equal "abc" (css::string-token-value token))))))
 
   (it
     (tokenize-string (tokenizer "'abc'")
       (css::consume-code-point tokenizer)
-      (is (equal '(:string "abc") (css::consume-string tokenizer))))))
+      (let ((token (css::consume-string-token tokenizer)))
+        (is (equal 'css::string-token (type-of token)))
+        (is (equal "abc" (css::string-token-value token)))))))
