@@ -7,7 +7,7 @@
     :initarg :stream
     :initform nil)
    (tokenizer
-    :initarg tokenizer
+    :initarg :tokenizer
     :initform nil)
    (current-input-token
     :initform nil
@@ -18,8 +18,7 @@
 (defun next-input-token (parser)
   (with-slots (tokenizer next-input-token) parser
     (or next-input-token
-        (when-let ((token (consume-token tokenizer)))
-          (setf next-input-token token)))))
+        (setf next-input-token (consume-token tokenizer)))))
 
 (defun consume-next-input-token (parser)
   (with-slots (tokenizer current-input-token next-input-token) parser
@@ -31,8 +30,7 @@
 
 (defun reconsume-current-input-token (parser)
   (with-slots (current-input-token next-input-token) parser
-    (when current-input-token
-      (setf next-input-token current-input-token))))
+    (setf next-input-token current-input-token)))
 
 (defun parse-stylesheet ()
   )
@@ -45,14 +43,16 @@
         do (cond
             ((whitespace-token-p token) (consume-next-input-token parser))
             ((not (ident-token-p token)) (error 'syntax-error))
-            (t (or (consume-declaration parser) (error 'syntax-error))))))
+            (t (if-let ((declaration (consume-declaration parser)))
+                 (return declaration)
+                 (error 'syntax-error))))))
 
 (defun consume-declaration (parser)
   (let ((name (consume-next-input-token parser))
         (value '()))
     (loop while (whitespace-token-p (next-input-token parser))
           do (consume-next-input-token parser))
-    (if (colon-token-p (next-input-token parser))
+    (if (not (colon-token-p (next-input-token parser)))
         (return-from consume-declaration)
       (consume-next-input-token parser))
     (loop while (whitespace-token-p (next-input-token parser))
@@ -107,3 +107,9 @@
               ((null token) (return function))
               (t (reconsume-current-input-token parser)
                  (appendf function (list (consume-component-value parser))))))))
+
+(defun test-parser ()
+  (with-input-from-string (stream "background: red")
+    (let* ((tokenizer (make-instance 'tokenizer :stream stream))
+           (parser (make-instance 'parser :tokenizer tokenizer :stream stream)))
+      (parse-declaration parser))))
