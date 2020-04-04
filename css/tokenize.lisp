@@ -102,9 +102,9 @@
       (eq #\- char)))
 
 (define-code-point-predicate non-printable-code-point-p (char)
-  (or (<= #\Null char #\Backspace)
+  (or (char<= #\Null char #\Backspace)
       (eq #\VT char)
-      (<= #\SO char #\US)
+      (char<= #\SO char #\US)
       (eq #\Delete char)))
 
 (defun valid-escape-p (two-chars)
