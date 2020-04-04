@@ -86,10 +86,10 @@
 
 (defun consume-simple-block (parser)
   (let ((ending-token-type
-         (type-case (current-input-token parser)
-                    (left-parenthesis-token 'right-parenthesis-token)
-                    (left-square-bracket-token 'right-square-bracket-token)
-                    (left-curly-bracket-token 'right-curly-bracket-token)))
+         (typecase (current-input-token parser)
+           (left-parenthesis-token 'right-parenthesis-token)
+           (left-square-bracket-token 'right-square-bracket-token)
+           (left-curly-bracket-token 'right-curly-bracket-token)))
         (block '()))
     (loop for token = (consume-next-input-token parser)
           do (cond
