@@ -57,7 +57,7 @@
     :initarg :stream
     :initform nil)
    (buffer
-    :initform (make-array 3))
+    :initform (make-array 3 :initial-element nil))
    (current-input-code-point
     :initform nil
     :reader current-input-code-point)))
@@ -301,17 +301,17 @@
     (loop for char = (consume-code-point tokenizer)
           do (cond
               ((eq ending-code-point char)
-               (return-from consume-string-token (make-string-token :value string)))
+               (return (make-string-token :value string)))
               ((null char)
                (error "End of input white consume string"))
               ((eq #\Newline char)
                (reconsume-current-input-code-point tokenizer)
-               (return-from consume-string-token (make-bad-string-token)))
+               (return (make-bad-string-token)))
               ((eq #\/ char)
                (let ((next-char (next-input-code-point tokenizer)))
                  (cond
                   ((null next-char))
-                  ((eq #\Newline char) (consume-code-point tokenizer))
+                  ((eq #\Newline next-char) (consume-code-point tokenizer))
                   (t (let ((char (consume-escaped-code-point tokenizer)))
                        (setf string (concatenate 'string string (string char))))))))
               (t (setf string (concatenate 'string string (string char))))))))
