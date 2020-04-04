@@ -67,6 +67,9 @@
      (when ,char
        ,@body)))
 
+(defconstant +replacement-character+
+  #+lispworks #\Replacement-Character #-lispworks #\Replacement_Character)
+
 (define-code-point-predicate uppercase-letter-p (char)
   (char<= #\A char #\Z))
 
@@ -333,9 +336,9 @@
           (if (or (zerop number)
                   (<= #xD800 number #xDFFF)
                   (> number #x10FFFF))
-              #\Replacement-Character
+              +replacement-character+
             (code-char number)))))
-     ((null char) #\Replacement-Character)
+     ((null char) +replacement-character+)
      (t char))))
 
 (defun consume-name (tokenizer)
