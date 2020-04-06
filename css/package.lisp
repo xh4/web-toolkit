@@ -97,6 +97,27 @@
    :rule-selector :rule-declarations :rule-name
    ;; serialize
    :serialize
+   ;; tokenize
+   :ident-token :ident-token-p :ident-token-value
+   :function-token :function-token-p :function-token-value
+   :at-keyword-token :at-keyword-token-p :at-keyword-token-value
+   :hash-token :hash-token-p :hash-token-type :hash-token-name
+   :string-token :string-token-p :string-token-value
+   :url-token :url-token-p :url-token-value
+   :delim-token :delim-token-p :delim-token-value
+   :number-token :number-token-p :number-token-value
+   :percentage-token :percentage-token-p :percentage-token-value
+   :dimension-token :dimension-token-p :dimension-token-value
+   :whitespace-token :whitespace-token-p
+   :colon-token :colon-token-p
+   :semicolon-token :semicolon-token-p
+   :comma-token :comma-token-p
+   :left-square-bracket-token :left-square-bracket-token-p
+   :right-square-bracket-token :right-square-bracket-token-p
+   :left-parenthesis-token :left-parenthesis-token-p
+   :right-parenthesis-token :right-parenthesis-token-p
+   :left-curly-bracket-token :left-curly-bracket-token-p
+   :right-curly-bracket-token :right-curly-bracket-token-p
    ;; parse
    :parse-list-of-rules :syntax-error)
   (:import-from :utility
