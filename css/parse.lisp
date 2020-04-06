@@ -140,54 +140,41 @@
                  (appendf rules (list (consume-qualified-rule parser))))))))
 
 (defun consume-at-rule (parser)
-  (let ((name (consume-next-input-token parser))
-        (prelude)
-        (block))
+  (let* ((at-keyword-token (consume-next-input-token parser))
+         (name (at-keyword-token-value at-keyword-token))
+         (rule (make-instance 'at-rule :name name)))
     (loop for token = (consume-next-input-token parser)
           do (cond
-              ((semicolon-token-p token) (return (make-instance 'at-rule
-                                                                :name (serialize name)
-                                                                :prelude prelude
-                                                                :block block)))
-              ((null token) (return (make-instance 'at-rule
-                                                   :name (serialize name)
-                                                   :prelude prelude
-                                                   :block block)))
+              ((semicolon-token-p token) (return rule))
+              ((null token) (return rule))
               ((left-curly-bracket-token-p token)
-               (setf block (consume-simple-block parser))
-               (return (return (make-instance 'at-rule
-                                              :name (serialize name)
-                                              :prelude prelude
-                                              :block block))))
+               (setf (rule-block rule) (consume-simple-block parser))
+               (return rule))
               ((and (simple-block-p token)
                     (left-curly-bracket-token-p
                      (simple-block-associated-token token)))
-               (setf block token)
-               (return `(,name ,prelude ,block)))
+               (setf (rule-block rule) token)
+               (return rule))
               (t (reconsume-current-input-token parser)
-                 (appendf prelude
+                 (appendf (rule-prelude rule)
                           (list (consume-component-value parser))))))))
 
 (defun consume-qualified-rule (parser)
-  (let ((prelude)
-        (block))
+  (let ((rule (make-instance 'qualified-rule)))
     (loop for token = (consume-next-input-token parser)
           do (cond
               ((null token) (return))
               ((left-curly-bracket-token-p token)
-               (setf block (consume-simple-block parser))
-               (return (make-instance 'qualified-rule
-                                      :prelude prelude
-                                      :block block)))
+               (setf (rule-block rule) (consume-simple-block parser))
+               (return rule))
               ((and (simple-block-p token)
                     (left-curly-bracket-token-p
                      (simple-block-associated-token token)))
-               (setf block token)
-               (return (make-instance 'qualified-rule
-                                      :prelude prelude
-                                      :block block)))
+               (setf (rule-block rule) token)
+               (return rule))
               (t (reconsume-current-input-token parser)
-                 (appendf prelude (list (consume-component-value parser))))))))
+                 (appendf (rule-prelude rule)
+                          (list (consume-component-value parser))))))))
 
 (defun consume-list-of-declarations (parser)
   (let ((declarations '()))
@@ -215,9 +202,10 @@
                        do (consume-component-value parser)))))))
 
 (defun consume-declaration (parser)
-  (let ((name (consume-next-input-token parser))
-        (value '())
-        (important))
+  (let* ((ident-token (consume-next-input-token parser))
+         (name (ident-token-value ident-token))
+         (value '())
+         (important))
     (loop while (whitespace-token-p (next-input-token parser))
           do (consume-next-input-token parser))
     (if (not (colon-token-p (next-input-token parser)))
@@ -229,7 +217,7 @@
           do (appendf value (list (consume-component-value parser))))
     (let ((last-two-tokens (reverse
                             (take 2 (reverse (remove 'whitespace-token value
-                                                    :key 'type-of))))))
+                                                     :key 'type-of))))))
       (when (and (delim-token-p (first last-two-tokens))
                  (eq #\! (delim-token-value (first last-two-tokens)))
                  (ident-token-p (second last-two-tokens))
@@ -242,7 +230,7 @@
             while (whitespace-token-p token)
             do (setf value (remove token value))))
     (make-instance 'declaration
-                   :name (serialize name)
+                   :name name
                    :value (with-output-to-string (stream)
                             (loop for token in value
                                   do (serialize token stream)))
@@ -276,9 +264,9 @@
                           (list (consume-component-value parser))))))))
 
 (defun consume-function (parser)
-  (let* ((name (current-input-token parser))
-         (function (make-instance 'function
-                                  :name (function-token-value name))))
+  (let* ((function-token (current-input-token parser))
+         (name (function-token-value function-token))
+         (function (make-instance 'function :name name :value '())))
     (loop for token = (consume-next-input-token parser)
           do (cond
               ((right-parenthesis-token-p token) (return function))

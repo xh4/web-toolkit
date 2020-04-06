@@ -5,17 +5,21 @@
 (defclass qualified-rule (rule)
   ((prelude
     :initarg :prelude
+    :initform nil
     :accessor rule-prelude)
    (block
     :initarg :block
+    :initform nil
     :accessor rule-block)))
 
 (defclass style-rule (qualified-rule)
   ((selector
     :initarg :selector
+    :initform nil
     :accessor rule-selector)
    (declarations
     :initarg :declarations
+    :initform nil
     :accessor rule-declarations)))
 
 (defmethod rule-prelude ((rule style-rule))
