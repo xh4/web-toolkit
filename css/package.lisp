@@ -4,7 +4,7 @@
   (:nicknames :wt.css)
   (:use :cl :alexandria)
   (:shadow :length :float :declaration :rem :time :position :shadow :rotate
-           :parse-error :function :function-name :function-value)
+           :parse-error :function :function-name :function-value :block)
   (:export
    ;; length
    :em :ex :ch :rem
