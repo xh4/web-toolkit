@@ -6,29 +6,56 @@
 
 (defstruct ident-token (value))
 
+(define-serialize-method (ident-token stream)
+  (format stream "~A" (ident-token-value ident-token)))
+
 (defstruct function-token (value))
 
+(define-serialize-method (function-token stream)
+  (format stream "~A" (function-token-value function-token)))
+
 (defstruct at-keyword-token (value))
+
+(define-serialize-method (at-keyword-token stream)
+  (format stream "@~A" (at-keyword-token-value at-keyword-token)))
 
 (defstruct hash-token (type) (name))
 
 (defstruct string-token (value))
 
+(define-serialize-method (string-token stream)
+  (format stream "~S" (string-token-value string-token)))
+
 (defstruct bad-string-token (value))
 
 (defstruct url-token (value))
+
+(define-serialize-method (url-token stream)
+  (format stream "url(~A)" (url-token-value url-token)))
 
 (defstruct bad-url-token (value))
 
 (defstruct delim-token (value))
 
+(define-serialize-method (delim-token stream)
+  (format stream "~A" (delim-token-value delim-token)))
+
 (defstruct number-token (value))
 
+(define-serialize-method (number-token stream)
+  (format stream "~A" (number-token-value number-token)))
+
 (defstruct percentage-token (value))
+
+(define-serialize-method (percentage-token stream)
+  (format stream "~A%" (percentage-token-value percentage-token)))
 
 (defstruct dimension-token (value))
 
 (defstruct whitespace-token)
+
+(define-serialize-method (whitespace-token stream)
+  (format stream " "))
 
 (defstruct cdo-token)
 
@@ -36,21 +63,48 @@
 
 (defstruct colon-token)
 
+(define-serialize-method (colon-token stream)
+  (format stream ":"))
+
 (defstruct semicolon-token)
+
+(define-serialize-method (semicolon-token stream)
+  (format stream ";"))
 
 (defstruct comma-token)
 
+(define-serialize-method (comma-token stream)
+  (format stream ","))
+
 (defstruct left-square-bracket-token)
+
+(define-serialize-method (left-square-bracket-token stream)
+  (format stream "["))
 
 (defstruct right-square-bracket-token)
 
+(define-serialize-method (right-square-bracket-token stream)
+  (format stream "]"))
+
 (defstruct left-parenthesis-token)
+
+(define-serialize-method (left-parenthesis-token stream)
+  (format stream "("))
 
 (defstruct right-parenthesis-token)
 
+(define-serialize-method (right-parenthesis-token stream)
+  (format stream ")"))
+
 (defstruct left-curly-bracket-token)
 
+(define-serialize-method (left-curly-bracket-token stream)
+  (format stream "{"))
+
 (defstruct right-curly-bracket-token)
+
+(define-serialize-method (right-curly-bracket-token stream)
+  (format stream "}"))
 
 (defclass tokenizer ()
   ((stream
@@ -514,9 +568,3 @@
             ((start-with-a-valid-escape-p tokenizer)
              (consume-escaped-code-point tokenizer)))))
 
-(defun test-tokenizer ()
-  (with-input-from-string (stream ".foo {background: red;}")
-    (let ((tokenizer (make-instance 'tokenizer :stream stream)))
-      (loop for token = (consume-token tokenizer)
-            while token
-            do (format t "~A~%" token)))))

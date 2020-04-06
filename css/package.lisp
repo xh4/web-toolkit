@@ -4,7 +4,7 @@
   (:nicknames :wt.css)
   (:use :cl :alexandria)
   (:shadow :length :float :declaration :rem :time :position :shadow :rotate
-           :parse-error)
+           :parse-error :function :function-name :function-value)
   (:export
    ;; length
    :em :ex :ch :rem
@@ -98,7 +98,7 @@
    ;; serialize
    :serialize
    ;; parse
-   )
+   :parse-list-of-rules :syntax-error)
   (:import-from :utility
                 :define-parser
                 :parse

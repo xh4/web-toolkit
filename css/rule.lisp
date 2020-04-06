@@ -2,11 +2,13 @@
 
 (defclass rule () ())
 
-(defclass qualified-rule (rule) ())
-
-(defgeneric rule-prelude (rule))
-
-(defgeneric rule-block (rule))
+(defclass qualified-rule (rule)
+  ((prelude
+    :initarg :prelude
+    :accessor rule-prelude)
+   (block
+    :initarg :block
+    :accessor rule-block)))
 
 (defclass style-rule (qualified-rule)
   ((selector
@@ -30,7 +32,15 @@
   ((name
     :initarg :name
     :initform nil
-    :accessor rule-name)))
+    :accessor rule-name)
+   (prelude
+    :initarg :prelude
+    :initform nil
+    :accessor rule-prelude)
+   (block
+    :initarg :block
+    :initform nil
+    :accessor rule-block)))
 
 (define-serialize-method ((rule qualified-rule) stream)
   (let ((selector (rule-selector rule))
@@ -46,6 +56,11 @@
          (serialize declaration stream)
          (format stream ";"))
     (format stream "~%}")))
+
+(define-serialize-method ((rule at-rule) stream)
+  (let ((name (rule-name rule))
+        (block (rule-block rule)))
+    (format stream "@~A" name)))
 
 (defun rule (selector &rest declarations)
   (let ((ds '()))

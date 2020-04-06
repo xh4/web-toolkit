@@ -18,3 +18,10 @@
   `(with-input-from-string (stream ,string)
      (let ((,tokenizer (make-instance 'css::tokenizer :stream stream)))
        ,@body)))
+
+(defun tokenize (string)
+  (with-input-from-string (stream string)
+    (let ((tokenizer (make-instance 'tokenizer :stream stream)))
+      (loop for token = (css::consume-token tokenizer)
+            while token
+            collect token))))

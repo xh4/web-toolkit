@@ -22,6 +22,7 @@
                                      (:file "dimension")
                                      (:file "declaration")
                                      (:file "percentage")
+                                     (:file "function")
                                      (:file "length")
                                      (:file "angle")
                                      (:file "time")
