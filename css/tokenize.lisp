@@ -210,8 +210,7 @@
      ((eq #\" char) (consume-string-token tokenizer))
      ((eq #\# char) (if (or (name-code-point-p (next-input-code-point tokenizer))
                             (valid-escape-p (next-2-input-code-points tokenizer)))
-                        (let ((type (when (start-an-identifier-p
-                                           (next-3-input-code-points tokenizer))
+                        (let ((type (when (start-an-identifier-p tokenizer)
                                       :id))
                               (name (consume-name tokenizer)))
                           (make-hash-token :type type :name name))

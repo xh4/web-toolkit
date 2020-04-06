@@ -278,7 +278,7 @@
 (defun consume-function (parser)
   (let* ((name (current-input-token parser))
          (function (make-instance 'function
-                                  :name (ident-token-value name))))
+                                  :name (function-token-value name))))
     (loop for token = (consume-next-input-token parser)
           do (cond
               ((right-parenthesis-token-p token) (return function))
