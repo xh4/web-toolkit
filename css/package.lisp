@@ -21,7 +21,9 @@
    ;; percentage
    :%
    ;; declaration
-   :declaration :property :descriptor :property-name :property-value
+   :declaration :declaration-name :declaration-value
+   :property :property-name :property-value
+   :descriptor
    ;; color
    :color :opacity :rgb :rgba
    ;; box
