@@ -40,7 +40,7 @@
    (with-slots (current-input-token next-input-token) parser
      (setf next-input-token current-input-token))))
 
-(defclass token-parser ()
+(defclass token-parser (parser)
   ((tokens
     :initarg :tokens
     :initform nil)
@@ -97,8 +97,18 @@
                  (return declaration)
                  (error 'syntax-error))))))
 
-(defun parse-list-of-declarations (parser)
-  (consume-list-of-declarations parser))
+(defgeneric parse-list-of-declarations (soruce)
+  (:method ((string string))
+   (with-input-from-string (stream string)
+     (parse-list-of-declarations stream)))
+  (:method ((stream stream))
+   (let ((parser (make-instance 'parser :stream stream)))
+     (parse-list-of-declarations parser)))
+  (:method ((block simple-block))
+   (let ((parser (make-instance 'token-parser :tokens (simple-block-value block))))
+     (parse-list-of-declarations parser)))
+  (:method ((parser parser))
+   (consume-list-of-declarations parser)))
 
 (defun parse-component-value (parser)
   (loop while (whitespace-token-p (next-input-token parser))
@@ -231,9 +241,7 @@
             do (setf value (remove token value))))
     (make-instance 'declaration
                    :name name
-                   :value (with-output-to-string (stream)
-                            (loop for token in value
-                                  do (serialize token stream)))
+                   :value value
                    :important important)))
 
 (defun consume-component-value (parser)
