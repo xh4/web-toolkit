@@ -62,6 +62,16 @@
 
 (defstruct simple-block (associated-token) (value))
 
+(define-serialize-method (simple-block stream)
+  (let ((ending-token
+         (typecase (simple-block-associated-token simple-block)
+           (left-parenthesis-token (make-right-parenthesis-token))
+           (left-square-bracket-token (make-right-square-bracket-token))
+           (left-curly-bracket-token (make-right-curly-bracket-token)))))
+    (serialize (simple-block-associated-token simple-block) stream)
+    (serialize-tokens (simple-block-value simple-block) stream)
+    (serialize ending-token stream)))
+
 (defun parse-stylesheet (parser)
   (consume-list-of-rules parser))
 
@@ -142,12 +152,13 @@
     (loop for token = (consume-next-input-token parser)
           do (cond
               ((whitespace-token-p token))
-              ((null token) (return rules))
+              ((null token) (return (reverse rules)))
               ((at-keyword-token-p token)
                (reconsume-current-input-token parser)
-               (appendf rules (list (consume-at-rule parser))))
+               (push (consume-at-rule parser) rules))
               (t (reconsume-current-input-token parser)
-                 (appendf rules (list (consume-qualified-rule parser))))))))
+                 (push (consume-qualified-rule parser) rules)))
+          finally (return (reverse rules)))))
 
 (defun consume-at-rule (parser)
   (let* ((at-keyword-token (consume-next-input-token parser))
@@ -176,15 +187,16 @@
               ((null token) (return))
               ((left-curly-bracket-token-p token)
                (setf (rule-block rule) (consume-simple-block parser))
+               (reversef (rule-prelude rule))
                (return rule))
               ((and (simple-block-p token)
                     (left-curly-bracket-token-p
                      (simple-block-associated-token token)))
                (setf (rule-block rule) token)
+               (reversef (rule-prelude rule))
                (return rule))
               (t (reconsume-current-input-token parser)
-                 (appendf (rule-prelude rule)
-                          (list (consume-component-value parser))))))))
+                 (push (consume-component-value parser) (rule-prelude rule)))))))
 
 (defun consume-list-of-declarations (parser)
   (let ((declarations '()))
@@ -192,20 +204,20 @@
           do (cond
               ((or (whitespace-token-p token)
                    (semicolon-token-p token)))
-              ((null token) (return-from consume-list-of-declarations declarations))
+              ((null token) (return (reverse declarations)))
               ((at-keyword-token-p token)
                (reconsume-current-input-token parser)
-               (appendf declarations (list (consume-at-rule parser))))
+               (push (consume-at-rule parser) declarations))
               ((ident-token-p token)
                (let ((temporary-list `(,token)))
                  (loop while (and (not (semicolon-token-p (next-input-token parser)))
                                   (not (null (next-input-token parser))))
-                       do (appendf temporary-list
-                                   (list (consume-component-value parser))))
-                 (appendf declarations
-                          (list
-                           (consume-declaration (make-instance 'token-parser
-                                                               :tokens temporary-list))))))
+                       do (push (consume-component-value parser) temporary-list))
+                 (push
+                  (consume-declaration
+                   (make-instance 'token-parser
+                                  :tokens (reverse temporary-list)))
+                  declarations)))
               (t (reconsume-current-input-token parser)
                  (loop while (and (not (semicolon-token-p (next-input-token parser)))
                                   (not (null (next-input-token parser))))
@@ -263,13 +275,16 @@
            (left-curly-bracket-token 'right-curly-bracket-token)))
         (simple-block (make-simple-block
                        :associated-token (current-input-token parser))))
-    (loop for token = (consume-next-input-token parser)
-          do (cond
-              ((typep token ending-token-type) (return simple-block))
-              ((null token) (return simple-block))
-              (t (reconsume-current-input-token parser)
-                 (appendf (simple-block-value simple-block)
-                          (list (consume-component-value parser))))))))
+    (flet ((return-simple-block ()
+             (reversef (simple-block-value simple-block))
+             (return-from consume-simple-block simple-block)))
+      (loop for token = (consume-next-input-token parser)
+            do (cond
+                ((typep token ending-token-type) (return-simple-block))
+                ((null token) (return-simple-block))
+                (t (reconsume-current-input-token parser)
+                   (push (consume-component-value parser)
+                         (simple-block-value simple-block))))))))
 
 (defun consume-function (parser)
   (let* ((function-token (current-input-token parser))
