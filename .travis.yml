@@ -23,20 +23,22 @@ install:
 script:
   - echo $(which wstest)
   - if [ "$LISP" = "sbcl" ]; then
-      sbcl --non-interactive
+      sbcl --non-interactive \
+           --eval '(ql:quickload :trivial-backtrace)' \
            --eval '(setf *debugger-hook*
                      (lambda (c h)
-                        (declare (ignore h))
-                        (trivial-backtrace:print-backtrace c :output *standard-output*)
-                        (uiop:quit -1)))'
+                       (declare (ignore h))
+                       (trivial-backtrace:print-backtrace c :output *standard-output*)
+                       (uiop:quit -1)))' \
            --eval '(asdf:test-system :wt)'
     elif [ "$LISP" = "ccl" ]; then
-      ccl --eval '(setf *debugger-hook*
+      ccl --eval '(ql:quickload :trivial-backtrace)' \
+          --eval '(setf *debugger-hook*
                     (lambda (c h)
                       (declare (ignore h))
                       (trivial-backtrace:print-backtrace c :output *standard-output*)
-                      (uiop:quit -1)))'
-          --eval '(asdf:test-system :wt)'
+                      (uiop:quit -1)))' \
+          --eval '(asdf:test-system :wt)' \
           --eval '(uiop:quit)'
     fi
 
