@@ -121,7 +121,7 @@
    :left-curly-bracket-token :left-curly-bracket-token-p
    :right-curly-bracket-token :right-curly-bracket-token-p
    ;; parse
-   :parse-list-of-rules :syntax-error)
+   :parse-list-of-rules :parse-list-of-declarations :syntax-error)
   (:import-from :utility
                 :define-parser
                 :parse
