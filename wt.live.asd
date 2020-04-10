@@ -11,6 +11,7 @@
                :wt.json
                :wt.component
                :wt.reactive
+               :group-by
                :parenscript)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "live"

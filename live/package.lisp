@@ -34,7 +34,13 @@
   (:import-from :component
                 :component
                 :render-all
-                :diff)
+                :diff
+                :component-class-style)
+  (:import-from :css
+                :rule-selector
+                :rule-declarations
+                :property-name
+                :property-value)
   (:import-from :uri
                 :uri-path)
   (:import-from :reactive
@@ -55,4 +61,12 @@
                 :chain
                 :try
                 :for-in
-                :getprop))
+                :getprop
+                :create)
+  (:import-from :group-by
+                :group-by)
+  (:import-from :closer-mop
+                :slot-definition
+                :slot-definition-name
+                :class-direct-slots
+                :slot-value-using-class))
