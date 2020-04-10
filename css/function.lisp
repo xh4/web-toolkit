@@ -11,6 +11,7 @@
     :accessor function-value)))
 
 (define-serialize-method (function stream)
-  (format stream "~A" (function-name function))
+  (format stream "~A(" (function-name function))
   (loop for token in (function-value function)
-        do (serialize token stream)))
+        do (serialize token stream))
+  (write-char #\) stream))
