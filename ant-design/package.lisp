@@ -19,5 +19,7 @@
                 :parse-list-of-declarations
                 :qualified-rule
                 :comma-token)
+  (:import-from :dom
+                :children)
   (:import-from :split-sequence
                 :split-sequence))
