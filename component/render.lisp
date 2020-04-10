@@ -30,7 +30,7 @@
         (setf (slot-value component 'root) root)))))
 
 (defgeneric compute-component-class (component)
-  (:method ((component component))
+  (:method (component)
     (flet ((class-name-for-component-class (class)
              (let ((package (symbol-package (class-name class))))
                (list

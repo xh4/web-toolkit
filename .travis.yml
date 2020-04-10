@@ -22,13 +22,11 @@ install:
 
 script:
   - echo $(which wstest)
-  - cl -l fiveam
-       -e '(setf *debugger-hook*
-                 (lambda (c h)
-                   (declare (ignore h))
-                   (trivial-backtrace:print-backtrace c :output *standard-output*)
-                   (uiop:quit -1)))'
-       -e '(asdf:test-system :wt)'
+  - if [ "$LISP" = "sbcl" ]; then
+      sbcl --non-interactive --eval '(ql:quickload :trivial-backtrace)' --eval '(setf *debugger-hook* (lambda (c h) (declare (ignore h)) (trivial-backtrace:print-backtrace c :output *standard-output*) (uiop:quit -1)))' --eval '(asdf:test-system :wt)';
+    elif [ "$LISP" = "ccl" ]; then
+      ccl --eval '(ql:quickload :trivial-backtrace)' --eval '(setf *debugger-hook* (lambda (c h) (declare (ignore h)) (trivial-backtrace:print-backtrace c :output *standard-output*) (uiop:quit -1)))' --eval '(asdf:test-system :wt)' --eval '(uiop:quit)';
+    fi
 
 notifications:
   email:

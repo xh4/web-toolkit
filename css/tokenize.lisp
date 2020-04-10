@@ -21,6 +21,9 @@
 
 (defstruct hash-token (type) (name))
 
+(define-serialize-method (hash-token stream)
+  (format stream "#~A" (hash-token-name hash-token)))
+
 (defstruct string-token (value))
 
 (define-serialize-method (string-token stream)
@@ -202,7 +205,10 @@
                                   (next-2-input-code-points tokenizer))))
     (number-start-p three-chars)))
 
-(defun consume-token (tokenizer)
+(defmacro define-consume-function (name (tokenizer) &body body)
+  `(defun ,name (,tokenizer) ,@body))
+
+(define-consume-function consume-token (tokenizer)
   (consume-comments tokenizer)
   (let ((char (consume-code-point tokenizer)))
     (cond
@@ -264,7 +270,7 @@
      ((null char) nil)
      (t (make-delim-token :value char)))))
 
-(defun consume-code-point (tokenizer)
+(define-consume-function consume-code-point (tokenizer)
   (with-slots (stream buffer current-input-code-point) tokenizer
     (unless (aref buffer 0)
       (read-sequence buffer stream :start 0 :end 4))
@@ -312,7 +318,7 @@
           (aref buffer 1) (aref buffer 0)
           (aref buffer 0) current-input-code-point)))
 
-(defun consume-comments (tokenizer)
+(define-consume-function consume-comments (tokenizer)
   (let ((char (consume-code-point tokenizer)))
     (if (eq #\/ char)
         (if (eq #\* (next-input-code-point tokenizer))
@@ -333,12 +339,12 @@
           (reconsume-current-input-code-point tokenizer))
       (reconsume-current-input-code-point tokenizer))))
 
-(defun consume-whitespace (tokenizer)
+(define-consume-function consume-whitespace (tokenizer)
   (loop for count from 0
         while (whitespace-p (next-input-code-point tokenizer))
         do (consume-code-point tokenizer)))
 
-(defun consume-string-token (tokenizer)
+(define-consume-function consume-string-token (tokenizer)
   (let ((ending-code-point (current-input-code-point tokenizer))
         (string ""))
     (loop for char = (consume-code-point tokenizer)
@@ -359,12 +365,12 @@
                        (setf string (concatenate 'string string (string char))))))))
               (t (setf string (concatenate 'string string (string char))))))))
 
-(defun consume-hex-digit (tokenizer)
+(define-consume-function consume-hex-digit (tokenizer)
   (let ((char (next-input-code-point tokenizer)))
     (when (and char (hex-digit-p char))
       (consume-code-point tokenizer))))
 
-(defun consume-escaped-code-point (tokenizer)
+(define-consume-function consume-escaped-code-point (tokenizer)
   (let ((char (consume-code-point tokenizer)))
     (cond
      ((hex-digit-p char)
@@ -384,7 +390,7 @@
      ((null char) +replacement-character+)
      (t char))))
 
-(defun consume-name (tokenizer)
+(define-consume-function consume-name (tokenizer)
   (let ((result ""))
     (loop for char = (consume-code-point tokenizer)
           do (cond
@@ -400,7 +406,7 @@
               (t (reconsume-current-input-code-point tokenizer)
                  (return result))))))
 
-(defun consume-numeric-token (tokenizer)
+(define-consume-function consume-numeric-token (tokenizer)
   (let ((type :integer)
         (repr ""))
     (let ((char (next-input-code-point tokenizer)))
@@ -503,7 +509,7 @@
        (+ i (* f (expt 10 (- d))))
        (expt 10 (* t_ e)))))
 
-(defun consume-ident-like-token (tokenizer)
+(define-consume-function consume-ident-like-token (tokenizer)
   (let ((string (consume-name tokenizer)))
     (cond
      ((and (string= "url" string)
@@ -526,13 +532,13 @@
       (make-function-token :value string))
      (t (make-ident-token :value string)))))
 
-(defun consume-url-token (tokenizer)
+(define-consume-function consume-url-token (tokenizer)
   (let ((url ""))
     (consume-whitespace tokenizer)
     (loop for char = (consume-code-point tokenizer)
           do (cond
-              ((eq #\) char) (make-url-token :value url))
-              ((null char) (make-url-token :value url))
+              ((eq #\) char) (return (make-url-token :value url)))
+              ((null char) (return (make-url-token :value url)))
               ((whitespace-p char)
                (consume-whitespace tokenizer)
                (let ((char (next-input-code-point tokenizer)))
@@ -540,26 +546,26 @@
                          (null char))
                      (progn
                        (consume-code-point tokenizer)
-                       (return-from consume-url-token (make-url-token :value url)))
+                       (return (make-url-token :value url)))
                    (progn
                      (consume-remnants-of-bad-url tokenizer)
-                     (return-from consume-url-token (make-bad-url-token))))))
+                     (return (make-bad-url-token))))))
               ((or (eq #\" char)
                    (eq #\' char)
                    (eq #\( char)
                    (non-printable-code-point-p char))
                (consume-remnants-of-bad-url tokenizer)
-               (return-from consume-url-token (make-bad-url-token)))
+               (return (make-bad-url-token)))
               ((eq #\\ char)
                (if (start-with-a-valid-escape-p tokenizer)
                    (let ((char (consume-escaped-code-point tokenizer)))
                      (setf url (concatenate 'string url (string char))))
                  (progn
                    (consume-remnants-of-bad-url tokenizer)
-                   (return-from consume-url-token (make-bad-url-token)))))
+                   (return (make-bad-url-token)))))
               (t (setf url (concatenate 'string url (string char))))))))
 
-(defun consume-remnants-of-bad-url (tokenizer)
+(define-consume-function consume-remnants-of-bad-url (tokenizer)
   (loop for char = (consume-code-point tokenizer)
         do (cond
             ((or (eq #\) char)
@@ -567,3 +573,9 @@
             ((start-with-a-valid-escape-p tokenizer)
              (consume-escaped-code-point tokenizer)))))
 
+(defun serialize-tokens (tokens &optional stream)
+  (let ((string-stream-p (null stream)))
+    (when string-stream-p (setf stream (make-string-output-stream)))
+    (loop for token in tokens do (serialize token stream))
+    (when string-stream-p
+      (get-output-stream-string stream))))

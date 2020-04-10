@@ -4,7 +4,7 @@
   (:nicknames :wt.css)
   (:use :cl :alexandria)
   (:shadow :length :float :declaration :rem :time :position :shadow :rotate
-           :parse-error :function :function-name :function-value)
+           :parse-error :function :function-name :function-value :block)
   (:export
    ;; length
    :em :ex :ch :rem
@@ -21,7 +21,9 @@
    ;; percentage
    :%
    ;; declaration
-   :declaration :property :descriptor :property-name :property-value
+   :declaration :declaration-name :declaration-value
+   :property :property-name :property-value
+   :descriptor
    ;; color
    :color :opacity :rgb :rgba
    ;; box
@@ -97,8 +99,29 @@
    :rule-selector :rule-declarations :rule-name
    ;; serialize
    :serialize
+   ;; tokenize
+   :ident-token :ident-token-p :ident-token-value
+   :function-token :function-token-p :function-token-value
+   :at-keyword-token :at-keyword-token-p :at-keyword-token-value
+   :hash-token :hash-token-p :hash-token-type :hash-token-name
+   :string-token :string-token-p :string-token-value
+   :url-token :url-token-p :url-token-value
+   :delim-token :delim-token-p :delim-token-value
+   :number-token :number-token-p :number-token-value
+   :percentage-token :percentage-token-p :percentage-token-value
+   :dimension-token :dimension-token-p :dimension-token-value
+   :whitespace-token :whitespace-token-p
+   :colon-token :colon-token-p
+   :semicolon-token :semicolon-token-p
+   :comma-token :comma-token-p
+   :left-square-bracket-token :left-square-bracket-token-p
+   :right-square-bracket-token :right-square-bracket-token-p
+   :left-parenthesis-token :left-parenthesis-token-p
+   :right-parenthesis-token :right-parenthesis-token-p
+   :left-curly-bracket-token :left-curly-bracket-token-p
+   :right-curly-bracket-token :right-curly-bracket-token-p
    ;; parse
-   :parse-list-of-rules :syntax-error)
+   :parse-list-of-rules :parse-list-of-declarations :syntax-error)
   (:import-from :utility
                 :define-parser
                 :parse

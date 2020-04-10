@@ -1,7 +1,7 @@
 (in-package :cl-user)
 
 (defpackage :component
-  (:nicknames :com :wt.com :wt.component)
+  (:nicknames #-capi :com :wt.com :wt.component)
   (:use :cl :alexandria)
   (:export
    :define-component

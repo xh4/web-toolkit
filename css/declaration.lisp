@@ -97,6 +97,9 @@
                       :name (format nil "~(~A~)" ',property-name)
                       :value value))))
 
+(defun property (name value)
+  (make-instance 'property :name name :value value))
+
 (defmethod print-object ((property property) stream)
   (print-unreadable-object (property stream)
     (let ((name (property-name property))
