@@ -165,8 +165,8 @@
       (eq #\Delete char)))
 
 (defun valid-escape-p (two-chars)
-  (and (eq #\\ (char two-chars 0))
-       (not (eq #\Newline (char two-chars 1)))))
+  (and (eq #\\ (aref two-chars 0))
+       (not (eq #\Newline (aref two-chars 1)))))
 
 (defun start-with-a-valid-escape-p (tokenizer)
   (let ((two-chars (concatenate 'string
@@ -176,32 +176,32 @@
 
 (defun identifier-start-p (three-chars)
   (cond
-   ((eq #\- (char three-chars 0)) (or (name-start-code-point-p (char three-chars 1))
-                                      (eq #\- (char three-chars 1))
+   ((eq #\- (aref three-chars 0)) (or (name-start-code-point-p (aref three-chars 1))
+                                      (eq #\- (aref three-chars 1))
                                       (valid-escape-p (subseq three-chars 1))))
-   ((name-start-code-point-p (char three-chars 0)) t)
-   ((eq #\\ (char three-chars 0)) (valid-escape-p (subseq three-chars 0 2)))))
+   ((name-start-code-point-p (aref three-chars 0)) t)
+   ((eq #\\ (aref three-chars 0)) (valid-escape-p (subseq three-chars 0 2)))))
 
 (defun start-an-identifier-p (tokenizer)
-  (let ((three-chars (concatenate 'string
-                                  (string (current-input-code-point tokenizer))
+  (let ((three-chars (concatenate 'vector
+                                  (make-array 1 :initial-element (current-input-code-point tokenizer))
                                   (next-2-input-code-points tokenizer))))
     (identifier-start-p three-chars)))
 
 (defun number-start-p (three-chars)
   (cond
-   ((or (eq #\+ (char three-chars 0))
-        (eq #\- (char three-chars 0)))
-    (or (digit-p (char three-chars 1))
-        (and (eq #\. (char three-chars 1))
-             (digit-p (char three-chars 2)))))
-   ((eq #\. (char three-chars 0))
-    (digit-p (char three-chars 1)))
-   ((digit-p (char three-chars 0)) t)))
+   ((or (eq #\+ (aref three-chars 0))
+        (eq #\- (aref three-chars 0)))
+    (or (digit-p (aref three-chars 1))
+        (and (eq #\. (aref three-chars 1))
+             (digit-p (aref three-chars 2)))))
+   ((eq #\. (aref three-chars 0))
+    (digit-p (aref three-chars 1)))
+   ((digit-p (aref three-chars 0)) t)))
 
 (defun start-a-number-p (tokenizer)
-  (let ((three-chars (concatenate 'string
-                                  (string (current-input-code-point tokenizer))
+  (let ((three-chars (concatenate 'vector
+                                  (make-array 1 :initial-element (current-input-code-point tokenizer))
                                   (next-2-input-code-points tokenizer))))
     (number-start-p three-chars)))
 
@@ -293,23 +293,23 @@
 (defun next-2-input-code-points (tokenizer)
   (with-slots (stream buffer) tokenizer
     (if (aref buffer 1)
-        (coerce (subseq buffer 0 2) 'string)
+        (subseq buffer 0 2)
       (progn
         (if (aref buffer 0)
             (read-sequence buffer stream :start 1 :end 3)
           (read-sequence buffer stream :start 0 :end 3))
-        (coerce (subseq buffer 0 2) 'string)))))
+        (subseq buffer 0 2)))))
 
 (defun next-3-input-code-points (tokenizer)
   (with-slots (stream buffer) tokenizer
     (if (aref buffer 2)
-        (coerce (subseq buffer 0 3) 'string)
+        (subseq buffer 0 3)
       (progn
         (cond
          ((aref buffer 1) (read-sequence buffer stream :start 2 :end 3))
          ((aref buffer 0) (read-sequence buffer stream :start 1 :end 3))
          (t (read-sequence buffer stream :start 0 :end 3)))
-        (coerce (subseq buffer 0 3) 'string)))))
+        (subseq buffer 0 3)))))
 
 (defun reconsume-current-input-code-point (tokenizer)
   (with-slots (stream buffer current-input-code-point) tokenizer
@@ -420,8 +420,8 @@
                (consume-code-point tokenizer)
                (setf repr (concatenate 'string repr (string char)))))
     (let ((two-chars (next-2-input-code-points tokenizer)))
-      (when (and (eq #\. (char two-chars 0))
-                 (digit-p (char two-chars 1)))
+      (when (and (eq #\. (aref two-chars 0))
+                 (digit-p (aref two-chars 1)))
         (loop repeat 2 do
               (setf repr (concatenate 'string repr
                                       (string (consume-code-point tokenizer)))))
@@ -433,13 +433,13 @@
                    (setf repr (concatenate 'string repr (string char)))))))
     (let ((three-chars (next-3-input-code-points tokenizer))
           (count 0))
-      (when (and (or (eq #\e (char three-chars 0))
-                     (eq #\E (char three-chars 0)))
-                 (or (and (digit-p (char three-chars 1))
+      (when (and (or (eq #\e (aref three-chars 0))
+                     (eq #\E (aref three-chars 0)))
+                 (or (and (digit-p (aref three-chars 1))
                           (setf count 2))
-                     (and (or (eq #\- (char three-chars 1))
-                              (eq #\+ (char three-chars 1)))
-                          (digit-p (char three-chars 2))
+                     (and (or (eq #\- (aref three-chars 1))
+                              (eq #\+ (aref three-chars 1)))
+                          (digit-p (aref three-chars 2))
                           (setf count 3))))
         (loop repeat count do
               (setf repr (concatenate 'string repr
@@ -454,7 +454,7 @@
       (make-number-token :value value))))
 
 (defun convert-string-to-number (string)
-  (let (s i f d t_ e)
+  (let (s i f d t_ e has-dot has-e)
     (let ((index 0)
           (ending (1- (cl:length string))))
       ;; sign
@@ -474,6 +474,7 @@
       ;; decimal point
       (when (and (<= index ending)
                  (eq #\. (char string index)))
+        (setf has-dot t)
         (incf index))
       ;; fractional part
       (loop with start = index
@@ -489,6 +490,7 @@
       (when (and (<= index ending)
                  (or (eq #\e (char string index))
                      (eq #\E (char string index))))
+        (setf has-e t)
         (incf index))
       ;; exponent sign
       (if (<= index ending)
@@ -505,9 +507,12 @@
             finally (if (plusp (- end start))
                         (setf e (parse-integer (subseq string start end)))
                       (setf e 0))))
-    (* s
-       (+ i (* f (expt 10 (- d))))
-       (expt 10 (* t_ e)))))
+    (let ((number (* s
+                     (+ i (* f (expt 10 (- d))))
+                     (expt 10 (* t_ e)))))
+      (if (or has-dot has-e)
+          (coerce number 'single-float)
+        number))))
 
 (define-consume-function consume-ident-like-token (tokenizer)
   (let ((string (consume-name tokenizer)))
@@ -516,15 +521,15 @@
            (eq #\( (next-input-code-point tokenizer)))
       (consume-code-point tokenizer)
       (loop for two-chars = (next-2-input-code-points tokenizer)
-            while (and (whitespace-p (char two-chars 0))
-                       (whitespace-p (char two-chars 1)))
+            while (and (whitespace-p (aref two-chars 0))
+                       (whitespace-p (aref two-chars 1)))
             do (consume-code-point tokenizer))
       (if (or (eq #\" (next-input-code-point tokenizer))
               (eq #\' (next-input-code-point tokenizer))
               (let ((two-chars (next-2-input-code-points tokenizer)))
-                (and (whitespace-p (char two-chars 0))
-                     (eq #\" (char two-chars 1))
-                     (eq #\' (char two-chars 1)))))
+                (and (whitespace-p (aref two-chars 0))
+                     (eq #\" (aref two-chars 1))
+                     (eq #\' (aref two-chars 1)))))
           (make-function-token :value string)
         (consume-url-token tokenizer)))
      ((eq #\( (next-input-code-point tokenizer))
