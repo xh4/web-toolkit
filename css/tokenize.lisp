@@ -21,6 +21,9 @@
 
 (defstruct hash-token (type) (name))
 
+(define-serialize-method (hash-token stream)
+  (format stream "#~A" (hash-token-name hash-token)))
+
 (defstruct string-token (value))
 
 (define-serialize-method (string-token stream)
