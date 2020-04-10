@@ -69,7 +69,9 @@
           (loop for child in children
              when (typep child 'reactive-object)
              do (add-dependency component child)
-             do (dom:append-child component child))
+             do (typecase child
+                  ((or html:element html:text) (dom:append-child component child))
+                  (string (dom:append-child component (html:text child)))))
           component)))))
 
 (defmacro define-component (name superclasses slots &rest options)
