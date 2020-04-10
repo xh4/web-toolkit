@@ -36,7 +36,7 @@
                          ,@body
                          (let ((rule (apply (symbol-function 'css:rule)
                                             ,selector
-                                            properties)))
+                                            (reverse properties))))
                            (restart-case
                                (signal 'on-css-rule :rule rule)
                              (continue ())))))))
@@ -47,26 +47,17 @@
      (with-css-as-signal
        ,@body)))
 
-(defmethod component-class-style :around (component-name)
-  (let ((package (symbol-package component-name))
-        (properties '())
-        (rules '()))
+(defmethod component-class-style :around (component)
+  (let* ((component-name (typecase component
+                           (symbol component)
+                           (component (class-name (class-of component)))))
+         (package (symbol-package component-name))
+         
+         (rules '()))
     (handler-bind
-        ((on-css-property
-          (lambda (c)
-            (push (slot-value c 'property) properties)
-            (continue)))
-         (on-css-rule
+        ((on-css-rule
           (lambda (c)
             (push (slot-value c 'rule) rules)
             (continue))))
       (call-next-method))
-    (setf rules (reverse rules))
-    (if properties
-        (let ((rule (make-instance 'css:style-rule
-                                   :selector (format nil ".~(~A~)[package~~=\"~(~A~)\"]"
-                                                     component-name
-                                                     (package-name package))
-                                   :declarations (reverse properties))))
-          (push rule rules))
-        rules)))
+    (reverse rules)))
