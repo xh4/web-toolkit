@@ -47,12 +47,14 @@
      (with-css-as-signal
        ,@body)))
 
+(defmethod component-class-style (component))
+
 (defmethod component-class-style :around (component)
   (let* ((component-name (typecase component
                            (symbol component)
                            (component (class-name (class-of component)))))
          (package (symbol-package component-name))
-         
+
          (rules '()))
     (handler-bind
         ((on-css-rule
