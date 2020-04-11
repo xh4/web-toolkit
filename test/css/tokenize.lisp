@@ -15,8 +15,11 @@
     (tokenize-string (tokenizer "abcd")
       (is (equal #\a (css::consume-code-point tokenizer)))
       (is (equal #\b (css::next-input-code-point tokenizer)))
-      (is (equal "bc" (css::next-2-input-code-points tokenizer)))
-      (is (equal "bcd" (css::next-3-input-code-points tokenizer))))))
+      (is (equal #\b (aref (css::next-2-input-code-points tokenizer) 0)))
+      (is (equal #\c (aref (css::next-2-input-code-points tokenizer) 1)))
+      (is (equal #\b (aref (css::next-3-input-code-points tokenizer) 0)))
+      (is (equal #\c (aref (css::next-3-input-code-points tokenizer) 1)))
+      (is (equal #\d (aref (css::next-3-input-code-points tokenizer) 2))))))
 
 (test reconsume-current-input-code-point
   (it

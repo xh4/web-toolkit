@@ -584,3 +584,16 @@
     (loop for token in tokens do (serialize token stream))
     (when string-stream-p
       (get-output-stream-string stream))))
+
+(defgeneric tokenize (source)
+  (:method ((stream stream))
+   (let ((tokenizer (make-instance 'tokenizer :stream stream)))
+     (loop for token = (consume-token tokenizer)
+           while token
+           collect token)))
+  (:method ((string string))
+   (with-input-from-string (stream string)
+     (tokenize stream)))
+  (:method ((pathname pathname))
+   (with-open-file (stream pathname)
+     (tokenize stream))))

@@ -6,6 +6,18 @@
   (:shadow :length :float :declaration :rem :time :position :shadow :rotate
            :parse-error :function :function-name :function-value :block)
   (:export
+   ;; rule
+   :rule :qualified-rule :style-rule :at-rule
+   :rule-prelude :rule-block :rule-selector :rule-declarations :rule-name
+   ;; declaration
+   :declaration :declaration-name :declaration-value
+   :property :property-name :property-value
+   ;; serialize
+   :serialize
+   ;; tokenize
+   :tokenize :serialize-tokens   
+   ;; parse
+   :parse-rules :parse-declarations :syntax-error
    ;; length
    :em :ex :ch :rem
    :vw :vh :vmin :vmax
@@ -20,10 +32,6 @@
    :dpi :dpcm :dppx
    ;; percentage
    :%
-   ;; declaration
-   :declaration :declaration-name :declaration-value
-   :property :property-name :property-value
-   :descriptor
    ;; color
    :color :opacity :rgb :rgba
    ;; box
@@ -94,12 +102,7 @@
    :touch-action :pointer-events
    ;; filter-effects
    :backdrop-filter
-   ;; rule
-   :rule :qualified-rule :style-rule :at-rule :rule-prelude :rule-block
-   :rule-selector :rule-declarations :rule-name
-   ;; serialize
-   :serialize
-   ;; tokenize
+   ;; tokens
    :ident-token :ident-token-p :ident-token-value
    :function-token :function-token-p :function-token-value
    :at-keyword-token :at-keyword-token-p :at-keyword-token-value
@@ -119,9 +122,7 @@
    :left-parenthesis-token :left-parenthesis-token-p
    :right-parenthesis-token :right-parenthesis-token-p
    :left-curly-bracket-token :left-curly-bracket-token-p
-   :right-curly-bracket-token :right-curly-bracket-token-p
-   ;; parse
-   :parse-list-of-rules :parse-list-of-declarations :syntax-error)
+   :right-curly-bracket-token :right-curly-bracket-token-p)
   (:import-from :utility
                 :define-parser
                 :parse

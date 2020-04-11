@@ -13,11 +13,11 @@
          (is (equal 'ident-token (type-of (first (declaration-value declaration)))))
          (is (equal "red" (ident-token-value (first (declaration-value declaration))))))))))
 
-(test parse-list-of-declarations
+(test parse-declarations
   (it
    (with-input-from-string (stream "background: red; margin: 10px 20px;")
      (let ((parser (make-instance 'css::parser :stream stream)))
-       (let ((declarations (css::parse-list-of-declarations parser)))
+       (let ((declarations (css::parse-declarations parser)))
          (is (equal 2 (length declarations)))
          (is (equal "background" (declaration-name (first declarations))))
          (is (equal "margin" (declaration-name (second declarations)))))))))
@@ -36,12 +36,12 @@
        (let ((rule (css::parse-rule parser)))
          (is (equal 'at-rule (type-of rule))))))))
 
-(test parse-list-of-declarations-from-rule
+(test parse-declarations-from-rule
   (it
     (with-input-from-string (stream ".foo, .bar { background: red; margin: 10px 20px; }")
       (let ((parser (make-instance 'css::parser :stream stream)))
         (let ((rule (css::parse-rule parser)))
-          (let ((declarations (css::parse-list-of-declarations (rule-block rule))))
+          (let ((declarations (css::parse-declarations (rule-block rule))))
             (is (equal 2 (length declarations)))
             (is (equal "background" (declaration-name (first declarations))))
             (is (equal "margin" (declaration-name (second declarations))))))))))

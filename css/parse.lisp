@@ -1,5 +1,7 @@
 (in-package :css)
 
+;; https://www.w3.org/TR/css-syntax-3/#tokenizing-and-parsing
+
 (define-condition syntax-error (error) ())
 
 (defclass parser ()
@@ -75,15 +77,15 @@
 (defun parse-stylesheet (parser)
   (consume-list-of-rules parser))
 
-(defgeneric parse-list-of-rules (source)
+(defgeneric parse-rules (source)
   (:method ((string string))
    (with-input-from-string (stream string)
-     (parse-list-of-rules stream)))
+     (parse-rules stream)))
   (:method ((stream stream))
    (let ((parser (make-instance 'parser :stream stream)))
-     (parse-list-of-rules parser)))
+     (parse-rules parser)))
   (:method ((parser parser))
-   (consume-list-of-rules parser)))
+   (consume-rules parser)))
 
 (defun parse-rule (parser)
   (loop while (whitespace-token-p (next-input-token parser))
@@ -107,16 +109,16 @@
                  (return declaration)
                  (error 'syntax-error))))))
 
-(defgeneric parse-list-of-declarations (soruce)
+(defgeneric parse-declarations (soruce)
   (:method ((string string))
    (with-input-from-string (stream string)
-     (parse-list-of-declarations stream)))
+     (parse-declarations stream)))
   (:method ((stream stream))
    (let ((parser (make-instance 'parser :stream stream)))
-     (parse-list-of-declarations parser)))
+     (parse-declarations parser)))
   (:method ((block simple-block))
    (let ((parser (make-instance 'token-parser :tokens (simple-block-value block))))
-     (parse-list-of-declarations parser)))
+     (parse-declarations parser)))
   (:method ((parser parser))
    (consume-list-of-declarations parser)))
 
