@@ -3,13 +3,15 @@
 (defclass component (html:custom-element reactive-object)
   ((root
     :initarg :root
-    :initform nil)
+    :initform nil
+    :reader component-root)
    (children
     :initarg :children
     :initform nil)
    (version
     :initarg :version
-    :initform 0))
+    :initform 0
+    :reader component-version))
   (:metaclass component-class)
   #+lispworks
   (:optimize-slot-access nil))
