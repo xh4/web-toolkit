@@ -105,7 +105,7 @@
     (let ((name (property-name property))
           (value (property-value property))
           (important (property-important property)))
-      (format stream "~A ~S" name value)
+      (format stream "~:@(~A~) ~S" name value)
       (when important
         (format stream " !important")))))
 
@@ -135,4 +135,3 @@
   (unless (find 'descriptor superclasses)
     (appendf superclasses '(descriptor)))
   `(define-declaration ,descriptor-name ,superclasses ,slots ,@options))
-
