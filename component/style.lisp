@@ -21,11 +21,11 @@
 (defmacro with-css-as-signal (&body body)
   (let ((properties (css-properties)))
     `(flet ,(loop for property in properties
-               collect `(,property (value)
-                                   (let ((property (funcall (symbol-function ',property) value)))
-                                     (restart-case
-                                         (signal 'on-css-property :property property)
-                                       (continue ())))))
+                  collect `(,property (value)
+                             (let ((property (funcall (symbol-function ',property) value)))
+                               (restart-case
+                                   (signal 'on-css-property :property property)
+                                 (continue ())))))
        (macrolet ((css:rule (selector &body body)
                     `(let ((properties '()))
                        (handler-bind
@@ -39,7 +39,12 @@
                                             (reverse properties))))
                            (restart-case
                                (signal 'on-css-rule :rule rule)
-                             (continue ())))))))
+                             (continue ()))))))
+                  (css:property (name value)
+                    `(let ((property (funcall (symbol-function 'css:property) ,name ,value)))
+                       (restart-case
+                           (signal 'on-css-property :property property)
+                         (continue ())))))
          ,@body))))
 
 (defmacro define-component-class-style-method (component-name &body body)
