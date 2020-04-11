@@ -10,11 +10,15 @@
      :title "CSS"
      (p "The WT.CSS implements CSS constructor, parser and serializer based on specifications introduced in " (a :href "https://www.w3.org/TR/css-2018/#css" :target "blank" "CSS Snapshot 2018") ".")
      (class/o :symbol 'css:declaration
-              :summary (p "A class which represents a CSS " (a :href "https://www.w3.org/TR/css-syntax-3/#declaration" "declaration") ". Declarations are further categorized as \"" (class-ref 'css:property "properties") "\" or \"" (class-ref 'css:descriptor "descriptors") "\"."))
+              :summary (p "A class which represents a CSS " (a :href "https://www.w3.org/TR/css-syntax-3/#declaration" "declaration") ". Declarations are further categorized as \"" (class-ref 'css:property "properties") "\" or \"descriptors\"."))
      (class/o :symbol 'css:property
               :summary (p "A class which represents a CSS property."))
-     (class/o :symbol 'css:descriptor
-              :summary (p "A class which represents a CSS descriptor."))
+     (function/o :symbol 'css:property
+                 :syntax '(property name value)
+                 :arguments `((name . "A string for the name of the property.")
+                              (value . "A string for the value of the property."))
+                 :values `((property "A " ,(class-ref 'css:property) " instance."))
+                 :summary (p "The function to construct a " (class-ref 'css:property) "."))
      (article
       :title "Property Constructors"
       (p "A property contructor is a function to constructor a CSS " (class-ref 'css:property) ".")

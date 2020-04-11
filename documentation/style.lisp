@@ -40,6 +40,22 @@ dl dd {
     margin: 0 1em;
 }
 
+dl.function-arguments {
+    margin: 0;
+}
+
+.function-arguments dt {
+    display: inline;
+    font-weight: normal;
+    font-style: italic;
+    text-transform: lowercase;
+}
+
+.function-arguments dd {
+    display: inline;
+    margin: .5em 0 .5em 2em;
+}
+
 table.symbol-table {
     background: unset;
     border-left-color: transparent;

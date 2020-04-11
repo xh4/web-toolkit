@@ -118,12 +118,21 @@
         summary)))))
 
 (define-component function/o (symbol/o)
-  ((summary
+  ((syntax
+    :initarg :syntax
+    :initform nil)
+   (arguments
+    :initarg :arguments
+    :initform nil)
+   (values
+    :initarg :values
+    :initform nil)
+   (summary
     :initarg :summary
     :initform nil))
   (:render
    (lambda (c)
-     (with-slots (symbol summary id no title) c
+     (with-slots (symbol syntax arguments values summary id no title) c
        (div
         (h3
          :id (id c)
@@ -135,6 +144,43 @@
                      (string-downcase (symbol-name symbol))))
          " "
          (a :class "self-link" :href (format nil "#~A" (id c))))
+        (table
+         :class "def propdef symbol-table"
+         (tbody
+          (tr
+           (th "Package")
+           (td (span :class "package-name"
+                     (string-downcase
+                      (package-name
+                       (symbol-package symbol))))))
+          (when syntax
+            (tr
+             (th "Syntax")
+             (td (html:code (let ((*print-case* :downcase))
+                              (with-output-to-string (stream)
+                                (prin1 syntax)))))))
+          (when arguments
+            (tr
+             (th "Arguments")
+             (td (html:dl :class "function-arguments"
+                          (loop for first-p = t then nil
+                             for (name . desc) in arguments
+                             collect (list
+                                      (unless first-p
+                                        (html:br))
+                                      (html:dt name)
+                                      (html:dd desc)))))))
+          (when values
+            (tr
+             (th "Values")
+             (td (html:dl :class "function-values"
+                          (loop for first-p = t then nil
+                             for (name . desc) in values
+                             collect (list
+                                      (unless first-p
+                                        (html:br))
+                                      (html:dt name)
+                                      (html:dd desc)))))))))
         summary)))))
 
 (define-component constant/o (symbol/o)
