@@ -3,6 +3,7 @@
 (defgeneric render (component))
 
 (defmacro define-render-method ((component class) &body body)
+  (unless component (setf component 'component))
   `(defmethod render ((,component ,class))
      (without-propagation
        (with-variable-capturing (,component)
