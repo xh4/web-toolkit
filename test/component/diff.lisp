@@ -72,12 +72,27 @@
                  (diff p-1 p-2)))))
 
   (it
+    (let* ((text (text "foo"))
+           (p-1 (div))
+           (p-2 (div text)))
+      (is (equal `((:insert nil ,p-1 0 ,text))
+                 (diff p-1 p-2)))))
+
+  (it
     (let* ((a (h1))
            (p-1 (div))
            (p-2 (div a a a)))
       (is (equal `((:insert nil ,p-1 0 ,a)
                    (:insert nil ,p-1 1 ,a)
                    (:insert nil ,p-1 2 ,a))
+                 (diff p-1 p-2)))))
+
+  (it
+    (let* ((a (h1))
+           (b (h2))
+           (p-1 (div a a))
+           (p-2 (div a a b)))
+      (is (equal `((:insert nil ,p-1 2 ,b))
                  (diff p-1 p-2)))))
 
   (it
