@@ -31,8 +31,11 @@
      (class/o :symbol 'html:document
               :summary (p "A class which represents a " (a :href "https://html.spec.whatwg.org/multipage/dom.html#documents" "HTML Document") "."))
      (function/o :symbol 'document
+                 :syntax `(document &optional child)
+                 :arguments `((child "An " ,(class-ref 'html:element) "."))
+                 :values `((document "A " ,(class-ref 'html:document) " node."))
                  :summary (list
-                           (p "The function to construct a HTML Document.")
+                           (p "The function to construct a " (class-ref 'html:document) " node.")
                            (evil (document))
                            (evil (document (html (head) (body))))))
      (class/o :symbol 'html:element
@@ -51,14 +54,22 @@
      (class/o :symbol 'html:text
               :summary (p "A class which represents a " (a :href "https://html.spec.whatwg.org/multipage/syntax.html#text-2" "HTML Text") "."))
      (function/o :symbol 'text
+                 :syntax '(text &optional data)
+                 :arguments `((data "A string as the data of the text node."))
+                 :values `((text "A " ,(class-ref 'html:text) " node."))
                  :summary (list
-                           (p "The function to construct a HTML Text.")
+                           (p "The function to construct a " (class-ref 'html:text) " node.")
                            (evil (text))
                            (evil (text "Hello, world"))
                            (p "When passing string as child to element constructor, the string is automatically converted to a Text. " (html:code "(h1 \"title\")") " is the same as " (html:code "(h1 (text \"title\"))."))))
      (function/o :symbol 'serialize
+                 :syntax '(serialize root &optional stream)
+                 :arguments `((root "A node ("
+                                    ,(class-ref 'html:document) ", "
+                                    ,(class-ref 'html:element) " or "
+                                    ,(class-ref 'html:text) ").")
+                              (stream "A stream or NIL."))
+                 :values `((output "NIL or a string, depends on the " ,(argument-name 'stream) " argument."))
                  :summary (list
-                           (p "Serialize HTML Document or Element to a stream.")
-                           (evil (serialize (div (span "1") (span "2"))))
-                           (with-output-to-string (*standard-output*)
-                             (evil (serialize (div (span "1") (span "2")) *standard-output*)))))))
+                           (p "Serialize a HTML node to a stream.")
+                           (evil (serialize (div (span "1") (span "2"))))))))

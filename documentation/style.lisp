@@ -40,20 +40,31 @@ dl dd {
     margin: 0 1em;
 }
 
-dl.function-arguments {
+dl.function-arguments,
+dl.function-values {
     margin: 0;
 }
 
-.function-arguments dt {
-    display: inline;
-    font-weight: normal;
+.argument-name,
+.value-name {
     font-style: italic;
     text-transform: lowercase;
 }
 
-.function-arguments dd {
+.argument-description {
+
+}
+
+.function-arguments dt,
+.function-values dt {
     display: inline;
-    margin: .5em 0 .5em 2em;
+    font-weight: normal;
+}
+
+.function-arguments dd,
+.function-values dd {
+    display: inline;
+    margin: .5em 0 .5em 1em;
 }
 
 table.symbol-table {

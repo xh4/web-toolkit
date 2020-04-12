@@ -17,6 +17,14 @@
                     :target "blank"
                     "URI syntax diagram")))))
      (function/o :symbol 'uri:uri
+                 :syntax `((uri uri-designator)
+                           (uri &rest uri-components)
+                           (uri base-uri relative-uri)
+                           (uri uri-designator &rest uri-components))
+                 :arguments `((uri-designator "A URI instance or a string which represents a URI.")
+                              (uri-components "A property list whose key can be " ,(html:code ":scheme") ", " ,(html:code ":userinfo") ", " ,(html:code ":host") ", " ,(html:code ":port") ", " ,(html:code ":path") ", " ,(html:code ":query") " or " ,(html:code ":fragment") ".")
+                              (base-uri "A URI designator.")
+                              (relative-uri "A URI designator."))
                  :summary (list
                            (p "The \"All-in-One\" function to parse, merge, update and construct a URI.")
                            (p "Parse a URI:")
@@ -28,8 +36,16 @@
                            (p "Update a URI:")
                            (evil (uri:uri "https://xh.coobii.com" :query '("foo" "bar")) :uri)))
      (function/o :symbol 'uri:uri-string
+                 :syntax `((uri-string uri-designator)
+                           (uri-string &rest uri-components)
+                           (uri-string base-uri relative-uri)
+                           (uri-string uri-designator &rest uri-components))
+                 :arguments `((uri-designator "A URI instance or a string which represents a URI.")
+                              (uri-components "A property list whose key can be " ,(html:code ":scheme") ", " ,(html:code ":userinfo") ", " ,(html:code ":host") ", " ,(html:code ":port") ", " ,(html:code ":path") ", " ,(html:code ":query") " or " ,(html:code ":fragment") ".")
+                              (base-uri "A URI designator.")
+                              (relative-uri "A URI designator."))
                  :summary (list
-                           (p "Do the same thing as the function URI, render the final URI to a string.")
+                           (p "Do the same thing as the function " (function-ref 'uri:uri) ", render the final URI to a string.")
                            (evil (uri:uri-string :scheme "https" :host "xh.coobii.com"))
                            (evil (uri:uri-string "https://xh.coobii.com/foo" "/bar"))
                            (evil (uri:uri-string "https://xh.coobii.com" :port 443))

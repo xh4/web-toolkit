@@ -85,8 +85,12 @@
                          (symbol-package
                           (class-name class)))))))
             (tr
-             (th "Superclasses")
-             (td (superclasses/o class)))
+             (let ((superclasses (superclasses/o class)))
+               (list
+                (if (> (length superclasses) 1)
+                    (th "Superclasses")
+                    (th "Superclass")))
+               (td superclasses)))
             (tr
              (th "Metaclass")
              (td (let ((metaclass (class-of class)))
@@ -118,7 +122,9 @@
         summary)))))
 
 (define-component function/o (symbol/o)
-  ((syntax
+  ((type
+    :initform :function)
+   (syntax
     :initarg :syntax
     :initform nil)
    (arguments
@@ -156,9 +162,18 @@
           (when syntax
             (tr
              (th "Syntax")
-             (td (html:code (let ((*print-case* :downcase))
-                              (with-output-to-string (stream)
-                                (prin1 syntax)))))))
+             (td (let ((syntax-list '()))
+                   (if (symbolp (first syntax))
+                       (setf syntax-list (list syntax))
+                       (setf syntax-list syntax))
+                   (loop for first-p = t then nil
+                      for syntax in syntax-list
+                      collect
+                        (list
+                         (unless first-p (br))
+                         (html:code (let ((*print-case* :downcase))
+                                      (with-output-to-string (stream)
+                                        (print syntax stream))))))))))
           (when arguments
             (tr
              (th "Arguments")
@@ -168,8 +183,8 @@
                              collect (list
                                       (unless first-p
                                         (html:br))
-                                      (html:dt name)
-                                      (html:dd desc)))))))
+                                      (html:dt (argument-name name))
+                                      (html:dd (argument-description desc))))))))
           (when values
             (tr
              (th "Values")
@@ -179,8 +194,8 @@
                              collect (list
                                       (unless first-p
                                         (html:br))
-                                      (html:dt name)
-                                      (html:dd desc)))))))))
+                                      (html:dt (value-name name))
+                                      (html:dd (value-description desc))))))))))
         summary)))))
 
 (define-component constant/o (symbol/o)
@@ -203,8 +218,26 @@
          (a :class "self-link" :href (format nil "#~A" (id c))))
         summary)))))
 
+(defun argument-name (symbol)
+  (span :class "argument-name" (format nil "~A" symbol)))
+
+(defun argument-description (text)
+  (span :class "argument-description" text))
+
+(defun value-name (symbol)
+  (span :class "value-name" (format nil "~A" symbol)))
+
+(defun value-description (children)
+  (span :class "value-description" children))
+
 (defun class-ref (symbol &optional text)
   (let ((package (symbol-package symbol)))
     (a :href (format nil "#~(~A~)/class/~(~A~)" (package-name package) (symbol-name symbol))
+       (or text
+           (format nil "~(~A~)" (symbol-name symbol))))))
+
+(defun function-ref (symbol &optional text)
+  (let ((package (symbol-package symbol)))
+    (a :href (format nil "#~(~A~)/function/~(~A~)" (package-name package) (symbol-name symbol))
        (or text
            (format nil "~(~A~)" (symbol-name symbol))))))
