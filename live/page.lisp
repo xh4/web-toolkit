@@ -99,7 +99,8 @@
               (html:head
                (html:meta :charset "utf-8")
                (html:title title)
-               (compute-component-style-elements component-list))
+               (compute-component-style-elements component-list)
+               (html:script :src "https://code.jquery.com/jquery-3.4.1.js"))
               (html:body
                root
                (html:script
@@ -156,16 +157,15 @@
                       (loop for action in actions
                          for type = (@ action 0)
                          do (case type
-                              ("replace" (replace (@ action 1) (@ action 2)))
+                              ("replace" (replace (@ action 1) (@ action 2) (@ action 3)))
                               ("update" (update (@ action 1) (@ action 2)))
                               ("remove" (remove (@ action 1)))
-                              ("insert" (insert (@ action 1) (@ action 2) (@ action 3))))))
+                              ("insert" (insert (@ action 1) (@ action 2) (@ action 3) (@ action 4))))))
 
-                    (defun replace (selector node-string)
-                      (let ((new-node (chain (new (-d-o-m-parser))
-                                             (parse-from-string node-string "text/html")
-                                             body
-                                             first-child)))
+                    (defun replace (selector node-type node-string)
+                      (let ((new-node (if (= node-type "text")
+                                          (chain document (create-text-node node-string))
+                                          (chain $ (parse-h-t-m-l node-string) (pop)))))
                         (let ((old-node (@ document body)))
                           (for-in (i selector)
                                   (setf old-node (getprop old-node 'child-nodes (getprop selector i))))
@@ -190,11 +190,10 @@
                         (chain console (log "Remove" selector node))
                         (chain node parent-node (remove-child node))))
 
-                    (defun insert (selector index node-string)
-                      (let ((new-node (chain (new (-d-o-m-parser))
-                                             (parse-from-string node-string "text/html")
-                                             body
-                                             first-child)))
+                    (defun insert (selector index node-type node-string)
+                      (let ((new-node (if (= node-type "text")
+                                          (chain document (create-text-node node-string))
+                                          (chain $ (parse-h-t-m-l node-string) (pop)))))
                         (let ((parent-node (@ document body)))
                           (for-in (i selector)
                                   (setf parent-node
@@ -328,20 +327,30 @@
     (loop for class in class-list
        collect (component-class-style-element (class-name class)))))
 
+(defun style-rule-object (rule)
+  (let ((selector (format nil "~{~A~^, ~}" (ensure-list (rule-selector rule)))))
+    (json:object selector (apply json'object
+                                 (loop for declaration in (rule-declarations rule)
+                                       collect (list (declaration-name declaration)
+                                                     (declaration-value declaration)))))))
+
+(defun merge-object (object-1 object-2)
+  )
+
 (defun component-style-object (component)
   (let ((component-name (string-downcase (class-name (class-of component))))
-        (rules (component-style component))
+        (rules (component-class-style (class-name (class-of component))))
         (style (json:object)))
     (loop with properties = (json:object)
-       for rule in rules
-       for selector = (rule-selector rule)
-       do (loop for property in (rule-declarations rule)
-             for name = (format nil "~(~A~)" (property-name property))
-             for value = (slot-value property 'css::%value)
-             do (setf (json:get properties name) value))
-       finally (setf (json:get style selector)
-                     properties)
-         (return style))))
+          for rule in rules
+          for selector = (rule-selector rule)
+          do (loop for property in (rule-declarations rule)
+                   for name = (format nil "~(~A~)" (property-name property))
+                   for value = (property-value property)
+                   do (setf (json:get properties name) value))
+          finally (setf (json:get style selector)
+                        properties)
+          (return style))))
 
 (defmethod react ((session page-session) (page page))
   ;; (format t "Update page session ~A for page ~A~%" session page)
@@ -354,12 +363,12 @@
           (setf *actions* actions)
           ;; (format t "~A~%" actions)
 
-          (loop with style = (json:object)
-             for component in (hash-table-keys render-table)
-             for component-name = (string-downcase (class-name (class-of component)))
-             for rules = (component-style-object component)
-             do (setf (json:get style component-name) rules)
-             finally (send-text session (json:encode (json:array "style" style))))
+          ;; (loop with style = (json:object)
+          ;;    for component in (hash-table-keys render-table)
+          ;;    for component-name = (string-downcase (class-name (class-of component)))
+          ;;    for rules = (component-style-object component)
+          ;;    do (setf (json:get style component-name) rules)
+          ;;    finally (send-text session (json:encode (json:array "style" style))))
 
           (loop for action in actions
              for type = (first action)
@@ -367,6 +376,9 @@
              for js-action = (case type
                                (:replace (json:array "replace"
                                                      selector
+                                                     (typecase (fourth action)
+                                                       (html:element "element")
+                                                       ((or html:text string) "text"))
                                                      (html:serialize (fourth action))))
                                (:update (json:array "update"
                                                     selector
@@ -377,6 +389,9 @@
                                (:remove (json:array "remove" selector))
                                (:insert (json:array "insert" selector
                                                     (fourth action)
+                                                    (typecase (fifth action)
+                                                      (html:element "element")
+                                                      ((or html:text string) "text"))
                                                     (html:serialize (fifth action)))))
              collect js-action into js-actions
              finally (let ((js-message (json:array "reconciliation" js-actions)))

@@ -33,6 +33,8 @@
                 :session-open-p)
   (:import-from :component
                 :component
+                :define-component
+                :render
                 :render-all
                 :diff
                 :component-class-style)
