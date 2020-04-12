@@ -26,11 +26,8 @@
       (setf selector (rule-selector rule)))
     `(rule ,selector
        ,@(loop for declaration in (rule-declarations rule)
-               collect (if (find-symbol (string-upcase (declaration-name declaration)) :css)
-                           `(,(intern (string-upcase (declaration-name declaration)) :css)
-                             ,(css::serialize-tokens (declaration-value declaration)))
-                         `(property ,(declaration-name declaration)
-                                    ,(css::serialize-tokens (declaration-value declaration))))))))
+               collect `(property ,(declaration-name declaration)
+                                  ,(css::serialize-tokens (declaration-value declaration)))))))
 
 (defun print-rule (rule &optional (stream *standard-output*))
   (let ((form (transform-rule rule)))
