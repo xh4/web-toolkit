@@ -40,6 +40,10 @@ dl dd {
     margin: 0 1em;
 }
 
+pre {
+    white-space: pre-wrap;
+}
+
 dl.function-arguments,
 dl.function-values {
     margin: 0;

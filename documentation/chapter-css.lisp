@@ -15,13 +15,13 @@
               :summary (p "A class which represents a CSS property."))
      (function/o :symbol 'css:property
                  :syntax '(property name value)
-                 :arguments `((name . "A string for the name of the property.")
-                              (value . "A string for the value of the property."))
+                 :arguments `((name "A string for the name of the " ,(class-ref 'css:property) ".")
+                              (value "A string for the value of the " ,(class-ref 'css:property) "."))
                  :values `((property "A " ,(class-ref 'css:property) " instance."))
                  :summary (p "The function to construct a " (class-ref 'css:property) "."))
      (article
       :title "Property Constructors"
-      (p "A property contructor is a function to constructor a CSS " (class-ref 'css:property) ".")
+      (p "A property contructor is a function to constructor a " (class-ref 'css:property) ".")
       (evil (css:margin "10px auto") :css)
       (evil (css:border-color "rgb(173, 255, 47)") :css)
       (p "The CSS package exports the following property constructor symbols:")
@@ -94,4 +94,65 @@
       (p (a :href "https://www.w3.org/TR/pointerevents2" "Pointer Events"))
       (symbols :pointer-events :touch-action)
       (p (a :href "https://drafts.fxtf.org/filter-effects-2" "Filter Effects"))
-      (symbols :backdrop-filter))))
+      (symbols :backdrop-filter))
+     (class/o :symbol 'css:rule
+              :summary (p "A class which represents a CSS rule. Rules are further categorized as " (class-ref 'css:qualified-rule "qualified rules") " or at-rules."))
+     (class/o :symbol 'css:qualified-rule
+              :summary (p "A class which represents a CSS " (a :href "https://www.w3.org/TR/css-syntax-3/#qualified-rule" "qualified rule") "."))
+     (function/o :symbol 'css:rule-prelude
+                 :syntax '(rule-prelude rule)
+                 :arguments `((rule "A " ,(class-ref 'qualified-rule "qualified rule") "."))
+                 :values `((prelude "A list of tokens."))
+                 :summary (p "Get the prelude part of a " (class-ref 'qualified-rule "qualified rule") "."))
+     (function/o :symbol 'css:rule-block
+                 :syntax '(rule-block rule)
+                 :arguments `((rule "A " ,(class-ref 'qualified-rule "qualified rule") "."))
+                 :values `((block "A simple block or a list of tokens."))
+                 :summary (p "Get the block part of a " (class-ref 'qualified-rule "qualified rule") "."))
+     (class/o :symbol 'css:style-rule
+              :summary (p "A class which represents a CSS " (a :href "https://www.w3.org/TR/css-syntax-3/#qualified-rule" "qualified rule") "."))
+     (function/o :symbol 'css:rule-prelude
+                 :syntax '(rule-prelude rule)
+                 :arguments `((rule "A " ,(class-ref 'qualified-rule "qualified rule") "."))
+                 :values `((prelude "A list of tokens."))
+                 :summary (p "Get the prelude part of a " (class-ref 'qualified-rule "qualified rule") "."))
+     (function/o :symbol 'css:rule-block
+                 :syntax '(rule-block rule)
+                 :arguments `((rule "A " ,(class-ref 'qualified-rule "qualified rule") "."))
+                 :values `((block "A simple block or a list of tokens."))
+                 :summary (p "Get the block part of a " (class-ref 'qualified-rule "qualified rule") "."))
+     (function/o :symbol 'css:tokenize
+                 :syntax '(tokenize source)
+                 :arguments `((source "A string or a stream."))
+                 :values `((tokens "A list of tokens."))
+                 :summary (list
+                           (p "This funtion runs the tokenizer on the " (argument-name 'source) ", return a list of " (value-name 'tokens) ".")
+                           (evil (css:tokenize "body { background: #fff }") :css)))
+     (function/o :symbol 'css:parse-rules
+                 :syntax '(parse-rules source)
+                 :arguments `((source "A string or a stream."))
+                 :values `((rules "A list of rules."))
+                 :summary (list
+                           (p "This funtion runs the parser on the " (argument-name 'source) ", return a list of " (class-ref 'css:qualified-rule "qualified rules") ". The body (block) of the rule is given as a list of tokens, to further parse it as declarations, use " (function-ref 'css:parse-declarations) ".")
+                           (evil (css:parse-rules "body { background: #fff }") :css)))
+     (function/o :symbol 'css:parse-declarations
+                 :syntax '(parse-declaration source)
+                 :arguments `((source "A simple block, a string or a stream."))
+                 :values `((declarations "A list of declarations."))
+                 :summary (list
+                           (p "This funtion runs the parser on the " (argument-name 'source) ", return a list of " (class-ref 'css:declaration "declarations") ". The value of a declaration is given as a list of tokens, to get the string value, call " (function-ref 'css:serialize-tokens) " on the tokens.")
+                           (evil (let ((rule (first (css:parse-rules "body { background: #fff }"))))
+                                   (css:parse-declarations (css:rule-block rule))) :css)))
+     (function/o :symbol 'css:serialize-tokens
+                 :syntax '(serialize-tokens tokens &optional stream)
+                 :arguments `((tokens "A list of tokens.")
+                              (stream "A stream or NIL."))
+                 :values `((output "NIL or a string."))
+                 :summary (list
+                           (p "Serialize a list of tokens to a " (argument-name 'stream) ". This function is useful to unparse a rule's prelude (selector) or a declaration's value.")
+                           (evil (let ((rule (first (css:parse-rules "body h1 { color: #333 }"))))
+                                   (css:serialize-tokens (css:rule-prelude rule)))
+                                 :css)
+                           (evil (let ((declaration (first (css:parse-declarations "box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.5)"))))
+                                   (css:serialize-tokens (css:declaration-value declaration)))
+                                 :css)))))

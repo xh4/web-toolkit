@@ -34,10 +34,21 @@
       (setf form-string (concatenate 'string form-string (string #\Newline))))
     `(pre ,form-string
           (span :class "evaluates-to" "⇒")
-          (let ((string (if ,package
-                            (let ((*package* (find-package ,package)))
-                              (with-output-to-string (stream)
-                                (prin1 ,form stream)))
-                            (with-output-to-string (stream)
-                              (prin1 ,form stream)))))
-            (setf string (remove-identity string))))))
+          (progn
+            #+lispworks
+            (lw:defadvice
+                (system::print-unreadable-object-after
+                 print-unreadable-object-after-without-identity
+                 :around)
+                (object stream identity-p unknown)
+              (lw:call-next-advice object stream nil unknown))
+            (prog1
+                (if ,package
+                    (let ((*package* (find-package ,package)))
+                      (with-output-to-string (stream)
+                        (prin1 ,form stream)))
+                    (with-output-to-string (stream)
+                      (prin1 ,form stream)))
+              #+lispworks
+              (hcl:delete-advice system::print-unreadable-object-after
+                                 print-unreadable-object-after-without-identity))))))
