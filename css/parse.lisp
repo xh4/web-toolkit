@@ -85,7 +85,7 @@
    (let ((parser (make-instance 'parser :stream stream)))
      (parse-rules parser)))
   (:method ((parser parser))
-   (consume-rules parser)))
+   (consume-list-of-rules parser)))
 
 (defun parse-rule (parser)
   (loop while (whitespace-token-p (next-input-token parser))
