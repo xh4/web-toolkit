@@ -12,6 +12,12 @@
     :initform nil
     :accessor rule-block)))
 
+(defmethod print-object ((rule qualified-rule) stream)
+  (print-unreadable-object (rule stream :type t :identity t)
+    (format stream "PRELUDE: ~S BLOCK: ~S"
+            (rule-prelude rule)
+            (rule-block rule))))
+
 (defclass style-rule (qualified-rule)
   ((selector
     :initarg :selector

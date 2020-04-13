@@ -24,6 +24,14 @@
     :accessor declaration-important))
   (:metaclass declaration-class))
 
+(defmethod print-object ((declaration declaration) stream)
+  (print-unreadable-object (declaration stream :type t :identity t)
+    (format stream "NAME: ~S VALUE: ~S"
+            (declaration-name declaration)
+            (declaration-value declaration))
+    (when (declaration-important declaration)
+      (format stream " IMPORTANT: T"))))
+
 (defmethod initialize-instance :after ((declaration declaration) &key)
 ;;;   (let ((value (slot-value declaration '%value)))
 ;;;     (setf value (string-trim '(#\Space) value))
