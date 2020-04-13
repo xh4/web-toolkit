@@ -10,7 +10,7 @@
   :components ((:module "javascript"
                         :serial t
                         :components ((:file "package")
-                                     )))
+                                     (:file "estree"))))
   :in-order-to ((test-op (test-op :wt.javascript/test)))
   :perform (load-op :after (o c)
                     #+lispworks
