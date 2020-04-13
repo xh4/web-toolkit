@@ -8,7 +8,7 @@
 (define-variable chapter-css
     (chapter
      :title "CSS"
-     (p "The WT.CSS implements CSS constructor, parser and serializer based on specifications introduced in " (a :href "https://www.w3.org/TR/css-2018/#css" :target "blank" "CSS Snapshot 2018") ".")
+     (p "The WT.CSS system implements CSS constructor, tokenizer, parser and serializer based on specifications introduced in " (a :href "https://www.w3.org/TR/css-2018/#css" :target "blank" "CSS Snapshot 2018") ".")
      (class/o :symbol 'css:declaration
               :summary (p "A class which represents a CSS " (a :href "https://www.w3.org/TR/css-syntax-3/#declaration" "declaration") ". Declarations are further categorized as \"" (class-ref 'css:property "properties") "\" or \"descriptors\"."))
      (class/o :symbol 'css:property
@@ -18,7 +18,8 @@
                  :arguments `((name "A string for the name of the " ,(class-ref 'css:property) ".")
                               (value "A string for the value of the " ,(class-ref 'css:property) "."))
                  :values `((property "A " ,(class-ref 'css:property) " instance."))
-                 :summary (p "The function to construct a " (class-ref 'css:property) "."))
+                 :summary (list (p "The function to construct a " (class-ref 'css:property) ".")
+                                (evil (css:property "margin" "5px 10px"))))
      (article
       :title "Property Constructors"
       (p "A property contructor is a function to constructor a " (class-ref 'css:property) ".")
@@ -110,17 +111,29 @@
                  :values `((block "A simple block or a list of tokens."))
                  :summary (p "Get the block part of a " (class-ref 'qualified-rule "qualified rule") "."))
      (class/o :symbol 'css:style-rule
-              :summary (p "A class which represents a CSS " (a :href "https://www.w3.org/TR/css-syntax-3/#qualified-rule" "qualified rule") "."))
-     (function/o :symbol 'css:rule-prelude
-                 :syntax '(rule-prelude rule)
-                 :arguments `((rule "A " ,(class-ref 'qualified-rule "qualified rule") "."))
-                 :values `((prelude "A list of tokens."))
-                 :summary (p "Get the prelude part of a " (class-ref 'qualified-rule "qualified rule") "."))
-     (function/o :symbol 'css:rule-block
-                 :syntax '(rule-block rule)
-                 :arguments `((rule "A " ,(class-ref 'qualified-rule "qualified rule") "."))
-                 :values `((block "A simple block or a list of tokens."))
-                 :summary (p "Get the block part of a " (class-ref 'qualified-rule "qualified rule") "."))
+              :summary (p "A subclass of " (a :href "https://www.w3.org/TR/css-syntax-3/#qualified-rule" "qualified rule") "."))
+     (function/o :symbol 'css:rule-selector
+                 :syntax '(rule-selector rule)
+                 :arguments `((rule "A " ,(class-ref 'style-rule "style rule") "."))
+                 :values `((selector "A string or a list of strings."))
+                 :summary (p "Get the selector of a " (class-ref 'style-rule "style rule") "."))
+     (function/o :symbol 'css:rule-declarations
+                 :syntax '(rule-declarations rule)
+                 :arguments `((rule "A " ,(class-ref 'style-rule "style rule") "."))
+                 :values `((declarations "A list of " ,(class-ref 'css:declaration "declarations") "."))
+                 :summary (p "Get the declarations of a " (class-ref 'style-rule "style rule") "."))
+     (function/o :symbol 'css:rule
+                 :syntax '(rule selector &rest properties)
+                 :arguments `((selector "A string or a list of strings.")
+                              (properties "A list of properties."))
+                 :values `((rule "A " ,(class-ref 'css:style-rule "style rule") "."))
+                 :summary (list
+                           (p "This function constructs a " (class-ref 'css:style-rule "style rule") ".")
+                           (evil
+                            (css:rule '("h1" "h2" "h3")
+                                      (css:color "black")
+                                      (css:line-height "1.5"))
+                            :css)))
      (function/o :symbol 'css:tokenize
                  :syntax '(tokenize source)
                  :arguments `((source "A string or a stream."))
@@ -142,14 +155,15 @@
                  :summary (list
                            (p "This funtion runs the parser on the " (argument-name 'source) ", return a list of " (class-ref 'css:declaration "declarations") ". The value of a declaration is given as a list of tokens, to get the string value, call " (function-ref 'css:serialize-tokens) " on the tokens.")
                            (evil (let ((rule (first (css:parse-rules "body { background: #fff }"))))
-                                   (css:parse-declarations (css:rule-block rule))) :css)))
+                                   (css:parse-declarations (css:rule-block rule))) :css)
+                           (evil (css:parse-declarations "color: black; margin: 5px") :css)))
      (function/o :symbol 'css:serialize-tokens
                  :syntax '(serialize-tokens tokens &optional stream)
                  :arguments `((tokens "A list of tokens.")
                               (stream "A stream or NIL."))
                  :values `((output "NIL or a string."))
                  :summary (list
-                           (p "Serialize a list of tokens to a " (argument-name 'stream) ". This function is useful to unparse a rule's prelude (selector) or a declaration's value.")
+                           (p "Serialize a list of " (argument-name 'tokens) " to a " (argument-name 'stream) ". This function is useful to unparse a rule's prelude (selector) or a declaration's value.")
                            (evil (let ((rule (first (css:parse-rules "body h1 { color: #333 }"))))
                                    (css:serialize-tokens (css:rule-prelude rule)))
                                  :css)
