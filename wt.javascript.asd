@@ -8,13 +8,14 @@
   :depends-on (:alexandria)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "javascript"
-                        :serial t
-                        :components ((:file "package")
-                                     (:file "estree")
-                                     (:file "scanner")
-                                     (:file "token")
-                                     (:file "tokenizer")
-                                     (:file "parser"))))
+                :serial t
+                :components ((:file "package")
+                             (:file "estree")
+                             (:file "character")
+                             (:file "scanner")
+                             (:file "token")
+                             (:file "tokenizer")
+                             (:file "parser"))))
   :in-order-to ((test-op (test-op :wt.javascript/test)))
   :perform (load-op :after (o c)
                     #+lispworks
@@ -24,8 +25,8 @@
   :depends-on (:wt.javascript
                :wt.test)
   :components ((:module "test/javascript"
-                        :serial t
-                        :components ((:file "package")
-                                     )))
+                :serial t
+                :components ((:file "package")
+                             (:file "scanner"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :javascript-test)))
