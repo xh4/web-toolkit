@@ -186,6 +186,34 @@
                      :start start
                      :end index))))))
 
+(defun scan-identifier (scanner)
+  (with-slots (index source line-number line-start) scanner
+    (let ((start index)
+          (type))
+      (let ((id (if (eq #\\ (char source index))
+                    (get-complex-identifier scanner)
+                  (get-identifier scanner))))
+        (cond
+         ((= 1 (length id)) (setf type :identifier))
+         ((keyword-p id) (setf type :keyword))
+         ((equal "null" id) (setf type :null-literal))
+         ((or (equal "true" id)
+              (equal "false" id))
+          (setf type :boolean-literal))
+         (t (setf type :identifier)))
+        (when (and (not (eq :identifier type))
+                   (not (= (+ start (length id)) index)))
+          (let ((restore index))
+            (setf index start)
+            (tolerate-unexpected-token scanner)
+            (setf index restore)))
+        (make-token :type type
+                    :value id
+                    :line-number line-number
+                    :line-start line-start
+                    :start start
+                    :end index)))))
+
 (defun skip-single-line-comment (scanner offset))
 
 (defun skip-multi-line-comment (scanner))
@@ -211,8 +239,6 @@
 (defun get-complex-identifier (scanner))
 
 (defun octal-to-decimal (scanner ch))
-
-(defun scan-identifier (scanner))
 
 (defun scan-hex-literal (scanner start))
 
