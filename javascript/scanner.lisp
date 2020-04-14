@@ -186,6 +186,7 @@
                      :start start
                      :end index))))))
 
+;; https://tc39.github.io/ecma262/#sec-names-and-keywords
 (defun scan-identifier (scanner)
   (with-slots (index source line-number line-start) scanner
     (let ((start index)
@@ -214,50 +215,302 @@
                     :start start
                     :end index)))))
 
-(defun skip-single-line-comment (scanner offset))
+(defun get-identifier (scanner)
+  (with-slots (index source line-number line-start) scanner
+    (let ((start index))
+      (incf index)
+      (loop while (not (eof-p scanner))
+            for char = (char source index)
+            do (cond
+                ((eq #\\ char)
+                 (setf index start)
+                 (return-from get-identifier (get-complex-identifier scanner)))
+                ((< #xD800 (char-code char) #xDFFF)
+                 (setf index start)
+                 (return-from get-identifier (get-complex-identifier scanner))))
+            (if (identifier-part-p char)
+                (incf index)
+              (return)))
+      (subseq start index))))
 
-(defun skip-multi-line-comment (scanner))
+(defun get-complex-identifier (scanner)
+  (with-slots (index source) scanner
+    (let* ((char (char source index))
+           (id (string char)))
+      (incf index)
+      (let ((char))
+        (when (equal "\\" id)
+          (when (not (eq #\u (char source index)))
+            (error "Unexpected token"))
+          (incf index)
+          (when (eq #\{ (char source index))
+            (setf index (1+ index)
+                  char (scan-unicode-code-point-escape scanner))
+            (progn
+              (setf char (scan-hex-escape scanner #\u))
+              (when (or (null char)
+                        (eq #\\ char)
+                        (not (identifier-start-p char)))
+                (error "Unexpected token"))))
+          (setf id (string char))))
+      (loop while (not (eof-p scanner))
+            for char = (char source index)
+            do (when (not (identifier-part-p char))
+                 (return))
+            (setf id (concatenate 'string id (string char))
+                  index (1+ index))
+            (when (eq #\\ char)
+              (setf id (subseq id 0 (1- (length id))))
+              (when (not (eq #\u (char source index)))
+                (error "Unexpected token"))
+              (incf index)
+              (when (eq #\{ (char source index))
+                (setf index (1+ index)
+                      char (scan-unicode-code-point-escape scanner))
+                (progn
+                  (setf char (scan-hex-escape scanner #\u))
+                  (when (or (null char)
+                            (eq #\\ char)
+                            (not (identifier-start-p char)))
+                    (error "Unexpected token"))))
+              (setf id (concatenate 'string id (string char)))))
+      id)))
 
-(defun scan-comments (scanner))
+(defun scan-numeric-literal (scanner)
+  (with-slots (index source line-number line-start) scanner
+    (let ((start index)
+          (char (char source index))
+          (num ""))
+      (when  (not (eq #\. char))
+        (setf num (string char))
+        (incf index)
+        (let ((char (char source index)))
+          (when (equal "0" num)
+            (cond
+             ((or (eq #\x char) (eq #\X char))
+              (incf index)
+              (return-from scan-numeric-literal (scan-hex-literal scanner start)))
+             ((or (eq #\b char) (eq #\B char))
+              (incf index)
+              (return-from scan-numeric-literal (scan-binary-literal scanner start)))
+             ((or (eq #\o char) (eq #\O char))
+              (incf index)
+              (return-from scan-numeric-literal (scan-octal-literal scanner char start)))
+             ((and (octal-digit-p char) (implicit-octal-literal-p scanner))
+              (return-from scan-numeric-literal (scan-octal-literal scanner char start)))))
+          (loop while (decimal-digit-p (char source index))
+                do (setf num (concatenate 'string num (string (char source index))))
+                do (incf index)
+                finally (setf char (char source index)))))
+      (when (eq #\. char)
+        (setf num (concatenate 'string num (string (char source index))))
+        (incf index)
+        (loop while (decimal-digit-p (char source index))
+              do (setf num (concatenate 'string num (string (char source index))))
+              do (incf index)
+              finally (setf char (char source index))))
+      (when (or (eq #\e char) (eq #\E char))
+        (setf num (concatenate 'string num (string (char source index))))
+        (incf index)
+        (setf char (char source index))
+        (when (or (eq #\+ char) (eq #\- char))
+          (setf num (concatenate 'string num (string (char source index))))
+          (incf index))
+        (if (decimal-digit-p (char source index))
+            (loop while (decimal-digit-p (char source index))
+                  do (setf num (concatenate 'string num (string (char source index))))
+                  do (incf index)
+                  finally (setf char (char source index)))
+          (error "Unexpected token")))
+      (when (identifier-start-p (char source index))
+        (error "Unexpected token"))
+      (make-token :type :numeric-literal
+                  :value num
+                  :line-number line-number
+                  :line-start line-start
+                  :start start
+                  :end index))))
 
+(defun scan-hex-literal (scanner start)
+  (with-slots (index source line-number line-start) scanner
+    (let ((num ""))
+      (loop while (not (eof-p scanner))
+            do (if (not (hex-digit-p (char source index)))
+                 (return)
+                 (setf num (concatenate 'string num (string (char source index)))
+                       index (1+ index))))
+      (when (= 0 (length num))
+        (error "Unexpected token"))
+      (when (identifier-start-p (char source index))
+        (error "Unexpected token"))
+      ;; TODO: parse number
+      (make-token :type :numeric-literal
+                  :value num
+                  :line-number line-number
+                  :line-start line-start
+                  :start start
+                  :end index))))
+
+(defun scan-binary-literal (scanner start)
+  (with-slots (index source line-number line-start) scanner
+    (let ((num "")
+          (char))
+      (loop while (not (eof-p scanner))
+            for char = (char source index)
+            do (if (and (not (eq #\0 char))
+                          (not (eq #\1 char)))
+                 (return)
+                 (setf num (concatenate 'string num (string (char source index)))
+                       index (1+ index))))
+      (when (= 0 (length num))
+        (error "Unexpected token"))
+      (when (not (eof-p scanner))
+        (setf char (char source index))
+        (when (or (identifier-start-p char)
+                  (decimal-digit-p char))
+          (error "Unexpected token")))
+      ;; TODO: parse number
+      (make-token :type :numeric-literal
+                  :value num
+                  :line-number line-number
+                  :line-start line-start
+                  :start start
+                  :end index))))
+
+(defun scan-octal-literal (scanner prefix start)
+  (with-slots (index source line-number line-start) scanner
+    (let ((num "")
+          (octal nil))
+      (if (octal-digit-p (char prefix 0))
+          (setf octal t
+                num (concatenate 'string "0" (char source index))
+                index (1+ index))
+        (incf index))
+      (loop while (not (eof-p scanner))
+            do (if (octal-digit-p (char source index))
+                   (return)
+                 (setf num (concatenate 'string num (string (char source index)))
+                       index (1+ index))))
+      (when (and (not octal)
+                 (= 0 (length num)))
+        (error "Unexpected token"))
+      (when (or (identifier-start-p (char source index))
+                (decimal-digit-p (char source index)))
+        (error "Unexpected token"))
+      ;; TODO: parse number 
+      (make-token :type :numeric-literal
+                  :value num
+                  :octal octal
+                  :line-number line-number
+                  :line-start line-start
+                  :start start
+                  :end index))))
+
+;; TODO: check this
+(defun implicit-octal-literal-p (scanner)
+  (with-slots (index length source) scanner
+    (loop for i from (1+ index) upto (1- length)
+          for char = (char source i)
+          do (cond
+              ((or (eq #\8 char)
+                   (eq #\9 char)) (return))
+              ((not (octal-digit-p char)) (return t)))
+          finally (return t))))
+
+;; ttps://tc39.github.io/ecma262/#sec-comments
+(defun scan-comments (scanner)
+  (with-slots (index source line-number line-start) scanner))
+
+(defun skip-single-line-comment (scanner offset)
+  (with-slots (index source line-number line-start) scanner))
+
+(defun skip-multi-line-comment (scanner)
+  (with-slots (index source line-number line-start) scanner))
+
+(defun scan-reg-exp (scanner)
+  (with-slots (index source line-number line-start) scanner))
+
+(defun scan-reg-exp-body (scanner)
+  (with-slots (index source line-number line-start) scanner))
+
+(defun scan-reg-exp-flags (scanner)
+  (with-slots (index source line-number line-start) scanner))
+
+(defun test-reg-exp (scanner pattern flags))
+
+;; https://tc39.github.io/ecma262/#sec-future-reserved-words
 (defun future-reserved-word-p (id))
 
 (defun strict-mode-reserved-word-p (id))
 
-(defun restricted-word-p (id))
+(defun restricted-word-p (id)
+  (or (equal "eval" id) (equal "arguments" id)))
 
-(defun keyword-p (id))
+;; https://tc39.github.io/ecma262/#sec-keywords
+(defun keyword-p (id)
+  (member id '("id" "in" "do"
+               "var" "for" "new" "try" "let"
+               "this" "else" "case" "void" "with" "enum"
+               "while" "break" "catch" "throw" "const" "yield"
+               "clsss" "super" "return" "typeof" "delete" "switch"
+               "export" "import" "default" "finally" "extends"
+               "function" "continue" "debugger" "instanceof")
+          :test 'equal))
 
-(defun code-point-at (scanner i))
+(defun scan-hex-escape (scanner prefix)
+  (with-slots (index source line-number line-start) scanner
+    (let ((len (if (eq #\u prefix) 4 2))
+          (code 0))
+      (loop repeat len
+            do (if (and (not (eof-p scanner))
+                        (hex-digit-p (char source index)))
+                   (setf code (+ (* code 16)
+                                 (hex-value (char source index)))
+                         index (1+ index))
+                 (return)))
+      (code-char code))))
 
-(defun scan-hex-escape (scanner prefix))
+(defun hex-value (char)
+  (position (char-downcase char) "0123456789abcdef"))
 
-(defun scan-unicode-code-point-escape (scanner))
+(defun octal-value (char)
+  (position char "01234567"))
 
-(defun get-identifier (scanner))
+(defun scan-unicode-code-point-escape (scanner)
+  (with-slots (index source line-number line-start) scanner
+    (let ((char (char source index))
+          (code 0))
+      (when (eq #\} char)
+        (error "Unexpected token"))
+      (loop while (not (eof-p scanner))
+            for char = (char source index)
+            do (incf index)
+            do (if (not (hex-digit-p char))
+                   (return)
+                 (setf code (+ (* code 16) (hex-value char)))))
+      (when (or (> code #x10FFFF) (not (eq #\} char)))
+        (error "Unexpected token"))
+      (code-char code))))
 
-(defun get-complex-identifier (scanner))
+(defun octal-to-decimal (scanner char)
+  (with-slots (index source) scanner
+    (let ((octal (not (eq #\0 char)))
+          (code (octal-value char)))
+      (when (and (not (eof-p scanner))
+                 (octal-digit-p (char source index)))
+        (setf octal t
+              code (+ (* code 8)
+                      (octal-value (char source index)))
+              index (1+ index))
+        (when (and (>= (position char "0123") 0)
+                   (not (eof-p scanner))
+                   (octal-digit-p (char source index)))
+          (setf code (+ (* code 8) (octal-value (char source index)))
+                index (1+ index))))
+      `(:code ,code :octal ,octal))))
 
-(defun octal-to-decimal (scanner ch))
+(defun scan-template (scanner)
+  (with-slots (index source line-number line-start) scanner))
 
-(defun scan-hex-literal (scanner start))
-
-(defun scan-binary-literal (scanner start))
-
-(defun scan-octal-literal(scanner prefix start))
-
-(defun implicit-octal-literal-p (scanner))
-
-(defun scan-numeric-literal (scanner))
-
-(defun scan-template (scanner))
-
-(defun test-reg-exp (scanner pattern flags))
-
-(defun scan-reg-exp-body (scanner))
-
-(defun scan-reg-exp-flags (scanner))
-
-(defun scan-reg-exp (scanner))
-
-(defun tolerate-unexpected-token (scanner))
+(defun tolerate-unexpected-token (scanner)
+  (with-slots (index source line-number line-start) scanner))
