@@ -33,12 +33,12 @@
 (defun lex (scanner)
   (with-slots (index line-number line-start source curly-stack) scanner
     (when (eof-p scanner)
-      (return-from lex (make-token
-                        :type :eof
-                        :line-number line-number
-                        :line-start line-start
-                        :start index
-                        :end index)))
+      (return-from lex (make-instance 'eof
+;;;                         :line-number line-number
+;;;                         :line-start line-start
+;;;                         :start index
+;;;                         :end index
+                        )))
     (let ((char (char source index)))
       (cond
        ((identifier-start-p char) (scan-identifier scanner))
@@ -110,13 +110,13 @@
                         (incf index))))))))))
       (when (= index start)
         (error "Unexpected token"))
-      (make-token
-       :type :punctuator
-       :value str
-       :line-number line-number
-       :line-start line-start
-       :start start
-       :end index))))
+      (make-instance 'punctuator
+                     :value str
+;;;                      :line-number line-number
+;;;                      :line-start line-start
+;;;                      :start start
+;;;                      :end index
+                     ))))
 
 ;; https://tc39.github.io/ecma262/#sec-literals-string-literals
 (defun scan-string-literal (scanner)
@@ -178,14 +178,14 @@
             (unless ending
               (setf index start)
               (error "Unexpected token"))
-            (return (make-token
-                     :type :string-literal
+            (return (make-instance 'string-literal
                      :value str
-                     :octal octal
-                     :line-number line-number
-                     :line-start line-start
-                     :start start
-                     :end index))))))
+;;;                      :octal octal
+;;;                      :line-number line-number
+;;;                      :line-start line-start
+;;;                      :start start
+;;;                      :end index
+                     ))))))
 
 ;; https://tc39.github.io/ecma262/#sec-names-and-keywords
 (defun scan-identifier (scanner)
@@ -196,25 +196,26 @@
                     (get-complex-identifier scanner)
                   (get-identifier scanner))))
         (cond
-         ((= 1 (length id)) (setf type :identifier))
-         ((keyword-p id) (setf type :keyword))
-         ((equal "null" id) (setf type :null-literal))
+         ((= 1 (length id)) (setf type 'identifier))
+         ((keyword-p id) (setf type 'keyword))
+         ((equal "null" id) (setf type 'null-literal))
          ((or (equal "true" id)
               (equal "false" id))
-          (setf type :boolean-literal))
-         (t (setf type :identifier)))
-        (when (and (not (eq :identifier type))
+          (setf type 'boolean-literal))
+         (t (setf type 'identifier)))
+        (when (and (not (eq 'identifier type))
                    (not (= (+ start (length id)) index)))
           (let ((restore index))
             (setf index start)
             (tolerate-unexpected-token scanner)
             (setf index restore)))
-        (make-token :type type
-                    :value id
-                    :line-number line-number
-                    :line-start line-start
-                    :start start
-                    :end index)))))
+        (make-instance type
+                       :name id
+;;;                     :line-number line-number
+;;;                     :line-start line-start
+;;;                     :start start
+;;;                     :end index
+                    )))))
 
 (defun get-identifier (scanner)
   (with-slots (index source line-number line-start) scanner
@@ -325,12 +326,13 @@
           (error "Unexpected token")))
       (when (identifier-start-p (char source index))
         (error "Unexpected token"))
-      (make-token :type :numeric-literal
+      (make-instance 'numeric-literal
                   :value num
-                  :line-number line-number
-                  :line-start line-start
-                  :start start
-                  :end index))))
+;;;                   :line-number line-number
+;;;                   :line-start line-start
+;;;                   :start start
+;;;                   :end index
+                  ))))
 
 (defun scan-hex-literal (scanner start)
   (with-slots (index source line-number line-start) scanner
@@ -345,12 +347,13 @@
       (when (identifier-start-p (char source index))
         (error "Unexpected token"))
       ;; TODO: parse number
-      (make-token :type :numeric-literal
+      (make-instance 'numeric-literal
                   :value num
-                  :line-number line-number
-                  :line-start line-start
-                  :start start
-                  :end index))))
+;;;                   :line-number line-number
+;;;                   :line-start line-start
+;;;                   :start start
+;;;                   :end index
+                  ))))
 
 (defun scan-binary-literal (scanner start)
   (with-slots (index source line-number line-start) scanner
@@ -371,12 +374,13 @@
                   (decimal-digit-p char))
           (error "Unexpected token")))
       ;; TODO: parse number
-      (make-token :type :numeric-literal
+      (make-instance 'numeric-literal
                   :value num
-                  :line-number line-number
-                  :line-start line-start
-                  :start start
-                  :end index))))
+;;;                   :line-number line-number
+;;;                   :line-start line-start
+;;;                   :start start
+;;;                   :end index
+                  ))))
 
 (defun scan-octal-literal (scanner prefix start)
   (with-slots (index source line-number line-start) scanner
@@ -399,13 +403,14 @@
                 (decimal-digit-p (char source index)))
         (error "Unexpected token"))
       ;; TODO: parse number 
-      (make-token :type :numeric-literal
+      (make-instance'numeric-literal
                   :value num
-                  :octal octal
-                  :line-number line-number
-                  :line-start line-start
-                  :start start
-                  :end index))))
+;;;                   :octal octal
+;;;                   :line-number line-number
+;;;                   :line-start line-start
+;;;                   :start start
+;;;                   :end index
+                  ))))
 
 ;; TODO: check this
 (defun implicit-octal-literal-p (scanner)
@@ -494,14 +499,15 @@
       (let ((pattern (scan-reg-exp-body scanner))
             (flags (scan-reg-exp-flags scanner)))
         (let ((value (test-reg-exp scanner pattern flags)))
-          (make-token :type :regular-expression
+          (make-instance 'reg-exp-literal
                       :pattern pattern
                       :flags flags
-                      :regex value
-                      :line-number line-number
-                      :line-start line-start
-                      :start start
-                      :end index))))))
+                      :value value
+;;;                       :line-number line-number
+;;;                       :line-start line-start
+;;;                       :start start
+;;;                       :end index
+                      ))))))
 
 (defun scan-reg-exp-body (scanner)
   (with-slots (index source line-number line-start) scanner

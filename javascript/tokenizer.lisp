@@ -83,11 +83,13 @@
 
 (defun push-token (reader token)
   (with-slots (values curly paren) reader
-    (if (or (eq :punctuator (token-type token))
-            (eq :keyword (token-type token)))
-        (progn
+    (if (or (eq :punctuator (node-type token))
+            (eq :keyword (node-type token)))
+        (let ((value (typecase token
+                       (punctuator (punctuator-value token))
+                       (keyword (keyword-name token)))))
           (cond
-           ((eq "{" (token-value token)) (setf curly (length values)))
-           ((eq "(" (token-value token)) (setf paren (length values))))
-          (appendf values (list (token-value token))))
+           ((eq "{" value) (setf curly (length values)))
+           ((eq "(" value) (setf paren (length values))))
+          (appendf values (list value)))
       (appendf values (list nil)))))

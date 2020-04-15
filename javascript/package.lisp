@@ -8,4 +8,7 @@
    ;; token
    :token :token-type :token-value
    ;; tokenize
-   :tokenize))
+   :tokenize)
+  (:import-from :closer-mop
+                :class-direct-slots
+                :slot-definition-name))

@@ -6,7 +6,8 @@
   :mailto "xh@coobii.com"
   :license "BSD 3-Clause"
   :depends-on (:alexandria
-               :cl-ppcre)
+               :cl-ppcre
+               :closer-mop)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "javascript"
                 :serial t
@@ -14,7 +15,6 @@
                              (:file "estree")
                              (:file "character")
                              (:file "scanner")
-                             (:file "token")
                              (:file "tokenizer")
                              (:file "parser"))))
   :in-order-to ((test-op (test-op :wt.javascript/test)))
