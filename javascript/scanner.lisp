@@ -419,24 +419,155 @@
 
 ;; ttps://tc39.github.io/ecma262/#sec-comments
 (defun scan-comments (scanner)
-  (with-slots (index source line-number line-start) scanner))
+  (with-slots (index source line-number line-start) scanner
+    (let ((start (= 0 index)))
+      (loop while (not (eof-p scanner))
+            for char = (char source index)
+            do (cond
+                ((whitespace-p char) (incf index))
+                ((line-terminator-p char)
+                 (incf index)
+                 (when (and (eq #\Return char)
+                            (eq #\Newline (char source index)))
+                   (incf index))
+                 (incf line-number)
+                 (setf line-start index
+                       start t))
+                ((eq #\/ char)
+                 (setf char (char source (1+ index)))
+                 (cond
+                  ((eq #\/ char)
+                   (incf index 2)
+                   (skip-single-line-comment scanner 2)
+                   (setf start t))
+                  ((eq #\* char)
+                   (incf index 2)
+                   (skip-multi-line-comment scanner))
+                  (t (return))))
+                ((and start (eq #\- char))
+                 (if (and (eq #\- (char source (+ index 1)))
+                           (eq #\> (char source (+ index 2))))
+                     (progn
+                       (incf index 3)
+                       (skip-single-line-comment scanner 4))
+                   (return)))
+                (t (return)))))))
 
 (defun skip-single-line-comment (scanner offset)
-  (with-slots (index source line-number line-start) scanner))
+  (with-slots (index source line-number line-start) scanner
+    (let ((start)
+          (loc))
+      (loop while (not (eof-p scanner))
+            for char = (char source index)
+            do (incf index)
+            (when (line-terminator-p char)
+              (when (and (eq #\Return char)
+                         (eq #\Newline (char source index)))
+                (incf index))
+              (incf line-number)
+              (setf line-start index))))))
 
 (defun skip-multi-line-comment (scanner)
-  (with-slots (index source line-number line-start) scanner))
+  (with-slots (index source line-number line-start) scanner
+    (let ((start loc))
+      (loop while (not (eof-p scanner))
+            for char = (char source index)
+            do (cond
+                ((line-terminator-p char)
+                 (when (and (eq #\Return char)
+                            (eq #\Newline (char source index)))
+                   (incf index))
+                 (incf line-number)
+                 (incf index)
+                 (setf line-start index))
+                ((eq #\* char)
+                 (when (eq #\/ (char source index))
+                   (incf index 2))
+                 (incf index))
+                (t (incf index))))
+      (tolerate-unexpected-token scanner))))
 
 (defun scan-reg-exp (scanner)
-  (with-slots (index source line-number line-start) scanner))
+  (with-slots (index line-number line-start) scanner
+    (let ((start index))
+      (let ((pattern (scan-reg-exp-body scanner))
+            (flags (scan-reg-exp-flags scanner)))
+        (let ((value (test-reg-exp scanner pattern flags)))
+          (make-token :type :regular-expression
+                      :pattern pattern
+                      :flags flags
+                      :regex value
+                      :line-number line-number
+                      :line-start line-start
+                      :start start
+                      :end index))))))
 
 (defun scan-reg-exp-body (scanner)
-  (with-slots (index source line-number line-start) scanner))
+  (with-slots (index source line-number line-start) scanner
+    (let ((char (char source index)))
+      (assert (eq #\/ char))
+      (let ((str (string (char source (incf index))))
+            (class-marker)
+            (terminated))
+        (loop while (not (eof-p scanner))
+              for char = (char source index)
+              do (incf index)
+              (cond
+               ((eq #\\ char)
+                (setf char (char source index)
+                      index (1+ index))
+                (when (line-terminator-p char)
+                  (error "Unterminated regexp"))
+                (setf str (concatenate 'string str (string char))))
+               ((line-terminator-p char)
+                (error "Unterminated regexp"))
+               (class-marker
+                (when (eq #\] char)
+                  (setf class-marker nil)))
+               (t (cond
+                   ((eq #\/ char) (setf terminated t) (return))
+                   ((eq #\[ char) (setf class-marker t))))))
+        (unless terminated
+          (error (error "Unterminated regexp")))
+        (subseq str 1 (- (length str) 2))))))
 
 (defun scan-reg-exp-flags (scanner)
-  (with-slots (index source line-number line-start) scanner))
+  (with-slots (index source line-number line-start) scanner
+    (let ((str "")
+          (flags ""))
+      (loop while (not (eof-p scanner))
+            for char = (char source index)
+            do (when (not (identifier-part-p char))
+                 (return))
+            (incf index)
+            (if (and (eq #\\ char) (not (eof-p scanner)))
+                (let ((char (char source index)))
+                  (if (eq #\u char)
+                      (progn
+                        (incf index)
+                        (let ((restore index))
+                          (let ((char (scan-hex-escape scanner #\u)))
+                            (if char
+                                (progn
+                                  (setf flags (concatenate 'string flags (string char))
+                                        str (concatenate 'string str "\\u"))
+                                  (loop for i from restore upto (1- index)
+                                        do (setf str (concatenate 'string str
+                                                                  (string (char source restore))))))
+                              (progn
+                                (setf index restore
+                                      flags (concatenate 'string flags (string #\u))
+                                      str (concatenate 'string str "\\u"))))
+                            (tolerate-unexpected-token scanner))))
+                    (progn
+                      (setf str (concatenate 'string str "\\"))
+                      (tolerate-unexpected-token scanner))))
+              (setf flags (concatenate 'string flags (string char))
+                    str (concatenate 'string str (string char)))))
+      flags)))
 
-(defun test-reg-exp (scanner pattern flags))
+(defun test-reg-exp (scanner pattern flags)
+  `(:pattern ,pattern :flags ,flags))
 
 ;; https://tc39.github.io/ecma262/#sec-future-reserved-words
 (defun future-reserved-word-p (id))

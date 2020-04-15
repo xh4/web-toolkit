@@ -7,4 +7,7 @@
   line-start
   start
   end
-  octal)
+  octal
+  pattern
+  flags
+  regex)
