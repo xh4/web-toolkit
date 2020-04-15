@@ -24,7 +24,6 @@
       (eq #\_ char)
       (char<= #\A char #\Z)
       (char<= #\a char #\z)
-      (char<= #\0 char #\9)
       (eq #\\ char)
       ;; TODO
       (and (char>= char #\U+0080))))
