@@ -41,6 +41,7 @@
                         :end index)))
     (let ((char (char source index)))
       (cond
+       ((identifier-start-p char) (scan-identifier scanner))
        ((or (eq #\( char)
             (eq #\) char)
             (eq #\; char)) (scan-punctuator scanner))
@@ -51,7 +52,7 @@
                         (scan-punctuator scanner)))
        ((decimal-digit-p char) (scan-numeric-literal scanner))
        ((or (eq #\` char)
-            (and (eq #\} char) (equal "${" (nth curly-stack (1- (length curly-stack))))))
+            (and (eq #\} char) (equal "${" (nth (1- (length curly-stack)) curly-stack))))
         (scan-template scanner))
        ((<= #xD800 (char-code char) #xDFFF) (if (identifier-start-p char)
                                                 (scan-identifier scanner)
@@ -63,7 +64,7 @@
   (with-slots (index source curly-stack line-number line-start) scanner
     (let ((start index)
           (char (char source index))
-          (str))
+          (str (string (char source index))))
       (cond
        ((or (eq #\( char)
             (eq #\{ char))
@@ -231,7 +232,7 @@
             (if (identifier-part-p char)
                 (incf index)
               (return)))
-      (subseq start index))))
+      (subseq source start index))))
 
 (defun get-complex-identifier (scanner)
   (with-slots (index source) scanner

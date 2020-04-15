@@ -7,5 +7,5 @@
   (:export
    ;; token
    :token :token-type :token-value
-   ;; scanner
-   :scanner))
+   ;; tokenize
+   :tokenize))

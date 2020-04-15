@@ -5,7 +5,8 @@
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
   :license "BSD 3-Clause"
-  :depends-on (:alexandria)
+  :depends-on (:alexandria
+               :cl-ppcre)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "javascript"
                 :serial t
