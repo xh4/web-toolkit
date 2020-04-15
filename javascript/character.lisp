@@ -8,7 +8,7 @@
       #+lispworks
       (eq #\No-Break-Space char)
       #-lispworks
-      (eq #\No_Break-Space char)
+      (eq #\No-Break_Space char)
       (and (>= (char-code char) #x1680)
            (member (char-code char)
                    '(#x1680 #x2000 #x2001 #x2002 #x2003 #x2004 #x2005 #x2006 #x2007 #x2008 #x2009 #x200A #x202F #x205F #x3000 #xFEFF)))))
@@ -16,8 +16,8 @@
 (defun line-terminator-p (char)
   (or (eq #\Newline char)
       (eq #\Return char)
-      (eq #\Line-Separator char)
-      (eq #\Paragraph-Separator char)))
+      #+lispworks (eq #\Line-Separator char) #-lispworks (eq #\Line_Separator char)
+      #+lispworks (eq #\Paragraph-Separator char) #-lispworks (eq #\Paragraph_Separator char)))
 
 (defun identifier-start-p (char)
   (or (eq #\$ char)
