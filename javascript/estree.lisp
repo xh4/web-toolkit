@@ -10,7 +10,15 @@
    (location
     :initarg :location
     :initform nil
-    :accessor node-location)))
+    :accessor node-location)
+   (start
+    :initarg :start
+    :initform nil
+    :accessor node-start)
+   (end
+    :initarg :end
+    :initform nil
+    :accessor node-end)))
 
 (defmethod print-object ((node node) stream)
   (print-unreadable-object (node stream :type t)
@@ -111,6 +119,14 @@
     :initform nil
     :accessor program-body)))
 
+(defclass module (program)
+  ((source-type
+    :initform :module)))
+
+(defclass script (program)
+  ((source-type
+    :initform :script)))
+
 (defclass function (node)
   ((id
     :initarg :id
@@ -127,7 +143,11 @@
    (generator
     :initarg :generator
     :initform nil
-    :accessor function-generator)))
+    :accessor function-generator)
+   (async
+    :initarg :async
+    :initform nil
+    :accessor function-async)))
 
 (defclass statment (node) ())
 
@@ -513,6 +533,14 @@
     :initform nil
     :accessor member-expression-computed)))
 
+(defun computed-member-expression (member-expression)
+  ((computed
+    :initform t)))
+
+(defun static-member-expression (member-expression)
+  ((computed
+    :initform nil)))
+
 (defclass conditional-expression (expression)
   ((type :initform :conditional-expression)
    (test
@@ -574,6 +602,11 @@
     :initarg :expression
     :initform nil
     :accessor arrow-function-expression-expression)))
+
+(defclass await-expression (expression)
+  ((argument
+    :initarg :argument
+    :initform nil)))
 
 (defclass yield-expression (expression)
   ((type :initform :yield-expression)

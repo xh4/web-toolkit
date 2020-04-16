@@ -577,12 +577,17 @@
   `(:pattern ,pattern :flags ,flags))
 
 ;; https://tc39.github.io/ecma262/#sec-future-reserved-words
-(defun future-reserved-word-p (id))
+(defun future-reserved-word-p (id)
+  (member id '("enum" "export" "import" "super")
+          :test 'equal))
 
-(defun strict-mode-reserved-word-p (id))
+(defun strict-mode-reserved-word-p (id)
+  (member id '("implements" "interface" "package" "private"
+               "protected" "public" "static" "yield" "let")
+          :test 'equal))
 
 (defun restricted-word-p (id)
-  (or (equal "eval" id) (equal "arguments" id)))
+  (member id '("eval" "arguments") :test 'equal))
 
 ;; https://tc39.github.io/ecma262/#sec-keywords
 (defun keyword-p (id)
