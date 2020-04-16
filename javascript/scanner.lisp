@@ -609,10 +609,10 @@
       (code-char code))))
 
 (defun hex-value (char)
-  (position (char-downcase char) "0123456789abcdef"))
+  (cl:position (char-downcase char) "0123456789abcdef"))
 
 (defun octal-value (char)
-  (position char "01234567"))
+  (cl:position char "01234567"))
 
 (defun scan-unicode-code-point-escape (scanner)
   (with-slots (index source line-number line-start) scanner
@@ -640,7 +640,7 @@
               code (+ (* code 8)
                       (octal-value (char source index)))
               index (1+ index))
-        (when (and (>= (position char "0123") 0)
+        (when (and (>= (cl:position char "0123") 0)
                    (not (eof-p scanner))
                    (octal-digit-p (char source index)))
           (setf code (+ (* code 8) (octal-value (char source index)))
