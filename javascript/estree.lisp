@@ -14,12 +14,14 @@
 
 (defmethod print-object ((node node) stream)
   (print-unreadable-object (node stream :type t)
-    (loop for first-p = t then nil
+    (loop for first-p = t
           for slot in (class-slots (class-of node))
           for slot-name = (slot-definition-name slot)
           for slot-value = (slot-value node slot-name)
           when (and slot-value (not (member slot-name '(location range))))
-          do (unless first-p (write-char #\space stream))
+          do (unless first-p
+               (write-char #\space stream)
+               (setf first-p nil))
           and do (format stream "~A: ~S" slot-name slot-value))
     (when-let* ((location (node-location node))
                 (start (location-start location))
@@ -75,14 +77,16 @@
 
 (defmethod print-object ((token token) stream)
   (print-unreadable-object (token stream :type t)
-    (loop for first-p = t then nil
+    (loop for first-p = t
           for slot in (class-slots (class-of token))
           for slot-name = (slot-definition-name slot)
           for slot-value = (slot-value token slot-name)
           when (and slot-value
                     (not (member slot-name
                                  '(location range start end line-start line-number))))
-          do (unless first-p (write-char #\space stream))
+          do (unless first-p
+               (write-char #\space stream)
+               (setf first-p nil))
           and do (format stream "~A: ~S" slot-name slot-value))
     (with-slots (start end) token
       (when (and start end)
@@ -176,7 +180,7 @@
     :initform nil
     :accessor function-async)))
 
-(defclass statment (node) ())
+(defclass statement (node) ())
 
 (defclass expression-statment (statment)
   ((expression
@@ -190,7 +194,7 @@
     :initform nil
     :accessor directive-expression)
    (directive
-    :initarg :expression
+    :initarg :directive
     :initform nil
     :accessor directive-directive)))
 
@@ -373,6 +377,9 @@
     :initarg :id
     :initform nil
     :accessor function-declaration-id)))
+
+(defclass async-function-declaration (function-declaration)
+  ((async :initform t)))
 
 (defclass variable-declaration (declaration)
   ((declarations
