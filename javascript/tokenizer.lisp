@@ -1,6 +1,5 @@
 (in-package :javascript)
 
-
 (defclass tokenizer ()
   ((scanner
     :initarg :scanner
@@ -30,11 +29,16 @@
           (push token buffer))))
     (pop buffer)))
 
-(defun tokenize (source)
-  (let ((tokenizer (make-tokenizer source)))
+(defgeneric tokenize (source)
+  (:method ((source string))
+   (let ((tokenizer (make-tokenizer source)))
     (loop for token = (get-next-token tokenizer)
-          while token
+          while (and token (not (typep token 'eof)))
           collect token)))
+  (:method ((stream stream))
+   (tokenize (alexandria::read-stream-content-into-string stream)))
+  (:method ((pathname pathname))
+   (tokenize (read-file-into-string pathname))))
 
 (defclass reader ()
   ((values
@@ -83,13 +87,13 @@
 
 (defun push-token (reader token)
   (with-slots (values curly paren) reader
-    (if (or (eq :punctuator (node-type token))
-            (eq :keyword (node-type token)))
+    (if (or (typep token 'punctuator)
+            (typep token 'keyword))
         (let ((value (typecase token
-                       (punctuator (punctuator-value token))
-                       (keyword (keyword-name token)))))
+                       (punctuator (slot-value token 'value))
+                       (keyword (slot-value token 'name)))))
           (cond
-           ((eq "{" value) (setf curly (length values)))
-           ((eq "(" value) (setf paren (length values))))
+           ((equal "{" value) (setf curly (length values)))
+           ((equal "(" value) (setf paren (length values))))
           (appendf values (list value)))
-      (appendf values (list nil)))))
+      (appendf values (list t)))))

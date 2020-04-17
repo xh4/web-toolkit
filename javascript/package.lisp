@@ -10,5 +10,5 @@
    ;; tokenize
    :tokenize)
   (:import-from :closer-mop
-                :class-direct-slots
+                :class-slots
                 :slot-definition-name))

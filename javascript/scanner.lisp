@@ -9,7 +9,7 @@
     :initform 0
     :accessor scanner-index)
    (line-number
-    :initform 0
+    :initform 1
     :reader scanner-line-number)
    (line-start
     :initform 0
@@ -34,11 +34,10 @@
   (with-slots (index line-number line-start source curly-stack) scanner
     (when (eof-p scanner)
       (return-from lex (make-instance 'eof
-;;;                         :line-number line-number
-;;;                         :line-start line-start
-;;;                         :start index
-;;;                         :end index
-                        )))
+                                      :line-number line-number
+                                      :line-start line-start
+                                      :start index
+                                      :end index)))
     (let ((char (char source index)))
       (cond
        ((identifier-start-p char) (scan-identifier scanner))
@@ -112,11 +111,10 @@
         (error "Unexpected token"))
       (make-instance 'punctuator
                      :value str
-;;;                      :line-number line-number
-;;;                      :line-start line-start
-;;;                      :start start
-;;;                      :end index
-                     ))))
+                     :line-number line-number
+                     :line-start line-start
+                     :start start
+                     :end index))))
 
 ;; https://tc39.github.io/ecma262/#sec-literals-string-literals
 (defun scan-string-literal (scanner)
@@ -129,6 +127,7 @@
             with ending = nil
             while (not (eof-p scanner))
             for char = (char source index)
+            do (incf index)
             do (cond
                 ((eq quote char) (setf ending t) (loop-finish))
                 ((eq #\\ char)
@@ -150,7 +149,7 @@
                       ((eq #\x char)
                        (let ((unescaped (scan-hex-escape scanner char)))
                          (unless unescaped
-                               (error "Unexpected token"))
+                           (error "Unexpected token"))
                          (setf str (concatenate 'string str unescaped))))
                       ((eq #\n char) (setf str (concatenate 'string str (string #\Newline))))
                       ((eq #\r char) (setf str (concatenate 'string str (string #\Return))))
@@ -173,19 +172,17 @@
                        (setf line-start index)))))
                 ((line-terminator-p char) (loop-finish))
                 (t (setf str (concatenate 'string str (string char)))))
-            do (incf index)
             finally
             (unless ending
               (setf index start)
               (error "Unexpected token"))
             (return (make-instance 'string-literal
-                     :value str
-;;;                      :octal octal
-;;;                      :line-number line-number
-;;;                      :line-start line-start
-;;;                      :start start
-;;;                      :end index
-                     ))))))
+                                   :value str
+                                   :octal octal
+                                   :line-number line-number
+                                   :line-start line-start
+                                   :start start
+                                   :end index))))))
 
 ;; https://tc39.github.io/ecma262/#sec-names-and-keywords
 (defun scan-identifier (scanner)
@@ -209,13 +206,20 @@
             (setf index start)
             (tolerate-unexpected-token scanner)
             (setf index restore)))
-        (make-instance type
-                       :name id
-;;;                     :line-number line-number
-;;;                     :line-start line-start
-;;;                     :start start
-;;;                     :end index
-                    )))))
+        (case type
+          ((identifier keyword)
+           (make-instance type
+                          :name id
+                          :line-number line-number
+                          :line-start line-start
+                          :start start
+                          :end index))
+          (t (make-instance type
+                            :value id
+                            :line-number line-number
+                            :line-start line-start
+                            :start start
+                            :end index)))))))
 
 (defun get-identifier (scanner)
   (with-slots (index source line-number line-start) scanner
@@ -327,19 +331,18 @@
       (when (identifier-start-p (char source index))
         (error "Unexpected token"))
       (make-instance 'numeric-literal
-                  :value num
-;;;                   :line-number line-number
-;;;                   :line-start line-start
-;;;                   :start start
-;;;                   :end index
-                  ))))
+                     :value num
+                     :line-number line-number
+                     :line-start line-start
+                     :start start
+                     :end index))))
 
 (defun scan-hex-literal (scanner start)
   (with-slots (index source line-number line-start) scanner
     (let ((num ""))
       (loop while (not (eof-p scanner))
             do (if (not (hex-digit-p (char source index)))
-                 (return)
+                   (return)
                  (setf num (concatenate 'string num (string (char source index)))
                        index (1+ index))))
       (when (= 0 (length num))
@@ -348,12 +351,11 @@
         (error "Unexpected token"))
       ;; TODO: parse number
       (make-instance 'numeric-literal
-                  :value num
-;;;                   :line-number line-number
-;;;                   :line-start line-start
-;;;                   :start start
-;;;                   :end index
-                  ))))
+                     :value num
+                     :line-number line-number
+                     :line-start line-start
+                     :start start
+                     :end index))))
 
 (defun scan-binary-literal (scanner start)
   (with-slots (index source line-number line-start) scanner
@@ -362,8 +364,8 @@
       (loop while (not (eof-p scanner))
             for char = (char source index)
             do (if (and (not (eq #\0 char))
-                          (not (eq #\1 char)))
-                 (return)
+                        (not (eq #\1 char)))
+                   (return)
                  (setf num (concatenate 'string num (string (char source index)))
                        index (1+ index))))
       (when (= 0 (length num))
@@ -375,12 +377,11 @@
           (error "Unexpected token")))
       ;; TODO: parse number
       (make-instance 'numeric-literal
-                  :value num
-;;;                   :line-number line-number
-;;;                   :line-start line-start
-;;;                   :start start
-;;;                   :end index
-                  ))))
+                     :value num
+                     :line-number line-number
+                     :line-start line-start
+                     :start start
+                     :end index))))
 
 (defun scan-octal-literal (scanner prefix start)
   (with-slots (index source line-number line-start) scanner
@@ -404,13 +405,12 @@
         (error "Unexpected token"))
       ;; TODO: parse number 
       (make-instance'numeric-literal
-                  :value num
-;;;                   :octal octal
-;;;                   :line-number line-number
-;;;                   :line-start line-start
-;;;                   :start start
-;;;                   :end index
-                  ))))
+                    :value num
+                    :octal octal
+                    :line-number line-number
+                    :line-start line-start
+                    :start start
+                    :end index))))
 
 ;; TODO: check this
 (defun implicit-octal-literal-p (scanner)
@@ -471,11 +471,12 @@
                          (eq #\Newline (char source index)))
                 (incf index))
               (incf line-number)
-              (setf line-start index))))))
+              (setf line-start index)
+              (return))))))
 
 (defun skip-multi-line-comment (scanner)
   (with-slots (index source line-number line-start) scanner
-    (let ((start loc))
+    (let ((start))
       (loop while (not (eof-p scanner))
             for char = (char source index)
             do (cond
@@ -487,8 +488,9 @@
                  (incf index)
                  (setf line-start index))
                 ((eq #\* char)
-                 (when (eq #\/ (char source index))
-                   (incf index 2))
+                 (when (eq #\/ (char source (1+ index)))
+                   (incf index 2)
+                   (return))
                  (incf index))
                 (t (incf index))))
       (tolerate-unexpected-token scanner))))
@@ -500,14 +502,13 @@
             (flags (scan-reg-exp-flags scanner)))
         (let ((value (test-reg-exp scanner pattern flags)))
           (make-instance 'reg-exp-literal
-                      :pattern pattern
-                      :flags flags
-                      :value value
-;;;                       :line-number line-number
-;;;                       :line-start line-start
-;;;                       :start start
-;;;                       :end index
-                      ))))))
+                         :pattern pattern
+                         :flags flags
+                         :value value
+                         :line-number line-number
+                         :line-start line-start
+                         :start start
+                         :end index))))))
 
 (defun scan-reg-exp-body (scanner)
   (with-slots (index source line-number line-start) scanner
