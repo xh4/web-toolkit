@@ -15,16 +15,16 @@
 (defmethod print-object ((node node) stream)
   (print-unreadable-object (node stream :type t)
     (loop for first-p = t then nil
-          for slot in (class-direct-slots (class-of node))
+          for slot in (class-slots (class-of node))
           for slot-name = (slot-definition-name slot)
           for slot-value = (slot-value node slot-name)
-          when slot-value
+          when (and slot-value (not (member slot-name '(location range))))
           do (unless first-p (write-char #\space stream))
-          do (format stream "~A: ~S" slot-name slot-value))
+          and do (format stream "~A: ~S" slot-name slot-value))
     (when-let* ((location (node-location node))
                 (start (location-start location))
                 (end (location-end location)))
-      (format stream "[~D:~D-~D:D]"
+      (format stream " [~D:~D-~D:D]"
               (position-line start)
               (position-column start)
               (position-line end)
@@ -55,10 +55,7 @@
     :accessor position-column)))
 
 (defclass token (node)
-  ((value
-    :initarg :value
-    :initform nil)
-   (start
+  ((start
     :initarg :start
     :initform nil)
    (end
@@ -71,9 +68,29 @@
     :initarg :line-number
     :initform nil)))
 
+(defmethod initialize-instance :after ((token token) &key)
+  (with-slots (start end range) token
+    (when (and start end)
+      (setf range `(,start ,end)))))
+
+(defmethod print-object ((token token) stream)
+  (print-unreadable-object (token stream :type t)
+    (loop for first-p = t then nil
+          for slot in (class-slots (class-of token))
+          for slot-name = (slot-definition-name slot)
+          for slot-value = (slot-value token slot-name)
+          when (and slot-value
+                    (not (member slot-name
+                                 '(location range start end line-start line-number))))
+          do (unless first-p (write-char #\space stream))
+          and do (format stream "~A: ~S" slot-name slot-value))
+    (with-slots (start end) token
+      (when (and start end)
+        (format stream " [~D-~D]" start end)))))
+
 (defclass eof (token) ())
 
-(defclass identifier (expression pattern)
+(defclass identifier (token expression pattern)
   ((name
     :initarg :name
     :initform nil
@@ -85,15 +102,21 @@
     :initform nil
     :accessor literal-value)))
 
-(defclass boolean-literal (literal) ())
+(defclass boolean-literal (token literal) ())
 
-(defclass null-literal (literal) ())
+(defclass null-literal (token literal) ())
 
-(defclass numeric-literal (literal) ())
+(defclass numeric-literal (token literal)
+  ((octal
+    :initarg :octal
+    :initform nil)))
 
-(defclass string-literal (literal) ())
+(defclass string-literal (token literal)
+  ((octal
+    :initarg :octal
+    :initform nil)))
 
-(defclass reg-exp-literal (literal)
+(defclass reg-exp-literal (token literal)
   ((pattern
     :initarg :pattern
     :initform nil)
@@ -101,7 +124,7 @@
     :initarg :flags
     :initform nil)))
 
-(defclass keyword (node)
+(defclass keyword (token)
   ((name
     :initarg :name
     :initform nil
