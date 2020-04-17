@@ -40,6 +40,7 @@
    (context
     :initform nil)
    (config
+    :initarg :config
     :initform nil)
    (tokens
     :initform nil)
@@ -74,7 +75,9 @@
 (defgeneric parse (source)
   (:method ((source string))
    (let ((scanner (make-instance 'scanner :source source)))
-     (let ((parser (make-instance 'parser :scanner scanner)))
+     (let ((parser (make-instance 'parser
+                                  :scanner scanner
+                                  :config `(:range t :location t))))
        (parse-script parser))))
   (:method ((stream stream))
    (parse (alexandria::read-stream-content-into-string stream)))
@@ -152,12 +155,13 @@
       (let ((location (make-instance
                        'source-location
                        :start (make-instance 'position
-                                             :line (getf marker :line)
-                                             :column (getf marker :column))
+                                             :line (marker-line marker)
+                                             :column (marker-column marker))
                        :end (make-instance 'position
-                                           :line (getf last-marker :line)
-                                           :column (getf last-marker :column)))))
-        (setf (slot-value node 'location) location)))))
+                                           :line (marker-line last-marker)
+                                           :column (marker-column last-marker)))))
+        (setf (slot-value node 'location) location)))
+    node))
 
 (defun expect (parser value)
   (let ((token (next-token parser)))
@@ -933,12 +937,12 @@
              (unless (getf context :module-p)
                (tolerate-unexpected-token parser lookahead "some message"))
              (setf statement (parse-import-declaration parser)))
-            ("const" (parse-lexical-declaration parser))
-            ("function" (parse-function-declaration parser))
-            ("class" (parse-class-declaration parser))
-            ("let" (if (lexical-declaration-p parser)
-                       (parse-lexical-declaration parser)
-                     (parse-statement parser)))
+            ("const" (setf statement (parse-lexical-declaration parser)))
+            ("function" (setf statement (parse-function-declaration parser)))
+            ("class" (setf statement (parse-class-declaration parser)))
+            ("let" (setf statement (if (lexical-declaration-p parser)
+                                       (parse-lexical-declaration parser)
+                                     (parse-statement parser))))
             (t (setf statement (parse-statement parser))))
         (setf statement (parse-statement parser)))
       statement)))
@@ -978,7 +982,19 @@
       pattern)))
 
 (defun parse-pattern-with-default (parser params &optional kind)
-  )
+  (with-slots (lookahead context) parser
+    (let ((start-token lookahead)
+          (pattern (parse-pattern parser params kind)))
+      (when (match parser "=")
+        (next-token parser)
+        (let ((previous-allow-yield (getf context :allow-yield)))
+          (setf (getf context :allow-yield) t)
+          (let ((right (isolate-cover-grammar parser 'parse-assignment-expression)))
+            (setf (getf context :allow-yield) previous-allow-yield
+                  pattern (finalize parser (start-node parser start-token)
+                                    (make-instance 'assignment-pattern
+                                                   :left pattern
+                                                   :right right)))))))))
 
 (defun parse-variable-identifier (parser &optional kind)
   (with-slots (context) parser
@@ -998,7 +1014,7 @@
                  (strict-mode-reserved-word-p (slot-value token 'name)))
             (tolerate-unexpected-token parser token "some message")
           (when (or (getf context :strict)
-                    (not (equal "let" (slot-value token 'name)))
+                    (not (equal "let" (slot-value token 'value)))
                     (not (equal "var" kind)))
             (throw-unexpected-token parser token))))
        ((and (or (getf context :module-p)
@@ -1129,7 +1145,7 @@
   (with-slots (lookahead) parser
     (let ((options `(:simple t :params nil :first-restricted ,first-restricted)))
       (expect parser "(")
-      (unless (match parser "(")
+      (unless (match parser ")")
         (setf (getf options :param-set) nil)
         (loop while (not (typep lookahead 'eof))
               do (parse-formal-parameter parser options)
@@ -1281,7 +1297,9 @@
   (with-slots (lookahead) parser
     (let ((body (parse-directive-prologues parser)))
       (loop while (and lookahead (not (typep lookahead 'eof)))
-            do (appendf body (list (parse-statement-list-item parser))))
+            for statement = (parse-statement-list-item parser)
+            while statement
+            do (appendf body (list statement)))
       (make-instance 'script :body body))))
 
 (defun parse-module-specifier (parser))
