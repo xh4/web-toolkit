@@ -3,22 +3,14 @@
 ;; https://github.com/estree/estree/blob/master/es5.md
 
 (defclass node ()
-  ((type
-    :initarg :type
-    :initform nil
-    :accessor node-type)
-   (location
+  ((location
     :initarg :location
     :initform nil
     :accessor node-location)
-   (start
-    :initarg :start
-    :initform nil
-    :accessor node-start)
-   (end
-    :initarg :end
-    :initform nil
-    :accessor node-end)))
+   (range
+    :initarg :range
+    :initform '(nil nil)
+    :accessor node-range)))
 
 (defmethod print-object ((node node) stream)
   (print-unreadable-object (node stream :type t)
@@ -62,18 +54,33 @@
     :initform nil
     :accessor position-column)))
 
-(defclass eof (node) ())
+(defclass token (node)
+  ((value
+    :initarg :value
+    :initform nil)
+   (start
+    :initarg :start
+    :initform nil)
+   (end
+    :initarg :end
+    :initform nil)
+   (line-start
+    :initarg :line-start
+    :initform nil)
+   (line-number
+    :initarg :line-number
+    :initform nil)))
+
+(defclass eof (token) ())
 
 (defclass identifier (expression pattern)
-  ((type :initform :identifier)
-   (name
+  ((name
     :initarg :name
     :initform nil
     :accessor identifier-name)))
 
 (defclass literal (expression)
-  ((type :initform :literal)
-   (value
+  ((value
     :initarg :value
     :initform nil
     :accessor literal-value)))
@@ -95,22 +102,19 @@
     :initform nil)))
 
 (defclass keyword (node)
-  ((type :initform :keyword)
-   (name
+  ((name
     :initarg :name
     :initform nil
     :accessor keyword-name)))
 
-(defclass punctuator (node)
-  ((type :initform :punctuator)
-   (value
+(defclass punctuator (token)
+  ((value
     :initarg :value
     :initform nil
     :accessor punctuator-value)))
 
 (defclass program (node)
-  ((type :initform :program)
-   (source-type
+  ((source-type
     :initarg :source-type
     :initform nil
     :accessor program-source-type)
@@ -152,15 +156,13 @@
 (defclass statment (node) ())
 
 (defclass expression-statment (statment)
-  ((type :initform :expression-statement)
-   (expression
+  ((expression
     :initarg :expression
     :initform nil
     :accessor expression-statment-expression)))
 
 (defclass directive (node)
-  ((type :initform :expression-statement)
-   (expression
+  ((expression
     :initarg :expression
     :initform nil
     :accessor directive-expression)
@@ -170,8 +172,7 @@
     :accessor directive-directive)))
 
 (defclass block-statement (statement)
-  ((type :initform :block-statement)
-   (body
+  ((body
     :initarg :body
     :initform nil
     :accessor block-statement-body)))
@@ -182,15 +183,12 @@
     :initform nil
     :accessor function-body-body)))
 
-(defclass empty-statement (statement)
-  ((type :initform :empty-statement)))
+(defclass empty-statement (statement) ())
 
-(defclass debugger-statement (statement)
-  ((type :initform :debugger-statement)))
+(defclass debugger-statement (statement) ())
 
 (defclass with-statement (statement)
-  ((type :initform :with-statement)
-   (object
+  ((object
     :initarg :object
     :initform nil
     :accessor with-statement-object)
@@ -200,15 +198,13 @@
     :accessor with-statement-body)))
 
 (defclass return-statement (statement)
-  ((type :initform :return-statement)
-   (argument
+  ((argument
     :initarg :argument
     :initform nil
     :accessor return-statement-argument)))
 
 (defclass labeled-statement (statement)
-  ((type :initform :labeled-statement)
-   (label
+  ((label
     :initarg :label
     :initform nil
     :accessor labeled-statement-label)
@@ -218,22 +214,19 @@
     :accessor labeled-statement-body)))
 
 (defclass break-statement (statement)
-  ((type :initform :break-statement)
-   (label
+  ((label
     :initarg :label
     :initform nil
     :accessor break-statement-label)))
 
 (defclass continue-statement (statement)
-  ((type :initform :continue-statement)
-   (label
+  ((label
     :initarg :label
     :initform nil
     :accessor continue-statement-label)))
 
 (defclass if-statement (statement)
-  ((type :initform :if-statement)
-   (test
+  ((test
      :initarg :test
      :initform nil
      :accessor if-statement-test)
@@ -247,8 +240,7 @@
     :accessor if-statement-alternate)))
 
 (defclass switch-statement (statement)
-  ((type :initform :switch-statement)
-   (discriminant
+  ((discriminant
     :initarg :discriminant
     :initform nil
     :accessor switch-statement-discriminant)
@@ -258,8 +250,7 @@
     :accessor switch-statement-cases)))
 
 (defclass switch-case (node)
-  ((type :initform :switch-case)
-   (test
+  ((test
     :initarg :test
     :initform nil
     :accessor switch-case-test)
@@ -269,15 +260,13 @@
     :accessor switch-case-consequent)))
 
 (defclass throw-statement (statement)
-  ((type :initform :throw-statement)
-   (argument
+  ((argument
     :initarg :argument
     :initform nil
     :accessor throw-statement-argument)))
 
 (defclass try-statement (statement)
-  ((type :initform :try-statement)
-   (block
+  ((block
     :initarg :block
     :initform nil
     :accessor try-statement-block)
@@ -291,8 +280,7 @@
     :accessor try-statement-finalizer)))
 
 (defclass catch-clause (node)
-  ((type :initform :catch-clause)
-   (param
+  ((param
     :initarg :param
     :initform nil
     :accessor catch-clause-param)
@@ -302,8 +290,7 @@
     :accessor catch-clause-body)))
 
 (defclass while-statement (statement)
-  ((type :initform :while-statement)
-   (test
+  ((test
     :initarg :test
     :initform nil
     :accessor while-statement-test)
@@ -313,8 +300,7 @@
     :accessor while-statement-body)))
 
 (defclass do-while-statement (statement)
-  ((type :initform :do-while-statement)
-   (body
+  ((body
     :initarg :body
     :initform nil
     :accessor do-while-statement-body)
@@ -324,8 +310,7 @@
     :accessor do-while-statement-test)))
 
 (defclass for-statement (statement)
-  ((type :initform :for-statement)
-   (init
+  ((init
     :initarg :init
     :initform nil
     :accessor for-statement-init)
@@ -343,8 +328,7 @@
     :accessor for-statement-body)))
 
 (defclass for-in-statement (statement)
-  ((type :initform :for-in-statement)
-   (left
+  ((left
     :initarg :left
     :initform nil
     :accessor for-in-statement-left)
@@ -357,21 +341,18 @@
     :initform nil
     :accessor for-in-statement-body)))
 
-(defclass for-of-statement (for-in-statement)
-  ((type :initform :for-of-statement)))
+(defclass for-of-statement (for-in-statement) ())
 
 (defclass declaration (statement) ())
 
 (defclass function-declaration (function declaration)
-  ((type :initform :function-declaration)
-   (id
+  ((id
     :initarg :id
     :initform nil
     :accessor function-declaration-id)))
 
 (defclass variable-declaration (declaration)
-  ((type :initform :variable-declaration)
-   (declarations
+  ((declarations
     :initarg :declarations
     :initform nil
     :accessor variable-declaration-declarations)
@@ -381,8 +362,7 @@
     :accessor variable-declaration-kind)))
 
 (defclass variable-declarator (node)
-  ((type :initform :variable-declarator)
-   (id
+  ((id
     :initarg :id
     :initform nil
     :accessor variable-declarator-id)
@@ -391,51 +371,56 @@
     :initform nil
     :accessor variable-declarator-init)))
 
-(defclass super (node)
-  ((type :initform :super)))
+(defclass super (node) ())
 
 (defclass expression (node) ())
 
-(defclass this-expression (expression)
-  ((type :initform :this-expression)))
+(defclass this-expression (expression) ())
 
 (defclass array-expression (expression)
-  ((type :initform :array-expression)
-   (elements
+  ((elements
     :initarg :elements
     :initform nil
     :accessor array-expression-elements)))
 
 (defclass object-expression (expression)
-  ((type :initform :object-expression)
-   (properties
+  ((properties
     :initarg :properties
     :initform nil
     :accessor object-expression-properties)))
 
 (defclass property (node)
-  ((type :initform :property)
-   (key
+  ((key
     :initarg :key
     :initform nil
     :type (or literal identifier)
     :accessor property-key)
    (value
-    :initarg :key
+    :initarg :value
     :initform nil
     :type expression
     :accessor property-value)
    (kind
     :initarg :kind
     :initform nil
-    :accessor property-kind)))
+    :accessor property-kind)
+   (method
+    :initarg :method
+    :initform nil
+    :accessor property-method)
+   (shorthand
+    :initarg :shorthand
+    :initform nil
+    :accessor property-shorthand)
+   (computed
+    :initarg :computed
+    :initform nil
+    :accessor property-computed)))
 
-(defclass function-expression (function expression)
-  ((type :initform :function-expression)))
+(defclass function-expression (function expression) ())
 
 (defclass unary-expression (expression)
-  ((type :initform :unary-expression)
-   (operator
+  ((operator
     :initarg :operator
     :initform nil
     :accessor unary-expression-operator)
@@ -451,8 +436,7 @@
 (defclass unary-operator () ())
 
 (defclass update-expression (expression)
-  ((type :initform :update-expression)
-   (operator
+  ((operator
     :initarg :operator
     :initform nil
     :accessor update-expression-operator)
@@ -468,8 +452,7 @@
 (defclass update-operator () ())
 
 (defclass binary-expression ()
-  ((type :initform :binary-expression)
-   (operator
+  ((operator
     :initarg :operator
     :initform nil
     :accessor binary-expression-operator)
@@ -485,8 +468,7 @@
 (defclass binary-operator () ())
 
 (defclass assignment-expression ()
-  ((type :initform :assignment-Expression)
-   (operator
+  ((operator
     :initarg :operator
     :initform nil
     :accessor assignment-expression-operator)
@@ -502,8 +484,7 @@
 (defclass assignment-operator () ())
 
 (defclass logical-expression ()
-  ((type :initform :logical-expression)
-   (operator
+  ((operator
     :initarg :operator
     :initform nil
     :accessor logical-expression-operator)
@@ -519,8 +500,7 @@
 (defclass logical-operator () ())
 
 (defclass member-expression (expression pattern)
-  ((type :initform :member-expression)
-   (object
+  ((object
     :initarg :object
     :initform nil
     :accessor member-expression-object)
@@ -533,17 +513,16 @@
     :initform nil
     :accessor member-expression-computed)))
 
-(defun computed-member-expression (member-expression)
+(defclass computed-member-expression (member-expression)
   ((computed
     :initform t)))
 
-(defun static-member-expression (member-expression)
+(defclass static-member-expression (member-expression)
   ((computed
     :initform nil)))
 
 (defclass conditional-expression (expression)
-  ((type :initform :conditional-expression)
-   (test
+  ((test
     :initarg :test
     :initform nil
     :accessor conditional-expression-test)
@@ -557,8 +536,7 @@
     :accessor conditional-expression-consequent)))
 
 (defclass call-expression (expression)
-  ((type :initform :call-expression)
-   (callee
+  ((callee
     :initarg :callee
     :initform nil
     :accessor call-expression-callee)
@@ -568,8 +546,7 @@
     :accessor call-expression-arguments)))
 
 (defclass new-expression (expression)
-  ((type :initform :new-expression)
-   (callee
+  ((callee
     :initarg :callee
     :initform nil
     :accessor new-expression-callee)
@@ -579,22 +556,19 @@
     :accessor new-expression-arguments)))
 
 (defclass sequence-expression (expression)
-  ((type :initform :sequence-expression)
-   (expressions
+  ((expressions
     :initarg :expressions
     :initform nil
     :accessor sequence-expression-expressions)))
 
 (defclass spread-element (node)
-  ((type :initform :spread-element)
-   (argument
+  ((argument
     :initarg :argument
     :initform nil
     :accessor spread-element-argument)))
 
 (defclass arrow-function-expression (function expression)
-  ((type :initform :arrow-function-expression)
-   (body
+  ((body
     :initarg :body
     :initform nil
     :accessor arrow-function-expression-body)
@@ -609,8 +583,7 @@
     :initform nil)))
 
 (defclass yield-expression (expression)
-  ((type :initform :yield-expression)
-   (argument
+  ((argument
     :initarg :argument
     :initform nil
     :accessor yield-expression-argument)
@@ -620,8 +593,7 @@
     :accessor yield-expression-delegate)))
 
 (defclass template-literal (expression)
-  ((type :initform :template-literal)
-   (quasis
+  ((quasis
     :initarg :quasis
     :initform nil
     :accessor template-literal-quasis)
@@ -631,8 +603,7 @@
     :accessor template-literal-expressions)))
 
 (defclass tagged-template-expression (expression)
-  ((type :initform :tagged-template-expression)
-   (tag
+  ((tag
     :initarg :tag
     :initform nil
     :accessor tagged-template-expression-tag)
@@ -642,8 +613,7 @@
     :accessor tagged-template-expression-quasi)))
 
 (defclass template-element (node)
-  ((type :initform :template-element)
-   (tail
+  ((tail
     :initarg :tail
     :initform nil
     :accessor template-element-tail)
@@ -657,8 +627,7 @@
     :accessor template-element-value-raw)))
 
 (defclass assignment-property (property)
-  ((type :initform :property)
-   (value
+  ((value
     :initarg :value
     :initform nil
     :accessor assignment-property-value)
@@ -674,29 +643,25 @@
 (defclass pattern (node) ())
 
 (defclass object-pattern (pattern)
-  ((type :initform :object-pattern)
-   (properties
+  ((properties
     :initarg :properties
     :initform nil
     :accessor object-pattern-properties)))
 
 (defclass array-pattern (pattern)
-  ((type :initform :array-pattern)
-   (elements
+  ((elements
     :initarg :elements
     :initform nil
     :accessor array-pattern-elements)))
 
 (defclass rest-element (pattern)
-  ((type :initform :rest-element)
-   (argument
+  ((argument
     :initarg :argument
     :initform nil
     :accessor rest-element-argument)))
 
 (defclass assignment-pattern (pattern)
-  ((type :initform :assignment-pattern)
-   (left
+  ((left
     :initarg :left
     :initform nil
     :accessor assignment-pattern-type)
@@ -720,15 +685,13 @@
     :accessor class-body)))
 
 (defclass class-body (node)
-  ((type :initform :class-body)
-   (body
+  ((body
     :initarg :body
     :initform nil
     :accessor class-body-body)))
 
 (defclass method-definition (node)
-  ((type :initform :method-definition)
-   (key
+  ((key
     :initarg :key
     :initform nil
     :accessor method-definition-key)
@@ -750,18 +713,15 @@
     :accessor method-definition-static)))
 
 (defclass class-declaration (class declaration)
-  ((type :initform :class-declaration)
-   (id
+  ((id
     :initarg :id
     :initform nil
     :accessor class-declaration-id)))
 
-(defclass class-expression (class expression)
-  ((type :initform :class-expression)))
+(defclass class-expression (class expression) ())
 
 (defclass meta-property (expression)
-  ((type :initform :meta-property)
-   (meta
+  ((meta
     :initarg :meta
     :initform nil
     :accessor meta-property-meta)
@@ -779,8 +739,7 @@
     :accessor module-specifier-local)))
 
 (defclass import-declaration (module-declaration)
-  ((type :initform :import-declaration)
-   (specifiers
+  ((specifiers
     :initarg :specifiers
     :initform nil
     :accessor import-declaration-specifiers)
@@ -790,21 +749,17 @@
     :accessor import-declaration-source)))
 
 (defclass import-specifier (module-specifier)
-  ((type :initform :import-specifier)
-   (imported
+  ((imported
     :initarg :imported
     :initform nil
     :accessor import-specifier-imported)))
 
-(defclass import-default-specifier (module-specifier)
-  ((type :initform :import-default-specifier)))
+(defclass import-default-specifier (module-specifier) ())
 
-(defclass import-namespace-specifier (module-specifier)
-  ((type :initform :import-namespace-specifier)))
+(defclass import-namespace-specifier (module-specifier) ())
 
 (defclass export-named-declaration (module-declaration)
-  ((type :initform :export-named-declaration)
-   (declaration
+  ((declaration
     :initarg :declaration
     :initform nil
     :accessor export-named-declaration-declaration)
@@ -818,36 +773,31 @@
     :accessor export-named-declaration-source)))
 
 (defclass export-specifier (module-specifier)
-  ((type :initform :export-specifierx)
-   (exported
+  ((exported
     :initarg :exported
     :initform nil
     :accessor export-specifier-exported)))
 
 (defclass anonymous-default-exported-function-declaration (function)
-  ((type :initform :function-declaration)
-   (id
+  ((id
     :initarg :id
     :initform nil
     :accessor anonymous-default-exported-function-declaration-id)))
 
 (defclass anonymous-default-exported-class-declaration (functioclass)
-  ((type :initform :class-declaration)
-   (id
+  ((id
     :initarg :id
     :initform nil
     :accessor anonymous-default-exported-class-declaration-id)))
 
 (defclass export-default-declaration (module-declaration)
-  ((type :initform :export-default-declaration)
-   (declaration
+  ((declaration
     :initarg :declaration
     :initform nil
     :accessor export-default-declaration-declaration)))
 
 (defclass export-all-declaration (module-declaration)
-  ((type :initform :export-all-declaration)
-   (source
+  ((source
     :initarg :source
     :initform nil
     :accessor export-all-declaration-source)))
