@@ -104,3 +104,6 @@
 
 (test parse-uri/percent-encoding
   (signals error (uri::parse-uri "ht%74p://coobii.com")))
+
+(test parse-uri/invalid
+  (signals error (uri::parse-uri "123.example.com:443")))
