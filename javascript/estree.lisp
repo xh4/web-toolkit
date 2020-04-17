@@ -14,19 +14,19 @@
 
 (defmethod print-object ((node node) stream)
   (print-unreadable-object (node stream :type t)
-    (loop for first-p = t
+    (loop with first-p = t
           for slot in (class-slots (class-of node))
           for slot-name = (slot-definition-name slot)
           for slot-value = (slot-value node slot-name)
           when (and slot-value (not (member slot-name '(location range))))
-          do (unless first-p
-               (write-char #\space stream)
-               (setf first-p nil))
+          do (if first-p
+                 (setf first-p nil)
+               (write-char #\space stream))
           and do (format stream "~A: ~S" slot-name slot-value))
     (when-let* ((location (node-location node))
                 (start (location-start location))
                 (end (location-end location)))
-      (format stream " [~D:~D-~D:D]"
+      (format stream " [~D:~D-~D:~D]"
               (position-line start)
               (position-column start)
               (position-line end)
@@ -46,6 +46,16 @@
     :initform nil
     :accessor location-end)))
 
+(defmethod print-object ((location source-location) stream)
+  (print-unreadable-object (location stream :type t)
+    (when-let* ((start (location-start location))
+                (end (location-end location)))
+      (format stream "[~D:~D-~D:~D]"
+              (position-line start)
+              (position-column start)
+              (position-line end)
+              (position-column end)))))
+
 (defclass position ()
   ((line
     :initarg :line
@@ -55,6 +65,12 @@
     :initarg :column
     :initform nil
     :accessor position-column)))
+
+(defmethod print-object ((position position) stream)
+  (print-unreadable-object (position stream :type t)
+    (when-let* ((line (position-line position))
+                (column (position-column position)))
+      (format stream "[~D:~D]" line column))))
 
 (defclass token (node)
   ((start
@@ -77,16 +93,16 @@
 
 (defmethod print-object ((token token) stream)
   (print-unreadable-object (token stream :type t)
-    (loop for first-p = t
+    (loop with first-p = t
           for slot in (class-slots (class-of token))
           for slot-name = (slot-definition-name slot)
           for slot-value = (slot-value token slot-name)
           when (and slot-value
                     (not (member slot-name
                                  '(location range start end line-start line-number))))
-          do (unless first-p
-               (write-char #\space stream)
-               (setf first-p nil))
+          do (if first-p
+                 (setf first-p nil)
+               (write-char #\space stream))
           and do (format stream "~A: ~S" slot-name slot-value))
     (with-slots (start end) token
       (when (and start end)
