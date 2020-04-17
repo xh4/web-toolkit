@@ -3,12 +3,12 @@
 (defpackage :javascript
   (:nicknames :js :wt.javascript :wt.js)
   (:use :cl :alexandria)
-  (:shadow :position :function :class)
+  (:shadow :position :function :class :keyword)
   (:export
-   ;; token
-   :token :token-type :token-value
    ;; tokenize
-   :tokenize)
+   :tokenize
+   ;; parse
+   :parse)
   (:import-from :closer-mop
                 :class-slots
                 :slot-definition-name))
