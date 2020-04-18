@@ -497,7 +497,7 @@
 
 (defclass update-operator () ())
 
-(defclass binary-expression ()
+(defclass binary-expression (expression)
   ((operator
     :initarg :operator
     :initform nil
