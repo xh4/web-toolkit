@@ -32,10 +32,13 @@ WT.URI provides URI parser and constructor, with support for UTF-8 characters, I
 #### [CSS](https://lisp-web-toolkit.com/#css)
 WT.CSS implements CSS constructor, parser and serializer based on specifications introduced in [CSS Snapshot 2018](https://www.w3.org/TR/css-2018/#css).
 
-#### DOM
+#### [JavaScript](https://lisp-web-toolkit.com/#javascript)
+WT.JAVASCRIPT implements JavaScript parser and serializer based on [ECMAScript 2016 Language Specification](https://www.ecma-international.org/ecma-262/7.0/) (ECMA-262 7th Edition) with support for JSX syntax extension.
+
+#### [DOM](https://lisp-web-toolkit.com/#dom)
 WT.DOM implements Document Object Model (DOM) based on recent version of [DOM Living Standard](https://dom.spec.whatwg.org/), it covers chapters on [Nodes](https://dom.spec.whatwg.org/#nodes) and [Traversal](https://dom.spec.whatwg.org/#traversal).
 
-#### Component
+#### [Component](https://lisp-web-toolkit.com/#component)
 WT.COMPONENT provices component abstraction, it combines [Web Components](https://developer.mozilla.org/en-US/docs/Web/Web_Components) style strong encapsulation and [React](https://reactjs.org/) style declarative DOM synchronization.
 
 ### Roadmap
@@ -90,7 +93,10 @@ WT.COMPONENT provices component abstraction, it combines [Web Components](https:
 * DOM
   * Implement namespace
   * Implement XPath
-* Script (Implement JavaScript code transformer)
+* JavaScript
+  * Implement JavaScript <=> S-expression code transformer
+* CSS
+  * Parse common used property values and implement CSSOM
 
 ### Author
 [Xiangyu He](https://xh.coobii.com) <[xh@coobii.com](mailto:xh@coobii.com)>
