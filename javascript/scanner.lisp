@@ -39,6 +39,16 @@
                              "Unexpected token at index ~D line ~D column ~D")
                          index line-number (1+ (- index line-start)))))
 
+(defun save-state (scanner)
+  `(:index ,(slot-value scanner 'index)
+    :line-number ,(slot-value scanner 'line-number)
+    :line-start ,(slot-value scanner 'line-start)))
+
+(defun restore-state (scanner state)
+  (setf (slot-value scanner 'index) (getf state :index)
+        (slot-value scanner 'line-number) (getf state :line-number)
+        (slot-value scanner 'line-start) (getf state :line-start)))
+
 (defun lex (scanner)
   (with-slots (index line-number line-start source curly-stack) scanner
     (when (eof-p scanner)
