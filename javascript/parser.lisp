@@ -249,11 +249,11 @@
         result))))
 
 (defun consume-semicolon (parser)
-  (with-slots (lookahead) parser
+  (with-slots (lookahead has-line-terminator-p) parser
     (cond
      ((match parser ";")
       (next-token parser))
-     ((not (has-line-terminator-p parser))
+     ((not has-line-terminator-p)
       (when (and (not (typep lookahead 'eof))
                  (not (match parser "}")))
         (throw-unexpected-token parser lookahead))))))
@@ -404,8 +404,8 @@
           (previous-await (getf context :await)))
       (setf (getf context :allow-yield) t
             (getf context :await) t)
-      (let* ((params (parse-format-parameters parser))
-             (method (parse-property-method params)))
+      (let* ((params (parse-formal-parameters parser))
+             (method (parse-property-method parser params)))
         (setf (getf context :allow-yield) previous-allow-yield
               (getf context :await) previous-await)
         (finalize parser marker (make-instance 'async-function-expression
@@ -484,7 +484,7 @@
                 key (parse-object-property-key parser)
                 (getf context :allow-yield) nil
                 value (parse-getter-method parser)))
-         ((and (tpep token 'identifier)
+         ((and (typep token 'identifier)
                (not async-p)
                (equal "set" (slot-value token 'value))
                lookahead-property-key)
@@ -681,7 +681,7 @@
            (setf expression (make-instance 'static-member-expression
                                            :object expression
                                            :property property))))
-        ((parse-match parser "(")
+        ((match parser "(")
          (let ((async-arrow (and maybe-async)))
            (setf (getf context :binding-element-p) nil
                  (getf context :assignment-target-p) nil)
@@ -694,7 +694,7 @@
              (when async-arrow
                (match parser "=>")
                (loop for i from 0 upto (1- (length arguments))
-                     do (reinterpret-expression-as-pattern parser (nth arguments i)))
+                     do (reinterpret-expression-as-pattern (nth arguments i)))
                (setf expression `(:type :arrow-parameter-placeholder
                                   :params ,arguments
                                   :async t))))))
@@ -887,20 +887,20 @@
           ("export"
            (unless (getf context :module-p)
              (tolerate-unexpected-token parser lookahead "Unexpected token"))
-           (setf statement (parser-export-declaration parser)))
+           (setf statement (parse-export-declaration parser)))
           ("import"
            (unless (getf context :module-p)
              (tolerate-unexpected-token parser lookahead "Unexpected token"))
-           (setf statement (parser-import-declaration parser)))
+           (setf statement (parse-import-declaration parser)))
           ("const"
-           (setf statement (parser-lexical-declaration parser)))
+           (setf statement (parse-lexical-declaration parser)))
           ("function"
-           (setf statement (parser-function-declaration parser)))
+           (setf statement (parse-function-declaration parser)))
           ("class"
            (setf statement (parse-class-declaration parser)))
           ("let"
            (setf statement (if (lexical-declaration-p parser)
-                               (parser-lexical-declaration parser)
+                               (parse-lexical-declaration parser)
                              (parse-statement parser))))
           (t (setf statement (parse-statement parser))))
         (setf statement (parse-statement parser)))
@@ -991,7 +991,7 @@
           (setf (getf context :allow-yield) t)
           (let ((right (isolate-cover-grammar parser 'parse-assignment-expression)))
             (setf (getf context :allow-yield) previous-allow-yield
-                  pattern (finalize parser (start-node parser start-token)
+                  pattern (finalize parser (start-marker parser start-token)
                                     (make-instance 'assignment-pattern
                                                    :left pattern
                                                    :right right)))))))))
