@@ -668,7 +668,7 @@
     :initform nil
     :accessor template-element-value-cooked)
    (value-raw
-    :initarg :valur-raw
+    :initarg :value-raw
     :initform nil
     :accessor template-element-value-raw)))
 
