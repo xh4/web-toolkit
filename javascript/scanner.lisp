@@ -19,7 +19,9 @@
     :reader scanner-curly-stack)
    (length
     :initform nil
-    :reader scanner-length)))
+    :reader scanner-length)
+   (module-p
+    :initform :module)))
 
 (defmethod initialize-instance :after ((scanner scanner) &key)
   (check-type (slot-value scanner 'source) string)
