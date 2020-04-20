@@ -207,7 +207,7 @@
 (defun match-keyword (parser value)
   (with-slots (lookahead) parser
     (and (typep lookahead 'keyword)
-         (equal value (slot-value lookahead 'value)))))
+         (equal value (slot-value lookahead 'name)))))
 
 (defun match-contextual-keyword (parser value)
   (with-slots (lookahead) parser
@@ -618,7 +618,7 @@
 
 (defun reinterpret-expression-as-pattern (expression)
   (typecase expression
-    ((identifier member-expression rest-element assignment-pattern))
+    ((or identifier member-expression rest-element assignment-pattern))
     (spread-element
      (change-class expression 'rest-element)
      (reinterpret-expression-as-pattern (slot-value expression 'argument)))
@@ -741,12 +741,12 @@
          (expect-comma-separator parser)
          (when (match parser ")")
            (return)))))
-    (match parser ")")
+    (expect parser ")")
     arguments))
 
 (defun identifier-name-p (token)
   (typecase token
-    ((identifier keyword boolean-literal null-literal) t)))
+    ((or identifier keyword boolean-literal null-literal) t)))
 
 (defun parse-identifier-name (parser)
   (let ((marker (create-marker parser))
@@ -754,7 +754,7 @@
     (unless (identifier-name-p token)
       (throw-unexpected-token token))
     (finalize parser marker (make-instance 'identifier
-                                           :name (slot-value token 'value)))))
+                                           :name (slot-value token 'name)))))
 
 (defun parse-new-expression (parser)
   (with-slots (lookahead context) parser
@@ -915,7 +915,7 @@
                                       (make-instance 'static-member-expression
                                                      :object expression
                                                      :property property)))))
-        ((and (typep lookahead 'template)
+        ((and (typep lookahead 'template-literal)
               (slot-value lookahead 'head))
          (let ((quasi (parse-template-literal parser)))
            (setf expression (finalize parser marker
@@ -993,7 +993,7 @@
           (setf expression (inherit-cover-grammar parser 'parse-unary-expression)
                 expression (finalize parser marker
                                      (make-instance 'unary-expression
-                                                    :operator (slot-value token 'vaue)
+                                                    :operator (slot-value token 'value)
                                                     :argument expression)))
           (when (and (getf context :strict)
                      (equal "delete" (slot-value expression 'operator))
@@ -1027,15 +1027,14 @@
 
 (defun binary-precedence (parser token)
   (with-slots (context) parser
-    (let ((operator (slot-value token 'value))
-          (precedence))
+    (let ((precedence))
       (cond
        ((typep token 'punctuator)
-        (setf precedence (or (operator-precedence operator) 0)))
+        (setf precedence (or (operator-precedence (slot-value token 'value)) 0)))
        ((typep token 'keyword)
-        (setf precedence (if (or (equal "instanceof" operator)
+        (setf precedence (if (or (equal "instanceof" (slot-value token 'name))
                                  (and (getf context :allow-in)
-                                      (equal "in" operator)))
+                                      (equal "in" (slot-value token 'name))))
                              7
                            0)))
        (t (setf precedence 0)))
@@ -1196,7 +1195,7 @@
                         (slot-value lookahead 'line-number))
                      (equal "async" (slot-value token 'name)))
             (when (or (typep lookahead 'identifier)
-                      (match-keyword parser "yidld"))
+                      (match-keyword parser "yield"))
               (let ((argument (parse-primary-expression parser)))
                 (reinterpret-expression-as-pattern argument)
                 (setf expression `(:type :arrow-parameter-placeholder
@@ -2486,7 +2485,7 @@
                   (when (and (typep token 'identifier)
                              (equal "constructor" (slot-value token 'name)))
                     (tolerate-unexpected-token parser token "some message"))))))))
-      (let ((lookahead-property-key (qualified-property-name lookahead)))
+      (let ((lookahead-property-key (qualified-property-name-p lookahead)))
         (cond
          ((typep token 'identifier)
           (cond
