@@ -198,7 +198,7 @@
 
 (defclass statement (node) ())
 
-(defclass expression-statment (statment)
+(defclass expression-statement (statement)
   ((expression
     :initarg :expression
     :initform nil
@@ -513,7 +513,7 @@
 
 (defclass binary-operator () ())
 
-(defclass assignment-expression ()
+(defclass assignment-expression (expression)
   ((operator
     :initarg :operator
     :initform nil
@@ -529,7 +529,7 @@
 
 (defclass assignment-operator () ())
 
-(defclass logical-expression ()
+(defclass logical-expression (expression)
   ((operator
     :initarg :operator
     :initform nil
