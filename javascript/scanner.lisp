@@ -613,11 +613,11 @@
 
 ;; https://tc39.github.io/ecma262/#sec-keywords
 (defun keyword-p (id)
-  (member id '("id" "in" "do"
+  (member id '("if" "in" "do"
                "var" "for" "new" "try" "let"
                "this" "else" "case" "void" "with" "enum"
                "while" "break" "catch" "throw" "const" "yield"
-               "clsss" "super" "return" "typeof" "delete" "switch"
+               "class" "super" "return" "typeof" "delete" "switch"
                "export" "import" "default" "finally" "extends"
                "function" "continue" "debugger" "instanceof")
           :test 'equal))
