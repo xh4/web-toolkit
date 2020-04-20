@@ -84,13 +84,16 @@
   (:method ((pathname pathname))
    (parse (read-file-into-string pathname))))
 
-(defun throw-error (message-format &rest values))
+(defun throw-error (message-format &rest values)
+  (apply 'error message-format values))
 
 (defun tolerate-error (parser message-format &rest values))
 
 (defun unexpected-token-error (token message))
 
-(defun throw-unexpected-token (parser &optional token message))
+(defun throw-unexpected-token (parser &optional token message)
+  (declare (ignore parser))
+  (unexpected-token-error token message))
 
 (defun tolerate-unexpected-token (parser &optional token message))
 
@@ -127,7 +130,13 @@
         (setf lookahead next-token))
       token)))
 
-(defun next-regex-token (parser))
+(defun next-regex-token (parser)
+  (with-slots (scanner lookahead) parser
+    (collect-comments parser)
+    (let ((token (scan-reg-exp scanner)))
+      (setf lookahead token)
+      (next-token parser)
+      token)))
 
 (defun create-marker (parser)
   (with-slots (start-marker) parser
@@ -725,8 +734,8 @@
       (loop
        (let ((expression (if (match parser "...")
                              (parse-spread-element parser)
-                           (isolate-cover-grammar 'parse-assignment-expression))))
-         (appendf argument (list expression))
+                           (isolate-cover-grammar parser 'parse-assignment-expression))))
+         (appendf arguments (list expression))
          (when (match parser ")")
            (return))
          (expect-comma-separator parser)
@@ -1042,23 +1051,23 @@
         (next-token parser)
         (setf (getf context :assignment-target-p) nil
               (getf context :binding-element-p) nil)
-        (let* ((markers `(,start-token ,lookahead))
+        (let* ((markers `(,lookahead ,start-token))
                (left expression)
                (right (isolate-cover-grammar parser 'parse-exponentiation-expression))
-               (stack `(,left ,(slot-value token 'value) ,right))
-               (precedences))
+               (stack `(,right ,(slot-value token 'value) ,left))
+               (precedences `(,precedence)))
           (loop
            (let ((precedence (binary-precedence parser lookahead)))
              (when (<= precedence 0)
                (return))
              (loop while (and (> (length stack) 2)
-                              (<= precedence (nth (1- (length precedences)) precedences)))
+                              (<= precedence (first precedences)))
                    for right = (pop stack)
                    for operator = (pop stack)
                    do (pop precedences)
-                   (let ((left (pop precedences)))
+                   (let ((left (pop stack)))
                      (pop markers)
-                     (let ((marker (start-marker parser (nth (1- (length markers)) markers))))
+                     (let ((marker (start-marker (first markers))))
                        (push (finalize parser marker
                                        (make-instance 'binary-expression
                                                       :operator operator
@@ -1069,21 +1078,21 @@
              (push precedence precedences)
              (push lookahead markers)
              (push (isolate-cover-grammar parser 'parse-exponentiation-expression) stack)))
-          (let ((i (1- (length stack))))
+          (let ((i 0))
             (setf expression (nth i stack))
             (let ((last-marker (pop markers)))
-              (loop while (> i 1)
+              (loop while (< i (1- (length stack)))
                     for marker_ = (pop markers)
                     for last-line-start = (and last-marker
                                                (slot-value last-marker 'line-start))
                     for marker = (start-marker  marker_ last-line-start)
-                    for operator = (nth (1- i) stack)
+                    for operator = (nth (1+ i) stack)
                     do (setf expression (finalize parser marker
                                                   (make-instance 'binary-expression
                                                                  :operator operator
-                                                                 :left (nth (- i 2) stack)
+                                                                 :left (nth (+ i 2) stack)
                                                                  :right expression))
-                             i (- i 2)
+                             i (+ i 2)
                              last-marker marker_))))))
       expression)))
 
@@ -1200,7 +1209,7 @@
                 (setf (getf context :assignment-target-p) nil
                       (getf context :binding-element-p) nil)
                 (let ((async-p (getf expression :async))
-                      (list (reinterpret-as-cover-formals-list expression)))
+                      (list (reinterpret-as-cover-formals-list parser expression)))
                   (when list
                     (when has-line-terminator-p
                       (tolerate-unexpected-token parser lookahead))
@@ -1283,7 +1292,8 @@
                                             parser
                                             'parse-assignment-expression))))
           (setf expression (finalize parser (start-marker start-token)
-                                     (make-instance 'sequence-expression :expressions expressions)))))
+                                     (make-instance 'sequence-expression
+                                                    :expressions expressions)))))
       expression)))
 
 (defun parse-statement-list-item (parser)
@@ -1301,11 +1311,11 @@
              (unless (getf context :module-p)
                (tolerate-unexpected-token parser lookahead "some message"))
              (setf statement (parse-import-declaration parser)))
-            ("const" (setf statement (parse-lexical-declaration parser)))
+            ("const" (setf statement (parse-lexical-declaration parser '(:in-for nil))))
             ("function" (setf statement (parse-function-declaration parser)))
             ("class" (setf statement (parse-class-declaration parser)))
             ("let" (setf statement (if (lexical-declaration-p parser)
-                                       (parse-lexical-declaration parser)
+                                       (parse-lexical-declaration parser '(:in-for nil))
                                      (parse-statement parser))))
             (t (setf statement (parse-statement parser))))
         (setf statement (parse-statement parser)))
@@ -1389,7 +1399,7 @@
       (finalize parser marker (make-instance 'rest-element :argument argument)))))
 
 (defun parse-array-pattern (parser params kind)
-  (let ((marker (create-node parser)))
+  (let ((marker (create-marker parser)))
     (expect parser "[")
     (let ((elements))
       (loop while (not (match parser "]"))
@@ -2455,7 +2465,7 @@
                 key (parse-object-property-key parser))
           (let ((id key))
             (when (and (equal "static" (slot-value id 'name))
-                       (or (qualified-property-name lookahead)
+                       (or (qualified-property-name-p lookahead)
                            (match parser "*")))
               (setf token lookahead
                     static-p t
@@ -2577,11 +2587,12 @@
       (setf (getf context :strict) t)
       (expect-keyword parser "class")
       (let ((id (when (typep lookahead 'identifier)
-                  (parse-variable-identifiern)))
+                  (parse-variable-identifier parser)))
             (super-class))
         (when (match-keyword parser "extends")
           (next-token parser)
-          (setf super-class (isolate-cover-grammar parser 'parse-left-hand-side-expression-allow-call)))
+          (setf super-class (isolate-cover-grammar parser
+                                                   'parse-left-hand-side-expression-allow-call)))
         (let ((class-body (parse-class-body parser)))
           (setf (getf context :strict) previous-strict)
           (finalize parser marker (make-instance 'class-expression
