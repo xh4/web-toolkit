@@ -558,7 +558,7 @@
                    ((eq #\[ char) (setf class-marker t))))))
         (unless terminated
           (error "Unterminated regexp")))
-        (subseq str 1 (- (length str) 2))))))
+        (subseq str 1 (- (length str) 2)))))
 
 (defun scan-reg-exp-flags (scanner)
   (with-slots (index source line-number line-start) scanner
@@ -655,7 +655,7 @@
                  (setf code (+ (* code 16) (hex-value char)))))
       (when (or (> code #x10FFFF) (not (eq #\} char)))
         (scanner-throw-unexpected-token scanner))
-      (code-char code))))
+      (code-char code)))
 
 (defun octal-to-decimal (scanner char)
   (with-slots (index source) scanner
