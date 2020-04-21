@@ -41,6 +41,9 @@
                              "Unexpected token at index ~D line ~D column ~D")
                          index line-number (1+ (- index line-start)))))
 
+(defun scanner-tolerate-unexpected-token (scanner)
+  (with-slots (index source line-number line-start) scanner))
+
 (defun save-state (scanner)
   `(:index ,(slot-value scanner 'index)
     :line-number ,(slot-value scanner 'line-number)
@@ -675,7 +678,4 @@
       `(:code ,code :octal ,octal))))
 
 (defun scan-template (scanner)
-  (with-slots (index source line-number line-start) scanner))
-
-(defun tolerate-unexpected-token (scanner)
   (with-slots (index source line-number line-start) scanner))
