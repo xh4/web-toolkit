@@ -108,13 +108,19 @@
       (when (and start end)
         (format stream " [~D-~D]" start end)))))
 
+(defgeneric token-value (token))
+
 (defclass eof (token) ())
+
+(defmethod token-value ((eof eof)))
 
 (defclass identifier (token expression pattern)
   ((name
     :initarg :name
     :initform nil
     :accessor identifier-name)))
+
+(defmethod token-value ((identifier identifier)) (identifier-name identifier))
 
 (defclass literal (expression)
   ((value
@@ -124,17 +130,29 @@
 
 (defclass boolean-literal (token literal) ())
 
+(defmethod token-value ((boolean-literal boolean-literal))
+  (literal-value boolean-literal))
+
 (defclass null-literal (token literal) ())
+
+(defmethod token-value ((null-literal null-literal))
+  (literal-value null-literal))
 
 (defclass numeric-literal (token literal)
   ((octal
     :initarg :octal
     :initform nil)))
 
+(defmethod token-value ((numeric-literal numeric-literal))
+  (literal-value numeric-literal))
+
 (defclass string-literal (token literal)
   ((octal
     :initarg :octal
     :initform nil)))
+
+(defmethod token-value ((string-literal string-literal))
+  (literal-value string-literal))
 
 (defclass reg-exp-literal (token literal)
   ((pattern
@@ -144,17 +162,26 @@
     :initarg :flags
     :initform nil)))
 
+(defmethod token-value ((reg-exp-literal reg-exp-literal))
+  (literal-value reg-exp-literal))
+
 (defclass keyword (token)
   ((name
     :initarg :name
     :initform nil
     :accessor keyword-name)))
 
+(defmethod token-value ((keyword keyword))
+  (keyword-name keyword))
+
 (defclass punctuator (token)
   ((value
     :initarg :value
     :initform nil
     :accessor punctuator-value)))
+
+(defmethod token-value ((punctuator punctuator))
+  (punctuator-value punctuator))
 
 (defclass program (node)
   ((source-type
