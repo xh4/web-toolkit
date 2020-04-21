@@ -87,24 +87,19 @@
 (defun throw-error (message-format &rest values)
   (apply 'error message-format values))
 
-(defun tolerate-error (parser message-format &rest values))
+(defun tolerate-error (parser message-format &rest values)
+  (declare (ignore parser message-format values)))
 
 (defun unexpected-token-error (token &optional (message nil message-present-p))
-  (let ((message (or message "Unexpected token ~A"))
-        (value))
-    (when token
-      (unless message-present-p
-        )
-      (setf value (typecase token
-                    ((or identifier keyword) (token-value token))
-                    (t (token-value token)))))
+  (let ((message (or message "Unexpected token ~A")))
     (throw-error message token)))
 
 (defun throw-unexpected-token (parser &optional token message)
   (declare (ignore parser))
   (unexpected-token-error token message))
 
-(defun tolerate-unexpected-token (parser &optional token message))
+(defun tolerate-unexpected-token (parser &optional token message)
+  (declare (ignore parser token message)))
 
 (defun collect-comments (parser)
   (with-slots (scanner) parser
@@ -115,8 +110,6 @@
     (with-slots (source) scanner
       (with-slots (start end) token
         (subseq source start end)))))
-
-(defun convert-token (token))
 
 (defun next-token (parser)
   (with-slots (lookahead scanner context start-marker last-marker) parser
@@ -287,8 +280,7 @@
   (with-slots (lookahead context scanner start-marker) parser
     (let ((marker (create-marker parser))
           (expression)
-          (token)
-          (raw))
+          (token))
       (typecase lookahead
         (identifier
          (when (and (or (getf context :module-p)
@@ -307,23 +299,17 @@
          (setf (getf context :assignment-target-p) nil
                (getf context :binding-elemnt-p) nil
                token (next-token parser)
-               raw (get-token-raw parser token)
-               expression (finalize parser marker
-                                    (make-instance 'literal :value (token-value token)))))
+               expression (finalize parser marker token)))
         (boolean-literal
          (setf (getf context :assignment-target-p) nil
                (getf context :binding-elemnt-p) nil
                token (next-token parser)
-               raw (get-token-raw parser token)
-               expression (finalize parser marker
-                                    (make-instance 'literal
-                                                   :value (equal "true" (token-value token))))))
+               expression (finalize parser marker token)))
         (null-literal
          (setf (getf context :assignment-target-p) nil
                (getf context :binding-elemnt-p) nil
                token (next-token parser)
-               raw (get-token-raw parser token)
-               expression (finalize parser marker (make-instance 'literal))))
+               expression (finalize parser marker token)))
         (template-literal
          (setf expression (parse-template-literal parser)))
         (punctuator
@@ -342,8 +328,7 @@
                     (getf context :binding-elemnt-p) nil
                     (slot-value scanner 'index) (marker-index start-marker)
                     token (next-regex-token parser)
-                    raw (get-token-raw parser token)
-                    expression (finalize parser marker (make-instance 'reg-exp-literal))))
+                    expression (finalize parser marker token)))
              (t (throw-unexpected-token parser (next-token parser))))))
         (keyword
          (cond
@@ -462,10 +447,8 @@
         ((or string-literal numeric-literal)
          (when (and (getf context :strict)
                     (slot-value token 'octal))
-           (tolerate-unexpected-token parser token "some message")
-           (let ((raw (get-token-raw parser token)))
-             (setf key (finalize parser marker (make-instance 'literal
-                                                              :value (token-value token)))))))
+           (tolerate-unexpected-token parser token "some message"))
+         (setf key (finalize parser marker token)))
         ((or identifier boolean-literal null-literal keyword)
          (setf key (finalize parser marker (make-instance 'identifier
                                                           :name (token-value token)))))
@@ -2632,10 +2615,8 @@
     (let ((marker (create-marker parser)))
       (when (typep lookahead 'string-literal)
         (throw-error parser "some message"))
-      (let* ((token (next-token parser))
-             (raw (get-token-raw parser token)))
-        (finalize parser marker (make-instance 'literal
-                                               :value (token-value token)))))))
+      (let* ((token (next-token parser)))
+        (finalize parser marker token)))))
 
 ;; import {<foo as bar>} ...;
 (defun parse-import-specifier (parser)
