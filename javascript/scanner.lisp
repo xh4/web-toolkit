@@ -538,12 +538,14 @@
   (with-slots (index source line-number line-start) scanner
     (let ((char (char source index)))
       (assert (eq #\/ char))
-      (let ((str (string (char source (incf index))))
+      (let ((str (string (char source index)))
             (class-marker)
             (terminated))
+        (incf index)
         (loop while (not (eof-p scanner))
               for char = (char source index)
-              do (incf index)
+              do (setf str (concatenate 'string str (string (char source index)))
+                       index (1+ index))
               (cond
                ((eq #\\ char)
                 (setf char (char source index)
@@ -561,7 +563,7 @@
                    ((eq #\[ char) (setf class-marker t))))))
         (unless terminated
           (error "Unterminated regexp"))
-        (subseq str 1 (- (length str) 2))))))
+        (subseq str 1 (1- (length str)))))))
 
 (defun scan-reg-exp-flags (scanner)
   (with-slots (index source line-number line-start) scanner
