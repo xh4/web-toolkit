@@ -353,18 +353,20 @@
            ((equal ">>>=" str) (incf index 4))
            (t (setf str (substring str 0 3))
               (cond
-               ((or (equal "===" str) (equal "!==" str) (equal ">>>" str)
-                    (equal "<<=" str) (equal ">>=" str) (equal "**=" str))
+               ((member str '("===" "!==" ">>>"
+                              "<<=" ">>=" "**=")
+                        :test 'equal)
                 (incf index 3))
                (t (setf str (substring str 0 2))
                   (cond
-                   ((or (equal "&&" str) (equal "||" str) (equal "==" str) (equal "!=" str)
-                        (equal "+=" str)  (equal "-=" str) (equal "*=" str) (equal "/=" str)
-                        (equal "++" str) (equal "--" str) (equal "<<" str) (equal ">>" str)
-                        (equal "&=" str) (equal "|=" str) (equal "^=" str) (equal "%=" str)
-                        (equal "<=" str) (equal ">=" str) (equal "=>" str) (equal "**" str))
+                   ((member str '("&&" "||" "==" "!="
+                                  "+=" "-=" "*=" "/="
+                                  "++" "--" "<<" ">>"
+                                  "<=""|=" "^=" "%="
+                                  "&=" ">=" "=>" "**")
+                            :test 'equal)
                     (incf index 2))
-                   (t (setf str (string (char-at source index)))
+                   (t (setf str (substring str 0 1))
                       (when (search str "<>=!+-*%&|^/")
                         (incf index))))))))))
       (when (= index start)
