@@ -17,7 +17,8 @@
                              (:file "character")
                              (:file "scanner")
                              (:file "tokenizer")
-                             (:file "parser"))))
+                             (:file "parser")
+                             (:file "serializer"))))
   :in-order-to ((test-op (test-op :wt.javascript/test)))
   :perform (load-op :after (o c)
                     #+lispworks
