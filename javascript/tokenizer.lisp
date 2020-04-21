@@ -48,9 +48,11 @@
    (paren
     :initform -1)))
 
+;; Determine if forward slash (/) is an operator or part of a regular expression
+;; https://github.com/mozilla/sweet.js/wiki/design
 (defun regex-start-p (reader)
   (with-slots (values curly paren) reader
-    (let ((previous (first values)))
+    (let ((previous (car (last values))))
       (let ((regex-p (not (null previous))))
         (cond
          ((or (equal "this" previous)
@@ -65,19 +67,24 @@
          ((equal "}" previous)
           (setf regex-p nil)
           (cond
-           ((equal "function" (nth (- curly 3) values))
+           ;; Anonymous function, e.g. function(){} /42
+           ((and (> curly 3)
+                 (equal "function" (nth (- curly 3) values)))
             (let ((check (nth (- curly 4) values)))
               (setf regex-p (if check (not (before-function-expression-p check)) nil))))
-           ((equal "function" (nth (- curly 3) values))
+           ;; Named function, e.g. function f(){} /42/
+           ((and (> curly 4)
+                 (equal "function" (nth (- curly 4) values)))
             (let ((check (nth (- curly 5) values)))
               (setf regex-p (if check (not (before-function-expression-p check)) t)))))))
         regex-p))))
 
+;; A function following one of those tokens is an expression
 (defun before-function-expression-p (str)
   (member str '("(" "{" "[" "in" "typeof" "instanceof" "new"
-                "return" "case" "delete" "throw" "void" "=" "+="
+                "return" "case" "delete" "throw" "void"
                 ;; assignment operators
-                "-=" "*=" "**=" "/=" "%=" "<<=" ">>=" ">>>="
+                "=" "+=" "-=" "*=" "**=" "/=" "%=" "<<=" ">>=" ">>>="
                 "&=" "|=" "^=" ","
                 ;; binary/unary operators
                 "+" "-" "*" "**" "/" "%" "++" "--" "<<" ">>" ">>>" "&"
@@ -89,11 +96,9 @@
   (with-slots (values curly paren) reader
     (if (or (typep token 'punctuator)
             (typep token 'keyword))
-        (let ((value (typecase token
-                       (punctuator (slot-value token 'value))
-                       (keyword (slot-value token 'name)))))
+        (let ((value (token-value token)))
           (cond
            ((equal "{" value) (setf curly (length values)))
            ((equal "(" value) (setf paren (length values))))
           (appendf values (list value)))
-      (appendf values (list t)))))
+      (appendf values (list nil)))))
