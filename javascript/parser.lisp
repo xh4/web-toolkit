@@ -910,7 +910,6 @@
                (getf context :assignment-target-p) t)
          (expect parser ".")
          (let ((property (parse-identifier-name parser)))
-           (expect parser "]")
            (setf expression (finalize parser marker
                                       (make-instance 'static-member-expression
                                                      :object expression
@@ -1778,8 +1777,9 @@
                     (let ((init-seq `(,init)))
                       (loop while (match parser ",")
                             do (next-token parser)
-                            (appendf init-seq (isolate-cover-grammar parser
-                                                                     'parse-assignment-expression)))
+                            (appendf init-seq (list (isolate-cover-grammar
+                                                     parser
+                                                     'parse-assignment-expression))))
                       (setf init (finalize parser (start-marker init-start-token)
                                            (make-instance 'sequence-expression
                                                           :expressions init-seq)))))
