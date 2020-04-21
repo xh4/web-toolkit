@@ -3,30 +3,28 @@
 (defclass scanner ()
   ((source
     :initarg :source
-    :initform nil
-    :accessor scanner-source)
+    :initform nil)
    (index
-    :initform 0
-    :accessor scanner-index)
+    :initform 0)
    (line-number
-    :initform 1
-    :reader scanner-line-number)
+    :initform 1)
    (line-start
-    :initform 0
-    :reader scanner-line-start)
+    :initform 0)
    (curly-stack
-    :initform nil
-    :reader scanner-curly-stack)
+    :initform nil)
    (length
-    :initform nil
-    :reader scanner-length)
+    :initform nil)
    (module-p
-    :initform :module)))
+    :initarg :module
+    :initform nil)))
 
 (defmethod initialize-instance :after ((scanner scanner) &key)
   (check-type (slot-value scanner 'source) string)
-  (with-slots (source length) scanner
-    (setf length (length source))))
+  (with-slots (source length index line-number line-start) scanner
+    (setf length (length source)
+          index 0
+          line-number (if (> length 0) 1 0)
+          line-start 0)))
 
 (defun eof-p (scanner)
   (with-slots (index length) scanner
