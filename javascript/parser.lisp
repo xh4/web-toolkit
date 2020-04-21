@@ -77,7 +77,7 @@
    (let ((scanner (make-instance 'scanner :source source)))
      (let ((parser (make-instance 'parser
                                   :scanner scanner
-                                  :config `(:range t :location t))))
+                                  :config `(:range t :location t :tolerant t))))
        (parse-script parser))))
   (:method ((stream stream))
    (parse (alexandria::read-stream-content-into-string stream)))
@@ -99,7 +99,7 @@
   (unexpected-token-error token message))
 
 (defun tolerate-unexpected-token (parser &optional token message)
-  (declare (ignore parser token message)))
+  (tolerate-error parser (or message "Unexpected token ~A") token))
 
 (defun collect-comments (parser)
   (with-slots (scanner) parser
@@ -112,7 +112,7 @@
         (subseq source start end)))))
 
 (defun next-token (parser)
-  (with-slots (lookahead scanner context start-marker last-marker) parser
+  (with-slots (lookahead scanner context has-line-terminator-p start-marker last-marker) parser
     (let ((token lookahead))
       (setf (marker-index last-marker) (slot-value scanner 'index)
             (marker-line last-marker) (slot-value scanner 'line-number)
@@ -126,6 +126,8 @@
               (marker-column start-marker) (- (slot-value scanner 'index)
                                               (slot-value scanner 'line-start))))
       (let ((next-token (lex scanner)))
+        (setf has-line-terminator-p (not (= (slot-value token 'line-number)
+                                            (slot-value next-token 'line-number))))
         (when (and next-token (getf context :strict) (typep next-token 'identifier))
           (when (strict-mode-reserved-word-p (token-value next-token))
             (change-class next-token 'keyword)))
@@ -267,14 +269,17 @@
         result))))
 
 (defun consume-semicolon (parser)
-  (with-slots (lookahead has-line-terminator-p) parser
+  (with-slots (lookahead has-line-terminator-p start-marker last-marker) parser
     (cond
      ((match parser ";")
       (next-token parser))
      ((not has-line-terminator-p)
       (when (and (not (typep lookahead 'eof))
                  (not (match parser "}")))
-        (throw-unexpected-token parser lookahead))))))
+        (throw-unexpected-token parser lookahead))
+      (setf (marker-index last-marker) (marker-index start-marker)
+            (marker-line last-marker) (marker-line start-marker)
+            (marker-column last-marker) (marker-column start-marker))))))
 
 (defun parse-primary-expression (parser)
   (with-slots (lookahead context scanner start-marker) parser
@@ -928,7 +933,7 @@
               (match parser "--"))
           (let ((marker (start-marker start-token))
                 (token (next-token parser)))
-            (setf expression (inherit-cover-grammar parser 'parser-unary-expression))
+            (setf expression (inherit-cover-grammar parser 'parse-unary-expression))
             (when (and (getf context :strict)
                        (typep expression 'identifier)
                        (restricted-word-p (slot-value expression 'name)))
