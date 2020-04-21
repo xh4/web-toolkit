@@ -1705,7 +1705,7 @@
                         right (parse-expression parser)
                         init nil)))
                ((and (= 1 (length declarations))
-                     (null (first declarations))
+                     (null (slot-value (first declarations) 'init))
                      (match-contextual-keyword parser "of"))
                 (setf init (finalize parser init (make-instance 'variable-declaration
                                                                 :declarations declarations
@@ -1715,9 +1715,10 @@
                       right (parse-assignment-expression parser)
                       init nil
                       for-in nil))
-               (t (setf init (finalize parser init (make-instance 'variable-declarat
+               (t (setf init (finalize parser init (make-instance 'variable-declaration
                                                                   :declarations declarations
-                                                                  :kind "var"))))))))
+                                                                  :kind "var")))
+                  (expect parser ";"))))))
          ((or (match-keyword parser "const")
               (match-keyword parser "let"))
           (setf init (create-marker parser))
