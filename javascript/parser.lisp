@@ -284,7 +284,7 @@
         (throw-unexpected-token parser lookahead))))))
 
 (defun parse-primary-expression (parser)
-  (with-slots (lookahead context) parser
+  (with-slots (lookahead context scanner start-marker) parser
     (let ((marker (create-marker parser))
           (expression)
           (token)
@@ -340,7 +340,8 @@
                   (equal "/=" value))
               (setf (getf context :assignment-target-p) nil
                     (getf context :binding-elemnt-p) nil
-                    token (next-token parser)
+                    (slot-value scanner 'index) (marker-index start-marker)
+                    token (next-regex-token parser)
                     raw (get-token-raw parser token)
                     expression (finalize parser marker (make-instance 'reg-exp-literal))))
              (t (throw-unexpected-token parser (next-token parser))))))
