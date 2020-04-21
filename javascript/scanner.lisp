@@ -413,7 +413,7 @@
           (octal nil))
       (if (octal-digit-p (char prefix 0))
           (setf octal t
-                num (concatenate 'string "0" (char source index))
+                num (concatenate 'string "0" (string (char source index)))
                 index (1+ index))
         (incf index))
       (loop while (not (eof-p scanner))
@@ -427,7 +427,7 @@
       (when (or (identifier-start-p (char source index))
                 (decimal-digit-p (char source index)))
         (scanner-throw-unexpected-token scanner))
-      ;; TODO: parse number 
+      ;; TODO: parse number
       (make-instance'numeric-literal
                     :value num
                     :octal octal
@@ -560,8 +560,8 @@
                    ((eq #\/ char) (setf terminated t) (return))
                    ((eq #\[ char) (setf class-marker t))))))
         (unless terminated
-          (error "Unterminated regexp")))
-        (subseq str 1 (- (length str) 2)))))
+          (error "Unterminated regexp"))
+        (subseq str 1 (- (length str) 2))))))
 
 (defun scan-reg-exp-flags (scanner)
   (with-slots (index source line-number line-start) scanner
@@ -649,16 +649,16 @@
     (let ((char (char source index))
           (code 0))
       (when (eq #\} char)
-        (scanner-throw-unexpected-token scanner)))
+        (scanner-throw-unexpected-token scanner))
       (loop while (not (eof-p scanner))
-            for char = (char source index)
-            do (incf index)
-            do (if (not (hex-digit-p char))
-                   (return)
-                 (setf code (+ (* code 16) (hex-value char)))))
+         for char = (char source index)
+         do (incf index)
+         do (if (not (hex-digit-p char))
+                (return)
+                (setf code (+ (* code 16) (hex-value char)))))
       (when (or (> code #x10FFFF) (not (eq #\} char)))
         (scanner-throw-unexpected-token scanner))
-      (code-char code)))
+      (code-char code))))
 
 (defun octal-to-decimal (scanner char)
   (with-slots (index source) scanner

@@ -266,7 +266,7 @@
                    previous-binding-element-p)
               (getf context :assignment-target-p)
               (and
-               (getf context :assignment-target-p) 
+               (getf context :assignment-target-p)
                previous-assignment-target-p)
               (getf context :first-cover-initialized-name-error)
               (or (getf context :first-cover-initialized-name-error)
@@ -327,21 +327,23 @@
         (template-literal
          (setf expression (parse-template-literal parser)))
         (punctuator
-         (switch ((token-value lookahead) :test 'equal)
-           ("("
-            (setf (getf context :binding-element-p) nil
-                  expression (inherit-cover-grammar parser 'parse-group-expression)))
-           ("["
-            (setf expression (inherit-cover-grammar parser 'parse-array-initializer)))
-           ("{"
-            (setf expression (inherit-cover-grammar parser 'parse-object-initializer)))
-           ((or "/" "/=")
-            (setf (getf context :assignment-target-p) nil
-                  (getf context :binding-elemnt-p) nil
-                  token (next-token parser)
-                  raw (get-token-raw parser token)
-                  expression (finalize parser marker (make-instance 'reg-exp-literal))))
-           (t (throw-unexpected-token parser (next-token parser)))))
+         (let ((value (token-value lookahead)))
+           (cond
+             ((equal "(" value)
+              (setf (getf context :binding-element-p) nil
+                    expression (inherit-cover-grammar parser 'parse-group-expression)))
+             ((equal "[" value)
+              (setf expression (inherit-cover-grammar parser 'parse-array-initializer)))
+             ((equal "{" value)
+              (setf expression (inherit-cover-grammar parser 'parse-object-initializer)))
+             ((or (equal "/" value)
+                  (equal "/=" value))
+              (setf (getf context :assignment-target-p) nil
+                    (getf context :binding-elemnt-p) nil
+                    token (next-token parser)
+                    raw (get-token-raw parser token)
+                    expression (finalize parser marker (make-instance 'reg-exp-literal))))
+             (t (throw-unexpected-token parser (next-token parser))))))
         (keyword
          (cond
           ((and (not (getf context :strict))
@@ -409,12 +411,12 @@
       (let ((body (isolate-cover-grammar parser 'parse-function-source-elements)))
         (when (and (getf context :strict) (getf params :first-restricted))
           (tolerate-unexpected-token parser
-                                     (getf :params :first-restricted)
-                                     (getf :params :message)))
+                                     (getf params :first-restricted)
+                                     (getf params :message)))
         (when (and (getf context :strict) (getf params :stricted))
           (tolerate-unexpected-token parser
-                                     (getf :params :stricted)
-                                     (getf :params :message)))
+                                     (getf params :stricted)
+                                     (getf params :message)))
         (setf (getf context :strict) previous-strict
               (getf context :allow-strict-directive) previous-allow-strict-directive)
         body))))
@@ -543,9 +545,9 @@
             (cond
              ((and (match parser ":") (not async-p))
               (when (and (not computed) (property-key-p key "__proto__"))
-                (when (slot-value has-proto 'value)
+                (when (getf has-proto :value)
                   (tolerate-error parser "some message"))
-                (setf (slot-value has-proto 'value) t))
+                (setf (getf has-proto :value) t))
               (next-token parser)
               (setf value (inherit-cover-grammar parser 'parse-assignment-expression)))
              ((match parser "(")
@@ -858,7 +860,7 @@
              (when async-arrow
                (match parser "=>")
                (loop for i from 0 upto (1- (length arguments))
-                     do (reinterpret-expression-as-pattern (nth arguments i)))
+                     do (reinterpret-expression-as-pattern (nth i arguments)))
                (setf expression `(:type :arrow-parameter-placeholder
                                   :params ,arguments
                                   :async t))))))
@@ -1151,7 +1153,7 @@
     (let ((params `(,expression))
           (options)
           (async-arrow-p))
-      (cond 
+      (cond
        ((typep expression 'identifier))
        ((and (listp expression)
              (eq :arrow-parameter-placeholder (getf expression :type)))
@@ -1287,7 +1289,7 @@
       expression)))
 
 (defun parse-expression (parser)
-  (with-slots (lookahead) parser 
+  (with-slots (lookahead) parser
     (let ((start-token lookahead)
           (expression (isolate-cover-grammar parser 'parse-assignment-expression)))
       (when (match parser ",")
@@ -1676,7 +1678,7 @@
       (expect-keyword parser "for")
       (expect parser "(")
       (if (match parser ";")
-          (next-token parser)  
+          (next-token parser)
         (cond
          ((match-keyword parser "var")
           (setf init (create-marker parser))
@@ -1877,7 +1879,7 @@
                                      (not has-line-terminator-p)
                                      (not (typep lookahead 'eof)))
                                 (typep lookahead 'string-literal)
-                                (typep lookahead 'template))))
+                                (typep lookahead 'template-literal))))
         (let ((argument (when has-argument-p
                           (parse-expression parser))))
           (consume-semicolon parser)
@@ -2507,7 +2509,7 @@
                   (getf context :allow-yield) nil
                   value (parse-setter-method parser)))))
          ((and (typep token 'punctuator)
-               (equal "*" value)
+               (equal "*" (token-value token))
                lookahead-property-key)
           (setf kind "init"
                 computed (match parser "[")
@@ -2803,11 +2805,15 @@
                                                             :source source)))))
        ((typep lookahead 'keyword)
         ;; export var foo = 1;
-        (let ((declaration))
-          (switch ((token-value lookahead) :test 'equal)
-            ((or "let" "const")
+        (let ((declaration)
+              (value (token-value lookahead)))
+          (cond
+            ((or (equal "let" value)
+                 (equal "const" value))
              (setf declaration (parse-lexical-declaration parser '(:in-for nil))))
-            ((or "var" "class" "function")
+            ((or (equal "var" value)
+                 (equal "class" value)
+                 (equal "function" value))
              (setf declaration (parse-statement-list-item parser)))
             (t (throw-unexpected-token parser lookahead)))
           (setf export-declaration (finalize parser marker
