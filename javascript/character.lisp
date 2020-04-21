@@ -48,3 +48,9 @@
 
 (defun octal-digit-p (char)
   (char<= #\0 char #\7))
+
+(defun hex-value (char)
+  (cl:position (char-downcase char) "0123456789abcdef"))
+
+(defun octal-value (char)
+  (cl:position char "01234567"))

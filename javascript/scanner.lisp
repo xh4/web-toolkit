@@ -42,7 +42,7 @@
                          index line-number (1+ (- index line-start)))))
 
 (defun scanner-tolerate-unexpected-token (scanner)
-  (with-slots (index source line-number line-start) scanner))
+  (declare (ignore scanner)))
 
 (defun save-state (scanner)
   `(:index ,(slot-value scanner 'index)
@@ -82,168 +82,128 @@
                                               (scan-punctuator scanner)))
        (t (scan-punctuator scanner))))))
 
-;; https://tc39.github.io/ecma262/#sec-punctuators
-(defun scan-punctuator (scanner)
-  (with-slots (index source curly-stack line-number line-start) scanner
-    (let ((start index)
-          (char (char-at source index))
-          (str (string (char-at source index))))
-      (cond
-       ((or (eq #\( char)
-            (eq #\{ char))
-        (when (eq #\{ char)
-          (push #\{ curly-stack))
-        (incf index))
-       ((eq #\. char)
-        (incf index)
-        (when (and (eq #\. (char-at source index))
-                   (eq #\. (char-at source (1+ index))))
-          (incf index 2)
-          (setf str "...")))
-       ((eq #\} char)
-        (incf index)
-        (pop curly-stack))
-       ((or (eq #\) char)
-            (eq #\; char)
-            (eq #\, char)
-            (eq #\[ char)
-            (eq #\] char)
-            (eq #\: char)
-            (eq #\? char)
-            (eq #\~ char))
-        (incf index))
-       (t (setf str (substring source index (+ 4 index)))
-          (cond
-           ((equal ">>>=" str) (incf index 4))
-           (t (setf str (substring str 0 3))
-              (cond
-               ((or (equal "===" str) (equal "!==" str) (equal ">>>" str)
-                    (equal "<<=" str) (equal ">>=" str) (equal "**=" str))
-                (incf index 3))
-               (t (setf str (substring str 0 2))
-                  (cond
-                   ((or (equal "&&" str) (equal "||" str) (equal "==" str) (equal "!=" str)
-                        (equal "+=" str)  (equal "-=" str) (equal "*=" str) (equal "/=" str)
-                        (equal "++" str) (equal "--" str) (equal "<<" str) (equal ">>" str)
-                        (equal "&=" str) (equal "|=" str) (equal "^=" str) (equal "%=" str)
-                        (equal "<=" str) (equal ">=" str) (equal "=>" str) (equal "**" str))
-                    (incf index 2))
-                   (t (setf str (string (char-at source index)))
-                      (when (search str "<>=!+-*%&|^/")
-                        (incf index))))))))))
-      (when (= index start)
-        (scanner-throw-unexpected-token scanner))
-      (make-instance 'punctuator
-                     :value str
-                     :line-number line-number
-                     :line-start line-start
-                     :start start
-                     :end index))))
+(defun skip-single-line-comment (scanner offset)
+  (declare (ignore offset))
+  (with-slots (index source line-number line-start) scanner
+    (loop while (not (eof-p scanner))
+          for char = (char-at source index)
+          do (incf index)
+          (when (line-terminator-p char)
+            (when (and (eq #\Return char)
+                       (eq #\Newline (char-at source index)))
+              (incf index))
+            (incf line-number)
+            (setf line-start index)
+            (return)))))
 
-;; https://tc39.github.io/ecma262/#sec-literals-string-literals
-(defun scan-string-literal (scanner)
-  (with-slots (index source curly-stack line-number line-start) scanner
-    (let ((start index)
-          (quote (char-at source index)))
-      (incf index)
-      (loop with octal = nil
-            with str = ""
-            with ending = nil
-            while (not (eof-p scanner))
+(defun skip-multi-line-comment (scanner)
+  (with-slots (index source line-number line-start) scanner
+    (loop while (not (eof-p scanner))
+          for char = (char-at source index)
+          do (cond
+              ((line-terminator-p char)
+               (when (and (eq #\Return char)
+                          (eq #\Newline (char-at source index)))
+                 (incf index))
+               (incf line-number)
+               (incf index)
+               (setf line-start index))
+              ((eq #\* char)
+               (when (eq #\/ (char-at source (1+ index)))
+                 (incf index 2)
+                 (return))
+               (incf index))
+              (t (incf index))))
+    (tolerate-unexpected-token scanner)))
+
+;; ttps://tc39.github.io/ecma262/#sec-comments
+(defun scan-comments (scanner)
+  (with-slots (index source line-number line-start) scanner
+    (let ((start (= 0 index)))
+      (loop while (not (eof-p scanner))
+            for char = (char-at source index)
+            do (cond
+                ((whitespace-p char) (incf index))
+                ((line-terminator-p char)
+                 (incf index)
+                 (when (and (eq #\Return char)
+                            (eq #\Newline (char-at source index)))
+                   (incf index))
+                 (incf line-number)
+                 (setf line-start index
+                       start t))
+                ((eq #\/ char)
+                 (setf char (char-at source (1+ index)))
+                 (cond
+                  ((eq #\/ char)
+                   (incf index 2)
+                   (skip-single-line-comment scanner 2)
+                   (setf start t))
+                  ((eq #\* char)
+                   (incf index 2)
+                   (skip-multi-line-comment scanner))
+                  (t (return))))
+                ((and start (eq #\- char))
+                 (if (and (eq #\- (char-at source (+ index 1)))
+                          (eq #\> (char-at source (+ index 2))))
+                     (progn
+                       (incf index 3)
+                       (skip-single-line-comment scanner 4))
+                   (return)))
+                (t (return)))))))
+
+;; https://tc39.github.io/ecma262/#sec-future-reserved-words
+(defun future-reserved-word-p (id)
+  (member id '("enum" "export" "import" "super")
+          :test 'equal))
+
+(defun strict-mode-reserved-word-p (id)
+  (member id '("implements" "interface" "package" "private"
+               "protected" "public" "static" "yield" "let")
+          :test 'equal))
+
+(defun restricted-word-p (id)
+  (member id '("eval" "arguments") :test 'equal))
+
+;; https://tc39.github.io/ecma262/#sec-keywords
+(defun keyword-p (id)
+  (member id '("if" "in" "do"
+               "var" "for" "new" "try" "let"
+               "this" "else" "case" "void" "with" "enum"
+               "while" "break" "catch" "throw" "const" "yield"
+               "class" "super" "return" "typeof" "delete" "switch"
+               "export" "import" "default" "finally" "extends"
+               "function" "continue" "debugger" "instanceof")
+          :test 'equal))
+
+(defun scan-hex-escape (scanner prefix)
+  (with-slots (index source line-number line-start) scanner
+    (let ((len (if (eq #\u prefix) 4 2))
+          (code 0))
+      (loop repeat len
+            do (if (and (not (eof-p scanner))
+                        (hex-digit-p (char-at source index)))
+                   (setf code (+ (* code 16)
+                                 (hex-value (char-at source index)))
+                         index (1+ index))
+                 (return)))
+      (code-char code))))
+
+(defun scan-unicode-code-point-escape (scanner)
+  (with-slots (index source line-number line-start) scanner
+    (let ((char (char-at source index))
+          (code 0))
+      (when (eq #\} char)
+        (scanner-throw-unexpected-token scanner))
+      (loop while (not (eof-p scanner))
             for char = (char-at source index)
             do (incf index)
-            do (cond
-                ((eq quote char) (setf ending t) (loop-finish))
-                ((eq #\\ char)
-                 (let ((char (char-at source index)))
-                   (incf index)
-                   (cond
-                    ((or (null char)
-                         (not (line-terminator-p char)))
-                     (cond
-                      ((eq #\u char)
-                       (cond
-                        ((eq #\{ (char-at source index))
-                         (incf index)
-                         (setf str (concatenate 'string str (scan-unicode-code-point-escape scanner))))
-                        (t (let ((unescaped (scan-hex-escape scanner char)))
-                             (unless unescaped
-                               (scanner-throw-unexpected-token scanner))
-                             (setf str (concatenate 'string str unescaped))))))
-                      ((eq #\x char)
-                       (let ((unescaped (scan-hex-escape scanner char)))
-                         (unless unescaped
-                           (scanner-throw-unexpected-token scanner))
-                         (setf str (concatenate 'string str unescaped))))
-                      ((eq #\n char) (setf str (concatenate 'string str (string #\Newline))))
-                      ((eq #\r char) (setf str (concatenate 'string str (string #\Return))))
-                      ((eq #\t char) (setf str (concatenate 'string str (string #\Tab))))
-                      ((eq #\b char) (setf str (concatenate 'string str (string #\Backspace))))
-                      ((eq #\f char) (setf str (concatenate 'string str (string #\Page))))
-                      ((eq #\v char) (setf str (concatenate 'string str (string #\VT))))
-                      ((or (eq #\8 char)
-                           (eq #\9 char))
-                       (setf str (concatenate 'string str (string char)))
-                       (tolerate-unexpected-token scanner))
-                      (t (cond
-                          ((and char (octal-digit-p char))
-                           )
-                          (t (setf str (concatenate 'string str (string char))))))))
-                    (t (incf line-number)
-                       (when (and (eq #\Return char)
-                                  (eq #\Newline (char-at source index)))
-                         (incf index))
-                       (setf line-start index)))))
-                ((line-terminator-p char) (loop-finish))
-                (t (setf str (concatenate 'string str (string char)))))
-            finally
-            (unless ending
-              (setf index start)
-              (scanner-throw-unexpected-token scanner))
-            (return (make-instance 'string-literal
-                                   :value str
-                                   :octal octal
-                                   :line-number line-number
-                                   :line-start line-start
-                                   :start start
-                                   :end index))))))
-
-;; https://tc39.github.io/ecma262/#sec-names-and-keywords
-(defun scan-identifier (scanner)
-  (with-slots (index source line-number line-start) scanner
-    (let ((start index)
-          (type))
-      (let ((id (if (eq #\\ (char-at source index))
-                    (get-complex-identifier scanner)
-                  (get-identifier scanner))))
-        (cond
-         ((= 1 (length id)) (setf type 'identifier))
-         ((keyword-p id) (setf type 'keyword))
-         ((equal "null" id) (setf type 'null-literal))
-         ((or (equal "true" id)
-              (equal "false" id))
-          (setf type 'boolean-literal))
-         (t (setf type 'identifier)))
-        (when (and (not (eq 'identifier type))
-                   (not (= (+ start (length id)) index)))
-          (let ((restore index))
-            (setf index start)
-            (tolerate-unexpected-token scanner)
-            (setf index restore)))
-        (case type
-          ((identifier keyword)
-           (make-instance type
-                          :name id
-                          :line-number line-number
-                          :line-start line-start
-                          :start start
-                          :end index))
-          (t (make-instance type
-                            :value id
-                            :line-number line-number
-                            :line-start line-start
-                            :start start
-                            :end index)))))))
+            do (if (not (hex-digit-p char))
+                   (return)
+                 (setf code (+ (* code 16) (hex-value char)))))
+      (when (or (> code #x10FFFF) (not (eq #\} char)))
+        (scanner-throw-unexpected-token scanner))
+      (code-char code))))
 
 (defun get-identifier (scanner)
   (with-slots (index source line-number line-start) scanner
@@ -306,56 +266,113 @@
               (setf id (concatenate 'string id (string char)))))
       id)))
 
-(defun scan-numeric-literal (scanner)
+(defun octal-to-decimal (scanner char)
+  (with-slots (index source) scanner
+    (let ((octal (not (eq #\0 char)))
+          (code (octal-value char)))
+      (when (and (not (eof-p scanner))
+                 (octal-digit-p (char-at source index)))
+        (setf octal t
+              code (+ (* code 8)
+                      (octal-value (char-at source index)))
+              index (1+ index))
+        (when (and (>= (cl:position char "0123") 0)
+                   (not (eof-p scanner))
+                   (octal-digit-p (char-at source index)))
+          (setf code (+ (* code 8) (octal-value (char-at source index)))
+                index (1+ index))))
+      `(:code ,code :octal ,octal))))
+
+;; https://tc39.github.io/ecma262/#sec-names-and-keywords
+(defun scan-identifier (scanner)
   (with-slots (index source line-number line-start) scanner
     (let ((start index)
+          (type))
+      (let ((id (if (eq #\\ (char-at source index))
+                    (get-complex-identifier scanner)
+                  (get-identifier scanner))))
+        (cond
+         ((= 1 (length id)) (setf type 'identifier))
+         ((keyword-p id) (setf type 'keyword))
+         ((equal "null" id) (setf type 'null-literal))
+         ((or (equal "true" id)
+              (equal "false" id))
+          (setf type 'boolean-literal))
+         (t (setf type 'identifier)))
+        (when (and (not (eq 'identifier type))
+                   (not (= (+ start (length id)) index)))
+          (let ((restore index))
+            (setf index start)
+            (tolerate-unexpected-token scanner)
+            (setf index restore)))
+        (case type
+          ((identifier keyword)
+           (make-instance type
+                          :name id
+                          :line-number line-number
+                          :line-start line-start
+                          :start start
+                          :end index))
+          (t (make-instance type
+                            :value id
+                            :line-number line-number
+                            :line-start line-start
+                            :start start
+                            :end index)))))))
+
+;; https://tc39.github.io/ecma262/#sec-punctuators
+(defun scan-punctuator (scanner)
+  (with-slots (index source curly-stack line-number line-start) scanner
+    (let ((start index)
           (char (char-at source index))
-          (num ""))
-      (when (not (eq #\. char))
-        (setf num (string char))
+          (str (string (char-at source index))))
+      (cond
+       ((or (eq #\( char)
+            (eq #\{ char))
+        (when (eq #\{ char)
+          (push #\{ curly-stack))
+        (incf index))
+       ((eq #\. char)
         (incf index)
-        (setf char (char-at source index))
-        (when (equal "0" num)
+        (when (and (eq #\. (char-at source index))
+                   (eq #\. (char-at source (1+ index))))
+          (incf index 2)
+          (setf str "...")))
+       ((eq #\} char)
+        (incf index)
+        (pop curly-stack))
+       ((or (eq #\) char)
+            (eq #\; char)
+            (eq #\, char)
+            (eq #\[ char)
+            (eq #\] char)
+            (eq #\: char)
+            (eq #\? char)
+            (eq #\~ char))
+        (incf index))
+       (t (setf str (substring source index (+ 4 index)))
           (cond
-           ((or (eq #\x char) (eq #\X char))
-            (incf index)
-            (return-from scan-numeric-literal (scan-hex-literal scanner start)))
-           ((or (eq #\b char) (eq #\B char))
-            (incf index)
-            (return-from scan-numeric-literal (scan-binary-literal scanner start)))
-           ((or (eq #\o char) (eq #\O char))
-            (incf index)
-            (return-from scan-numeric-literal (scan-octal-literal scanner char start)))
-           ((and (octal-digit-p char) (implicit-octal-literal-p scanner))
-            (return-from scan-numeric-literal (scan-octal-literal scanner char start)))))
-        (loop while (decimal-digit-p (char-at source index))
-              do (setf num (concatenate 'string num (string (char-at source index))))
-              do (incf index)
-              finally (setf char (char-at source index))))
-      (when (eq #\. char)
-        (setf num (concatenate 'string num (string (char-at source index))))
-        (incf index)
-        (loop while (decimal-digit-p (char-at source index))
-              do (setf num (concatenate 'string num (string (char-at source index))))
-              do (incf index)
-              finally (setf char (char-at source index))))
-      (when (or (eq #\e char) (eq #\E char))
-        (setf num (concatenate 'string num (string (char-at source index))))
-        (incf index)
-        (setf char (char-at source index))
-        (when (or (eq #\+ char) (eq #\- char))
-          (setf num (concatenate 'string num (string (char-at source index))))
-          (incf index))
-        (if (decimal-digit-p (char-at source index))
-            (loop while (decimal-digit-p (char-at source index))
-                  do (setf num (concatenate 'string num (string (char-at source index))))
-                  do (incf index)
-                  finally (setf char (char-at source index)))
-          (scanner-throw-unexpected-token scanner)))
-      (when (identifier-start-p (char-at source index))
+           ((equal ">>>=" str) (incf index 4))
+           (t (setf str (substring str 0 3))
+              (cond
+               ((or (equal "===" str) (equal "!==" str) (equal ">>>" str)
+                    (equal "<<=" str) (equal ">>=" str) (equal "**=" str))
+                (incf index 3))
+               (t (setf str (substring str 0 2))
+                  (cond
+                   ((or (equal "&&" str) (equal "||" str) (equal "==" str) (equal "!=" str)
+                        (equal "+=" str)  (equal "-=" str) (equal "*=" str) (equal "/=" str)
+                        (equal "++" str) (equal "--" str) (equal "<<" str) (equal ">>" str)
+                        (equal "&=" str) (equal "|=" str) (equal "^=" str) (equal "%=" str)
+                        (equal "<=" str) (equal ">=" str) (equal "=>" str) (equal "**" str))
+                    (incf index 2))
+                   (t (setf str (string (char-at source index)))
+                      (when (search str "<>=!+-*%&|^/")
+                        (incf index))))))))))
+      (when (= index start)
         (scanner-throw-unexpected-token scanner))
-      (make-instance 'numeric-literal
-                     :value num
+      (make-instance 'punctuator
+                     :value str
                      :line-number line-number
                      :line-start line-start
                      :start start
@@ -447,92 +464,135 @@
               ((not (octal-digit-p char)) (return t)))
           finally (return t))))
 
-;; ttps://tc39.github.io/ecma262/#sec-comments
-(defun scan-comments (scanner)
+(defun scan-numeric-literal (scanner)
   (with-slots (index source line-number line-start) scanner
-    (let ((start (= 0 index)))
-      (loop while (not (eof-p scanner))
-            for char = (char-at source index)
-            do (cond
-                ((whitespace-p char) (incf index))
-                ((line-terminator-p char)
-                 (incf index)
-                 (when (and (eq #\Return char)
-                            (eq #\Newline (char-at source index)))
-                   (incf index))
-                 (incf line-number)
-                 (setf line-start index
-                       start t))
-                ((eq #\/ char)
-                 (setf char (char-at source (1+ index)))
-                 (cond
-                  ((eq #\/ char)
-                   (incf index 2)
-                   (skip-single-line-comment scanner 2)
-                   (setf start t))
-                  ((eq #\* char)
-                   (incf index 2)
-                   (skip-multi-line-comment scanner))
-                  (t (return))))
-                ((and start (eq #\- char))
-                 (if (and (eq #\- (char-at source (+ index 1)))
-                          (eq #\> (char-at source (+ index 2))))
-                     (progn
-                       (incf index 3)
-                       (skip-single-line-comment scanner 4))
-                   (return)))
-                (t (return)))))))
+    (let ((start index)
+          (char (char-at source index))
+          (num ""))
+      (when (not (eq #\. char))
+        (setf num (string char))
+        (incf index)
+        (setf char (char-at source index))
+        (when (equal "0" num)
+          (cond
+           ((or (eq #\x char) (eq #\X char))
+            (incf index)
+            (return-from scan-numeric-literal (scan-hex-literal scanner start)))
+           ((or (eq #\b char) (eq #\B char))
+            (incf index)
+            (return-from scan-numeric-literal (scan-binary-literal scanner start)))
+           ((or (eq #\o char) (eq #\O char))
+            (incf index)
+            (return-from scan-numeric-literal (scan-octal-literal scanner char start)))
+           ((and (octal-digit-p char) (implicit-octal-literal-p scanner))
+            (return-from scan-numeric-literal (scan-octal-literal scanner char start)))))
+        (loop while (decimal-digit-p (char-at source index))
+              do (setf num (concatenate 'string num (string (char-at source index))))
+              do (incf index)
+              finally (setf char (char-at source index))))
+      (when (eq #\. char)
+        (setf num (concatenate 'string num (string (char-at source index))))
+        (incf index)
+        (loop while (decimal-digit-p (char-at source index))
+              do (setf num (concatenate 'string num (string (char-at source index))))
+              do (incf index)
+              finally (setf char (char-at source index))))
+      (when (or (eq #\e char) (eq #\E char))
+        (setf num (concatenate 'string num (string (char-at source index))))
+        (incf index)
+        (setf char (char-at source index))
+        (when (or (eq #\+ char) (eq #\- char))
+          (setf num (concatenate 'string num (string (char-at source index))))
+          (incf index))
+        (if (decimal-digit-p (char-at source index))
+            (loop while (decimal-digit-p (char-at source index))
+                  do (setf num (concatenate 'string num (string (char-at source index))))
+                  do (incf index)
+                  finally (setf char (char-at source index)))
+          (scanner-throw-unexpected-token scanner)))
+      (when (identifier-start-p (char-at source index))
+        (scanner-throw-unexpected-token scanner))
+      (make-instance 'numeric-literal
+                     :value num
+                     :line-number line-number
+                     :line-start line-start
+                     :start start
+                     :end index))))
 
-(defun skip-single-line-comment (scanner offset)
-  (with-slots (index source line-number line-start) scanner
-    (let ((start)
-          (loc))
-      (loop while (not (eof-p scanner))
+;; https://tc39.github.io/ecma262/#sec-literals-string-literals
+(defun scan-string-literal (scanner)
+  (with-slots (index source curly-stack line-number line-start) scanner
+    (let ((start index)
+          (quote (char-at source index)))
+      (incf index)
+      (loop with octal = nil
+            with str = ""
+            with ending = nil
+            while (not (eof-p scanner))
             for char = (char-at source index)
             do (incf index)
-            (when (line-terminator-p char)
-              (when (and (eq #\Return char)
-                         (eq #\Newline (char-at source index)))
-                (incf index))
-              (incf line-number)
-              (setf line-start index)
-              (return))))))
-
-(defun skip-multi-line-comment (scanner)
-  (with-slots (index source line-number line-start) scanner
-    (let ((start))
-      (loop while (not (eof-p scanner))
-            for char = (char-at source index)
             do (cond
-                ((line-terminator-p char)
-                 (when (and (eq #\Return char)
-                            (eq #\Newline (char-at source index)))
-                   (incf index))
-                 (incf line-number)
-                 (incf index)
-                 (setf line-start index))
-                ((eq #\* char)
-                 (when (eq #\/ (char-at source (1+ index)))
-                   (incf index 2)
-                   (return))
-                 (incf index))
-                (t (incf index))))
-      (tolerate-unexpected-token scanner))))
+                ((eq quote char) (setf ending t) (loop-finish))
+                ((eq #\\ char)
+                 (let ((char (char-at source index)))
+                   (incf index)
+                   (cond
+                    ((or (null char)
+                         (not (line-terminator-p char)))
+                     (cond
+                      ((eq #\u char)
+                       (cond
+                        ((eq #\{ (char-at source index))
+                         (incf index)
+                         (setf str (concatenate 'string str (scan-unicode-code-point-escape scanner))))
+                        (t (let ((unescaped (scan-hex-escape scanner char)))
+                             (unless unescaped
+                               (scanner-throw-unexpected-token scanner))
+                             (setf str (concatenate 'string str unescaped))))))
+                      ((eq #\x char)
+                       (let ((unescaped (scan-hex-escape scanner char)))
+                         (unless unescaped
+                           (scanner-throw-unexpected-token scanner))
+                         (setf str (concatenate 'string str unescaped))))
+                      ((eq #\n char) (setf str (concatenate 'string str (string #\Newline))))
+                      ((eq #\r char) (setf str (concatenate 'string str (string #\Return))))
+                      ((eq #\t char) (setf str (concatenate 'string str (string #\Tab))))
+                      ((eq #\b char) (setf str (concatenate 'string str (string #\Backspace))))
+                      ((eq #\f char) (setf str (concatenate 'string str (string #\Page))))
+                      ((eq #\v char) (setf str (concatenate 'string str (string #\VT))))
+                      ((or (eq #\8 char)
+                           (eq #\9 char))
+                       (setf str (concatenate 'string str (string char)))
+                       (tolerate-unexpected-token scanner))
+                      (t (cond
+                          ((and char (octal-digit-p char))
+                           )
+                          (t (setf str (concatenate 'string str (string char))))))))
+                    (t (incf line-number)
+                       (when (and (eq #\Return char)
+                                  (eq #\Newline (char-at source index)))
+                         (incf index))
+                       (setf line-start index)))))
+                ((line-terminator-p char) (loop-finish))
+                (t (setf str (concatenate 'string str (string char)))))
+            finally
+            (unless ending
+              (setf index start)
+              (scanner-throw-unexpected-token scanner))
+            (return (make-instance 'string-literal
+                                   :value str
+                                   :octal octal
+                                   :line-number line-number
+                                   :line-start line-start
+                                   :start start
+                                   :end index))))))
 
-(defun scan-reg-exp (scanner)
-  (with-slots (index line-number line-start) scanner
-    (let ((start index))
-      (let ((pattern (scan-reg-exp-body scanner))
-            (flags (scan-reg-exp-flags scanner)))
-        (let ((value (test-reg-exp scanner pattern flags)))
-          (make-instance 'reg-exp-literal
-                         :pattern pattern
-                         :flags flags
-                         :value value
-                         :line-number line-number
-                         :line-start line-start
-                         :start start
-                         :end index))))))
+(defun scan-template (scanner)
+  (with-slots (index source line-number line-start) scanner))
+
+(defun test-reg-exp (scanner pattern flags)
+  (declare (ignore scanner))
+  `(:pattern ,pattern :flags ,flags))
 
 (defun scan-reg-exp-body (scanner)
   (with-slots (index source line-number line-start) scanner
@@ -600,84 +660,17 @@
                     str (concatenate 'string str (string char)))))
       flags)))
 
-(defun test-reg-exp (scanner pattern flags)
-  `(:pattern ,pattern :flags ,flags))
-
-;; https://tc39.github.io/ecma262/#sec-future-reserved-words
-(defun future-reserved-word-p (id)
-  (member id '("enum" "export" "import" "super")
-          :test 'equal))
-
-(defun strict-mode-reserved-word-p (id)
-  (member id '("implements" "interface" "package" "private"
-               "protected" "public" "static" "yield" "let")
-          :test 'equal))
-
-(defun restricted-word-p (id)
-  (member id '("eval" "arguments") :test 'equal))
-
-;; https://tc39.github.io/ecma262/#sec-keywords
-(defun keyword-p (id)
-  (member id '("if" "in" "do"
-               "var" "for" "new" "try" "let"
-               "this" "else" "case" "void" "with" "enum"
-               "while" "break" "catch" "throw" "const" "yield"
-               "class" "super" "return" "typeof" "delete" "switch"
-               "export" "import" "default" "finally" "extends"
-               "function" "continue" "debugger" "instanceof")
-          :test 'equal))
-
-(defun scan-hex-escape (scanner prefix)
-  (with-slots (index source line-number line-start) scanner
-    (let ((len (if (eq #\u prefix) 4 2))
-          (code 0))
-      (loop repeat len
-            do (if (and (not (eof-p scanner))
-                        (hex-digit-p (char-at source index)))
-                   (setf code (+ (* code 16)
-                                 (hex-value (char-at source index)))
-                         index (1+ index))
-                 (return)))
-      (code-char code))))
-
-(defun hex-value (char)
-  (cl:position (char-downcase char) "0123456789abcdef"))
-
-(defun octal-value (char)
-  (cl:position char "01234567"))
-
-(defun scan-unicode-code-point-escape (scanner)
-  (with-slots (index source line-number line-start) scanner
-    (let ((char (char-at source index))
-          (code 0))
-      (when (eq #\} char)
-        (scanner-throw-unexpected-token scanner))
-      (loop while (not (eof-p scanner))
-         for char = (char-at source index)
-         do (incf index)
-         do (if (not (hex-digit-p char))
-                (return)
-                (setf code (+ (* code 16) (hex-value char)))))
-      (when (or (> code #x10FFFF) (not (eq #\} char)))
-        (scanner-throw-unexpected-token scanner))
-      (code-char code))))
-
-(defun octal-to-decimal (scanner char)
-  (with-slots (index source) scanner
-    (let ((octal (not (eq #\0 char)))
-          (code (octal-value char)))
-      (when (and (not (eof-p scanner))
-                 (octal-digit-p (char-at source index)))
-        (setf octal t
-              code (+ (* code 8)
-                      (octal-value (char-at source index)))
-              index (1+ index))
-        (when (and (>= (cl:position char "0123") 0)
-                   (not (eof-p scanner))
-                   (octal-digit-p (char-at source index)))
-          (setf code (+ (* code 8) (octal-value (char-at source index)))
-                index (1+ index))))
-      `(:code ,code :octal ,octal))))
-
-(defun scan-template (scanner)
-  (with-slots (index source line-number line-start) scanner))
+(defun scan-reg-exp (scanner)
+  (with-slots (index line-number line-start) scanner
+    (let ((start index))
+      (let ((pattern (scan-reg-exp-body scanner))
+            (flags (scan-reg-exp-flags scanner)))
+        (let ((value (test-reg-exp scanner pattern flags)))
+          (make-instance 'reg-exp-literal
+                         :pattern pattern
+                         :flags flags
+                         :value value
+                         :line-number line-number
+                         :line-start line-start
+                         :start start
+                         :end index))))))
