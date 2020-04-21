@@ -12,6 +12,7 @@
   :components ((:module "javascript"
                 :serial t
                 :components ((:file "package")
+                             (:file "utility")
                              (:file "estree")
                              (:file "character")
                              (:file "scanner")
