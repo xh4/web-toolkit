@@ -155,8 +155,7 @@
 (defmethod token-value ((string-literal string-literal))
   (literal-value string-literal))
 
-;; maybe rename it
-(defclass reg-exp-literal (token literal)
+(defclass regular-expression-literal (token literal)
   ((pattern
     :initarg :pattern
     :initform nil)
