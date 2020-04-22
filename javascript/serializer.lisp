@@ -15,6 +15,42 @@
 
 (defgeneric serialize (object &optional stream))
 
+(defparameter *serialize-pretty* t)
+
+(defparameter *serialize-indent* 0)
+
+(defparameter *serialize-offset* 0)
+
+(defun write-indentation (stream)
+  (when *serialize-pretty*
+    (loop repeat *serialize-indent*
+          do (loop repeat 4
+                   do (write-whitespace stream))
+          finally (loop repeat *serialize-offset*
+                        do (write-whitespace stream)))))
+
+(defun write-newline (stream)
+  (when *serialize-pretty*
+    (write-char #\Newline stream)))
+
+(defun write-whitespace (stream &optional force)
+  (if force
+      (write-char #\space stream)
+    (when *serialize-pretty*
+      (write-char #\space stream))))
+
+(defmacro with-indent (&body body)
+  `(progn
+     (incf *serialize-indent*)
+     (unwind-protect
+         (progn
+           ,@body)
+       (decf *serialize-indent*))))
+
+(defmacro with-offset (offset &body body)
+  `(let ((*serialize-offset* ,offset))
+     ,@body))
+
 (define-serialize-method string (stream)
   (format stream "~A" string))
 
@@ -28,7 +64,7 @@
   (format stream "~A" (literal-value boolean-literal)))
 
 (define-serialize-method null-literal (stream)
-  (format stream "null"))
+  (write-string "null" stream))
 
 (define-serialize-method numeric-literal (stream)
   (format stream "~A" (literal-value numeric-literal)))
@@ -36,8 +72,8 @@
 (define-serialize-method string-literal (stream)
   (format stream "~S" (literal-value string-literal)))
 
-(define-serialize-method reg-exp-literal (stream)
-  (with-slots (pattern flags) reg-exp-literal
+(define-serialize-method regular-expression-literal (stream)
+  (with-slots (pattern flags) regular-expression-literal
     (format stream "/~A/~A" pattern flags)))
 
 (define-serialize-method template-literal (stream)
@@ -52,256 +88,352 @@
 (define-serialize-method script (stream)
   (with-slots (body) script
     (loop for node in (ensure-list body)
-          do (serialize node stream))))
+          for first-p = t then nil
+          do (unless first-p
+               (write-newline stream)
+               (write-newline stream))
+          (serialize node stream))))
 
 (define-serialize-method function (stream))
 
 (define-serialize-method expression-statement (stream)
   (with-slots (expression) expression-statement
     (serialize expression stream)
-    (format stream ";")))
+    (write-char #\; stream)))
 
 (define-serialize-method block-statement (stream)
   (with-slots (body) block-statement
-    (format stream "{")
+    (write-char #\{ stream)
     (loop for node in (ensure-list body)
-          do (serialize node stream))
-    (format stream "}")))
+          do (write-newline stream)
+          (with-indent
+            (write-indentation stream)
+            (serialize node stream)))
+    (write-newline stream)
+    (write-indentation stream)
+    (write-char #\} stream)))
 
 (define-serialize-method empty-statement (stream)
-  (format stream ""))
+  (write-char #\; stream))
 
-(define-serialize-method debugger-statement (stream))
+(define-serialize-method debugger-statement (stream)
+  (write-string "debugger" stream)
+  (write-char #\; stream))
 
 (define-serialize-method with-statement (stream))
 
 (define-serialize-method return-statement (stream)
   (with-slots (argument) return-statement
-    (format stream "return")
+    (write-string "return" stream)
     (when argument
-      (format stream " ")
+      (write-whitespace stream t)
       (serialize argument stream))
-    (format stream ";")))
+    (write-char #\; stream)))
 
 (define-serialize-method labeled-statement (stream))
 
 (define-serialize-method break-statement (stream)
-  (format stream "break;"))
+  (with-slots (label) break-statement
+    (write-string "break" stream)
+    (when label
+      (write-whitespace stream t)
+      (serialize label stream))
+    (write-char #\; stream)))
 
 (define-serialize-method continue-statement (stream)
-  (format stream "continue;"))
+  (with-slots (label) continue-statement
+    (write-string "continue" stream)
+    (when label
+      (write-whitespace stream t)
+      (serialize label stream))
+    (write-char #\; stream)))
 
 (define-serialize-method if-statement (stream)
   (with-slots (test consequent alternate) if-statement
-    (format stream "if (")
+    (write-string "if" stream)
+    (write-whitespace stream)
+    (write-char #\( stream)
     (serialize test stream)
-    (format stream ")")
+    (write-char #\) stream)
+    (write-whitespace stream)
     (serialize consequent stream)
     (when alternate
-      (format stream "else")
+      (write-whitespace stream)
+      (write-string "else" stream)
+      (write-whitespace stream)
       (serialize alternate stream))))
 
 (define-serialize-method switch-statement (stream)
   (with-slots (discriminant cases) switch-statement
-    (format stream "switch ")
-    (format stream "(")
-    (serialize discriminant stream)
-    (format stream ")")
-    (format stream "{")
+    (write-string "switch" stream)
+    (write-whitespace stream)
+    (with-inline-parens (stream)
+      (serialize discriminant stream))
+    (write-char #\{ stream)
     (loop for case in cases
           do (serialize case stream))
-    (format stream "}")))
+    (write-char #\} stream)))
 
 (define-serialize-method switch-case (stream)
   (with-slots (test consequent) switch-case
     (if test
         (progn
-          (format stream "case ")
+          (write-string "case" stream)
+          (write-whitespace stream)
           (serialize test stream)
-          (format stream ":"))
-      (format stream "default:"))
+          (write-char #\: stream))
+      (progn
+        (write-string "default" stream)
+        (write-char #\: stream)))
     (loop for node in consequent
           do (serialize node stream))))
 
 (define-serialize-method throw-statement (stream)
   (with-slots (argument) throw-statement
-    (format stream "throw ")
+    (write-string "throw" stream)
+    (write-whitespace stream)
     (serialize argument stream)))
 
 (define-serialize-method try-statement (stream)
   (with-slots (block handler finalizer) try-statement
-    (format stream "try ")
+    (write-string "try" stream)
+    (write-whitespace stream)
     (serialize block stream)
     (when handler
       (serialize handler stream))
     (when finalizer
-      (format stream "finally ")
+      (write-string "finally" stream)
+      (write-whitespace stream)
       (serialize finalizer stream))))
 
 (define-serialize-method catch-clause (stream)
   (with-slots (param body) catch-clause
-    (format stream "catch ")
-    (format stream "(")
+    (write-whitespace stream)
+    (write-string "catch" stream)
+    (write-whitespace stream)
+    (write-char #\( stream)
     (serialize param stream)
-    (format stream ")")
+    (write-char #\) stream)
+    (write-whitespace stream)
     (serialize body stream)))
 
 (define-serialize-method while-statement (stream)
   (with-slots (test body) while-statement
-    (format stream "while ")
-    (format stream "(")
+    (write-string "while" stream)
+    (write-whitespace stream)
+    (write-char #\( stream)
     (serialize test stream)
-    (format stream ")")
+    (write-char #\) stream)
     (serialize body stream)))
 
 (define-serialize-method do-while-statement (stream)
   (with-slots (test body) do-while-statement
-    (format stream "do")
+    (write-string "do" stream)
+    (write-whitespace stream)
     (serialize body stream)
-    (format stream "while")
-    (format stream "(")
+    (write-whitespace stream)
+    (write-string "while" stream)
+    (write-whitespace stream)
+    (write-char #\( stream)
     (serialize test stream)
-    (format stream ")")))
+    (write-char #\) stream)))
 
 (define-serialize-method for-statement (stream)
   (with-slots (init test update body) for-statement
-    (format stream "for ")
-    (format stream "(")
+    (write-string "for" stream)
+    (write-whitespace stream)
+    (write-char #\( stream)
     (when init
       (serialize init stream))
-    ;; (format stream ";")
+    ;; (write-char #\; stream)
     (when test
       (serialize test stream))
-    (format stream ";")
+    (write-char #\; stream)
+    (write-whitespace stream)
     (when update
       (serialize update stream))
-    (format stream ")")
+    (write-char #\) stream)
     (serialize body stream)))
 
 (define-serialize-method for-in-statement (stream)
   (with-slots (left right body) for-in-statement
-    (format stream "for (")
+    (write-string "for" stream)
+    (write-whitespace stream)
+    (write-char #\( stream)
     (serialize left stream)
-    (format stream " in ")
+    (write-whitespace stream t)
+    (write-string "in" stream)
+    (write-whitespace stream t)
     (serialize right stream)
-    (format stream ")")
+    (write-char #\) stream)
     (serialize body stream)
-    (format stream ";")))
+    (write-char #\; stream)))
 
 (define-serialize-method for-of-statement (stream)
-  (with-slots (left right body) for-in-statement
-    (format stream "for (")
+  (with-slots (left right body) for-of-statement
+    (write-string "for" stream)
+    (write-whitespace stream)
+    (write-char #\( stream)
     (serialize left stream)
-    (format stream " of ")
+    (write-whitespace stream t)
+    (write-string "of" stream)
+    (write-whitespace stream t)
     (serialize right stream)
-    (format stream ")")
+    (write-char #\) stream)
     (serialize body stream)
-    (format stream ";")))
+    (write-char #\; stream)))
 
 (define-serialize-method function-declaration (stream)
   (with-slots (id params body generator async) function-declaration
-    (format stream "function (")
-    (loop for first-p = t then nil
-          for param in params
+    (write-string "function" stream)
+    (write-whitespace stream t)
+    (serialize id stream)
+    (write-char #\( stream)
+    (loop for param in params
+          for first-p = t then nil
           do (unless first-p
-               (format stream ", "))
+               (write-char #\, stream)
+               (write-whitespace stream))
           (serialize param stream))
-    (format stream ")")
+    (write-char #\) stream)
+    (write-whitespace stream)
     (serialize body stream)))
 
 (define-serialize-method variable-declaration (stream)
   (with-slots (declarations kind) variable-declaration
-    (format stream kind)
-    (format stream " ")
-    (loop for first-p = t then nil
-          for declaration in declarations
+    (write-string kind stream)
+    (write-whitespace stream t)
+    (loop for declaration in declarations
+          for first-p = t then nil
           do (unless first-p
-               (format stream ", "))
+               (write-char #\, stream)
+               (write-newline stream)
+               (with-offset (1+ (length kind))
+                 (write-indentation stream)))
           (serialize declaration stream))
-    (format stream ";")))
+    (write-char #\; stream)))
 
 (define-serialize-method variable-declarator (stream)
   (with-slots (id init) variable-declarator
     (serialize id stream)
     (when init
-      (format stream "=")
+      (write-whitespace stream)
+      (write-char #\= stream)
+      (write-whitespace stream)
       (serialize init stream))))
 
 (define-serialize-method super (stream)
-  (format stream "super;"))
+  (write-string "super" stream))
 
 (define-serialize-method this-expression (stream)
-  (format stream "this"))
+  (write-string "this" stream))
 
 (define-serialize-method array-expression (stream)
   (with-slots (elements) array-expression
-    (format stream "[")
-    (loop for first-p = t then nil
-          for element in elements
-          do (unless first-p
-               (format stream ","))
-          (serialize element stream))
-    (format stream "]")))
+    (write-char #\[ stream)
+    (when elements
+      (with-indent
+        (write-newline stream)
+        (write-indentation stream)
+        (loop for element in elements
+              for first-p = t then nil
+              do (unless first-p
+                   (write-char #\, stream)
+                   (write-whitespace stream))
+              (serialize element stream)))
+      (write-newline stream)
+      (write-indentation stream))    
+    (write-char #\] stream)))
 
 (define-serialize-method object-expression (stream)
   (with-slots (properties) object-expression
-    (format stream "{")
-    (loop for first-p = t then nil
-          for property in properties
-          do (unless first-p
-               (format stream ","))
-          (serialize property stream))
-    (format stream "}")))
+    (write-char #\{ stream)
+    (when properties
+      (with-indent
+        (write-newline stream)
+        (write-indentation stream)
+        (loop for property in properties
+              for first-p = t then nil
+              do (unless first-p
+                   (write-char #\, stream)
+                   (write-newline stream)
+                   (write-indentation stream))
+              (serialize property stream)))
+      (write-newline stream)
+      (write-indentation stream))
+    (write-char #\} stream)))
 
 (define-serialize-method property (stream)
   (with-slots (key value kind) property
     (serialize key stream)
-    (format stream ":")
+    (write-char #\: stream)
+    (write-whitespace stream)
     (serialize value stream)))
 
 (define-serialize-method function-expression (stream)
   (with-slots (params body generator async) function-expression
-    (format stream "function(")
+    (write-string "function" stream)
+    (write-whitespace stream)
+    (write-char #\( stream)
     (loop for first-p = t then nil
           for param in params
           do (unless first-p
-               (format stream ", "))
+               (write-char #\, stream)
+               (write-whitespace stream))
           (serialize param stream))
-    (format stream ")")
+    (write-char #\) stream)
+    (write-whitespace stream)
     (serialize body stream)))
 
 (define-serialize-method unary-expression (stream)
-  (with-slots (operator prefix argument) unary-expression
+  (with-slots (operator argument) unary-expression
     (serialize operator stream)
     (when (> (length operator) 1)
-      (format stream " "))
+      (write-whitespace stream))
     (serialize argument stream)))
 
 (define-serialize-method update-expression (stream)
-  (with-slots (operator prefix argument) update-expression
-    (serialize operator stream)
-    (serialize argument stream)))
+  (with-slots (prefix operator argument) update-expression
+    (if prefix
+        (progn
+          (serialize operator stream)
+          (serialize argument stream))
+      (progn
+        (serialize argument stream)
+        (serialize operator stream)))))
 
-;; paren
 (define-serialize-method binary-expression (stream)
   (with-slots (operator left right) binary-expression
-    (serialize left stream)
-    (format stream " ")
+    (if (and (typep left 'binary-expression)
+             (< (operator-precedence (slot-value left 'operator))
+                (operator-precedence operator)))
+        (progn
+          (write-char #\( stream)
+          (serialize left stream)
+          (write-char #\) stream))
+      (serialize left stream))
+    (if (member operator '("in" "instanceof") :test 'equal)
+        (write-whitespace stream t)
+      (write-whitespace stream))
     (serialize operator stream)
-    (format stream " ")
-    (serialize right stream)))
+    (if (member operator '("in" "instanceof") :test 'equal)
+        (write-whitespace stream t)
+      (write-whitespace stream))
+    (if (and (typep right 'binary-expression)
+             (< (operator-precedence (slot-value right 'operator))
+                (operator-precedence operator)))
+        (progn
+          (write-char #\( stream)
+          (serialize right stream)
+          (write-char #\) stream))
+      (serialize right stream))))
 
 (define-serialize-method assignment-expression (stream)
   (with-slots (operator left right) assignment-expression
     (serialize left stream)
+    (write-whitespace stream)
     (serialize operator stream)
-    (serialize right stream)))
-
-;; paren
-(define-serialize-method logical-expression (stream)
-  (with-slots (operator left right) logical-expression
-    (serialize left stream)
-    (serialize operator stream)
+    (write-whitespace stream)
     (serialize right stream)))
 
 (define-serialize-method member-expression (stream))
@@ -309,58 +441,67 @@
 (define-serialize-method computed-member-expression (stream)
   (with-slots (object property) computed-member-expression
     (serialize object stream)
-    (format stream "[")
+    (write-char #\[ stream)
     (serialize property stream)
-    (format stream "]")))
+    (write-char #\] stream)))
 
 (define-serialize-method static-member-expression (stream)
   (with-slots (object property) static-member-expression
     (serialize object stream)
-    (format stream ".")
+    (write-char #\. stream)
     (serialize property stream)))
 
 (define-serialize-method conditional-expression (stream)
   (with-slots (test consequent alternate) conditional-expression
     (serialize test stream)
-    (format stream " ? ")
+    (write-whitespace stream t)
+    (write-char #\? stream)
+    (write-whitespace stream t)
     (serialize consequent stream)
-    (format stream " : ")
+    (write-whitespace stream t)
+    (write-char #\: stream)
+    (write-whitespace stream t)
     (serialize alternate stream)))
 
 (define-serialize-method call-expression (stream)
   (with-slots (callee arguments) call-expression
     (serialize callee stream)
-    (format stream "(")
-    (loop for first-p = t then nil
-          for argument in arguments
+    (write-char #\( stream)
+    (loop for argument in arguments
+          for first-p = t then nil
           do (unless first-p
-               (format stream ", "))
+               (write-char #\, stream)
+               (write-whitespace stream))
           (serialize argument stream))
-    (format stream ")")))
+    (write-char #\) stream)))
 
+;; https://tc39.es/ecma262/#sec-new-operator
 (define-serialize-method new-expression (stream)
   (with-slots (callee arguments) new-expression
-    (format stream "new ")
+    (write-string "new" stream)
+    (write-whitespace stream t)
     (serialize callee stream)
+    (write-char #\( stream)
     (when arguments
-      (format stream "(")
-      (loop for first-p = t then nil
-            for argument in arguments
+      (loop for argument in arguments
+            for first-p = t then nil
             do (unless first-p
-                 (format stream ", ")
-                 (serialize argument stream)))
-      (format stream ")"))))
+                 (write-char #\, stream)
+                 (write-whitespace stream)
+                 (serialize argument stream))))
+    (write-char #\) stream)))
 
 (define-serialize-method sequence-expression (stream)
   (with-slots (expressions) sequence-expression
     (loop for first-p = t then nil
           for expression in expressions
           do (unless first-p
-               (format stream ", "))
+               (write-char #\, stream)
+               (write-whitespace stream))
           (serialize expression stream))))
 
 (define-serialize-method spread-element (stream)
-  (format stream "..."))
+  (write-string "..." stream))
 
 (define-serialize-method arrow-function-expression (stream))
 
