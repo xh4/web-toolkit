@@ -2050,7 +2050,7 @@
     (let ((statement))
       (typecase lookahead
         ((or boolean-literal null-literal numeric-literal
-             string-literal template-literal reg-exp-literal)
+             string-literal template-literal regular-expression-literal)
          (setf statement (parse-expression-statement parser)))
         (punctuator
          (switch ((token-value lookahead) :test 'equal)
