@@ -569,7 +569,17 @@
 
 (define-serialize-method object-pattern (stream))
 
-(define-serialize-method array-pattern (stream))
+(define-serialize-method array-pattern (stream)
+  (with-slots (elements) array-pattern
+    (write-char #\[ stream)
+    (loop for element in elements
+          for first-p = t then nil
+          do (unless first-p
+               (write-char #\, stream)
+               (write-whitespace stream))
+          (when element
+            (serialize element stream)))    
+    (write-char #\] stream)))
 
 (define-serialize-method rest-element (stream)
   (with-slots (argument) rest-element
