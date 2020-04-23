@@ -576,7 +576,14 @@
 
 (define-serialize-method await-expression (stream))
 
-(define-serialize-method yield-expression (stream))
+(define-serialize-method yield-expression (stream)
+  (with-slots (delegate argument) yield-expression
+    (write-string "yield" stream)
+    (when delegate
+      (write-char #\* stream))
+    (when argument
+      (write-whitespace stream t)
+      (serialize argument stream))))
 
 (define-serialize-method assignment-property (stream))
 
