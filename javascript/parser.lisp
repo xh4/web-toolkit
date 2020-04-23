@@ -31,7 +31,10 @@
     ("/" 11)
     ("%" 11)))
 
+
 (defstruct marker index line column)
+
+(defstruct arrow-parameter-placeholder params async)
 
 (defclass parser ()
   ((scanner
@@ -322,21 +325,21 @@
         (punctuator
          (let ((value (token-value lookahead)))
            (cond
-             ((equal "(" value)
-              (setf (getf context :binding-element-p) nil
-                    expression (inherit-cover-grammar parser 'parse-group-expression)))
-             ((equal "[" value)
-              (setf expression (inherit-cover-grammar parser 'parse-array-initializer)))
-             ((equal "{" value)
-              (setf expression (inherit-cover-grammar parser 'parse-object-initializer)))
-             ((or (equal "/" value)
-                  (equal "/=" value))
-              (setf (getf context :assignment-target-p) nil
-                    (getf context :binding-elemnt-p) nil
-                    (slot-value scanner 'index) (marker-index start-marker)
-                    token (next-regex-token parser)
-                    expression (finalize parser marker token)))
-             (t (throw-unexpected-token parser (next-token parser))))))
+            ((equal "(" value)
+             (setf (getf context :binding-element-p) nil
+                   expression (inherit-cover-grammar parser 'parse-group-expression)))
+            ((equal "[" value)
+             (setf expression (inherit-cover-grammar parser 'parse-array-initializer)))
+            ((equal "{" value)
+             (setf expression (inherit-cover-grammar parser 'parse-object-initializer)))
+            ((or (equal "/" value)
+                 (equal "/=" value))
+             (setf (getf context :assignment-target-p) nil
+                   (getf context :binding-elemnt-p) nil
+                   (slot-value scanner 'index) (marker-index start-marker)
+                   token (next-regex-token parser)
+                   expression (finalize parser marker token)))
+            (t (throw-unexpected-token parser (next-token parser))))))
         (keyword
          (cond
           ((and (not (getf context :strict))
@@ -650,9 +653,9 @@
             (next-token parser)
             (unless (match parser "=>")
               (expect parser "=>"))
-            (setf expression `(:type :arrow-parameter-placeholder
-                               :params nil
-                               :async nil)))
+            (setf expression (make-arrow-parameter-placeholder
+                              :params nil
+                              :async nil)))
         (let ((start-token lookahead)
               (params))
           (if (match parser "...")
@@ -661,9 +664,9 @@
                 (expect parser ")")
                 (unless (match parser "=>")
                   (expect parser "=>"))
-                (setf expression `(:type :arrow-parameter-placeholder
-                                   :params `(,expression)
-                                   :async nil)))
+                (setf expression (make-arrow-parameter-placeholder
+                                  :params `(,expression)
+                                  :async nil)))
             (let ((arrow))
               (setf (getf context :binding-element-p) t
                     expression (inherit-cover-grammar parser 'parse-assignment-expression))
@@ -681,9 +684,9 @@
                           (loop for expression in expressions
                                 do (reinterpret-expression-as-pattern expression))
                           (setf arrow t
-                                expression `(:type :arrow-parameter-placeholder
-                                             :params expressions
-                                             :async nil)))
+                                expression (make-arrow-parameter-placeholder
+                                            :params expressions
+                                            :async nil)))
                          ((match parser "...")
                           (unless (getf context :binding-element-p)
                             (throw-unexpected-token parser lookahead))
@@ -695,9 +698,9 @@
                           (loop for expression in expressions
                                 do (reinterpret-expression-as-pattern expression))
                           (setf arrow t
-                                expression `(:type :arrow-parameter-placeholder
-                                             :params expressions
-                                             :async nil)))
+                                expression (make-arrow-parameter-placeholder
+                                            :params expressions
+                                            :async nil)))
                          (t (appendf expressions (list (inherit-cover-grammar parser
                                                                               'parse-assignment-expression)))))
                         (when arrow (return)))
@@ -711,9 +714,9 @@
                   (when (and (typep expression 'identifier)
                              (equal "yield" (slot-value expression 'name)))
                     (setf arrow t
-                          expression `(:type :arrow-parameter-placeholder
-                                       :params `(,expression)
-                                       :async nil)))
+                          expression (make-arrow-parameter-placeholder
+                                      :params `(,expression)
+                                      :async nil)))
                   (unless arrow
                     (unless (getf context :binding-element-p)
                       (throw-unexpected-token parser lookahead))
@@ -724,9 +727,9 @@
                     (let ((parameters (if (typep expression 'sequence-expression)
                                           (slot-value expression 'expressions)
                                         `(,expression))))
-                      (setf expression `(:type :arrow-parameter-placeholder
-                                         :params ,parameters
-                                         :async nil)))))
+                      (setf expression (make-arrow-parameter-placeholder
+                                        :params parameters
+                                        :async nil)))))
                 (setf (getf context :binding-element-p) nil))))))
       expression)))
 
@@ -853,9 +856,9 @@
                (match parser "=>")
                (loop for i from 0 upto (1- (length arguments))
                      do (reinterpret-expression-as-pattern (nth i arguments)))
-               (setf expression `(:type :arrow-parameter-placeholder
-                                  :params ,arguments
-                                  :async t))))))
+               (setf expression (make-arrow-parameter-placeholder
+                                 :params arguments
+                                 :async t))))))
         ((match parser "[")
          (setf (getf context :binding-element-p) nil
                (getf context :assignment-target-p) t)
@@ -1146,10 +1149,9 @@
           (async-arrow-p))
       (cond
        ((typep expression 'identifier))
-       ((and (listp expression)
-             (eq :arrow-parameter-placeholder (getf expression :type)))
-        (setf params (getf expression :params)
-              async-arrow-p (getf expression :async))))
+       ((typep expression 'arrow-parameter-placeholder)
+        (setf params (arrow-parameter-placeholder-params expression)
+              async-arrow-p (arrow-parameter-placeholder-async expression))))
       (setf (getf options :simple) t
             (getf options :param-set) nil)
       (loop for param in params
@@ -1200,16 +1202,16 @@
                       (match-keyword parser "yield"))
               (let ((argument (parse-primary-expression parser)))
                 (reinterpret-expression-as-pattern argument)
-                (setf expression `(:type :arrow-parameter-placeholder
-                                   :params ,`(,argument)
-                                   :async t)))))
-          (if (or (and (typep expression 'list)
-                       (eq :arrow-parameter-placeholder (getf expression :type)))
+                (setf expression (make-arrow-parameter-placeholder
+                                  :params `(,argument)
+                                  :async t)))))
+          (if (or (typep expression 'arrow-parameter-placeholder)
                   (match parser "=>"))
               (progn
                 (setf (getf context :assignment-target-p) nil
                       (getf context :binding-element-p) nil)
-                (let ((async-p (getf expression :async))
+                (let ((async-p (and (arrow-parameter-placeholder-p expression)
+                                    (arrow-parameter-placeholder-async expression)))
                       (list (reinterpret-as-cover-formals-list parser expression)))
                   (when list
                     (when has-line-terminator-p
@@ -2799,14 +2801,14 @@
         (let ((declaration)
               (value (token-value lookahead)))
           (cond
-            ((or (equal "let" value)
-                 (equal "const" value))
-             (setf declaration (parse-lexical-declaration parser '(:in-for nil))))
-            ((or (equal "var" value)
-                 (equal "class" value)
-                 (equal "function" value))
-             (setf declaration (parse-statement-list-item parser)))
-            (t (throw-unexpected-token parser lookahead)))
+           ((or (equal "let" value)
+                (equal "const" value))
+            (setf declaration (parse-lexical-declaration parser '(:in-for nil))))
+           ((or (equal "var" value)
+                (equal "class" value)
+                (equal "function" value))
+            (setf declaration (parse-statement-list-item parser)))
+           (t (throw-unexpected-token parser lookahead)))
           (setf export-declaration (finalize parser marker
                                              (make-instance 'export-named-declaration
                                                             :declaration declaration)))))
