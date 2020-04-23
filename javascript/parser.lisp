@@ -1406,17 +1406,19 @@
     (expect parser "[")
     (let ((elements))
       (loop while (not (match parser "]"))
-            do (if (match parser ",")
-                   (progn
-                     (next-token parser)
-                     (appendf elements (list nil)))
-                 (if (match parser "...")
-                     (progn
-                       (appendf elements (list (parse-binding-rest-element parser params kind)))
-                       (return))
-                   (appendf elements (list (parse-pattern-with-default parser params kind)))))
-            (when (not (match parser "]"))
-              (expect parser ",")))
+            do
+            (if (match parser ",")
+                (progn
+                  (next-token parser)
+                  (appendf elements (list nil)))
+              (progn
+                (if (match parser "...")
+                    (progn
+                      (appendf elements (list (parse-binding-rest-element parser params kind)))
+                      (return))
+                  (appendf elements (list (parse-pattern-with-default parser params kind))))
+                (when (not (match parser "]"))
+                  (expect parser ",")))))
       (expect parser "]")
       (finalize parser marker (make-instance 'array-pattern :elements elements)))))
 
