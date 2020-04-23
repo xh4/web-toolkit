@@ -244,6 +244,7 @@
     (write-char #\( stream)
     (serialize test stream)
     (write-char #\) stream)
+    (write-whitespace stream)
     (serialize body stream)))
 
 (define-serialize-method do-while-statement (stream)
@@ -319,6 +320,7 @@
       (write-char #\* stream))
     (write-whitespace stream t)
     (serialize id stream)
+    (write-whitespace stream)
     (write-char #\( stream)
     (loop for param in params
           for first-p = t then nil
@@ -423,6 +425,7 @@
 (define-serialize-method function-expression (stream)
   (with-slots (params body generator async) function-expression
     (write-string "function" stream)
+    (write-whitespace stream)
     (write-char #\( stream)
     (loop for first-p = t then nil
           for param in params
