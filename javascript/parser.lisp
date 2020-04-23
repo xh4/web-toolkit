@@ -2543,7 +2543,7 @@
                      (property-key-p key "constructor"))
             (when (or (not (equal "method" kind))
                       (not method)
-                      (and value (getf value 'generator)))
+                      (and value (slot-value value 'generator)))
               (throw-unexpected-token parser token "some message"))
             (when (getf has-constructor :value)
               (throw-unexpected-token parser token "some message"))
@@ -2578,10 +2578,10 @@
           (previous-strict (getf context :strict)))
       (setf (getf context :strict) t)
       (expect-keyword parser "class")
-      (let ((id (and identifier-optional-p
-                     (if (typep lookahead 'identifier)
-                         nil
-                       (parse-variable-identifier parser))))
+      (let ((id (if (and identifier-optional-p
+                         (not (typep lookahead 'identifier)))
+                    nil
+                  (parse-variable-identifier parser)))
             (super-class))
         (when (match-keyword parser "extends")
           (next-token parser)
