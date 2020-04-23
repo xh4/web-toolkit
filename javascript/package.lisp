@@ -3,7 +3,7 @@
 (defpackage :javascript
   (:nicknames :js :wt.javascript :wt.js)
   (:use :cl :alexandria)
-  (:shadow :position :function :class :keyword :declaration)
+  (:shadow :position :function :class :keyword :declaration :method)
   (:export
    ;; tokenize
    :tokenize
