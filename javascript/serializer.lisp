@@ -544,8 +544,8 @@
             for first-p = t then nil
             do (unless first-p
                  (write-char #\, stream)
-                 (write-whitespace stream)
-                 (serialize argument stream))))
+                 (write-whitespace stream))
+            (serialize argument stream)))
     (write-char #\) stream)))
 
 (define-serialize-method sequence-expression (stream)
