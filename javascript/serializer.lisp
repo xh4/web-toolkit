@@ -516,7 +516,30 @@
 (define-serialize-method spread-element (stream)
   (write-string "..." stream))
 
-(define-serialize-method arrow-function-expression (stream))
+(define-serialize-method arrow-function-expression (stream)
+  (with-slots (params async body) arrow-function-expression
+    (when async
+      (write-string "async" stream)
+      (write-whitespace stream t))
+    (unless (= 1 (length params))
+        (write-char #\( stream))
+      (loop for param in params
+            for first-p = t then nil
+            do (unless first-p
+                 (write-char #\, stream)
+                 (write-whitespace stream))
+            (serialize param stream))
+      (unless (= 1 (length params))
+        (write-char #\) stream))
+    (write-whitespace stream t)
+    (write-string "=>" stream)
+    (write-whitespace stream t)
+    (if (typep body 'object-expression)
+        (progn
+          (write-char #\( stream)
+          (serialize body stream)
+          (write-char #\) stream))
+      (serialize body stream))))
 
 (define-serialize-method await-expression (stream))
 
