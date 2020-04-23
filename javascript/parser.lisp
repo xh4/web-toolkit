@@ -423,12 +423,12 @@
           (marker (create-marker parser))
           (previous-allow-yield (getf context :allow-yield)))
       (setf (getf context :allow-yield) t)
-      (let* ((params (parse-formal-parameters parser))
-             (method (parse-property-method parser params)))
+      (let* ((formal-parameters (parse-formal-parameters parser))
+             (method (parse-property-method parser formal-parameters)))
         (setf (getf context :allow-yield) previous-allow-yield)
         (finalize parser marker (make-instance 'function-expression
                                                :id nil
-                                               :params params
+                                               :params (getf formal-parameters :params)
                                                :body method
                                                :generator generator-p))))))
 
@@ -439,13 +439,13 @@
           (previous-await (getf context :await)))
       (setf (getf context :allow-yield) t
             (getf context :await) t)
-      (let* ((params (parse-formal-parameters parser))
-             (method (parse-property-method parser params)))
+      (let* ((formal-parameters (parse-formal-parameters parser))
+             (method (parse-property-method parser formal-parameters)))
         (setf (getf context :allow-yield) previous-allow-yield
               (getf context :await) previous-await)
         (finalize parser marker (make-instance 'async-function-expression
                                                :id nil
-                                               :params params
+                                               :params (getf formal-parameters :params)
                                                :body method))))))
 
 (defun parse-object-property-key (parser)
@@ -2370,13 +2370,13 @@
           (previous-allow-yield (getf context :allow-yield)))
       (setf (getf context :allow-yield) (not generator-p))
       (let ((formal-parameters (parse-formal-parameters parser)))
-        (when (> (length (slot-value formal-parameters 'params)) 0)
+        (when (> (length (getf formal-parameters :params)) 0)
           (tolerate-error parser "some message"))
         (let ((method (parse-property-method parser formal-parameters)))
           (setf (getf context :allow-yield) previous-allow-yield)
           (finalize parser marker (make-instance 'function-expression
                                                  :id nil
-                                                 :params (slot-value formal-parameters 'params)
+                                                 :params (getf formal-parameters :params)
                                                  :body method
                                                  :generator generator-p)))))))
 
@@ -2388,15 +2388,15 @@
       (setf (getf context :allow-yield) (not generator-p))
       (let ((formal-parameters (parse-formal-parameters parser)))
         (cond
-         ((not (= 1 (length (slot-value formal-parameters 'params))))
+         ((not (= 1 (length (getf formal-parameters :params))))
           (tolerate-error parser "some message"))
-         ((typep (first (slot-value formal-parameters 'params)) 'rest-element)
+         ((typep (first (getf formal-parameters :params)) 'rest-element)
           (tolerate-error parser "some message")))
         (let ((method (parse-property-method parser formal-parameters)))
           (setf (getf context :allow-yield) previous-allow-yield)
           (finalize parser marker (make-instance 'function-expression
                                                  :id nil
-                                                 :params (slot-value formal-parameters 'params)
+                                                 :params (getf formal-parameters :params)
                                                  :body method
                                                  :generator generator-p)))))))
 
@@ -2412,7 +2412,7 @@
           (setf (getf context :allow-yield) previous-allow-yield)
           (finalize parser marker (make-instance 'function-expression
                                                  :id nil
-                                                 :params (slot-value formal-parameters 'params)
+                                                 :params (getf formal-parameters :params)
                                                  :body method
                                                  :generator generator-p)))))))
 
