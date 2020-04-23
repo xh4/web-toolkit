@@ -531,7 +531,7 @@
           (setf kind "init"
                 computed (match parser "[")
                 key (parse-object-property-key parser)
-                value (parse-setter-method parser)
+                value (parse-generator-method parser)
                 method t))
          (t (unless key
               (throw-unexpected-token parser lookahead))
