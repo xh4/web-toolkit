@@ -424,7 +424,12 @@
 
 (define-serialize-method function-expression (stream)
   (with-slots (params body generator async) function-expression
+    (when async
+      (write-string "async" stream)
+      (write-whitespace stream t))
     (write-string "function" stream)
+    (when generator
+      (write-char #\* stream))
     (write-whitespace stream)
     (write-char #\( stream)
     (loop for first-p = t then nil
