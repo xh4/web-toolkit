@@ -514,7 +514,9 @@
           (serialize expression stream))))
 
 (define-serialize-method spread-element (stream)
-  (write-string "..." stream))
+  (with-slots (argument) spread-element
+    (write-string "..." stream)
+    (serialize argument stream)))
 
 (define-serialize-method arrow-function-expression (stream)
   (with-slots (params async body) arrow-function-expression
