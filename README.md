@@ -10,8 +10,6 @@ Object-Oriented Reactive Lisp Systems for Rapid Web Application Development
 
 ### Status
 
-[![Build Status](https://travis-ci.org/xh4/web-toolkit.svg?branch=master)](https://travis-ci.org/xh4/web-toolkit)
-
 **Layer 1**: (*Work in Progress*) Rich set of features for fundamental Web-related technologies
 
 HTTP, WebSocket, URI, JSON, DOM, HTML, CSS, JavaScript
