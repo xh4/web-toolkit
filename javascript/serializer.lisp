@@ -311,7 +311,12 @@
 
 (define-serialize-method function-declaration (stream)
   (with-slots (id params body generator async) function-declaration
+    (when async
+      (write-string "async" stream)
+      (write-whitespace stream t))
     (write-string "function" stream)
+    (when generator
+      (write-char #\* stream))
     (write-whitespace stream t)
     (serialize id stream)
     (write-char #\( stream)
