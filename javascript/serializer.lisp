@@ -551,7 +551,10 @@
 
 (define-serialize-method array-pattern (stream))
 
-(define-serialize-method rest-element (stream))
+(define-serialize-method rest-element (stream)
+  (with-slots (argument) rest-element
+    (write-string "..." stream)
+    (serialize argument stream)))
 
 (define-serialize-method assignment-pattern (stream)
   (with-slots (left right) assignment-pattern
