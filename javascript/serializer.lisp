@@ -1,17 +1,19 @@
 (in-package :javascript)
 
 (defmacro define-serialize-method (object (stream) &body body)
-  (unless (listp object) (setf object `(,object ,object)))
-  `(defmethod serialize (,object &optional ,stream)
-     (let ((string-stream-p (null ,stream)))
-       (when string-stream-p (setf ,stream (make-string-output-stream)))
-       ,@(if body
-             body
-           `((error "Serialize method for ~A not implemented" ',(if (listp object)
-                                                                    (second object)
-                                                                  object))))
-       (when string-stream-p
-         (get-output-stream-string ,stream)))))
+  (let ((object (if (listp object) (first object) object))
+        (specifier (if (listp object) object `(,object ,object))))
+    `(defmethod serialize (,specifier &optional ,stream)
+       (let ((string-stream-p (null ,stream))
+             (*serialize-stack* (cons ,object *serialize-stack*)))
+         (when string-stream-p (setf ,stream (make-string-output-stream)))
+         ,@(if body
+               body
+             `((error "Serialize method for ~A not implemented" ',(if (listp object)
+                                                                      (second object)
+                                                                    object))))
+         (when string-stream-p
+           (get-output-stream-string ,stream))))))
 
 (defgeneric serialize (object &optional stream))
 
@@ -20,6 +22,8 @@
 (defparameter *serialize-indent* 0)
 
 (defparameter *serialize-offset* 0)
+
+(defparameter *serialize-stack* '())
 
 (defun write-indentation (stream)
   (when *serialize-pretty*
@@ -327,7 +331,10 @@
                (with-offset (1+ (length kind))
                  (write-indentation stream)))
           (serialize declaration stream))
-    (write-char #\; stream)))
+    (unless (or (typep (second *serialize-stack*) 'for-statement)
+                (typep (second *serialize-stack*) 'for-of-statement)
+                (typep (second *serialize-stack*) 'for-in-statement))
+      (write-char #\; stream))))
 
 (define-serialize-method variable-declarator (stream)
   (with-slots (id init) variable-declarator
