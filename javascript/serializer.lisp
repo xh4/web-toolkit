@@ -382,7 +382,7 @@
 (define-serialize-method property (stream)
   (with-slots (key value kind method computed shorthand) property
     (if (or method
-            (not (equal "init" kind)))
+            (and kind (not (equal "init" kind))))
         (serialize (make-instance 'method-definition
                                   :key key
                                   :value value
@@ -567,7 +567,16 @@
 
 (define-serialize-method assignment-property (stream))
 
-(define-serialize-method object-pattern (stream))
+(define-serialize-method object-pattern (stream)
+  (with-slots (properties) object-pattern
+    (write-char #\{ stream)
+    (loop for property in properties
+          for first-p = t then nil
+          do (unless first-p
+               (write-char #\, stream)
+               (write-whitespace stream))
+          (serialize property stream))
+    (write-char #\} stream)))
 
 (define-serialize-method array-pattern (stream)
   (with-slots (elements) array-pattern
