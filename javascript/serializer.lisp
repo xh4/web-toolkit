@@ -175,12 +175,31 @@
     (serialize test stream)
     (write-char #\) stream)
     (write-whitespace stream)
-    (serialize consequent stream)
+    (if (typep consequent 'block-statement)
+        (serialize consequent stream)
+      (with-indent
+        (write-newline stream)
+        (write-indentation stream)
+        (serialize consequent stream)))
     (when alternate
-      (write-whitespace stream)
-      (write-string "else" stream)
-      (write-whitespace stream)
-      (serialize alternate stream))))
+      (if (and (typep consequent 'block-statement)
+               (typep alternate 'block-statement))
+          (progn
+            (write-whitespace stream)
+            (write-string "else" stream))
+        (progn
+          (write-newline stream)
+          (write-indentation stream)
+          (write-string "else" stream)))
+      (if (or (typep alternate 'block-statement)
+              (typep alternate 'if-statement))
+          (progn
+            (write-whitespace stream)
+            (serialize alternate stream))
+        (with-indent
+          (write-newline stream)
+          (write-indentation stream)
+          (serialize alternate stream))))))
 
 (define-serialize-method switch-statement (stream)
   (with-slots (discriminant cases) switch-statement
