@@ -265,14 +265,18 @@
     (write-char #\( stream)
     (when init
       (serialize init stream))
-    ;; (write-char #\; stream)
+    (write-char #\; stream)
+    (when test
+      (write-whitespace stream))
     (when test
       (serialize test stream))
     (write-char #\; stream)
-    (write-whitespace stream)
+    (when test
+      (write-whitespace stream))
     (when update
       (serialize update stream))
     (write-char #\) stream)
+    (write-whitespace stream)
     (serialize body stream)))
 
 (define-serialize-method for-in-statement (stream)
