@@ -1497,7 +1497,7 @@
           (setf (getf context :allow-yield) t)
           (let ((right (isolate-cover-grammar parser 'parse-assignment-expression)))
             (setf (getf context :allow-yield) previous-allow-yield
-                  pattern (finalize parser (start-marker parser start-token)
+                  pattern (finalize parser (start-marker start-token)
                                     (make-instance 'assignment-pattern
                                                    :left pattern
                                                    :right right))))))
