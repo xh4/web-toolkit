@@ -290,6 +290,7 @@
     (write-whitespace stream t)
     (serialize right stream)
     (write-char #\) stream)
+    (write-whitespace stream)
     (serialize body stream)
     (write-char #\; stream)))
 
@@ -304,6 +305,7 @@
     (write-whitespace stream t)
     (serialize right stream)
     (write-char #\) stream)
+    (write-whitespace stream)
     (serialize body stream)
     (write-char #\; stream)))
 
