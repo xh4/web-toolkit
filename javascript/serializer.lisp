@@ -62,8 +62,10 @@
 (define-serialize-method null-literal (stream)
   (write-string "null" stream))
 
+;; FIXME
 (define-serialize-method numeric-literal (stream)
-  (format stream "~A" (literal-value numeric-literal)))
+  (with-slots (octal) numeric-literal
+    (format stream "~A" (literal-value numeric-literal))))
 
 (define-serialize-method string-literal (stream)
   (format stream "~S" (literal-value string-literal)))
@@ -378,10 +380,16 @@
     (write-char #\} stream)))
 
 (define-serialize-method property (stream)
-  (with-slots (key value kind) property
-    (serialize key stream)
-    (write-char #\: stream)
-    (write-whitespace stream)
+  (with-slots (key value kind computed shorthand) property
+    (unless shorthand
+      (if computed
+          (progn
+            (write-char #\[ stream)
+            (serialize key stream)
+            (write-char #\] stream))
+        (serialize key stream))
+      (write-char #\: stream)
+      (write-whitespace stream))
     (serialize value stream)))
 
 (define-serialize-method function-expression (stream)
