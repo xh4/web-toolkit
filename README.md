@@ -16,11 +16,11 @@ Object-Oriented Reactive Lisp Systems for Rapid Web Application Development
 
 HTTP, WebSocket, URI, JSON, DOM, HTML, CSS, JavaScript
 
-**Layer 2**: (*Experimeltal*) Component abstraction and reactive behavior.
+**Layer 2**: (*Experimeltal*) Component abstraction and reactive behavior
 
 Component, Live
 
-**Layer 3**: (*Planning*) Integration with enterprise-class vendor libraries.
+**Layer 3**: (*Planning*) Integration with enterprise-class vendor libraries
 
 [Ant Design](https://ant.design/), [Ant Vision](https://antv.vision/en), ...
 
