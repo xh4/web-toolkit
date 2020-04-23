@@ -842,7 +842,9 @@
                                                      :object expression
                                                      :property property)))))
         ((match parser "(")
-         (let ((async-arrow (and maybe-async)))
+         (let ((async-arrow (and maybe-async
+                                 (= (slot-value start-token 'line-number)
+                                    (slot-value lookahead 'line-number)))))
            (setf (getf context :binding-element-p) nil
                  (getf context :assignment-target-p) nil)
            (let ((arguments (if async-arrow
@@ -852,8 +854,8 @@
                                         (make-instance 'call-expression
                                                        :callee expression
                                                        :arguments arguments)))
-             (when async-arrow
-               (match parser "=>")
+             (when (and async-arrow
+                        (match parser "=>"))
                (loop for i from 0 upto (1- (length arguments))
                      do (reinterpret-expression-as-pattern (nth i arguments)))
                (setf expression (make-arrow-parameter-placeholder
