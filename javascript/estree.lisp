@@ -155,7 +155,7 @@
 (defmethod token-value ((string-literal string-literal))
   (literal-value string-literal))
 
-(defclass regular-expression-literal (token literal)
+(defclass regular-expression-literal (token)
   ((pattern
     :initarg :pattern
     :initform nil)
@@ -163,8 +163,9 @@
     :initarg :flags
     :initform nil)))
 
-(defmethod token-value ((reg-exp-literal reg-exp-literal))
-  (literal-value reg-exp-literal))
+(defmethod token-value ((regular-expression-literal regular-expression-literal))
+  (with-slots (pattern flags) regular-expression-literal
+    (format nil "/~A/~A" pattern flags)))
 
 (defclass keyword (token)
   ((name

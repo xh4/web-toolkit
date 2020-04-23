@@ -40,12 +40,8 @@
       (write-char #\space stream))))
 
 (defmacro with-indent (&body body)
-  `(progn
-     (incf *serialize-indent*)
-     (unwind-protect
-         (progn
-           ,@body)
-       (decf *serialize-indent*))))
+  `(let ((*serialize-indent* (1+ *serialize-indent*)))
+     ,@body))
 
 (defmacro with-offset (offset &body body)
   `(let ((*serialize-offset* ,offset))
@@ -167,8 +163,9 @@
   (with-slots (discriminant cases) switch-statement
     (write-string "switch" stream)
     (write-whitespace stream)
-    (with-inline-parens (stream)
-      (serialize discriminant stream))
+    (write-char #\( stream)
+    (serialize discriminant stream)
+    (write-char #\) stream)
     (write-char #\{ stream)
     (loop for case in cases
           do (serialize case stream))
@@ -373,7 +370,6 @@
 (define-serialize-method function-expression (stream)
   (with-slots (params body generator async) function-expression
     (write-string "function" stream)
-    (write-whitespace stream)
     (write-char #\( stream)
     (loop for first-p = t then nil
           for param in params
