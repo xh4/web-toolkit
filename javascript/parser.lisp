@@ -584,12 +584,12 @@
 (defun parse-template-head (parser)
   (let* ((marker (create-marker parser))
          (token (next-token parser))
-         (raw (token-value token))
+         (raw (slot-value token 'raw))
          (cooked (slot-value token 'cooked)))
     (finalize parser marker (make-instance 'template-element
                                            :tail (slot-value token 'tail)
-                                           :value-cooked cooked
-                                           :value-raw raw))))
+                                           :cooked cooked
+                                           :raw raw))))
 
 (defun parse-template-element (parser)
   (with-slots (lookahead) parser
@@ -601,9 +601,10 @@
            (cooked (slot-value token 'cooked)))
       (finalize parser marker (make-instance 'template-element
                                              :tail (slot-value token 'tail)
-                                             :value-cooked cooked
-                                             :value-raw raw)))))
+                                             :cooked cooked
+                                             :raw raw)))))
 
+;; FIXME: quasis range incorrect
 (defun parse-template-literal (parser)
   (let ((marker (create-marker parser))
         (expressions)

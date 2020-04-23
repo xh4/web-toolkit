@@ -73,7 +73,24 @@
     (format stream "/~A/~A" pattern flags)))
 
 (define-serialize-method template-literal (stream)
-  (format stream "`~A`" (literal-value template-literal)))
+  (with-slots (quasis expressions) template-literal
+    (write-char #\` stream)
+    (loop for i from 0 upto (1- (length expressions))
+          for expression = (nth i expressions)
+          for quasi = (nth i quasis)
+          do (serialize quasi stream)
+          (write-char #\$ stream)
+          (write-char #\{ stream)
+          (serialize expression stream)
+          (write-char #\} stream))
+    (serialize (car (last quasis)) stream)
+    (write-char #\` stream)))
+
+(define-serialize-method template-element (stream)
+  (with-slots (raw) template-element
+    (serialize raw stream)))
+
+(define-serialize-method tagged-template-expression (stream))
 
 (define-serialize-method punctuator (stream)
   (format stream "~A" (punctuator-value punctuator)))
@@ -504,10 +521,6 @@
 (define-serialize-method await-expression (stream))
 
 (define-serialize-method yield-expression (stream))
-
-(define-serialize-method tagged-template-expression (stream))
-
-(define-serialize-method template-element (stream))
 
 (define-serialize-method assignment-property (stream))
 

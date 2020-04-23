@@ -587,6 +587,7 @@
                                    :start start
                                    :end index))))))
 
+;; FIXME: token range incorrect
 (defun scan-template (scanner)
   (with-slots (index source line-number line-start curly-stack) scanner
     (let* ((cooked "")
@@ -668,6 +669,7 @@
         (pop curly-stack))
       (make-instance 'template
                      :value (substring source (1+ start) (- index raw-offset))
+                     :raw (substring source (1+ start) (- index raw-offset))
                      :cooked cooked
                      :tail tail
                      :line-number line-number

@@ -627,11 +627,11 @@
   ((tail
     :initarg :tail
     :initform nil)
-   (value-cooked
-    :initarg :value-cooked
+   (cooked
+    :initarg :cooked
     :initform nil)
-   (value-raw
-    :initarg :value-raw
+   (raw
+    :initarg :raw
     :initform nil)))
 
 (defclass assignment-property (property)
