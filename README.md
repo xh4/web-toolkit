@@ -12,6 +12,18 @@ Object-Oriented Reactive Lisp Systems for Rapid Web Application Development
 
 [![Build Status](https://travis-ci.org/xh4/web-toolkit.svg?branch=master)](https://travis-ci.org/xh4/web-toolkit)
 
+**Layer 1**: (*Work in Progress*) Rich set of features for fundamental Web-related technologies
+
+HTTP, WebSocket, URI, JSON, DOM, HTML, CSS, JavaScript
+
+**Layer 2**: (*Experimeltal*) Component abstraction and reactive behavior.
+
+Component, Live
+
+**Layer 3**: (*Planning*) Integration with enterprise-class vendor libraries.
+
+[Ant Design](https://ant.design/), [Ant Vision](https://antv.vision/en), ...
+
 ### Systems
 
 #### [HTTP](https://lisp-web-toolkit.com/#http)
@@ -30,10 +42,10 @@ WT.JSON implements JSON encoder and decoder based on [ECMA-404 The JSON Data Int
 WT.URI provides URI parser, render and constructor with support for UTF-8 characters, IPv6 addresses and query parameters handling. It utilizes recursive descent [parser combinators](https://www.cs.nott.ac.uk/~pszgmh/monparsing.pdf) to provide a concise implementation that is close to the definition in [RFC 3986 Uniform Resource Identifier (URI): Generic Syntax](https://tools.ietf.org/html/rfc3986).
 
 #### [CSS](https://lisp-web-toolkit.com/#css)
-WT.CSS implements CSS constructor, tokenizer, parser and serializer based on specifications introduced in [CSS Snapshot 2018](https://www.w3.org/TR/css-2018/#css).
+WT.CSS implements CSS constructor, parser and serializer based on specifications introduced in [CSS Snapshot 2018](https://www.w3.org/TR/css-2018/#css).
 
 #### [JavaScript](https://lisp-web-toolkit.com/#javascript)
-WT.JAVASCRIPT implements JavaScript tokenizer, parser and serializer based on [ECMAScript 2016 Language Specification](https://www.ecma-international.org/ecma-262/7.0/) (ECMA-262 7th Edition) with support for [JSX](https://reactjs.org/docs/introducing-jsx.html) syntax extension.
+WT.JAVASCRIPT implements JavaScript parser and serializer based on [ECMAScript 2016 Language Specification](https://www.ecma-international.org/ecma-262/7.0/) (ECMA-262 7th Edition) with support for [JSX](https://reactjs.org/docs/introducing-jsx.html) syntax extension. It utilizes syntax tree components from the [ESTree](https://github.com/estree/estree) project.
 
 #### [DOM](https://lisp-web-toolkit.com/#dom)
 WT.DOM implements Document Object Model (DOM) based on recent version of [DOM Living Standard](https://dom.spec.whatwg.org/), it covers chapters on [Nodes](https://dom.spec.whatwg.org/#nodes) and [Traversal](https://dom.spec.whatwg.org/#traversal).
