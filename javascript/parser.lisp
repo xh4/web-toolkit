@@ -317,7 +317,7 @@
                (getf context :binding-elemnt-p) nil
                token (next-token parser)
                expression (finalize parser marker token)))
-        (template-literal
+        (template
          (setf expression (parse-template-literal parser)))
         (punctuator
          (let ((value (token-value lookahead)))
@@ -593,7 +593,7 @@
 
 (defun parse-template-element (parser)
   (with-slots (lookahead) parser
-    (unless (typep lookahead 'template-literal)
+    (unless (typep lookahead 'template)
       (throw-unexpected-token parser))
     (let* ((marker (create-marker parser))
            (token (next-token parser))
@@ -865,7 +865,7 @@
                                       (make-instance 'computed-member-expression
                                                      :object expression
                                                      :property property)))))
-        ((and (typep lookahead 'template-literal)
+        ((and (typep lookahead 'template)
               (slot-value lookahead 'head))
          (let ((quasi (parse-template-literal parser)))
            (setf expression (finalize parser (start-marker start-token)
@@ -916,7 +916,7 @@
                                       (make-instance 'static-member-expression
                                                      :object expression
                                                      :property property)))))
-        ((and (typep lookahead 'template-literal)
+        ((and (typep lookahead 'template)
               (slot-value lookahead 'head))
          (let ((quasi (parse-template-literal parser)))
            (setf expression (finalize parser marker
@@ -1871,7 +1871,7 @@
                                      (not has-line-terminator-p)
                                      (not (typep lookahead 'eof)))
                                 (typep lookahead 'string-literal)
-                                (typep lookahead 'template-literal))))
+                                (typep lookahead 'template))))
         (let ((argument (when has-argument-p
                           (parse-expression parser))))
           (consume-semicolon parser)
@@ -2052,7 +2052,7 @@
     (let ((statement))
       (typecase lookahead
         ((or boolean-literal null-literal numeric-literal
-             string-literal template-literal regular-expression-literal)
+             string-literal template regular-expression-literal)
          (setf statement (parse-expression-statement parser)))
         (punctuator
          (switch ((token-value lookahead) :test 'equal)

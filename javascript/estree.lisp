@@ -587,6 +587,26 @@
     :initarg :delegate
     :initform nil)))
 
+(defclass template (token)
+  ((raw
+    :initarg :raw
+    :initform nil)
+   (cooked
+    :initarg :cooked
+    :initform nil)
+   (value
+    :initarg :value
+    :initform nil)
+   (head
+    :initarg :head
+    :initform nil)
+   (tail
+    :initarg :tail
+    :initform nil)))
+
+(defmethod token-value ((template template))
+  (slot-value template 'raw))
+
 (defclass template-literal (expression)
   ((quasis
     :initarg :quasis

@@ -73,7 +73,7 @@
                         (scan-punctuator scanner)))
        ((decimal-digit-p char) (scan-numeric-literal scanner))
        ((or (eq #\` char)
-            (and (eq #\} char) (equal "${" (nth (1- (length curly-stack)) curly-stack))))
+            (and (eq #\} char) (equal "${" (first curly-stack))))
         (scan-template scanner))
        ((<= #xD800 (char-code char) #xDFFF) (if (identifier-start-p char)
                                                 (scan-identifier scanner)
@@ -588,7 +588,92 @@
                                    :end index))))))
 
 (defun scan-template (scanner)
-  (with-slots (index source line-number line-start) scanner))
+  (with-slots (index source line-number line-start curly-stack) scanner
+    (let* ((cooked "")
+           (terminated)
+           (start index)
+           (head (eq #\` (char-at source start)))
+           (tail)
+           (raw-offset 2))
+      (incf index)
+      (loop while (not (eof-p scanner))
+            for char = (char-at source index)
+            do (incf index)
+            (cond
+             ((eq #\` char)
+              (setf raw-offset 1
+                    tail t
+                    terminated t)
+              (return))
+             ((eq #\$ char)
+              (when (eq #\{ (char-at source index))
+                (push "${" curly-stack)
+                (incf index)
+                (setf terminated t)
+                (return))
+              (setf cooked (concatenate 'string cooked (string char))))
+             ((eq #\\ char)
+              (setf char (char-at source index)
+                    index (1+ index))
+              (if (not (line-terminator-p char))
+                  (case char
+                    (#\n (setf cooked (concatenate 'string cooked (string #\Newline))))
+                    (#\r (setf cooked (concatenate 'string cooked (string #\Return))))
+                    (#\t (setf cooked (concatenate 'string cooked (string #\Tab))))
+                    (#\u (if (eq #\{ (char-at source index))
+                             (setf index (1+ index)
+                                   cooked (concatenate 'string cooked
+                                                       (scan-unicode-code-point-escape scanner)))
+                           (let ((restore index)
+                                 (unescaped (scan-hex-escape scanner char)))
+                             (if unescaped
+                                 (setf cooked (concatenate 'string cooked
+                                                           (string unescaped)))
+                               (setf index restore
+                                     cooked (concatenate 'string cooked
+                                                         (string char)))))))
+                    (#\x (let ((unescaped (scan-hex-escape scanner char)))
+                           (unless unescaped
+                             (scanner-throw-unexpected-token scanner))
+                           (setf cooked (concatenate 'string cooked
+                                                     (string unescaped)))))
+                    (#\b (setf cooked (concatenate 'string cooked (string #\Backspace))))
+                    (#\f (setf cooked (concatenate 'string cooked (string #\Page))))
+                    (#\v (setf cooked (concatenate 'string cooked (string #\VT))))
+                    (t (cond
+                        ((eq #\0 char)
+                         (when (decimal-digit-p (char-at source index))
+                           (scanner-throw-unexpected-token scanner))
+                         (setf cooked (concatenate 'string cooked (string #\Null))))
+                        ((octal-digit-p char)
+                         (scanner-throw-unexpected-token scanner))
+                        (t (setf cooked (concatenate 'string cooked (string char)))))))
+                (progn
+                  (incf line-number)
+                  (when (and (eq #\Return char)
+                             (eq #\Newline (char-at source index)))
+                    (incf index))
+                  (setf line-start index))))
+             ((line-terminator-p char)
+              (incf line-number)
+              (when (and (eq #\Return char)
+                         (eq #\Newline (char-at source index)))
+                (incf index))
+              (setf line-start index)
+              (setf cooked (concatenate 'string cooked (string #\Newline))))
+             (t (setf cooked (concatenate 'string cooked (string char))))))
+      (unless terminated
+        (scanner-throw-unexpected-token scanner))
+      (unless head
+        (pop curly-stack))
+      (make-instance 'template
+                     :value (substring source (1+ start) (- index raw-offset))
+                     :cooked cooked
+                     :tail tail
+                     :line-number line-number
+                     :line-start line-start
+                     :start start
+                     :end index))))
 
 (defun test-reg-exp (scanner pattern flags)
   (declare (ignore scanner))
