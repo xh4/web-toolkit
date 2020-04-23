@@ -1467,7 +1467,7 @@
         (properties))
     (expect parser "{")
     (loop while (not (match parser "}"))
-          do (appendf properties (parse-property-pattern parser params kind))
+          do (appendf properties (list (parse-property-pattern parser params kind)))
           (unless (match parser "}")
             (expect parser ",")))
     (expect parser "}")
