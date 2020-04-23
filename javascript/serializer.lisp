@@ -553,7 +553,13 @@
 
 (define-serialize-method rest-element (stream))
 
-(define-serialize-method assignment-pattern (stream))
+(define-serialize-method assignment-pattern (stream)
+  (with-slots (left right) assignment-pattern
+    (serialize left stream)
+    (write-whitespace stream)
+    (write-char #\= stream)
+    (write-whitespace stream)
+    (serialize right stream)))
 
 (define-serialize-method class (stream))
 
