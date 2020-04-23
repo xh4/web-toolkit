@@ -380,17 +380,27 @@
     (write-char #\} stream)))
 
 (define-serialize-method property (stream)
-  (with-slots (key value kind computed shorthand) property
-    (unless shorthand
-      (if computed
-          (progn
-            (write-char #\[ stream)
-            (serialize key stream)
-            (write-char #\] stream))
-        (serialize key stream))
-      (write-char #\: stream)
-      (write-whitespace stream))
-    (serialize value stream)))
+  (with-slots (key value kind method computed shorthand) property
+    (if (or method
+            (not (equal "init" kind)))
+        (serialize (make-instance 'method-definition
+                                  :key key
+                                  :value value
+                                  :computed computed
+                                  :kind kind
+                                  :static nil)
+                   stream)
+        (progn
+          (unless shorthand
+            (if computed
+                (progn
+                  (write-char #\[ stream)
+                  (serialize key stream)
+                  (write-char #\] stream))
+              (serialize key stream))
+            (write-char #\: stream)
+            (write-whitespace stream))
+          (serialize value stream)))))
 
 (define-serialize-method function-expression (stream)
   (with-slots (params body generator async) function-expression
@@ -578,7 +588,36 @@
 
 (define-serialize-method class-body (stream))
 
-(define-serialize-method method-definition (stream))
+(define-serialize-method method-definition (stream)
+  (with-slots (key value kind computed static) method-definition
+    (when static
+      (write-string "static" stream)
+      (write-whitespace stream t))
+    (when (or (equal "get" kind)
+              (equal "set" kind))
+      (write-string kind stream)
+      (write-whitespace stream t))
+    (when (slot-value value 'async)
+      (write-string "async" stream)
+      (write-whitespace stream t))
+    (when (slot-value value 'generator)
+      (write-string "*" stream))
+    (if computed
+        (progn
+          (write-char #\[ stream)
+          (serialize key stream)
+          (write-char #\] stream))
+      (serialize key stream))
+    (write-char #\( stream)
+    (loop for param in (slot-value value 'params)
+          for first-p = t then nil
+          do (unless first-p
+               (write-char #\, stream)
+               (write-whitespace stream))
+          (serialize param stream))
+    (write-char #\) stream)
+    (write-whitespace stream)
+    (serialize (slot-value value 'body) stream)))
 
 (define-serialize-method class-declaration (stream))
 
