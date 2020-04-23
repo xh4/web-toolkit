@@ -2420,12 +2420,22 @@
 
 (defun start-of-expression-p (parser)
   (with-slots (lookahead) parser
-    (member (token-value lookahead)
-            '("[" "(" "{" "+" "-" "!" "~"
-              "++" "--" "/" "/="
-              "class" "delete" "function"
-              "let" "new" "super" "this" "typeof"
-              "void" "yield"))))
+    (let ((start t))
+      (typecase lookahead
+        (punctuator
+         (setf start
+               (member (token-value lookahead)
+                       '("[" "(" "{" "+" "-" "!" "~"
+                         "++" "--" "/" "/=")
+                       :test 'equal)))
+        (keyword
+         (setf start
+               (member (token-value lookahead)
+                       '("class" "delete" "function"
+                         "let" "new" "super" "this" "typeof"
+                         "void" "yield")
+                       :test 'equal))))
+      start)))
 
 (defun parse-yield-expression (parser)
   (with-slots (context has-line-terminator-p) parser
