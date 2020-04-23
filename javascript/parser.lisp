@@ -2626,7 +2626,7 @@
   (with-slots (lookahead) parser
     (let ((marker (create-marker parser)))
       (when (typep lookahead 'string-literal)
-        (throw-error parser "some message"))
+        (throw-error "some message"))
       (let* ((token (next-token parser)))
         (finalize parser marker token)))))
 
