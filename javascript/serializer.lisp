@@ -657,7 +657,18 @@
 
 (define-serialize-method class (stream))
 
-(define-serialize-method class-body (stream))
+(define-serialize-method class-body (stream)
+  (with-slots (body) class-body
+    (write-char #\{ stream)
+    (with-indent
+      (loop for node in body
+            do
+            (write-newline stream)
+            (write-indentation stream)
+            (serialize node stream)))
+    (write-newline stream)
+    (write-indentation stream)
+    (write-char #\} stream)))
 
 (define-serialize-method method-definition (stream)
   (with-slots (key value kind computed static) method-definition
@@ -690,7 +701,19 @@
     (write-whitespace stream)
     (serialize (slot-value value 'body) stream)))
 
-(define-serialize-method class-declaration (stream))
+(define-serialize-method class-declaration (stream)
+  (with-slots (id super-class body) class-declaration
+    (write-string "class" stream)
+    (write-whitespace stream t)
+    (when id
+      (serialize id stream)
+      (write-whitespace stream t))
+    (when super-class
+      (write-string "extends" stream)
+      (write-whitespace stream t)
+      (serialize super-class stream)
+      (write-whitespace stream t))
+    (serialize body stream)))
 
 (define-serialize-method class-expression (stream))
 
