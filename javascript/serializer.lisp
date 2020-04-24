@@ -72,7 +72,31 @@
     (format stream "~A" (literal-value numeric-literal))))
 
 (define-serialize-method string-literal (stream)
-  (format stream "~S" (literal-value string-literal)))
+  (write-char #\" stream)
+  (loop for char across (literal-value string-literal)
+        do (case char
+             (#\"
+              (write-char #\\ stream)
+              (write-char char stream))
+             (#\Newline
+              (write-char #\\ stream)
+              (write-char #\n stream))
+             (#\Return
+              (write-char #\\ stream)
+              (write-char #\r stream))
+             (#\Tab
+              (write-char #\\ stream)
+              (write-char #\t stream))
+             (#\Backspace
+              (write-char #\\ stream)
+              (write-char #\b stream))
+             (#\Page
+              (write-char #\\ stream)
+              (write-char #\f stream))
+             (#\VT
+              (write-char #\\ stream)
+              (write-char #\v stream))))
+  (write-char #\" stream))
 
 (define-serialize-method regular-expression-literal (stream)
   (with-slots (pattern flags) regular-expression-literal
@@ -470,7 +494,13 @@
     (serialize operator stream)
     (when (> (length operator) 1)
       (write-whitespace stream))
-    (serialize argument stream)))
+    (if (or (typep argument 'assignment-expression)
+            (typep argument 'binary-expression))
+        (progn
+          (write-char #\( stream)
+          (serialize argument stream)
+          (write-char #\) stream))
+      (serialize argument stream))))
 
 (define-serialize-method update-expression (stream)
   (with-slots (prefix operator argument) update-expression
@@ -522,14 +552,34 @@
 
 (define-serialize-method computed-member-expression (stream)
   (with-slots (object property) computed-member-expression
-    (serialize object stream)
+    (if (not (or (typep object 'member-expression)
+                 (typep object 'call-expression)
+                 (typep object 'new-expression)))
+        (progn
+          (write-char #\( stream)
+          (serialize object stream)
+          (write-char #\) stream))
+      (serialize object stream))
     (write-char #\[ stream)
-    (serialize property stream)
+    (if (or (typep property 'literal)
+            (typep property 'identifier))
+        (serialize property stream)
+      (progn
+        (write-char #\( stream)
+        (serialize property stream)
+        (write-char #\) stream)))
     (write-char #\] stream)))
 
 (define-serialize-method static-member-expression (stream)
   (with-slots (object property) static-member-expression
-    (serialize object stream)
+    (if (not (or (typep object 'member-expression)
+                 (typep object 'call-expression)
+                 (typep object 'new-expression)))
+        (progn
+          (write-char #\( stream)
+          (serialize object stream)
+          (write-char #\) stream))
+      (serialize object stream))
     (write-char #\. stream)
     (serialize property stream)))
 
