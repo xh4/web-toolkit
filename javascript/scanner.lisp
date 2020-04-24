@@ -569,7 +569,12 @@
                        (scanner-tolerate-unexpected-token scanner))
                       (t (cond
                           ((and char (octal-digit-p char))
-                           )
+                           (let ((result (octal-to-decimal scanner char)))
+                             (setf octal (or (getf result :octal) octal)
+                                   str (concatenate 'string str
+                                                    (string
+                                                     (code-char
+                                                      (getf result :code)))))))
                           (t (setf str (concatenate 'string str (string char))))))))
                     (t (incf line-number)
                        (when (and (eq #\Return char)
