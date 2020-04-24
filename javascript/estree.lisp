@@ -226,7 +226,6 @@
     :initarg :expression
     :initform nil)))
 
-;; used?
 (defclass directive (node)
   ((expression
     :initarg :expression
