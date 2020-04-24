@@ -392,7 +392,7 @@
         (scanner-throw-unexpected-token scanner))
       ;; TODO: parse number
       (make-instance 'numeric-literal
-                     :value num
+                     :value (concatenate 'string "0x" num)
                      :line-number line-number
                      :line-start line-start
                      :start start
@@ -418,7 +418,7 @@
           (scanner-throw-unexpected-token scanner)))
       ;; TODO: parse number
       (make-instance 'numeric-literal
-                     :value num
+                     :value (concatenate 'string "0b" num)
                      :line-number line-number
                      :line-start line-start
                      :start start
@@ -428,16 +428,16 @@
   (with-slots (index source line-number line-start) scanner
     (let ((num "")
           (octal nil))
-      (if (octal-digit-p (char-at prefix 0))
+      (if (octal-digit-p prefix)
           (setf octal t
                 num (concatenate 'string "0" (string (char-at source index)))
                 index (1+ index))
         (incf index))
       (loop while (not (eof-p scanner))
-            do (if (octal-digit-p (char-at source index))
-                   (return)
-                 (setf num (concatenate 'string num (string (char-at source index)))
-                       index (1+ index))))
+            do (unless (octal-digit-p (char-at source index))
+                 (return))
+            (setf num (concatenate 'string num (string (char-at source index)))
+                  index (1+ index)))
       (when (and (not octal)
                  (= 0 (length num)))
         (scanner-throw-unexpected-token scanner))
@@ -446,7 +446,9 @@
         (scanner-throw-unexpected-token scanner))
       ;; TODO: parse number
       (make-instance'numeric-literal
-                    :value num
+                    :value (if (eq #\o prefix)
+                               (concatenate 'string "0o" num)
+                             num)
                     :octal octal
                     :line-number line-number
                     :line-start line-start
@@ -482,9 +484,10 @@
             (incf index)
             (return-from scan-numeric-literal (scan-binary-literal scanner start)))
            ((or (eq #\o char) (eq #\O char))
-            (incf index)
             (return-from scan-numeric-literal (scan-octal-literal scanner char start)))
-           ((and (octal-digit-p char) (implicit-octal-literal-p scanner))
+           ((and char
+                 (octal-digit-p char)
+                 (implicit-octal-literal-p scanner))
             (return-from scan-numeric-literal (scan-octal-literal scanner char start)))))
         (loop while (decimal-digit-p (char-at source index))
               do (setf num (concatenate 'string num (string (char-at source index))))
