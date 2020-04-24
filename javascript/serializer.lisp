@@ -120,6 +120,10 @@
     (serialize expression stream)
     (write-char #\; stream)))
 
+(define-serialize-method directive (stream)
+  (with-slots (directive) directive
+    (format stream "'~A'" directive)))
+
 (define-serialize-method block-statement (stream)
   (with-slots (body) block-statement
     (write-char #\{ stream)
@@ -397,7 +401,7 @@
                    (write-whitespace stream))
               (serialize element stream)))
       (write-newline stream)
-      (write-indentation stream))    
+      (write-indentation stream))
     (write-char #\] stream)))
 
 (define-serialize-method object-expression (stream)
@@ -639,7 +643,7 @@
                (write-char #\, stream)
                (write-whitespace stream))
           (when element
-            (serialize element stream)))    
+            (serialize element stream)))
     (write-char #\] stream)))
 
 (define-serialize-method rest-element (stream)
