@@ -122,7 +122,7 @@
 
 (define-serialize-method directive (stream)
   (with-slots (directive) directive
-    (format stream "'~A'" directive)))
+    (format stream "'~A';" directive)))
 
 (define-serialize-method block-statement (stream)
   (with-slots (body) block-statement
