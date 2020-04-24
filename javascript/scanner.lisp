@@ -112,7 +112,7 @@
                  (return))
                (incf index))
               (t (incf index))))
-    (tolerate-unexpected-token scanner)))
+    (scanner-tolerate-unexpected-token scanner)))
 
 ;; ttps://tc39.github.io/ecma262/#sec-comments
 (defun scan-comments (scanner)
@@ -184,7 +184,7 @@
                    (setf code (+ (* code 16)
                                  (hex-value (char-at source index)))
                          index (1+ index))
-                 (return)))
+                 (return-from scan-hex-escape)))
       (code-char code))))
 
 (defun scan-unicode-code-point-escape (scanner)
@@ -274,7 +274,7 @@
               code (+ (* code 8)
                       (octal-value (char-at source index)))
               index (1+ index))
-        (when (and (>= (cl:position char "0123") 0)
+        (when (and (cl:position char "0123")
                    (not (eof-p scanner))
                    (octal-digit-p (char-at source index)))
           (setf code (+ (* code 8) (octal-value (char-at source index)))
@@ -301,7 +301,7 @@
                    (not (= (+ start (length id)) index)))
           (let ((restore index))
             (setf index start)
-            (tolerate-unexpected-token scanner)
+            (scanner-tolerate-unexpected-token scanner)
             (setf index restore)))
         (case type
           ((identifier keyword)
@@ -544,16 +544,17 @@
                        (cond
                         ((eq #\{ (char-at source index))
                          (incf index)
-                         (setf str (concatenate 'string str (scan-unicode-code-point-escape scanner))))
+                         (setf str (concatenate 'string str
+                                                (string (scan-unicode-code-point-escape scanner)))))
                         (t (let ((unescaped (scan-hex-escape scanner char)))
                              (unless unescaped
                                (scanner-throw-unexpected-token scanner))
-                             (setf str (concatenate 'string str unescaped))))))
+                             (setf str (concatenate 'string str (string unescaped)))))))
                       ((eq #\x char)
                        (let ((unescaped (scan-hex-escape scanner char)))
                          (unless unescaped
                            (scanner-throw-unexpected-token scanner))
-                         (setf str (concatenate 'string str unescaped))))
+                         (setf str (concatenate 'string str (string unescaped)))))
                       ((eq #\n char) (setf str (concatenate 'string str (string #\Newline))))
                       ((eq #\r char) (setf str (concatenate 'string str (string #\Return))))
                       ((eq #\t char) (setf str (concatenate 'string str (string #\Tab))))
@@ -563,7 +564,7 @@
                       ((or (eq #\8 char)
                            (eq #\9 char))
                        (setf str (concatenate 'string str (string char)))
-                       (tolerate-unexpected-token scanner))
+                       (scanner-tolerate-unexpected-token scanner))
                       (t (cond
                           ((and char (octal-digit-p char))
                            )
@@ -624,7 +625,7 @@
                     (#\u (if (eq #\{ (char-at source index))
                              (setf index (1+ index)
                                    cooked (concatenate 'string cooked
-                                                       (scan-unicode-code-point-escape scanner)))
+                                                       (string (scan-unicode-code-point-escape scanner))))
                            (let ((restore index)
                                  (unescaped (scan-hex-escape scanner char)))
                              (if unescaped
@@ -739,10 +740,10 @@
                                 (setf index restore
                                       flags (concatenate 'string flags (string #\u))
                                       str (concatenate 'string str "\\u"))))
-                            (tolerate-unexpected-token scanner))))
+                            (scanner-tolerate-unexpected-token scanner))))
                     (progn
                       (setf str (concatenate 'string str "\\"))
-                      (tolerate-unexpected-token scanner))))
+                      (scanner-tolerate-unexpected-token scanner))))
               (setf flags (concatenate 'string flags (string char))
                     str (concatenate 'string str (string char)))))
       flags)))
