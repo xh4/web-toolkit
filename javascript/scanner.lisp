@@ -753,12 +753,10 @@
     (let ((start index))
       (let ((pattern (scan-reg-exp-body scanner))
             (flags (scan-reg-exp-flags scanner)))
-        (let ((value (test-reg-exp scanner pattern flags)))
-          (make-instance 'regular-expression-literal
+        (make-instance 'regular-expression-literal
                          :pattern pattern
                          :flags flags
-                         :value value
                          :line-number line-number
                          :line-start line-start
                          :start start
-                         :end index))))))
+                         :end index)))))
