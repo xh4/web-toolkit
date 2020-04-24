@@ -484,9 +484,10 @@
 
 (define-serialize-method binary-expression (stream)
   (with-slots (operator left right) binary-expression
-    (if (and (typep left 'binary-expression)
-             (< (operator-precedence (slot-value left 'operator))
-                (operator-precedence operator)))
+    (if (or (and (typep left 'binary-expression)
+                 (< (operator-precedence (slot-value left 'operator))
+                    (operator-precedence operator)))
+            (typep left 'assignment-expression))
         (progn
           (write-char #\( stream)
           (serialize left stream)
@@ -499,9 +500,10 @@
     (if (member operator '("in" "instanceof") :test 'equal)
         (write-whitespace stream t)
       (write-whitespace stream))
-    (if (and (typep right 'binary-expression)
-             (< (operator-precedence (slot-value right 'operator))
-                (operator-precedence operator)))
+    (if (or (and (typep right 'binary-expression)
+                 (< (operator-precedence (slot-value right 'operator))
+                    (operator-precedence operator)))
+            (typep right 'assignment-expression))
         (progn
           (write-char #\( stream)
           (serialize right stream)
@@ -545,7 +547,12 @@
 
 (define-serialize-method call-expression (stream)
   (with-slots (callee arguments) call-expression
-    (serialize callee stream)
+    (if (typep callee 'function-expression)
+        (progn
+          (write-char #\( stream)
+          (serialize callee stream)
+          (write-char #\) stream))
+      (serialize callee stream))
     (write-char #\( stream)
     (loop for argument in arguments
           for first-p = t then nil
