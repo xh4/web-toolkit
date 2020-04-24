@@ -11,6 +11,7 @@
                :wt.dom
                :wt.html
                :wt.css
+               :wt.javascript
                ;; :wt.component
                ;; :wt.reactive
                ;; :wt.live
@@ -25,6 +26,7 @@
                :wt.dom/test
                :wt.html/test
                :wt.css/test
+               :wt.javascript/test
                ;; :wt.component/test
                ;; :wt.reactive/test
                ;; :wt.live/test
@@ -38,6 +40,7 @@
                     (uiop:symbol-call :test :run! :dom-test)
                     (uiop:symbol-call :test :run! :html-test)
                     (uiop:symbol-call :test :run! :css-test)
+                    (uiop:symbol-call :test :run! :javascript-test)
                     ;; (uiop:symbol-call :test :run! :component-test)
                     ;; (uiop:symbol-call :test :run! :reactive-test)
                     ;; (uiop:symbol-call :test :run! :live-test)
