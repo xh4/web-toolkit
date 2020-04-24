@@ -83,13 +83,25 @@
   (:method ((property property))
     (declaration-name property)))
 
+(defgeneric (setf property-name) (name property)
+  (:method (name (property property))
+    (setf (declaration-name property) name)))
+
 (defgeneric property-value (property)
   (:method ((property property))
     (declaration-value property)))
 
+(defgeneric (setf property-value) (value property)
+  (:method (value (property property))
+    (setf (declaration-value property) value)))
+
 (defgeneric property-important (property)
   (:method ((property property))
     (declaration-important property)))
+
+(defgeneric (setf property-important) (important property)
+  (:method (important (property property))
+    (setf (declaration-important property) important)))
 
 (defmethod initialize-instance :after ((property property) &key)
   (check-type (property-name property) string)

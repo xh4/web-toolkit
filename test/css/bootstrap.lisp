@@ -13,12 +13,12 @@
 
   (defun bootstrap-rules ()
     (let ((source (get-bootstrap)))
-      (parse-list-of-rules source)))
+      (parse-rules source)))
 
   (defun bootstrap-declarations ()
     (loop for rule in (bootstrap-rules)
           when (typep rule 'qualified-rule)
-          append (parse-list-of-declarations (rule-block rule)))))
+          append (parse-declarations (rule-block rule)))))
 
 (defmacro test-bootstrap ()
   `(progn
