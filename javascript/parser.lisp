@@ -2342,7 +2342,7 @@
            (return))
          (let ((statement (parse-directive parser)))
            (appendf body (list statement))
-           (let ((directive (slot-value 'statement 'directive)))
+           (let ((directive (slot-value statement 'directive)))
              (unless (typep directive 'string)
                (return))
              (cond
