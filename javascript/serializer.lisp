@@ -74,28 +74,37 @@
 (define-serialize-method string-literal (stream)
   (write-char #\" stream)
   (loop for char across (literal-value string-literal)
-        do (case char
-             (#\"
+        do (cond
+             ((eq #\" char)
               (write-char #\\ stream)
               (write-char char stream))
-             (#\Newline
+             ((eq #\Newline char)
               (write-char #\\ stream)
               (write-char #\n stream))
-             (#\Return
+             ((eq #\Return char)
               (write-char #\\ stream)
               (write-char #\r stream))
-             (#\Tab
+             ((eq #\Tab char)
               (write-char #\\ stream)
               (write-char #\t stream))
-             (#\Backspace
+             ((eq #\Backspace char)
               (write-char #\\ stream)
               (write-char #\b stream))
-             (#\Page
+             ((eq #\Page char)
               (write-char #\\ stream)
               (write-char #\f stream))
-             (#\VT
+             ((eq #\VT char)
               (write-char #\\ stream)
-              (write-char #\v stream))))
+              (write-char #\v stream))
+             ((eq #\Null char)
+              (write-char #\\ stream)
+              (write-char #\0 stream))
+             ((eq #\\ char)
+              (write-char #\\ stream)
+              (write-char #\\ stream))
+             ((char<= #\U+00BF char #\U+FFFF)
+              (format stream "\\u~X" (char-code char)))
+             (t (write-char char stream))))
   (write-char #\" stream))
 
 (define-serialize-method regular-expression-literal (stream)
@@ -259,7 +268,8 @@
   (with-slots (argument) throw-statement
     (write-string "throw" stream)
     (write-whitespace stream)
-    (serialize argument stream)))
+    (serialize argument stream)
+    (write-char #\; stream)))
 
 (define-serialize-method try-statement (stream)
   (with-slots (block handler finalizer) try-statement
@@ -470,13 +480,16 @@
           (serialize value stream)))))
 
 (define-serialize-method function-expression (stream)
-  (with-slots (params body generator async) function-expression
+  (with-slots (id params body generator async) function-expression
     (when async
       (write-string "async" stream)
       (write-whitespace stream t))
     (write-string "function" stream)
     (when generator
       (write-char #\* stream))
+    (when id
+      (write-whitespace stream t)
+      (serialize id stream))
     (write-whitespace stream)
     (write-char #\( stream)
     (loop for first-p = t then nil
@@ -495,7 +508,8 @@
     (when (> (length operator) 1)
       (write-whitespace stream))
     (if (or (typep argument 'assignment-expression)
-            (typep argument 'binary-expression))
+            (typep argument 'binary-expression)
+            (typep argument 'conditional-expression))
         (progn
           (write-char #\( stream)
           (serialize argument stream)
@@ -517,7 +531,8 @@
     (if (or (and (typep left 'binary-expression)
                  (< (operator-precedence (slot-value left 'operator))
                     (operator-precedence operator)))
-            (typep left 'assignment-expression))
+            (typep left 'assignment-expression)
+            (typep left 'conditional-expression))
         (progn
           (write-char #\( stream)
           (serialize left stream)
@@ -533,7 +548,8 @@
     (if (or (and (typep right 'binary-expression)
                  (< (operator-precedence (slot-value right 'operator))
                     (operator-precedence operator)))
-            (typep right 'assignment-expression))
+            (typep right 'assignment-expression)
+            (typep right 'conditional-expression))
         (progn
           (write-char #\( stream)
           (serialize right stream)
@@ -552,9 +568,10 @@
 
 (define-serialize-method computed-member-expression (stream)
   (with-slots (object property) computed-member-expression
-    (if (not (or (typep object 'member-expression)
-                 (typep object 'call-expression)
-                 (typep object 'new-expression)))
+    (if (or (typep object 'binary-expression)
+            (typep object 'unary-expression)
+            (typep object 'assignment-expression)
+            (typep object 'conditional-expression))
         (progn
           (write-char #\( stream)
           (serialize object stream)
@@ -572,9 +589,10 @@
 
 (define-serialize-method static-member-expression (stream)
   (with-slots (object property) static-member-expression
-    (if (not (or (typep object 'member-expression)
-                 (typep object 'call-expression)
-                 (typep object 'new-expression)))
+    (if (or (typep object 'binary-expression)
+            (typep object 'unary-expression)
+            (typep object 'assignment-expression)
+            (typep object 'conditional-expression))
         (progn
           (write-char #\( stream)
           (serialize object stream)
