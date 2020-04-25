@@ -349,8 +349,7 @@
     (serialize right stream)
     (write-char #\) stream)
     (write-whitespace stream)
-    (serialize body stream)
-    (write-char #\; stream)))
+    (serialize body stream)))
 
 (define-serialize-method for-of-statement (stream)
   (with-slots (left right body) for-of-statement
@@ -364,8 +363,7 @@
     (serialize right stream)
     (write-char #\) stream)
     (write-whitespace stream)
-    (serialize body stream)
-    (write-char #\; stream)))
+    (serialize body stream)))
 
 (define-serialize-method function-declaration (stream)
   (with-slots (id params body generator async) function-declaration
@@ -529,8 +527,8 @@
 (define-serialize-method binary-expression (stream)
   (with-slots (operator left right) binary-expression
     (if (or (and (typep left 'binary-expression)
-                 (< (operator-precedence (slot-value left 'operator))
-                    (operator-precedence operator)))
+                 (<= (operator-precedence (slot-value left 'operator))
+                     (operator-precedence operator)))
             (typep left 'assignment-expression)
             (typep left 'conditional-expression))
         (progn
@@ -546,8 +544,8 @@
         (write-whitespace stream t)
       (write-whitespace stream))
     (if (or (and (typep right 'binary-expression)
-                 (< (operator-precedence (slot-value right 'operator))
-                    (operator-precedence operator)))
+                 (<= (operator-precedence (slot-value right 'operator))
+                     (operator-precedence operator)))
             (typep right 'assignment-expression)
             (typep right 'conditional-expression))
         (progn
@@ -615,7 +613,9 @@
 
 (define-serialize-method call-expression (stream)
   (with-slots (callee arguments) call-expression
-    (if (typep callee 'function-expression)
+    (if (or (typep callee 'function-expression)
+            (typep callee 'binary-expression)
+            (typep callee 'conditional-expression))
         (progn
           (write-char #\( stream)
           (serialize callee stream)
