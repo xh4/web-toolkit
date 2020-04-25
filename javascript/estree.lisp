@@ -1,4 +1,4 @@
-(in-package :javascript)
+(in-package :estree)
 
 ;; https://github.com/estree/estree/blob/master/es5.md
 
@@ -302,8 +302,8 @@
 
 (defclass switch-case (node)
   ((test
-    :initarg :test
-    :initform nil)
+     :initarg :test
+     :initform nil)
    (consequent
     :initarg :consequent
     :initform nil)))
@@ -315,8 +315,8 @@
 
 (defclass try-statement (statement)
   ((block
-    :initarg :block
-    :initform nil)
+       :initarg :block
+     :initform nil)
    (handler
     :initarg :handler
     :initform nil)
@@ -334,16 +334,16 @@
 
 (defclass while-statement (statement)
   ((test
-    :initarg :test
-    :initform nil)
+     :initarg :test
+     :initform nil)
    (body
     :initarg :body
     :initform nil)))
 
 (defclass do-while-statement (statement)
   ((test
-    :initarg :test
-    :initform nil)
+     :initarg :test
+     :initform nil)
    (body
     :initarg :body
     :initform nil)))
@@ -353,8 +353,8 @@
     :initarg :init
     :initform nil)
    (test
-    :initarg :test
-    :initform nil)
+     :initarg :test
+     :initform nil)
    (update
     :initarg :update
     :initform nil)
@@ -530,8 +530,8 @@
 
 (defclass conditional-expression (expression)
   ((test
-    :initarg :test
-    :initform nil)
+     :initarg :test
+     :initform nil)
    (consequent
     :initarg :consequent
     :initform nil)

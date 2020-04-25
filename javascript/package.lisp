@@ -1,18 +1,180 @@
 (in-package :cl-user)
 
-(defpackage :javascript
-  (:nicknames :js :wt.javascript :wt.js)
+(defpackage :estree
   (:use :cl :alexandria)
-  (:shadow :position :function :class :keyword :declaration :method)
+  (:shadow :position :function :class :keyword :declaration :method :block)
   (:export
-   ;; syntax
    :node
-   ;; tokenize
-   :tokenize
-   ;; parse
-   :parse
-   ;; serialize
-   :serialize)
+   :source-location
+   :position
+   :token
+   :token-value
+   :eof
+   :identifier
+   :literal
+   :boolean-literal
+   :null-literal
+   :numeric-literal
+   :string-literal
+   :regular-expression-literal
+   :keyword
+   :punctuator
+   :program
+   :module
+   :script
+   :function
+   :statement
+   :expression-statement
+   :directive
+   :block-statement
+   :function-body
+   :empty-statement
+   :debugger-statement
+   :with-statement
+   :return-statement
+   :labeled-statement
+   :break-statement
+   :continue-statement
+   :if-statement
+   :switch-statement
+   :switch-case
+   :throw-statement
+   :try-statement
+   :catch-clause
+   :while-statement
+   :do-while-statement
+   :for-statement
+   :for-in-statement
+   :for-of-statement
+   :declaration
+   :function-declaration
+   :async-function-declaration
+   :variable-declaration
+   :variable-declarator
+   :super
+   :expression
+   :this-expression
+   :array-expression
+   :object-expression
+   :property
+   :function-expression
+   :unary-expression
+   :update-expression
+   :binary-expression
+   :assignment-expression
+   :logical-expression
+   :member-expression
+   :computed-member-expression
+   :static-member-expression
+   :conditional-expression
+   :call-expression
+   :new-expression
+   :sequence-expression
+   :spread-element
+   :arrow-function-expression
+   :await-expression
+   :yield-expression
+   :template
+   :template-literal
+   :tagged-template-expression
+   :template-element
+   :assignment-property
+   :pattern
+   :object-pattern
+   :array-pattern
+   :rest-element
+   :assignment-pattern
+   :class
+   :class-body
+   :method-definition
+   :class-declaration
+   :class-expression
+   :meta-property
+   :module-declaration
+   :module-specifier
+   :import-declaration
+   :import-specifier
+   :import-default-specifier
+   :import-namespace-specifier
+   :export-named-declaration
+   :export-specifier
+   :export-default-declaration
+   :export-all-declaration
+   :anonymous-default-exported-function-declaration
+   :anonymous-default-exported-class-declaration
+   ;; slots
+   :location
+   :range
+   :source
+   :start
+   :end
+   :line
+   :column
+   :line-number
+   :line-start
+   :name
+   :value
+   :octal
+   :pattern
+   :flags
+   :source-type
+   :body
+   :id
+   :params
+   :generator
+   :async
+   :object
+   :label
+   :test
+   :consequent
+   :alternate
+   :discriminant
+   :cases
+   :argument
+   :arguments
+   :block
+   :handler
+   :finalizer
+   :param
+   :init
+   :update
+   :left
+   :right
+   :kind
+   :declarations
+   :elements
+   :properties
+   :key
+   :method
+   :shorthand
+   :computed
+   :operator
+   :prefix
+   :callee
+   :expressions
+   :delegate
+   :raw
+   :cooked
+   :head
+   :tail
+   :quasis
+   :tag
+   :super-class
+   :static
+   :meta
+   :specifiers
+   :imported
+   :exported)
   (:import-from :closer-mop
                 :class-slots
                 :slot-definition-name))
+
+(defpackage :javascript
+  (:nicknames :js :wt.javascript :wt.js)
+  (:use :cl :estree :alexandria)
+  (:shadowing-import-from :estree
+   :position :function :class :keyword :declaration :method :block)
+  (:export
+   :tokenize
+   :parse
+   :serialize))

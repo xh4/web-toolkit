@@ -55,13 +55,13 @@
   (format stream "~A" string))
 
 (define-serialize-method identifier (stream)
-  (format stream "~A" (identifier-name identifier)))
+  (format stream "~A" (slot-value identifier 'name)))
 
 (define-serialize-method keyword (stream)
-  (format stream "~A" (keyword-name keyword)))
+  (format stream "~A" (slot-value keyword 'value)))
 
 (define-serialize-method boolean-literal (stream)
-  (format stream "~A" (literal-value boolean-literal)))
+  (format stream "~A" (slot-value boolean-literal 'value)))
 
 (define-serialize-method null-literal (stream)
   (write-string "null" stream))
@@ -69,42 +69,42 @@
 ;; FIXME
 (define-serialize-method numeric-literal (stream)
   (with-slots (octal) numeric-literal
-    (format stream "~A" (literal-value numeric-literal))))
+    (format stream "~A" (slot-value numeric-literal 'value))))
 
 (define-serialize-method string-literal (stream)
   (write-char #\" stream)
-  (loop for char across (literal-value string-literal)
+  (loop for char across (slot-value string-literal 'value)
         do (cond
-             ((eq #\" char)
-              (write-char #\\ stream)
-              (write-char char stream))
-             ((eq #\Newline char)
-              (write-char #\\ stream)
-              (write-char #\n stream))
-             ((eq #\Return char)
-              (write-char #\\ stream)
-              (write-char #\r stream))
-             ((eq #\Tab char)
-              (write-char #\\ stream)
-              (write-char #\t stream))
-             ((eq #\Backspace char)
-              (write-char #\\ stream)
-              (write-char #\b stream))
-             ((eq #\Page char)
-              (write-char #\\ stream)
-              (write-char #\f stream))
-             ((eq #\VT char)
-              (write-char #\\ stream)
-              (write-char #\v stream))
-             ((eq #\Null char)
-              (write-char #\\ stream)
-              (write-char #\0 stream))
-             ((eq #\\ char)
-              (write-char #\\ stream)
-              (write-char #\\ stream))
-             ((char<= #\U+00BF char #\U+FFFF)
-              (format stream "\\u~X" (char-code char)))
-             (t (write-char char stream))))
+            ((eq #\" char)
+             (write-char #\\ stream)
+             (write-char char stream))
+            ((eq #\Newline char)
+             (write-char #\\ stream)
+             (write-char #\n stream))
+            ((eq #\Return char)
+             (write-char #\\ stream)
+             (write-char #\r stream))
+            ((eq #\Tab char)
+             (write-char #\\ stream)
+             (write-char #\t stream))
+            ((eq #\Backspace char)
+             (write-char #\\ stream)
+             (write-char #\b stream))
+            ((eq #\Page char)
+             (write-char #\\ stream)
+             (write-char #\f stream))
+            ((eq #\VT char)
+             (write-char #\\ stream)
+             (write-char #\v stream))
+            ((eq #\Null char)
+             (write-char #\\ stream)
+             (write-char #\0 stream))
+            ((eq #\\ char)
+             (write-char #\\ stream)
+             (write-char #\\ stream))
+            ((char<= #\U+00BF char #\U+FFFF)
+             (format stream "\\u~X" (char-code char)))
+            (t (write-char char stream))))
   (write-char #\" stream))
 
 (define-serialize-method regular-expression-literal (stream)
@@ -132,7 +132,7 @@
 (define-serialize-method tagged-template-expression (stream))
 
 (define-serialize-method punctuator (stream)
-  (format stream "~A" (punctuator-value punctuator)))
+  (format stream "~A" (slot-value punctuator 'value)))
 
 (define-serialize-method module (stream)
   (call-next-method))
@@ -465,17 +465,17 @@
                                   :kind kind
                                   :static nil)
                    stream)
-        (progn
-          (unless shorthand
-            (if computed
-                (progn
-                  (write-char #\[ stream)
-                  (serialize key stream)
-                  (write-char #\] stream))
-              (serialize key stream))
-            (write-char #\: stream)
-            (write-whitespace stream))
-          (serialize value stream)))))
+      (progn
+        (unless shorthand
+          (if computed
+              (progn
+                (write-char #\[ stream)
+                (serialize key stream)
+                (write-char #\] stream))
+            (serialize key stream))
+          (write-char #\: stream)
+          (write-whitespace stream))
+        (serialize value stream)))))
 
 (define-serialize-method function-expression (stream)
   (with-slots (id params body generator async) function-expression
@@ -666,15 +666,15 @@
       (write-string "async" stream)
       (write-whitespace stream t))
     (unless (= 1 (length params))
-        (write-char #\( stream))
-      (loop for param in params
-            for first-p = t then nil
-            do (unless first-p
-                 (write-char #\, stream)
-                 (write-whitespace stream))
-            (serialize param stream))
-      (unless (= 1 (length params))
-        (write-char #\) stream))
+      (write-char #\( stream))
+    (loop for param in params
+          for first-p = t then nil
+          do (unless first-p
+               (write-char #\, stream)
+               (write-whitespace stream))
+          (serialize param stream))
+    (unless (= 1 (length params))
+      (write-char #\) stream))
     (write-whitespace stream t)
     (write-string "=>" stream)
     (write-whitespace stream t)

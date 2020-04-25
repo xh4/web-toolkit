@@ -19,7 +19,7 @@
        (format stream "Left: ~A~%" (type-of left))
        (format stream "Right: ~A~%" (type-of right))
        (when (typep left 'node)
-           (format stream "Location: ~A~%" (slot-value left 'js::location)))
+           (format stream "Location: ~A~%" (slot-value left 'location)))
        (format stream "Slot: ~A~%" slot)
        (format stream "~%~A" message)))))
 
@@ -34,8 +34,8 @@
     (loop for slot-name in left-slot-names
           for left-slot-value = (slot-value left slot-name)
           for right-slot-value = (slot-value right slot-name)
-          unless (member slot-name '(js::range js::location js::start js::end
-                                           js::line-number js::line-start))
+          unless (member slot-name '(range location start end
+                                           line-number line-start))
           do (cond
               ((and (typep left-slot-value 'node)
                     (typep right-slot-value 'node))
@@ -63,7 +63,8 @@
                                        left-slot-value right-slot-value))))))))
 
 (defun test-parse-and-serialize (source)
-  (let ((root-1 (parse source)))
+  (finishes
+   (let ((root-1 (parse source)))
     (let ((new-source (serialize root-1)))
       (let ((root-2 (parse new-source)))
-        (assert-node-equal root-1 root-2)))))
+        (assert-node-equal root-1 root-2))))))
