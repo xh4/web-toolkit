@@ -26,10 +26,12 @@
 
 (defsystem wt.javascript/test
   :depends-on (:wt.javascript
+               :wt.http
                :wt.test)
   :components ((:module "test/javascript"
                 :serial t
                 :components ((:file "package")
-                             (:file "scanner"))))
+                             (:file "helper")
+                             (:file "vendor"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :javascript-test)))

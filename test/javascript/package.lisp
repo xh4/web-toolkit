@@ -3,7 +3,10 @@
 (defpackage :javascript-test
   (:nicknames :js-test :wt.js-test :wt.javascript-test)
   (:use :cl :javascript :test)
-  (:export :run!))
+  (:export :run!)
+  (:import-from :closer-mop
+                :class-slots
+                :slot-definition-name))
 
 (in-package :javascript-test)
 (def-suite :javascript-test)
