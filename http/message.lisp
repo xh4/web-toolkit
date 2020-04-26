@@ -22,18 +22,23 @@
 
 (defgeneric read-message-body-into-vector (message)
   (:method ((message message))
-    (let ((stream (message-body message)))
-      (check-type stream cl:stream)
-      (let ((content-length (header-field-value
-                             (find-header-field "Content-Length" message))))
-        ;; TODO: read chunked stream
-        (unless content-length
-          (error "Missing content length when read message body into vector"))
-        (when content-length
-          (setf content-length (parse-integer content-length)))
-        (alexandria::read-stream-content-into-byte-vector
-         stream 'alexandria::%length content-length)))))
+   (let ((stream (message-body message)))
+     (check-type stream cl:stream)
+     (let ((content-length (header-field-value
+                            (find-header-field "Content-Length" message)))
+           (transfer-encoding (header-field-value
+                               (find-header-field "Transfer-Encoding" message))))
+       (if (search "chunked" transfer-encoding)
+           (setf stream (chunga:make-chunked-stream stream)
+                 (chunga:chunked-stream-input-chunking-p stream) t
+                 (message-body message) stream)
+         (if content-length
+             (setf content-length (parse-integer content-length))
+           (error "Missing content length when read message body into vector")))
+       (alexandria::read-stream-content-into-byte-vector
+        stream 'alexandria::%length content-length)))))
 
+;; TODO: chunked transfer encoding
 (defgeneric read-message-body-into-temporary-file (message)
   (:method ((message message))
     (let ((stream (message-body message)))
