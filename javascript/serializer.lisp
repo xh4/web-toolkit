@@ -51,6 +51,18 @@
   `(let ((*serialize-offset* ,offset))
      ,@body))
 
+(defun contain-assignment-expression-p (node)
+  (if (typep node 'assignment-expression)
+      t
+    (and (typep node 'expression)
+       (loop for slot in (class-slots (class-of node))
+             for slot-name = (slot-definition-name slot)
+             for slot-value = (slot-value node slot-name)
+             if (or (and (listp slot-value)
+                     (some #'contain-assignment-expression-p slot-value))
+                    (contain-assignment-expression-p slot-value))
+             do (return t)))))
+
 (define-serialize-method string (stream)
   (format stream "~A" string))
 
@@ -605,11 +617,21 @@
     (write-whitespace stream t)
     (write-char #\? stream)
     (write-whitespace stream t)
-    (serialize consequent stream)
+    (if (contain-assignment-expression-p consequent)
+        (progn
+          (write-char #\( stream)
+          (serialize consequent stream)
+          (write-char #\) stream))
+      (serialize consequent stream))
     (write-whitespace stream t)
     (write-char #\: stream)
     (write-whitespace stream t)
-    (serialize alternate stream)))
+    (if (contain-assignment-expression-p alternate)
+        (progn
+          (write-char #\( stream)
+          (serialize alternate stream)
+          (write-char #\) stream))
+      (serialize alternate stream))))
 
 (define-serialize-method call-expression (stream)
   (with-slots (callee arguments) call-expression

@@ -177,4 +177,7 @@
   (:export
    :tokenize
    :parse
-   :serialize))
+   :serialize)
+  (:import-from :closer-mop
+                :class-slots
+                :slot-definition-name))
