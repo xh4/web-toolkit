@@ -198,7 +198,11 @@
       (serialize argument stream))
     (write-char #\; stream)))
 
-(define-serialize-method labeled-statement (stream))
+(define-serialize-method labeled-statement (stream)
+  (with-slots (label body) labeled-statement
+    (serialize label stream)
+    (write-whitespace stream)
+    (serialize body stream)))
 
 (define-serialize-method break-statement (stream)
   (with-slots (label) break-statement
