@@ -1838,7 +1838,7 @@
           (let ((id (parse-variable-identifier parser)))
             (setf label id)
             (let ((key (format nil "$~A" (slot-value id 'name))))
-              (unless (getf (getf context :label-set) key)
+              (unless (find key (getf context :label-set) :test 'equal)
                 (throw-error parser "some message")))))
         (consume-semicolon parser)
         (when (and (null label)
@@ -1856,14 +1856,14 @@
                    (not has-line-terminator-p))
           (let ((id (parse-variable-identifier parser)))
             (let ((key (format nil "$~A" (slot-value id 'name))))
-              (unless (getf (getf context :label-set) key)
-                (throw-error parser "some message"))
+              (unless (find key (getf context :label-set) :test 'equal)
+                (throw-error "some message"))
               (setf label id))))
         (consume-semicolon parser)
         (when (and (null label)
                    (not (getf context :in-iteration))
                    (not (getf context :in-switch)))
-          (throw-error parser "some message"))
+          (throw-error "some message"))
         (finalize parser marker (make-instance 'break-statement
                                                :label label))))))
 
@@ -1967,9 +1967,9 @@
             (next-token parser)
             (let* ((id expression)
                    (key (format nil "$~A" (slot-value id 'name))))
-              (when (getf (getf context :label-set) key)
+              (when (find key (getf context :label-set) :test 'equal)
                 (throw-error parser "some message"))
-              (setf (getf (getf context :label-set) key) t)
+              (push key (getf context :label-set))
               (let ((body))
                 (cond
                  ((match-keyword parser "class")
@@ -1983,7 +1983,8 @@
                       (if (slot-value declaration 'generator)
                           (tolerate-unexpected-token parser token "some message")))))
                  (t (setf body (parse-statement parser))))
-                (setf (getf (getf context :label-set) key) nil)
+                (setf (getf context :label-set)
+                      (remove key (getf context :label-set) :test 'equal))
                 (setf statement (make-instance 'labeled-statement
                                                :label id
                                                :body body)))))
