@@ -201,6 +201,7 @@
 (define-serialize-method labeled-statement (stream)
   (with-slots (label body) labeled-statement
     (serialize label stream)
+    (write-char #\: stream)
     (write-whitespace stream)
     (serialize body stream)))
 
