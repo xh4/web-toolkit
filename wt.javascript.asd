@@ -13,6 +13,7 @@
                 :serial t
                 :components ((:file "package")
                              (:file "utility")
+                             (:file "condition")
                              (:file "estree")
                              (:file "character")
                              (:file "scanner")
