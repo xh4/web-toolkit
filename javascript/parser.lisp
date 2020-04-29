@@ -89,19 +89,23 @@
   (:method ((pathname pathname))
    (parse (read-file-into-string pathname))))
 
-(defun throw-error (message-format &rest values)
-  (apply 'error message-format values))
+(defun throw-error (parser message-format &rest values)
+  (let ((message (apply #'format message-format values)))
+    (with-slots (last-marker) parser
+      (let ((index (marker-index last-marker))
+            (line (marker-line last-marker))
+            (column (marker-column last-marker)))
+        (error "~A Line ~A Column ~A Index ~A" message line column index)))))
 
 (defun tolerate-error (parser message-format &rest values)
   (declare (ignore parser message-format values)))
 
-(defun unexpected-token-error (token &optional (message nil message-present-p))
+(defun unexpected-token-error (parser token &optional (message nil message-present-p))
   (let ((message (or message "Unexpected token ~A")))
-    (throw-error message token)))
+    (throw-error parser message token)))
 
 (defun throw-unexpected-token (parser &optional token message)
-  (declare (ignore parser))
-  (unexpected-token-error token message))
+  (unexpected-token-error parser token message))
 
 (defun tolerate-unexpected-token (parser &optional token message)
   (tolerate-error parser (or message "Unexpected token ~A") token))
@@ -199,7 +203,7 @@
                  (equal ";" (token-value token)))
             (next-token parser)
             (tolerate-unexpected-token parser token))
-           (t (tolerate-unexpected-token parser token "some message"))))
+           (t (tolerate-unexpected-token parser token +message-unexpected-token+))))
       (expect parser ","))))
 
 (defun expect-keyword (parser value)
@@ -243,7 +247,7 @@
             (getf context :first-cover-initialized-name-error) nil)
       (let ((result (funcall parse-function parser)))
         (when (getf context :first-cover-initialized-name-error)
-          (throw-unexpected-token (getf context :first-cover-initialized-name-error)))
+          (throw-unexpected-token parser (getf context :first-cover-initialized-name-error)))
         (setf (getf context :binding-element-p) previous-binding-element-p
               (getf context :assignment-target-p) previous-assignment-target-p
               (getf context :first-cover-initialized-name-error)
@@ -259,8 +263,6 @@
             (getf context :assignment-target-p) t
             (getf context :first-cover-initialized-name-error) nil)
       (let ((result (funcall parse-function parser)))
-        (when (getf context :first-cover-initialized-name-error)
-          (error (getf context :first-cover-initialized-name-error)))
         (setf (getf context :binding-element-p)
               (and (getf context :binding-element-p)
                    previous-binding-element-p)
@@ -305,7 +307,7 @@
         ((or numeric-literal string-literal)
          (when (and (getf context :strict)
                     (slot-value lookahead 'octal))
-           (tolerate-unexpected-token parser lookahead "some message"))
+           (tolerate-unexpected-token parser lookahead +message-strict-octal-literal+))
          (setf (getf context :assignment-target-p) nil
                (getf context :binding-elemnt-p) nil
                token (next-token parser)
@@ -457,7 +459,7 @@
         ((or string-literal numeric-literal)
          (when (and (getf context :strict)
                     (slot-value token 'octal))
-           (tolerate-unexpected-token parser token "some message"))
+           (tolerate-unexpected-token parser token +message-strict-octal-literal+))
          (setf key (finalize parser marker token)))
         ((or identifier boolean-literal null-literal keyword)
          (setf key (finalize parser marker (make-instance 'identifier
@@ -540,7 +542,7 @@
              ((and (match parser ":") (not async-p))
               (when (and (not computed) (property-key-p key "__proto__"))
                 (when (getf has-proto :value)
-                  (tolerate-error parser "some message"))
+                  (tolerate-error parser +message-duplicate-proto-property+))
                 (setf (getf has-proto :value) t))
               (next-token parser)
               (setf value (inherit-cover-grammar parser 'parse-assignment-expression)))
@@ -944,9 +946,9 @@
             (when (and (getf context :strict)
                        (typep expression 'identifier)
                        (restricted-word-p (slot-value expression 'name)))
-              (tolerate-error parser "some message"))
+              (tolerate-error parser +message-strict-lhs-prefix+))
             (unless (getf context :assignment-target-p)
-              (tolerate-error parser "some message"))
+              (tolerate-error parser +message-invalid-lhs-in-assignment+))
             (let ((prefix t))
               (setf expression (finalize parser marker
                                          (make-instance 'update-expression
@@ -963,9 +965,9 @@
               (when (and (getf context :strict)
                          (typep expression 'identifier)
                          (restricted-word-p (slot-value expression 'name)))
-                (tolerate-error parser "some message"))
+                (tolerate-error parser +message-strict-lhs-postfix+))
               (unless (getf context :assignment-target-p)
-                (tolerate-error parser "some message"))
+                (tolerate-error parser +message-invalid-lhs-in-assignment+))
               (setf (getf context :assignment-target-p) nil
                     (getf context :binding-element-p) nil)
               (let ((operator (token-value (next-token parser)))
@@ -1005,7 +1007,7 @@
           (when (and (getf context :strict)
                      (equal "delete" (slot-value expression 'operator))
                      (typep (slot-value expression 'argument) 'identifier))
-            (tolerate-error parser "some message"))
+            (tolerate-error parser +message-strict-delete+))
           (setf (getf context :assignment-target-p) nil
                 (getf context :binding-element-p) nil)))
        ((and (getf context :await)
@@ -1238,10 +1240,14 @@
                             (let ((expression-p (not (typep body 'block-statement))))
                               (when (and (getf context :strict)
                                          (getf list :first-restricted))
-                                (throw-unexpected-token parser (getf list :first-restricted) "some message"))
+                                (throw-unexpected-token parser
+                                                        (getf list :first-restricted)
+                                                        (getf list :message)))
                               (when (and (getf context :strict)
                                          (getf list :stricted))
-                                (throw-unexpected-token parser (getf list :stricted) "some message"))
+                                (throw-unexpected-token parser
+                                                        (getf list :stricted)
+                                                        (getf list :message)))
                               (setf expression
                                     (if async-p
                                         (finalize parser marker
@@ -1260,14 +1266,14 @@
                                     (getf context :await) previous-await)))))))))
             (when (match-assign parser)
               (unless (getf context :assignment-target-p)
-                (tolerate-error parser "some message"))
+                (tolerate-error parser +message-invalid-lhs-in-assignment+))
               (when (and (getf context :strict)
                          (typep expression 'identifier))
                 (let ((id expression))
                   (when (restricted-word-p (slot-value id 'name))
-                    (tolerate-unexpected-token parser token "some message"))
+                    (tolerate-unexpected-token parser token +message-strict-lhs-assignment+))
                   (when (strict-mode-reserved-word-p (slot-value id 'name))
-                    (tolerate-unexpected-token parser token "some message"))))
+                    (tolerate-unexpected-token parser token +message-strict-reserved-word+))))
               (if (not (match parser "="))
                   (setf (getf context :assignment-target-p) nil
                         (getf context :binding-element-p) nil)
@@ -1310,11 +1316,11 @@
           (switch ((slot-value lookahead 'name) :test 'equal)
             ("export"
              (unless (getf context :module-p)
-               (tolerate-unexpected-token parser lookahead "some message"))
+               (tolerate-unexpected-token parser lookahead +message-illegal-export-declaration+))
              (setf statement (parse-export-declaration parser)))
             ("import"
              (unless (getf context :module-p)
-               (tolerate-unexpected-token parser lookahead "some message"))
+               (tolerate-unexpected-token parser lookahead +message-illegal-import-declaration+))
              (setf statement (parse-import-declaration parser)))
             ("const" (setf statement (parse-lexical-declaration parser '(:in-for nil))))
             ("function" (setf statement (parse-function-declaration parser)))
@@ -1345,7 +1351,7 @@
       (when (and (getf context :strict)
                  (typep id 'identifier))
         (when (restricted-word-p (slot-value id 'name))
-          (tolerate-error parser "some message")))
+          (tolerate-error parser +message-strict-var-name+)))
       (let ((init))
         (cond
          ((equal "const" kind)
@@ -1355,7 +1361,7 @@
                 (progn
                   (next-token parser)
                   (setf init (isolate-cover-grammar parser 'parse-assignment-expression)))
-              (throw-error parser "some message"))))
+              (throw-error parser +message-declaration-missing-initializer+ "const"))))
          ((or (and (not (getf options :in-for))
                    (not (typep id 'identifier)))
               (match parser "="))
@@ -1486,7 +1492,7 @@
        (t (when (and (match-keyword parser "let")
                      (or (equal "const" kind)
                          (equal "let" kind)))
-            (tolerate-unexpected-token parser lookahead "some message"))
+            (tolerate-unexpected-token parser lookahead +message-let-in-lexical-binding+))
           (appendf params (list lookahead))
           (setf pattern (parse-variable-identifier parser kind))))
       pattern)))
@@ -1516,14 +1522,14 @@
              (equal "yield" (token-value token)))
         (cond
          ((getf context :strict)
-          (tolerate-unexpected-token parser token "some message"))
+          (tolerate-unexpected-token parser token +message-strict-reserved-word+))
          ((not (getf context :allow-yield))
           (throw-unexpected-token parser token))))
        ((not (typep token 'identifier))
         (if (and (getf context :strict)
                  (typep token 'keyword)
                  (strict-mode-reserved-word-p (token-value token)))
-            (tolerate-unexpected-token parser token "some message")
+            (tolerate-unexpected-token parser token +message-strict-reserved-word+)
           (when (or (getf context :strict)
                     (not (equal "let" (token-value token)))
                     (not (equal "var" kind)))
@@ -1544,7 +1550,7 @@
         (when (and (getf context :strict)
                    (typep id 'identifier))
           (when (restricted-word-p (slot-value id 'name))
-            (tolerate-error parser "some message")))
+            (tolerate-error parser +message-strict-var-name+)))
         (let ((init))
           (cond
            ((match parser "=")
@@ -1591,7 +1597,7 @@
   (with-slots (context) parser
     (when (and (getf context :strict)
                (match-keyword parser "function"))
-      (tolerate-error parser "some message"))
+      (tolerate-error parser +message-strict-function+))
     (parse-statement parser)))
 
 (defun parse-if-statement (parser)
@@ -1692,7 +1698,7 @@
                              (or (typep (slot-value declaration 'id) 'array-pattern)
                                  (typep (slot-value declaration 'id) 'object-pattern)
                                  (getf context :strict)))
-                    (tolerate-error parser "some message"))
+                    (tolerate-error parser +message-for-in-of-loop-initializer+ "for-in"))
                   (setf init (finalize parser init (make-instance 'variable-declaration
                                                                   :declarations declarations
                                                                   :kind "var")))
@@ -1766,7 +1772,7 @@
                ((match-keyword parser "in")
                 (when (or (not (getf context :assignment-target-p))
                           (typep init 'assignment-expression))
-                  (tolerate-error parser "some message"))
+                  (tolerate-error parser +message-invalid-lhs-in-for-in+))
                 (next-token parser)
                 (reinterpret-expression-as-pattern init)
                 (setf left init
@@ -1775,7 +1781,7 @@
                ((match-contextual-keyword parser "of")
                 (when (or (not (getf context :assignment-target-p))
                           (typep init 'assignment-expression))
-                  (tolerate-error parser "some message"))
+                  (tolerate-error parser +message-invalid-lhs-in-for-loop+))
                 (next-token parser)
                 (reinterpret-expression-as-pattern init)
                 (setf left init
@@ -1839,11 +1845,11 @@
             (setf label id)
             (let ((key (format nil "$~A" (slot-value id 'name))))
               (unless (find key (getf context :label-set) :test 'equal)
-                (throw-error parser "some message")))))
+                (throw-error parser +message-unknown-label+ (slot-value id 'name))))))
         (consume-semicolon parser)
         (when (and (null label)
                    (not (getf context :in-iteration)))
-          (throw-error parser "some message"))
+          (throw-error parser +message-illegal-continue+))
         (finalize parser marker (make-instance 'continue-statement
                                                :label label))))))
 
@@ -1857,20 +1863,20 @@
           (let ((id (parse-variable-identifier parser)))
             (let ((key (format nil "$~A" (slot-value id 'name))))
               (unless (find key (getf context :label-set) :test 'equal)
-                (throw-error "some message"))
+                (throw-error parser +message-unknown-label+ (slot-value id 'name)))
               (setf label id))))
         (consume-semicolon parser)
         (when (and (null label)
                    (not (getf context :in-iteration))
                    (not (getf context :in-switch)))
-          (throw-error "some message"))
+          (throw-error parser +message-illegal-break+))
         (finalize parser marker (make-instance 'break-statement
                                                :label label))))))
 
 (defun parse-return-statement (parser)
   (with-slots (context lookahead has-line-terminator-p) parser
     (unless (getf context :in-function-body)
-      (tolerate-error parser "some message"))
+      (tolerate-error parser +message-illegal-return+))
     (let ((marker (create-marker parser)))
       (expect-keyword parser "return")
       (let ((has-argument-p (or (and (not (match parser ";"))
@@ -1888,7 +1894,7 @@
 (defun parse-with-statement (parser)
   (with-slots (context config) parser
     (unless (getf context :strict)
-      (tolerate-error parser "some message"))
+      (tolerate-error parser +message-strict-mode-with+))
     (let ((marker (create-marker parser))
           (body))
       (expect-keyword parser "with")
@@ -1947,7 +1953,7 @@
              (let ((clause (parse-switch-case parser)))
                (when (null (slot-value clause 'test))
                  (when default-found-p
-                   (throw-error parser "some message"))
+                   (throw-error parser +message-multiple-defaults-in-switch+))
                  (setf default-found-p t))
                (appendf cases (list clause))))
             (expect parser "}")
@@ -1968,7 +1974,7 @@
             (let* ((id expression)
                    (key (format nil "$~A" (slot-value id 'name))))
               (when (find key (getf context :label-set) :test 'equal)
-                (throw-error parser "some message"))
+                (throw-error parser +message-redeclaration+ "Label" (slot-value id 'name)))
               (push key (getf context :label-set))
               (let ((body))
                 (cond
@@ -1979,9 +1985,9 @@
                   (let ((token lookahead)
                         (declaration (parse-function-declaration parser)))
                     (if (getf context :strict)
-                        (tolerate-unexpected-token parser token "some message")
+                        (tolerate-unexpected-token parser token +message-strict-function+)
                       (if (slot-value declaration 'generator)
-                          (tolerate-unexpected-token parser token "some message")))))
+                          (tolerate-unexpected-token parser token +message-generator-in-legacy-context+)))))
                  (t (setf body (parse-statement parser))))
                 (setf (getf context :label-set)
                       (remove key (getf context :label-set) :test 'equal))
@@ -1999,7 +2005,7 @@
     (let ((marker (create-marker parser)))
       (expect-keyword parser "throw")
       (when has-line-terminator-p
-        (throw-error parser "some message"))
+        (throw-error parser +message-newline-after-throw+))
       (let ((argument (parse-expression parser)))
         (consume-semicolon parser)
         (finalize parser marker (make-instance 'throw-statement :argument argument))))))
@@ -2018,12 +2024,12 @@
         (loop for param in params
               for key = (format nil "$~A" param)
               do (when (getf param-map key) ;
-                   (tolerate-error parser "some message")
+                   (tolerate-error parser +message-duplicate-binding+ (slot-value param 'value))
                    (setf (getf param-map key) t)))
         (when (and (getf context :strict)
                    (typep param 'identifier))
           (when (restricted-word-p (slot-value param 'name))
-            (tolerate-error parser "some message")))
+            (tolerate-error parser +message-strict-catch-variable+)))
         (expect parser ")")
         (let ((body (parse-block parser)))
           (finalize parser marker (make-instance 'catch-clause
@@ -2043,7 +2049,7 @@
           (finalizer (when (match-keyword parser "finally")
                        (parse-finally-clause parser))))
       (when (and (not handler) (not finalizer))
-        (throw-error parser "some message"))
+        (throw-error parser +message-no-catch-or-finally+))
       (finalize parser marker (make-instance 'try-statement
                                              :block block
                                              :handler handler
@@ -2125,21 +2131,21 @@
        ((getf context :strict)
         (when (restricted-word-p name)
           (setf (getf options :stricted) param
-                (getf options :message) "some message"))
+                (getf options :message) +message-strict-param-name+))
         (when (getf (getf options :param-set) key)
           (setf (getf options :stricted) param
-                (getf options :message) "some message")))
+                (getf options :message) +message-strict-param-dupe+)))
        ((not (getf options :first-restricted))
         (cond
          ((restricted-word-p name)
           (setf (getf options :first-restricted) param
-                (getf options :message) "some message"))
+                (getf options :message) +message-strict-param-name+))
          ((strict-mode-reserved-word-p name)
           (setf (getf options :first-restricted) param
-                (getf options :message) "some message"))
+                (getf options :message) +message-strict-reserved-word+))
          ((getf (getf options :param-set) key)
           (setf (getf options :first-restricted) param
-                (getf options :message) "some message")))))
+                (getf options :message) +message-strict-param-dupe+)))))
       (setf (getf (getf options :param-set) key) t))))
 
 (defun parse-rest-element (parser params)
@@ -2147,9 +2153,9 @@
     (expect parser "...")
     (let ((argument (parse-pattern parser params)))
       (when (match parser "=")
-        (throw-error parser "some message"))
+        (throw-error parser +message-default-rest-parameter+))
       (unless (match parser ")")
-        (throw-error parser "some message"))
+        (throw-error parser +message-parameter-after-rest-parameter+))
       (finalize parser marker (make-instance 'rest-element :argument argument)))))
 
 (defun parse-formal-parameter (parser options)
@@ -2214,13 +2220,15 @@
             (let ((token lookahead))
               (setf id (parse-variable-identifier parser))
               (if (getf context :strict)
-                  (cond
-                   ((restricted-word-p (token-value token))
-                    (setf first-restricted token
-                          message "some message"))
-                   ((strict-mode-reserved-word-p (token-value token))
-                    (setf first-restricted token
-                          message "some message"))))))
+                  (when (restricted-word-p (token-value token))
+                    (tolerate-unexpected-token parser token +message-strict-function-name+))
+                (cond
+                 ((restricted-word-p (token-value token))
+                  (setf first-restricted token
+                        message +message-strict-function-name+))
+                 ((strict-mode-reserved-word-p (token-value token))
+                  (setf first-restricted token
+                        message +message-strict-reserved-word+))))))
           (let ((previous-allow-await (getf context :await))
                 (previous-allow-yield (getf context :allow-yield)))
             (setf (getf context :await) async-p
@@ -2281,14 +2289,14 @@
                          (parse-variable-identifier parser)))
               (if (getf context :strict)
                   (when (restricted-word-p (token-value token))
-                    (tolerate-unexpected-token parser token "some message"))
+                    (tolerate-unexpected-token parser token +message-strict-function-name+))
                 (cond
                  ((restricted-word-p (token-value token))
                   (setf first-restricted token
-                        message "some message"))
+                        message +message-strict-function-name+))
                  ((strict-mode-reserved-word-p (token-value token))
                   (setf first-restricted token
-                        message "some message"))))))
+                        message +message-strict-reserved-word+))))))
           (let* ((formal-parameters (parse-formal-parameters parser first-restricted))
                  (params (getf formal-parameters :params))
                  (stricted (getf formal-parameters :stricted)))
@@ -2376,7 +2384,7 @@
       (setf (getf context :allow-yield) (not generator-p))
       (let ((formal-parameters (parse-formal-parameters parser)))
         (when (> (length (getf formal-parameters :params)) 0)
-          (tolerate-error parser "some message"))
+          (tolerate-error parser +message-bad-getter-arity+))
         (let ((method (parse-property-method parser formal-parameters)))
           (setf (getf context :allow-yield) previous-allow-yield)
           (finalize parser marker (make-instance 'function-expression
@@ -2394,9 +2402,9 @@
       (let ((formal-parameters (parse-formal-parameters parser)))
         (cond
          ((not (= 1 (length (getf formal-parameters :params))))
-          (tolerate-error parser "some message"))
+          (tolerate-error parser +message-bad-setter-arity+))
          ((typep (first (getf formal-parameters :params)) 'rest-element)
-          (tolerate-error parser "some message")))
+          (tolerate-error parser +message-bad-setter-rest-parameter+)))
         (let ((method (parse-property-method parser formal-parameters)))
           (setf (getf context :allow-yield) previous-allow-yield)
           (finalize parser marker (make-instance 'function-expression
@@ -2499,7 +2507,7 @@
                         key (parse-object-property-key parser))
                   (when (and (typep token 'identifier)
                              (equal "constructor" (token-value token)))
-                    (tolerate-unexpected-token parser token "some message"))))))))
+                    (tolerate-unexpected-token parser token +message-constructor-is-async+))))))))
       (let ((lookahead-property-key (qualified-property-name-p lookahead)))
         (cond
          ((typep token 'identifier)
@@ -2539,15 +2547,15 @@
           (setf kind "method"))
         (unless computed
           (when (and static-p (property-key-p key "prototype"))
-            (throw-unexpected-token parser token "some message"))
+            (throw-unexpected-token parser token +message-static-prototype+))
           (when (and (not static-p)
                      (property-key-p key "constructor"))
             (when (or (not (equal "method" kind))
                       (not method)
                       (and value (slot-value value 'generator)))
-              (throw-unexpected-token parser token "some message"))
+              (throw-unexpected-token parser token +message-constructor-special-method+))
             (when (getf has-constructor :value)
-              (throw-unexpected-token parser token "some message"))
+              (throw-unexpected-token parser token +message-duplicate-constructor+))
             (setf kind "constructor"))))
       (finalize parser marker (make-instance 'method-definition
                                              :key key
@@ -2639,7 +2647,7 @@
   (with-slots (lookahead) parser
     (let ((marker (create-marker parser)))
       (when (typep lookahead 'string-literal)
-        (throw-error "some message"))
+        (throw-error parser +message-invalid-module-specifier+))
       (let* ((token (next-token parser)))
         (finalize parser marker token)))))
 
@@ -2691,7 +2699,7 @@
   (let ((marker (create-marker parser)))
     (expect parser "*")
     (unless (match-contextual-keyword parser "as")
-      (throw-error parser "some message"))
+      (throw-error parser +message-no-as-after-import-namespace+))
     (next-token parser)
     (let ((local (parse-identifier-name parser)))
       (finalize parser marker (make-instance 'import-namespace-specifier
@@ -2700,7 +2708,7 @@
 (defun parse-import-declaration (parser)
   (with-slots (lookahead context) parser
     (when (getf context :in-function-body)
-      (throw-error parser "some message"))
+      (throw-error parser +message-illegal-import-declaration+))
     (expect-keyword parser "import")
     (let ((marker (create-marker parser))
           (source)
@@ -2732,7 +2740,8 @@
                (t (throw-unexpected-token parser lookahead)))))
            (t (throw-unexpected-token parser (next-token parser))))
           (unless (match-contextual-keyword parser "from")
-            (throw-error parser "some message"))
+            (let ((message (if lookahead +message-unexpected-token+ +message-missing-from-clause+)))
+              (throw-error parser message)))
           (next-token parser)
           (setf source (parse-module-specifier parser))))
       (consume-semicolon parser)
@@ -2754,7 +2763,7 @@
 (defun parse-export-declaration (parser)
   (with-slots (lookahead context) parser
     (when (getf context :in-function-body)
-      (throw-error parser "some message"))
+      (throw-error parser +message-illegal-export-declaration+))
     (expect-keyword parser "export")
     (let ((marker (create-marker parser))
           (export-declaration))
@@ -2787,7 +2796,7 @@
                                                (make-instance 'export-default-declaration
                                                               :declaration declaration)))))
          (t (when (match-contextual-keyword parser "from")
-              (throw-error parser "some message"))
+              (throw-error parser +message-unexpected-token+ (token-value lookahead)))
             ;; export default {};
             ;; export default [];
             ;; export default (1 + 2);
@@ -2804,7 +2813,8 @@
         ;; export * from 'foo';
         (next-token parser)
         (unless (match-contextual-keyword parser "from")
-          (error "some error"))
+          (let ((message (if lookahead +message-unexpected-token+ +message-missing-from-clause+)))
+            (throw-error parser message (token-value lookahead))))
         (next-token parser)
         (let ((source (parse-module-specifier parser)))
           (consume-semicolon parser)
@@ -2852,7 +2862,8 @@
               (setf source (parse-module-specifier parser))
               (consume-semicolon parser))
              (export-from-identifier-p
-              (error "some error"))
+              (let ((message (if lookahead +message-unexpected-token+ +message-missing-from-clause+)))
+                (throw-error parser message (token-value lookahead))))
              (t ;; export { foo };
                 (consume-semicolon parser)))
             (setf export-declaration (finalize parser marker
