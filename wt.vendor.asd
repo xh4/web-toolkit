@@ -10,4 +10,4 @@
                              (:file "quicklisp")
                              (:file "vendor"))))
   :perform (load-op :before (o c)
-                    (symbol-call :vendor :register)))
+             (symbol-call :vendor :register)))

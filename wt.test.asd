@@ -9,7 +9,7 @@
                :usocket)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "test"
-                        :serial t
-                        :components ((:file "package")
-                                     (:file "fiveam")
-                                     (:file "helper")))))
+                :serial t
+                :components ((:file "package")
+                             (:file "fiveam")
+                             (:file "helper")))))

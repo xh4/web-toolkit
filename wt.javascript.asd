@@ -1,7 +1,6 @@
 ;;;; -*- Mode: LISP -*-
 
 (defsystem wt.javascript
-  :version "0.0.0"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
   :license "BSD 3-Clause"
@@ -22,8 +21,8 @@
                              (:file "serializer"))))
   :in-order-to ((test-op (test-op :wt.javascript/test)))
   :perform (load-op :after (o c)
-                    #+lispworks
-                    (pushnew :javascript hcl:*packages-for-warn-on-redefinition*)))
+             #+lispworks
+             (pushnew :javascript hcl:*packages-for-warn-on-redefinition*)))
 
 (defsystem wt.javascript/test
   :depends-on (:wt.javascript
@@ -36,4 +35,4 @@
                              (:file "vendor")
                              (:file "es6"))))
   :perform (test-op (o c)
-                    (symbol-call :test :run! :javascript-test)))
+             (symbol-call :test :run! :javascript-test)))
