@@ -847,4 +847,12 @@
 
 (define-serialize-method export-default-declaration (stream))
 
-(define-serialize-method export-all-declaration (stream))
+(define-serialize-method export-all-declaration (stream)
+  (with-slots (source) export-all-declaration
+    (write-string "export" stream)
+    (write-whitespace stream t)
+    (write-char #\* stream)
+    (write-whitespace stream t)
+    (write-string "from" stream)
+    (write-whitespace stream t)
+    (serialize source stream)))
