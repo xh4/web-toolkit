@@ -4,7 +4,7 @@
   :version "3.1415"
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
-  :description "Object-oriented Lisp Systems for Rapid Web Application Development"
+  :description "Object-Oriented Lisp Systems for Rapid Web Application Development"
   :license "BSD 3-Clause"
   :depends-on (:wt.utility
                :wt.uri
