@@ -761,8 +761,6 @@
     (write-whitespace stream)
     (serialize right stream)))
 
-(define-serialize-method class (stream))
-
 (define-serialize-method class-body (stream)
   (with-slots (body) class-body
     (write-char #\{ stream)
@@ -827,15 +825,53 @@
 
 (define-serialize-method module-declaration (stream))
 
-(define-serialize-method module-specifier (stream))
-
-(define-serialize-method import-declaration (stream))
-
-(define-serialize-method import-specifier (stream))
-
-(define-serialize-method import-default-specifier (stream))
-
-(define-serialize-method import-namespace-specifier (stream))
+(define-serialize-method import-declaration (stream)
+  (with-slots (specifiers source) import-declaration
+    (write-string "import" stream)
+    (write-whitespace stream t)
+    (loop with i = 0
+          for specifier in specifiers
+          for local = (slot-value specifier 'local)
+          for first-p = t then nil
+          do (unless first-p
+               (write-char #\, stream)
+               (write-whitespace stream))
+          (typecase specifier
+            (import-namespace-specifier
+             (write-char #\* stream)
+             (write-whitespace stream t)
+             (write-string "as" stream)
+             (write-whitespace stream t)
+             (serialize local stream)
+             (incf i))
+            (import-default-specifier
+             (serialize local stream)
+             (incf i))
+            (t (loop-finish)))
+          finally (when (< i (length specifiers))
+                    (write-char #\{ stream)
+                    (loop for specifier = (nth i specifiers)
+                          for imported = (slot-value specifier 'imported)
+                          for local = (slot-value specifier 'local)
+                          do (serialize imported stream)
+                          (unless (equal (slot-value imported 'name)
+                                         (slot-value local 'name))
+                            (write-whitespace stream t)
+                            (write-string "as" stream)
+                            (write-whitespace stream t)
+                            (serialize local stream))
+                          (incf i)
+                          (if (< i (length specifiers))
+                              (progn
+                                (write-char #\, stream)
+                                (write-whitespace stream))
+                            (loop-finish))
+                          finally (write-char #\} stream))))
+    (write-whitespace stream t)
+    (write-string "from" stream)
+    (write-whitespace stream t)
+    (serialize source stream)
+    (write-char #\; stream)))
 
 (define-serialize-method export-named-declaration (stream)
   (with-slots (declaration specifiers source) export-named-declaration
@@ -867,12 +903,6 @@
       (serialize source stream))
     (unless declaration
       (write-char #\; stream))))
-
-(define-serialize-method export-specifier (stream))
-
-(define-serialize-method anonymous-default-exported-function-declaration (stream))
-
-(define-serialize-method anonymous-default-exported-class-declaration (stream))
 
 (define-serialize-method export-default-declaration (stream)
   (with-slots (declaration) export-default-declaration
