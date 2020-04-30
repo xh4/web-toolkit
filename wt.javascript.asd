@@ -33,6 +33,7 @@
                 :serial t
                 :components ((:file "package")
                              (:file "helper")
-                             (:file "vendor"))))
+                             (:file "vendor")
+                             (:file "es6"))))
   :perform (test-op (o c)
                     (symbol-call :test :run! :javascript-test)))
