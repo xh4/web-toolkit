@@ -36,7 +36,7 @@
   :description "This error occurs if the parser encounters an end tag with attributes. Attributes in end tags are completely ignored and do not make their way into the DOM.")
 
 (define-parse-error duplicate-attribute
-  :description "This error occurs if the parser encounters an attribute in a tag that already has an attribute with the same name. The parser ignores all such duplicate occurrences of the attribute. ")
+  :description "This error occurs if the parser encounters an attribute in a tag that already has an attribute with the same name. The parser ignores all such duplicate occurrences of the attribute.")
 
 (define-parse-error end-tag-with-trailing-solidus
   :description "This error occurs if the parser encounters an end tag that has a U+002F (/) code point right before the closing U+003E (>) code point (e.g., </div/>). Such a tag is treated as a regular end tag.")
