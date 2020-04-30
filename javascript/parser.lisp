@@ -90,7 +90,7 @@
    (parse (read-file-into-string pathname))))
 
 (defun throw-error (parser message-format &rest values)
-  (let ((message (apply #'format message-format values)))
+  (let ((message (apply #'format nil message-format values)))
     (with-slots (last-marker) parser
       (let ((index (marker-index last-marker))
             (line (marker-line last-marker))
@@ -2646,7 +2646,7 @@
 (defun parse-module-specifier (parser)
   (with-slots (lookahead) parser
     (let ((marker (create-marker parser)))
-      (when (typep lookahead 'string-literal)
+      (unless (typep lookahead 'string-literal)
         (throw-error parser +message-invalid-module-specifier+))
       (let* ((token (next-token parser)))
         (finalize parser marker token)))))
