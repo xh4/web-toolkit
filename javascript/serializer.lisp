@@ -874,7 +874,15 @@
 
 (define-serialize-method anonymous-default-exported-class-declaration (stream))
 
-(define-serialize-method export-default-declaration (stream))
+(define-serialize-method export-default-declaration (stream)
+  (with-slots (declaration) export-default-declaration
+    (write-string "export" stream)
+    (write-whitespace stream t)
+    (write-string "default" stream)
+    (write-whitespace stream t)
+    (serialize declaration stream)
+    (unless (typep declaration 'function-expression)
+      (write-char #\; stream))))
 
 (define-serialize-method export-all-declaration (stream)
   (with-slots (source) export-all-declaration
