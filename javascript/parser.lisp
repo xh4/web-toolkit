@@ -2727,7 +2727,7 @@
            ((and (identifier-name-p lookahead)
                  (not (match-keyword parser "default")))
             ;; import foo
-            (appendf specifiers (list (parse-import-namespace-specifier parser)))
+            (appendf specifiers (list (parse-import-default-specifier parser)))
             (when (match parser ",")
               (next-token parser)
               (cond
