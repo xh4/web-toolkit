@@ -163,6 +163,7 @@
    :static
    :meta
    :specifiers
+   :local
    :imported
    :exported)
   (:import-from :closer-mop
