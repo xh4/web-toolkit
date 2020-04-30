@@ -837,7 +837,36 @@
 
 (define-serialize-method import-namespace-specifier (stream))
 
-(define-serialize-method export-named-declaration (stream))
+(define-serialize-method export-named-declaration (stream)
+  (with-slots (declaration specifiers source) export-named-declaration
+    (write-string "export" stream)
+    (write-whitespace stream t)
+    (if declaration
+        (serialize declaration stream)
+      (progn
+        (write-char #\{ stream)
+        (loop for specifier in specifiers
+              for local = (slot-value specifier 'local)
+              for exported = (slot-value specifier 'exported)
+              for first-p = t then nil
+              do (unless first-p
+                   (write-char #\, stream)
+                   (write-whitespace stream))
+              (serialize local stream)
+              (unless (equal (slot-value local 'name)
+                             (slot-value exported 'name))
+                (write-whitespace stream t)
+                (write-string "as" stream)
+                (write-whitespace stream t)
+                (serialize exported stream)))
+        (write-char #\} stream)))
+    (when source
+      (write-whitespace stream t)
+      (write-string "from" stream)
+      (write-whitespace stream t)
+      (serialize source stream))
+    (unless declaration
+      (write-char #\; stream))))
 
 (define-serialize-method export-specifier (stream))
 
