@@ -17,6 +17,7 @@
                              (:file "text")
                              (:file "element")
                              (:file "serialize")
+                             (:file "tokenize")
                              (:file "parse"))))
   :in-order-to ((test-op (test-op :wt.html/test)))
   :perform (load-op :after (o c)
