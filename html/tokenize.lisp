@@ -828,19 +828,149 @@
      (reconsume-in 'before-attribute-name-state))))
 
 (define-tokenizer-state bogus-comment-state
-  )
+  (case next-input-character
+    (#\>
+     (switch-to 'data-state)
+     (emit current-comment-token))
+    ((nil)
+     (emit current-comment-token)
+     (emit end-of-file))
+    (#\null
+     (unexpected-null-character)
+     (append-char (slot-value current-comment-token 'data)
+                  #\replacement-character))
+    (t
+     (append-char (slot-value current-comment-token 'data)
+                  current-input-character))))
 
 (define-tokenizer-state markup-declaration-open-state)
-(define-tokenizer-state comment-start-state)
-(define-tokenizer-state comment-start-dash-state)
-(define-tokenizer-state comment-state)
-(define-tokenizer-state comment-less-than-sign-state)
-(define-tokenizer-state comment-less-than-sign-bang-state)
-(define-tokenizer-state comment-less-than-sign-bang-dash-state)
-(define-tokenizer-state comment-less-than-sign-bang-dash-dash-state)
-(define-tokenizer-state comment-end-dash-state)
-(define-tokenizer-state comment-end-state)
-(define-tokenizer-state comment-end-bang-state)
+
+(define-tokenizer-state comment-start-state
+  (case next-input-character
+    (#\-
+     (switch-to 'comment-start-dash-state))
+    (#\>
+     (abrupt-closing-of-empty-comment)
+     (switch-to 'data-state)
+     (emit current-comment-token))
+    (t
+     (reconsume-in 'comment-state))))
+
+(define-tokenizer-state comment-start-dash-state
+  (case next-input-character
+    (#\-
+     (switch-to 'comment-end-state))
+    (#\>
+     (abrupt-closing-of-empty-comment)
+     (switch-to 'data-state)
+     (emit current-comment-token))
+    ((nil)
+     (eof-in-comment)
+     (emit current-comment-token)
+     (emit end-of-file))
+    (t
+     (append-char (slot-value current-comment-token 'data) #\-)
+     (reconsume-in 'comment-state))))
+
+(define-tokenizer-state comment-state
+  (case next-input-character
+    (#\<
+     (append-char (slot-value current-comment-token 'data) current-input-character)
+     (switch-to 'comment-less-than-sign-state))
+    (#\-
+     (switch-to 'comment-end-dash-state))
+    (#\null
+     (unexpected-null-character)
+     (append-char (slot-value current-comment-token 'data) #\replacement-character))
+    ((nil)
+     (eof-in-comment)
+     (emit current-comment-token)
+     (emit end-of-file))
+    (t
+     (append-char (slot-value current-comment-token 'data) current-input-character))))
+
+(define-tokenizer-state comment-less-than-sign-state
+  (case next-input-character
+    (#\!
+     (append-char (slot-value current-comment-token 'data) current-input-character)
+     (switch-to 'comment-less-than-sign-bang-state))
+    (#\<
+     (append-char (slot-value current-comment-token 'data) current-input-character))
+    (t
+     (reconsume-in 'comment-state))))
+
+(define-tokenizer-state comment-less-than-sign-bang-state
+  (case next-input-character
+    (#\-
+     (switch-to 'comment-less-than-sign-bang-dash-state))
+    (t
+     (reconsume-in 'comment-state))))
+
+(define-tokenizer-state comment-less-than-sign-bang-dash-state
+  (case next-input-character
+    (#\-
+     (switch-to 'comment-less-than-sign-bang-dash-dash-state))
+    (t
+     (reconsume-in 'comment-end-dash-state))))
+
+(define-tokenizer-state comment-less-than-sign-bang-dash-dash-state
+  (case next-input-character
+    ((#\- nil)
+     (switch-to 'comment-end-state))
+    (t
+     (nested-comment)
+     (reconsume-in 'comment-end-state))))
+
+(define-tokenizer-state comment-end-dash-state
+  (case next-input-character
+    ((#\-)
+     (switch-to 'comment-end-state))
+    ((nil)
+     (eof-in-comment)
+     (emit current-comment-token)
+     (emit end-of-file))
+    (t
+     (append-char (slot-value current-comment-token 'data) #\-)
+     (reconsume-in comment-state))))
+
+(define-tokenizer-state comment-end-state
+  (case next-input-character
+    (#\>
+     (switch-to 'data-state)
+     (emit current-comment-token))
+    (#\!
+     (switch-to 'comment-end-bang-state))
+    (#\-
+     (append-char (slot-value current-comment-token 'data) #\-))
+    ((nil)
+     (eof-in-comment)
+     (emit current-comment-token)
+     (emit end-of-file))
+    (t
+     (append-char (slot-value current-comment-token 'data) #\-)
+     (append-char (slot-value current-comment-token 'data) #\-))))
+
+(define-tokenizer-state comment-end-bang-state
+  (case next-input-character
+    (#\-
+     (append-char (slot-value current-comment-token 'data) #\-)
+     (append-char (slot-value current-comment-token 'data) #\-)
+     (append-char (slot-value current-comment-token 'data) #\!)
+     (switch-to 'comment-end-dash-state))
+    (#\>
+     (incorrectly-closed-comment)
+     (switch-to 'data-state)
+     (emit current-comment-token))
+    ((nil)
+     (eof-in-comment)
+     (emit current-comment-token)
+     (emit end-of-file))
+    (t
+     (append-char (slot-value current-comment-token 'data) #\-)
+     (append-char (slot-value current-comment-token 'data) #\-)
+     (append-char (slot-value current-comment-token 'data) #\!)
+     (reconsume-in 'comment-state))))
+
 (define-tokenizer-state doctype-state)
 (define-tokenizer-state before-doctype-name-state)
 (define-tokenizer-state doctype-name-state)
