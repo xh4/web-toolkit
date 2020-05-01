@@ -6,7 +6,13 @@
 
 (define-condition parse-error (html-error) ())
 
-(defmacro define-parse-error (name &key description))
+(defmacro define-parse-error (name &key description)
+  `(define-condition ,name (parse-error)
+     ()
+     (:report
+      (lambda (condition stream)
+        (format stream "~A~%" (type-of condition))
+        (write-string ,description stream)))))
 
 (define-parse-error abrupt-closing-of-empty-comment
   :description "This error occurs if the parser encounters an empty comment that is abruptly closed by a U+003E (>) code point (i.e., <!--> or <!--->). The parser behaves as if the comment is closed correctly.")
@@ -74,7 +80,7 @@
 (define-parse-error missing-attribute-value
   :description "This error occurs if the parser encounters a U+003E (>) code point where an attribute value is expected (e.g., <div id=>). The parser treats the attribute as having an empty value.")
 
-(define-parse-error invalid-first-character-of-tag-name
+(define-parse-error missing-doctype-name
   :description "This error occurs if the parser encounters a DOCTYPE that is missing a name (e.g., <!DOCTYPE>). In such a case, if the DOCTYPE is correctly placed as a document preamble, the parser sets the Document to quirks mode.")
 
 (define-parse-error missing-doctype-public-identifier
@@ -154,3 +160,54 @@
 
 (define-parse-error unknown-named-character-reference
   :description "This error occurs if the parser encounters an ambiguous ampersand. In this case the parser doesn't resolve the character reference.")
+
+(defparameter *parse-errors*
+  '(abrupt-closing-of-empty-comment
+    abrupt-doctype-public-identifier
+    abrupt-doctype-system-identifier
+    absence-of-digits-in-numeric-character-reference
+    cdata-in-html-content
+    character-reference-outside-unicode-range
+    control-character-in-input-stream
+    control-character-reference
+    end-tag-with-attributes
+    duplicate-attribute
+    end-tag-with-trailing-solidus
+    eof-before-tag-name
+    eof-in-cdata
+    eof-in-comment
+    eof-in-doctype
+    eof-in-script-html-comment-like-text
+    eof-in-tag
+    incorrectly-closed-comment
+    incorrectly-opened-comment
+    invalid-character-sequence-after-doctype-name
+    invalid-first-character-of-tag-name
+    missing-attribute-value
+    missing-doctype-name
+    missing-doctype-public-identifier
+    missing-doctype-system-identifier
+    missing-end-tag-name
+    missing-quote-before-doctype-public-identifier
+    missing-quote-before-doctype-system-identifier
+    missing-semicolon-after-character-reference
+    missing-whitespace-after-doctype-public-keyword
+    missing-whitespace-after-doctype-system-keyword
+    missing-whitespace-before-doctype-name
+    missing-whitespace-between-attributes
+    missing-whitespace-between-doctype-public-and-system-identifiers
+    nested-comment
+    noncharacter-character-reference
+    noncharacter-in-input-stream
+    non-void-html-element-start-tag-with-trailing-solidus
+    null-character-reference
+    surrogate-character-reference
+    surrogate-in-input-stream
+    unexpected-character-after-doctype-system-identifier
+    unexpected-character-in-attribute-name
+    unexpected-character-in-unquoted-attribute-value
+    unexpected-equals-sign-before-attribute-name
+    unexpected-null-character
+    unexpected-question-mark-instead-of-tag-name
+    unexpected-solidus-in-tag
+    unknown-named-character-reference))
