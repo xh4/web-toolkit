@@ -5,7 +5,10 @@
     :initarg :value
     :initform nil)))
 
-(defclass doctype (token) ())
+(defclass doctype (token)
+  ((force-quirks-flag
+    :initarg :force-quirks-flag
+    :initform nil)))
 
 (defclass start-tag (token)
   ((tag-name
@@ -971,8 +974,49 @@
      (append-char (slot-value current-comment-token 'data) #\!)
      (reconsume-in 'comment-state))))
 
-(define-tokenizer-state doctype-state)
-(define-tokenizer-state before-doctype-name-state)
+(define-tokenizer-state doctype-state
+  (case next-input-character
+    ((#\tab #\newline #\page #\space)
+     (switch-to 'before-doctype-name-state))
+    (#\>
+     (reconsume-in 'before-doctype-name-state))
+    ((nil)
+     (eof-in-doctype)
+     (let ((token (make-instance 'doctype :force-quirks-flag :on)))
+       (emit token)
+       (emit end-of-file)))
+    (t
+     (missing-whitespace-before-doctype-name)
+     (reconsume-in 'before-doctype-name-state))))
+
+(define-tokenizer-state before-doctype-name-state
+  (let ((char next-input-character))
+    (cond
+     ((or (eq #\tab char) (eq #\newline char)
+          (eq #\page char) (eq #\space char)))
+     ((ascii-upper-alpha-p char)
+      (let ((token (make-instance 'doctype
+                                  :name (string (char-downcase current-input-character)))))
+        (switch-to 'doctype-name-state)))
+     ((eq #\null char)
+      (unexpected-null-character)
+      (let ((token (make-instance 'doctype
+                                  :name (string #\replacement-character))))
+        (switch-to 'doctype-name-state)))
+     ((eq #\> char)
+      (missing-doctype-name)
+      (let ((token (make-instance 'doctype :force-quirks-flag :on)))
+        (switch-to 'data-state)
+        (emit token)))
+     ((null char)
+      (eof-in-doctype)
+      (let ((token (make-instance 'doctype :force-quirks-flag :on)))
+        (emit token)
+        (emit end-of-file)))
+     (t
+      (let ((token (make-instance 'doctype :name (string current-input-character))))
+        (switch-to 'doctype-name-state))))))
+
 (define-tokenizer-state doctype-name-state)
 (define-tokenizer-state after-doctype-name-state)
 (define-tokenizer-state after-doctype-public-keyword-state)
