@@ -1336,9 +1336,34 @@
      (emit current-doctype-token)
      (emit end-of-file))))
 
-(define-tokenizer-state cdata-section-state)
-(define-tokenizer-state cdata-section-bracket-state)
-(define-tokenizer-state cdata-section-end-state)
+(define-tokenizer-state cdata-section-state
+  (case next-input-character
+    (#\]
+     (switch-to 'cdata-section-bracket-state))
+    ((nil)
+     (eof-in-cdata)
+     (emit end-of-file))
+    (t
+     (emit current-input-character))))
+
+(define-tokenizer-state cdata-section-bracket-state
+  (case next-input-character
+    (#\]
+     (switch-to 'cdata-section-end-state))
+    (t
+     (emit #\])
+     (reconsume-in 'cdata-section-state))))
+
+(define-tokenizer-state cdata-section-end-state
+  (case next-input-character
+    (#\]
+     (emit #\]))
+    (#\>
+     (switch-to 'data-state))
+    (t
+     (emit #\])
+     (reconsume-in 'cdata-section-state))))
+
 (define-tokenizer-state character-reference-state)
 (define-tokenizer-state named-character-reference-state)
 (define-tokenizer-state ambiguous-ampersand-state)
