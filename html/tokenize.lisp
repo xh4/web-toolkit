@@ -6,7 +6,16 @@
     :initform nil)))
 
 (defclass doctype (token)
-  ((force-quirks-flag
+  ((name
+    :initarg :name
+    :initform nil)
+   (public-identifier
+    :initarg :public-identifier
+    :initform nil)
+   (system-identifier
+    :initarg :system-identifier
+    :initform nil)
+   (force-quirks-flag
     :initarg :force-quirks-flag
     :initform nil)))
 
@@ -70,6 +79,7 @@
                        (current-tag-token (slot-value tokenizer 'current-tag-token))
                        (return-state (slot-value tokenizer 'return-state))
                        (current-attribute (slot-value tokenizer 'current-attribute))
+                       (current-doctype-token (slot-value tokenizer 'current-doctype-token))
                        (current-comment-token (slot-value tokenizer 'current-comment))
                        (temporary-buffer (slot-value tokenizer 'temporary-buffer)))
        (macrolet ((switch-to (state)
@@ -983,6 +993,7 @@
     ((nil)
      (eof-in-doctype)
      (let ((token (make-instance 'doctype :force-quirks-flag :on)))
+       (setf current-doctype-token token)
        (emit token)
        (emit end-of-file)))
     (t
@@ -997,40 +1008,334 @@
      ((ascii-upper-alpha-p char)
       (let ((token (make-instance 'doctype
                                   :name (string (char-downcase current-input-character)))))
+        (setf current-doctype-token token)
         (switch-to 'doctype-name-state)))
      ((eq #\null char)
       (unexpected-null-character)
       (let ((token (make-instance 'doctype
                                   :name (string #\replacement-character))))
+        (setf current-doctype-token token)
         (switch-to 'doctype-name-state)))
      ((eq #\> char)
       (missing-doctype-name)
       (let ((token (make-instance 'doctype :force-quirks-flag :on)))
+        (setf current-doctype-token token)
         (switch-to 'data-state)
         (emit token)))
      ((null char)
       (eof-in-doctype)
       (let ((token (make-instance 'doctype :force-quirks-flag :on)))
+        (setf current-doctype-token token)
         (emit token)
         (emit end-of-file)))
      (t
       (let ((token (make-instance 'doctype :name (string current-input-character))))
+        (setf current-doctype-token token)
         (switch-to 'doctype-name-state))))))
 
-(define-tokenizer-state doctype-name-state)
-(define-tokenizer-state after-doctype-name-state)
-(define-tokenizer-state after-doctype-public-keyword-state)
-(define-tokenizer-state before-doctype-public-identifier-state)
-(define-tokenizer-state doctype-public-identifier-double-quoted-state)
-(define-tokenizer-state doctype-public-identifier-single-quoted-state)
-(define-tokenizer-state after-doctype-public-identifier-state)
-(define-tokenizer-state between-doctype-public-and-system-identifiers-state)
-(define-tokenizer-state after-doctype-system-keyword-state)
-(define-tokenizer-state before-doctype-system-identifier-state)
-(define-tokenizer-state doctype-system-identifier-double-quoted-state)
-(define-tokenizer-state doctype-system-identifier-single-quoted-state)
-(define-tokenizer-state after-doctype-system-identifier-state)
-(define-tokenizer-state bogus-doctype-state)
+(define-tokenizer-state doctype-name-state
+  (let ((char next-input-character))
+    (cond
+     ((or (eq #\tab char) (eq #\newline char)
+          (eq #\page char) (eq #\space char))
+      (switch-to 'after-doctype-name-state))
+     ((eq #\> char)
+      (switch-to 'data-state)
+      (emit current-doctype-token))
+     ((ascii-upper-alpha-p char)
+      (append-char (slot-value current-doctype-token 'name)
+                   (char-downcase current-input-character)))
+     ((eq #\null char)
+      (unexpected-null-character)
+      (append-char (slot-value current-doctype-token 'name)
+                   #\replacement-character))
+     ((null char)
+      (eof-in-doctype)
+      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+      (emit end-of-file))
+     (t
+      (append-char (slot-value current-doctype-token 'name)
+                   current-input-character)))))
+
+(define-tokenizer-state after-doctype-name-state
+  (let ((char next-input-character))
+    (cond
+     ((or (eq #\tab char) (eq #\newline char)
+          (eq #\page char) (eq #\space char)))
+     ((eq #\> char)
+      (switch-to 'data-state)
+      (emit current-doctype-token))
+     ((null char)
+      (eof-in-doctype)
+      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+      (emit end-of-file))
+     (t
+      ;; ...
+      ))))
+
+(define-tokenizer-state after-doctype-public-keyword-state
+  (case next-input-character
+    ((#\tab #\newline #\page #\space)
+     (switch-to 'before-doctype-public-identifier-state))
+    (#\"
+     (missing-whitespace-after-doctype-public-keyword)
+     (setf (slot-value current-doctype-token 'public-identifier) "")
+     (switch-to 'doctype-public-identifier-double-quoted-state))
+    (#\'
+     (missing-whitespace-after-doctype-public-keyword)
+     (setf (slot-value current-doctype-token 'public-identifier) "")
+     (switch-to 'doctype-public-identifier-single-quoted-state))
+    (#\>
+     (missing-doctype-public-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (switch-to 'data-state)
+     (emit current-doctype-token))
+    ((nil)
+     (eof-in-doctype)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (emit end-of-file))
+    (t
+     (missing-quote-before-doctype-public-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (reconsume-in 'bogus-doctype-state))))
+
+(define-tokenizer-state before-doctype-public-identifier-state
+  (case next-input-character
+    ((#\tab #\newline #\page #\space))
+    (#\"
+     (setf (slot-value current-doctype-token 'public-identifier) "")
+     (switch-to 'doctype-public-identifier-double-quoted-state))
+    (#\'
+     (setf (slot-value current-doctype-token 'public-identifier) "")
+     (switch-to 'doctype-public-identifier-single-quoted-state))
+    (#\>
+     (missing-doctype-public-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (switch-to 'data-state)
+     (emit current-doctype-token))
+    ((nil)
+     (eof-in-doctype)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (emit current-doctype-token)
+     (emit end-of-file))
+    (t
+     (missing-quote-before-doctype-public-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (reconsume-in 'bogus-doctype-state))))
+
+(define-tokenizer-state doctype-public-identifier-double-quoted-state
+  (case next-input-character
+    (#\"
+     (switch-to 'after-doctype-public-identifier-state))
+    (#\null
+     (unexpected-null-character)
+     (append-char (slot-value current-doctype-token 'public-identifier)
+                  #\replacement-character))
+    (#\>
+     (abrupt-doctype-public-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (switch-to 'data-state)
+     (emit current-doctype-token))
+    ((nil)
+     (eof-in-doctype)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (emit current-doctype-token)
+     (emit end-of-file))
+    (t
+     (append-char (slot-value current-doctype-token 'public-identifier)
+                  current-input-character))))
+
+(define-tokenizer-state doctype-public-identifier-single-quoted-state
+  (case next-input-character
+    (#\'
+     (switch-to 'after-doctype-public-identifier-state))
+    (#\null
+     (unexpected-null-character)
+     (append-char (slot-value current-doctype-token 'public-identifier)
+                  #\replacement-character))
+    (#\>
+     (abrupt-doctype-public-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (switch-to 'data-state)
+     (emit current-doctype-token))
+    ((nil)
+     (eof-in-doctype)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (emit current-doctype-token)
+     (emit end-of-file))
+    (t
+     (append-char (slot-value current-doctype-token 'public-identifier)
+                  current-input-character))))
+
+(define-tokenizer-state after-doctype-public-identifier-state
+  (case next-input-character
+    ((#\tab #\newline #\page #\space)
+     (switch-to 'between-doctype-public-and-system-identifiers-state))
+    (#\>
+     (switch-to 'data-state)
+     (emit current-doctype-token))
+    (#\"
+     (missing-whitespace-between-doctype-public-and-system-identifiers)
+     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (switch-to 'doctype-system-identifier-double-quoted-state))
+    (#\'
+     (missing-whitespace-between-doctype-public-and-system-identifiers)
+     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (switch-to 'doctype-system-identifier-single-quoted-state))
+    ((nil)
+     (eof-in-doctype)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (emit current-doctype-token)
+     (emit end-of-file))
+    (t
+     (missing-quote-before-doctype-system-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (reconsume-in 'bogus-doctype-state))))
+
+(define-tokenizer-state between-doctype-public-and-system-identifiers-state
+  (case next-input-character
+    ((#\tab #\newline #\page #\space))
+    (#\>
+     (switch-to 'data-state)
+     (emit current-doctype-token))
+    (#\"
+     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (switch-to 'doctype-system-identifier-double-quoted-state))
+    (#\'
+     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (switch-to 'doctype-system-identifier-single-quoted-state))
+    ((nil)
+     (eof-in-doctype)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (emit current-doctype-token)
+     (emit end-of-file))
+    (t
+     (missing-quote-before-doctype-system-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (reconsume-in 'bogus-doctype-state))))
+
+(define-tokenizer-state after-doctype-system-keyword-state
+  (case next-input-character
+    ((#\tab #\newline #\page #\space)
+     (switch-to 'before-doctype-system-identifier-state))
+    (#\"
+     (missing-whitespace-after-doctype-system-keyword)
+     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (switch-to 'doctype-system-identifier-double-quoted-state))
+    (#\'
+     (missing-whitespace-after-doctype-system-keyword)
+     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (switch-to 'doctype-system-identifier-single-quoted-state))
+    (#\>
+     (missing-doctype-system-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (switch-to 'data-state)
+     (emit current-doctype-token))
+    ((nil)
+     (eof-in-doctype)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (emit current-doctype-token)
+     (emit end-of-file))
+    (t
+     (missing-quote-before-doctype-system-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (reconsume-in 'bogus-doctype-state))))
+
+(define-tokenizer-state before-doctype-system-identifier-state
+  (case next-input-character
+    ((#\tab #\newline #\page #\space))
+    (#\"
+     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (switch-to 'doctype-system-identifier-double-quoted-state))
+    (#\'
+     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (switch-to 'doctype-system-identifier-single-quoted-state))
+    (#\>
+     (missing-doctype-system-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (switch-to 'data-state)
+     (emit current-doctype-token))
+    ((nil)
+     (eof-in-doctype)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (emit current-doctype-token)
+     (emit end-of-file))
+    (t
+     (missing-quote-before-doctype-system-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (reconsume-in 'bogus-doctype-state))))
+
+(define-tokenizer-state doctype-system-identifier-double-quoted-state
+  (case next-input-character
+    (#\"
+     (switch-to 'after-doctype-system-identifier-state))
+    (#\null
+     (unexpected-null-character)
+     (append-char (slot-value current-doctype-token 'system-identifier)
+                  #\replacement-character))
+    (#\>
+     (abrupt-doctype-system-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (switch-to 'data-state)
+     (emit current-doctype-token))
+    ((nil)
+     (eof-in-doctype)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (emit current-doctype-token)
+     (emit end-of-file))
+    (t
+     (append-char (slot-value current-doctype-token 'system-identifier)
+                  current-input-character))))
+
+(define-tokenizer-state doctype-system-identifier-single-quoted-state
+  (case next-input-character
+    (#\'
+     (switch-to 'after-doctype-system-identifier-state))
+    (#\null
+     (unexpected-null-character)
+     (append-char (slot-value current-doctype-token 'system-identifier)
+                  #\replacement-character))
+    (#\>
+     (abrupt-doctype-system-identifier)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (switch-to 'data-state)
+     (emit current-doctype-token))
+    ((nil)
+     (eof-in-doctype)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (emit current-doctype-token)
+     (emit end-of-file))
+    (t
+     (append-char (slot-value current-doctype-token 'system-identifier)
+                  current-input-character))))
+
+(define-tokenizer-state after-doctype-system-identifier-state
+  (case next-input-character
+    ((#\tab #\newline #\page #\space))
+    (#\>
+     (switch-to 'data-state)
+     (emit current-doctype-token))
+    ((nil)
+     (eof-in-doctype)
+     (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+     (emit current-doctype-token)
+     (emit end-of-file))
+    (t
+     (unexpected-character-after-doctype-system-identifier)
+     (reconsume-in 'bogus-doctype-state))))
+
+(define-tokenizer-state bogus-doctype-state
+  (case next-input-character
+    ((#\tab #\newline #\page #\space))
+    (#\>
+     (switch-to 'data-state)
+     (emit current-doctype-token))
+    (#\null
+     (unexpected-null-character))
+    ((nil)
+     (emit current-doctype-token)
+     (emit end-of-file))))
+
 (define-tokenizer-state cdata-section-state)
 (define-tokenizer-state cdata-section-bracket-state)
 (define-tokenizer-state cdata-section-end-state)
@@ -1055,6 +1360,7 @@
     :initform nil
     :reader current-input-character)
    (current-tag-token :initform nil)
+   (current-doctype-token :initform nil)
    (current-attribute :initform nil)
    (temporary-buffer :initform nil)))
 
