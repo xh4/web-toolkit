@@ -66,6 +66,58 @@
   (and char
        (char<= #\a char #\z)))
 
+(defun ascii-digit-p (char)
+  (and char
+       (char<= #\0 char #\9)))
+
+(defun ascii-upper-hex-digit-p (char)
+  (and char
+       (char<= #\A char #\F)))
+
+(defun ascii-lower-hex-digit-p (char)
+  (and char
+       (char<= #\f char #\f)))
+
+(defun ascii-hex-digit-p (char)
+  (or (ascii-upper-hex-digit-p char)
+      (ascii-lower-hex-digit-p char)))
+
+(defun ascii-alphanumeric-p (char)
+  (or (ascii-digit-p char)
+      (ascii-alpha-p char)))
+
+(defun surrogate-p (code)
+  (and code
+       (<= #xD800 code #xDFFF)))
+
+(defun noncharacter-p (code)
+  (and code
+       (<= #xFDD0 code #xFDEF)
+       (find code '(#xFFFE #xFFFF #x1FFFE #x1FFFF #x2FFFE #x2FFFF
+                           #x3FFFE #x3FFFF #x4FFFE #x4FFFF #x5FFFE
+                           #x5FFFF #x6FFFE #x6FFFF #x7FFFE #x7FFFF
+                           #x8FFFE #x8FFFF #x9FFFE #x9FFFF #xAFFFE
+                           #xAFFFF #xBFFFE #xBFFFF #xCFFFE #xCFFFF
+                           #xDFFFE #xDFFFF #xEFFFE #xEFFFF #xFFFFE
+                           #xFFFFF #x10FFFE #x10FFFF))))
+
+(defun c0-control-p (code)
+  (and code
+       (<= #x0000 code #x001F)))
+
+(defun control-p (code)
+  (and code
+       (or (c0-control-p code)
+           (<= #x007F code #x009F))))
+
+(defun whitespace-p (code)
+  (and code
+       (or (= #x0009 code)
+           (= #x000A code)
+           (= #x000C code)
+           (= #x000D code)
+           (= #x0020 code))))
+
 (defmacro append-char (place char)
   `(setf ,place
          (concatenate 'string (string ,char))))
@@ -74,14 +126,16 @@
   `(defun ,name (tokenizer)
      ,@(unless body '((declare (ignore tokenizer))))
      (symbol-macrolet ((next-input-character (next-input-character tokenizer))
+                       (next-few-characters (next-few-characters tokenizer))
                        (current-input-character (current-input-character tokenizer))
                        (end-of-file (make-instance 'end-of-file))
-                       (current-tag-token (slot-value tokenizer 'current-tag-token))
                        (return-state (slot-value tokenizer 'return-state))
+                       (current-tag-token (slot-value tokenizer 'current-tag-token))
                        (current-attribute (slot-value tokenizer 'current-attribute))
                        (current-doctype-token (slot-value tokenizer 'current-doctype-token))
                        (current-comment-token (slot-value tokenizer 'current-comment))
-                       (temporary-buffer (slot-value tokenizer 'temporary-buffer)))
+                       (temporary-buffer (slot-value tokenizer 'temporary-buffer))
+                       (character-reference-code (slot-value tokenizer 'character-reference-code)))
        (macrolet ((switch-to (state)
                     `(setf (slot-value tokenizer 'state) ,state))
                   (reconsume-in (state)
@@ -91,7 +145,18 @@
          (flet (,@(loop for error-name in *parse-errors*
                     collect `(,error-name () (error ',error-name)))
                 (emit (token)
-                  (signal 'on-token :token token)))
+                  (prog1
+                      (signal 'on-token :token token)
+                    (when (typep token 'start-tag)
+                      (setf (slot-value tokenizer 'last-start-tag-token) token))))
+                (consume (&optional n)
+                  (consume tokenizer n))
+                (appropriate-end-tag-token-p (end-tag-token)
+                  (and (typep end-tag-token 'end-tag)
+                       (with-slots (last-start-tag-token) tokenizer
+                         (and last-start-tag-token
+                              (equal (slot-value end-tag-token 'tag-name)
+                                     (slot-value last-start-tag-token 'tag-name)))))))
            ,@(if body
                  body
                `((error "Tokenizer ~A not implemented" ',name))))))))
@@ -856,7 +921,28 @@
      (append-char (slot-value current-comment-token 'data)
                   current-input-character))))
 
-(define-tokenizer-state markup-declaration-open-state)
+(define-tokenizer-state markup-declaration-open-state
+  (let ((characters next-few-characters))
+    (cond
+     ((eq "--" characters)
+      (consume 2)
+      (let ((token (make-instance 'comment-token :data "")))
+        (setf current-comment-token token)
+        (switch-to 'comment-start-state)))
+     ((string-equal "DOCTYPE" characters)
+      (consume 7)
+      (switch-to 'doctype-state))
+     ((equal "[CDATA[" characters)
+      (consume 7)
+      ;; TODO
+      (let ((token (make-instance 'comment-token :data "[CDATA[")))
+        (setf current-comment-token token)
+        (switch-to 'bogus-comment-state)))
+     (t
+      (incorrectly-opened-comment)
+      (let ((token (make-instance 'comment-token :data "")))
+        (setf current-comment-token token)
+        (switch-to 'bogus-comment-state))))))
 
 (define-tokenizer-state comment-start-state
   (case next-input-character
@@ -944,7 +1030,7 @@
      (emit end-of-file))
     (t
      (append-char (slot-value current-comment-token 'data) #\-)
-     (reconsume-in comment-state))))
+     (reconsume-in 'comment-state))))
 
 (define-tokenizer-state comment-end-state
   (case next-input-character
@@ -1364,15 +1450,191 @@
      (emit #\])
      (reconsume-in 'cdata-section-state))))
 
-(define-tokenizer-state character-reference-state)
-(define-tokenizer-state named-character-reference-state)
-(define-tokenizer-state ambiguous-ampersand-state)
-(define-tokenizer-state numeric-character-reference-state)
-(define-tokenizer-state hexadecimal-character-reference-start-state)
-(define-tokenizer-state decimal-character-reference-start-state)
-(define-tokenizer-state hexadecimal-character-reference-state)
-(define-tokenizer-state decimal-character-reference-state)
-(define-tokenizer-state numeric-character-reference-end-state)
+(define-tokenizer-state character-reference-state
+  (setf temporary-buffer "")
+  (append-char temporary-buffer #\&)
+  (let ((char next-input-character))
+    (cond
+     ((ascii-alphanumeric-p char)
+      (reconsume-in 'named-character-reference-state))
+     ((eq #\# char)
+      (append-char temporary-buffer current-input-character)
+      (switch-to 'numeric-character-reference-state))
+     (t
+      (loop for char in temporary-buffer do (emit char))
+      (reconsume-in return-state)))))
+
+(define-tokenizer-state named-character-reference-state
+  (let ((match-p)
+        (last-character-matched)
+        (codepoints))
+    (block :match
+      (loop
+       (let ((char next-input-character))
+         (append-char temporary-buffer char)
+         (loop for (name cps) in *named-character-references*
+               do (let ((i (search temporary-buffer name)))
+                    (if (eq i 0)
+                        (progn
+                          (setf last-character-matched char)
+                          (if (= (length temporary-buffer)
+                                 (length name))
+                              (progn
+                                (setf match-p t
+                                      codepoints cps)
+                                (return-from :match))
+                            (return)))
+                      (return-from :match)))))))
+    (if match-p
+        (if (and (or (eq return-state 'attribute-value-double-quoted-state)
+                     (eq return-state 'attribute-value-single-quoted-state)
+                     (eq return-state 'attribute-value-unquoted-state))
+                 (not (eq #\; last-character-matched))
+                 (let ((char next-input-character))
+                   (or (eq #\= char)
+                       (ascii-alphanumeric-p char))))
+            (progn
+              (loop for char in temporary-buffer do (emit char))
+              (switch-to return-state))
+          (unless (eq #\; last-character-matched)
+            (missing-semicolon-after-character-reference)
+            (setf temporary-buffer "")
+            (loop for code in codepoints
+                  do (append-char temporary-buffer (code-char code)))
+            (loop for char in temporary-buffer do (emit char))
+            (switch-to return-state)))
+      (progn
+        (loop for char in temporary-buffer do (emit char))
+        (switch-to 'ambiguous-ampersand-state)))))
+
+(define-tokenizer-state ambiguous-ampersand-state
+  (let ((char next-input-character))
+    (cond
+     ((ascii-alphanumeric-p char)
+      (if (or (eq return-state 'attribute-value-double-quoted-state)
+              (eq return-state 'attribute-value-single-quoted-state)
+              (eq return-state 'attribute-value-unquoted-state))
+          (append-char (slot-value current-attribute 'value) current-input-character)
+        (emit current-input-character)))
+     ((eq #\; char)
+      (unknown-named-character-reference)
+      (reconsume-in return-state))
+     (t
+      (reconsume-in return-state)))))
+
+(define-tokenizer-state numeric-character-reference-state
+  (setf character-reference-code 0)
+  (case next-input-character
+    ((#\x #\X)
+     (append-char temporary-buffer current-input-character)
+     (switch-to 'hexadecimal-character-reference-state))
+    (t
+     (reconsume-in 'decimal-character-reference-state))))
+
+(define-tokenizer-state hexadecimal-character-reference-start-state
+  (let ((char next-input-character))
+    (cond
+     ((ascii-hex-digit-p char)
+      (reconsume-in 'hexadecimal-character-reference-state))
+     (t
+      (absence-of-digits-in-numeric-character-reference)
+      (loop for char in temporary-buffer do (emit char))
+      (reconsume-in return-state)))))
+
+(define-tokenizer-state decimal-character-reference-start-state
+  (let ((char next-input-character))
+    (cond
+     ((ascii-digit-p char)
+      (reconsume-in 'decimal-character-reference-sta))
+     (t
+      (absence-of-digits-in-numeric-character-reference)
+      (loop for char in temporary-buffer do (emit char))
+      (reconsume-in return-state)))))
+
+(define-tokenizer-state hexadecimal-character-reference-state
+  (let ((char next-input-character))
+    (cond
+     ((ascii-digit-p char)
+      (setf character-reference-code (* 16 character-reference-code)
+            character-reference-code (+ (- (char-code current-input-character) #x0030)
+                                        character-reference-code)))
+     ((ascii-upper-hex-digit-p char)
+      (setf character-reference-code (* 16 character-reference-code)
+            character-reference-code (+ (- (char-code current-input-character) #x0037)
+                                        character-reference-code)))
+     ((ascii-lower-hex-digit-p char)
+      (setf character-reference-code (* 16 character-reference-code)
+            character-reference-code (+ (- (char-code current-input-character) #x0057)
+                                        character-reference-code)))
+     ((eq #\; char)
+      (switch-to 'numeric-character-reference-end-state))
+     (t
+      (missing-semicolon-after-character-reference)
+      (reconsume-in 'numeric-character-reference-end-state)))))
+
+(define-tokenizer-state decimal-character-reference-state
+  (let ((char next-input-character))
+    (cond
+     ((ascii-digit-p char)
+      (setf character-reference-code (* 10 character-reference-code)
+            character-reference-code (+ (- (char-code current-input-character) #x0030)
+                                        character-reference-code)))
+     ((eq #\; char)
+      (switch-to 'numeric-character-reference-end-state))
+     (t
+      (missing-semicolon-after-character-reference)
+      (reconsume-in 'numeric-character-reference-end-state)))))
+
+(define-tokenizer-state numeric-character-reference-end-state
+  (cond
+   ((= #x00 character-reference-code)
+    (null-character-reference)
+    (setf character-reference-code #xFFFD))
+   ((> character-reference-code #X10FFFF)
+    (character-reference-outside-unicode-range)
+    (setf character-reference-code #XFFFD))
+   ((surrogate-p character-reference-code)
+    (surrogate-character-reference)
+    (setf character-reference-code #XFFFD))
+   ((noncharacter-p character-reference-code)
+    (noncharacter-character-reference))
+   ((or (= #x0D character-reference-code)
+        (and (control-p character-reference-code)
+             (not (whitespace-p character-reference-code))))
+    (control-character-reference)
+    (let ((code-point (cdr (assoc character-reference-code
+                                  '((0x80 . 0x20AC)
+                                    (0x82 . 0x201A)
+                                    (0x83 . 0x0192)
+                                    (0x84 . 0x201E)
+                                    (0x85 . 0x2026)
+                                    (0x86 . 0x2020)
+                                    (0x87 . 0x2021)
+                                    (0x88 . 0x02C6)
+                                    (0x89 . 0x2030)
+                                    (0x8A . 0x0160)
+                                    (0x8B . 0x2039)
+                                    (0x8C . 0x0152)
+                                    (0x8E . 0x017D)
+                                    (0x91 . 0x2018)
+                                    (0x92 . 0x2019)
+                                    (0x93 . 0x201C)
+                                    (0x94 . 0x201D)
+                                    (0x95 . 0x2022)
+                                    (0x96 . 0x2013)
+                                    (0x97 . 0x2014)
+                                    (0x98 . 0x02DC)
+                                    (0x99 . 0x2122)
+                                    (0x9A . 0x0161)
+                                    (0x9B . 0x203A)
+                                    (0x9C . 0x0153)
+                                    (0x9E . 0x017E)
+                                    (0x9F . 0x0178))))))
+      (when code-point (setf character-reference-code code-point)))))
+  (setf temporary-buffer "")
+  (append-char temporary-buffer (code-char character-reference-code))
+  (loop for char in temporary-buffer do (emit char))
+  (switch-to return-state))
 
 (defclass tokenizer ()
   ((state
@@ -1387,7 +1649,12 @@
    (current-tag-token :initform nil)
    (current-doctype-token :initform nil)
    (current-attribute :initform nil)
-   (temporary-buffer :initform nil)))
+   (temporary-buffer :initform nil)
+   (character-reference-code :initform nil)
+   (last-start-tag-token :initform nil)))
+
+(defun consume (tokenizer &optional (n 1))
+  )
 
 (defun next-input-character (tokenizer)
   (with-slots (current-input-character stream) tokenizer
@@ -1397,6 +1664,9 @@
   (with-slots (current-input-character stream) tokenizer
     (unread-char current-input-character stream)
     (setf current-input-character nil)))
+
+(defun next-few-characters (tokenizer)
+  )
 
 (defgeneric tokenize (source)
   (:method ((source string))
