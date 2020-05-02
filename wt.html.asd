@@ -12,6 +12,7 @@
                 :serial t
                 :components ((:file "package")
                              (:file "condition")
+                             (:file "named-character-references")
                              (:file "construct")
                              (:file "document")
                              (:file "text")
