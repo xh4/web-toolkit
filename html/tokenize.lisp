@@ -2,10 +2,7 @@
 
 ;; https://html.spec.whatwg.org/multipage/parsing.html#tokenization
 
-(defclass token ()
-  ((value
-    :initarg :value
-    :initform nil)))
+(defclass token () ())
 
 (defclass doctype (token)
   ((name
@@ -174,7 +171,10 @@
                        (reconsume tokenizer)
                        (setf (slot-value tokenizer 'state) ,state))))
          (flet (,@(loop for error-name in *parse-errors*
-                    collect `(,error-name () (error ',error-name)))
+                    collect `(,error-name ()
+                               (restart-case
+                                   (error ',error-name)
+                                 (continue ()))))
                 (emit (token)
                   (prog1
                       (signal 'on-token :token token)
@@ -479,7 +479,7 @@
      ((ascii-alpha-p char)
       (let ((token (make-instance 'end-tag :tag-name "")))
         (setf current-tag-token token)
-        (reconsume 'script-data-end-tag-name-state)))
+        (reconsume-in 'script-data-end-tag-name-state)))
      (t
       (emit #\<)
       (emit #\/)
@@ -1502,30 +1502,30 @@
       (append-char temporary-buffer current-input-character)
       (switch-to 'numeric-character-reference-state))
      (t
-      (loop for char in temporary-buffer do (emit char))
+      (loop for char across temporary-buffer do (emit char))
       (reconsume-in return-state)))))
 
 (define-tokenizer-state named-character-reference-state
   (let ((match-p)
         (last-character-matched)
         (codepoints))
-    (block :match
-      (loop
-       (let ((char next-input-character))
-         (append-char temporary-buffer char)
-         (loop for (name cps) in *named-character-references*
-               do (let ((i (search temporary-buffer name)))
-                    (if (eq i 0)
-                        (progn
-                          (setf last-character-matched char)
-                          (if (= (length temporary-buffer)
-                                 (length name))
-                              (progn
-                                (setf match-p t
-                                      codepoints cps)
-                                (return-from :match))
-                            (return)))
-                      (return-from :match)))))))
+    (loop with last-name-matched
+          for i from 1
+          for name = (concatenate 'string temporary-buffer (next-few-characters i))
+          for result = (lookup-named-character-reference name)
+          when (and result (= (length name) (+ (length temporary-buffer) i)))
+          do (progn
+               (setf last-character-matched (char name (1- (length name))))
+               (when (listp result)
+                 (setf match-p t
+                       last-name-matched name
+                       codepoints result)))
+          else do (if last-name-matched
+                      (progn (consume (1- (length last-name-matched))) (loop-finish))
+                    (progn (consume (1- name)) (loop-finish)))
+          finally (if last-name-matched
+                      (setf temporary-buffer last-name-matched)
+                    (setf temporary-buffer (subseq name 0 (1- (length name))))))
     (if match-p
         (if (and (or (eq return-state 'attribute-value-double-quoted-state)
                      (eq return-state 'attribute-value-single-quoted-state)
@@ -1535,17 +1535,18 @@
                    (or (eq #\= char)
                        (ascii-alphanumeric-p char))))
             (progn
-              (loop for char in temporary-buffer do (emit char))
+              (loop for char across temporary-buffer do (emit char))
               (switch-to return-state))
-          (unless (eq #\; last-character-matched)
-            (missing-semicolon-after-character-reference)
+          (progn
+            (unless (eq #\; last-character-matched)
+              (missing-semicolon-after-character-reference))
             (setf temporary-buffer "")
             (loop for code in codepoints
                   do (append-char temporary-buffer (code-char code)))
-            (loop for char in temporary-buffer do (emit char))
+            (loop for char across temporary-buffer do (emit char))
             (switch-to return-state)))
       (progn
-        (loop for char in temporary-buffer do (emit char))
+        (loop for char across temporary-buffer do (emit char))
         (switch-to 'ambiguous-ampersand-state)))))
 
 (define-tokenizer-state ambiguous-ampersand-state
@@ -1579,7 +1580,7 @@
       (reconsume-in 'hexadecimal-character-reference-state))
      (t
       (absence-of-digits-in-numeric-character-reference)
-      (loop for char in temporary-buffer do (emit char))
+      (loop for char across temporary-buffer do (emit char))
       (reconsume-in return-state)))))
 
 (define-tokenizer-state decimal-character-reference-start-state
@@ -1589,7 +1590,7 @@
       (reconsume-in 'decimal-character-reference-sta))
      (t
       (absence-of-digits-in-numeric-character-reference)
-      (loop for char in temporary-buffer do (emit char))
+      (loop for char across temporary-buffer do (emit char))
       (reconsume-in return-state)))))
 
 (define-tokenizer-state hexadecimal-character-reference-state
@@ -1674,7 +1675,7 @@
       (when code-point (setf character-reference-code code-point)))))
   (setf temporary-buffer "")
   (append-char temporary-buffer (code-char character-reference-code))
-  (loop for char in temporary-buffer do (emit char))
+  (loop for char across temporary-buffer do (emit char))
   (switch-to return-state))
 
 (defclass tokenizer ()
@@ -1689,6 +1690,7 @@
    (current-input-character
     :initform nil
     :reader current-input-character)
+   (return-state :initform nil)
    (current-tag-token :initform nil)
    (current-doctype-token :initform nil)
    (current-attribute :initform nil)
