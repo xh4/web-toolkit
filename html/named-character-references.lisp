@@ -1,5 +1,21 @@
 (in-package :html)
 
+(defvar *named-character-reference-lookup-table* nil)
+
+(defun make-named-character-reference-lookup-table ()
+  (setf *named-character-reference-lookup-table* (make-hash-table :test 'equal))
+  (loop for (name codepoints) in *named-character-references*
+        do (loop for i from 1 upto (1- (length name))
+                 for part = (subseq name 0 i)
+                 unless (gethash part *named-character-reference-lookup-table*)
+                 do (setf (gethash part *named-character-reference-lookup-table*) t))
+        do (setf (gethash name *named-character-reference-lookup-table*) codepoints)))
+
+(defun lookup-named-character-reference (name)
+  (unless *named-character-reference-lookup-table*
+    (make-named-character-reference-lookup-table))
+  (gethash name *named-character-reference-lookup-table*))
+
 (defvar *named-character-references*
   '(("&AElig" (198))
     ("&AElig;" (198))
