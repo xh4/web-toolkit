@@ -1,5 +1,7 @@
 (in-package :html)
 
+;; https://html.spec.whatwg.org/multipage/parsing.html#tokenization
+
 (defclass token ()
   ((value
     :initarg :value
@@ -19,6 +21,16 @@
     :initarg :force-quirks-flag
     :initform nil)))
 
+(defmethod print-object ((doctype doctype) stream)
+  (print-unreadable-object (doctype stream :type t)
+    (with-slots (name public-identifier system-identifier) doctype
+      (when name
+        (format stream " NAME: ~S" name))
+      (when public-identifier
+        (format stream " PUBLIC-IDENTIFIER: ~S" public-identifier))
+      (when system-identifier
+        (format stream " SYSTEM-IDENTIFIER: ~S" system-identifier)))))
+
 (defclass start-tag (token)
   ((tag-name
     :initarg :tag-name
@@ -27,19 +39,39 @@
     :initarg :attributes
     :initform nil)))
 
+(defmethod print-object ((start-tag start-tag) stream)
+  (print-unreadable-object (start-tag stream :type t)
+    (with-slots (tag-name attributes) start-tag
+      (format stream "~S" tag-name)
+      (when attributes
+        (format stream "~A"
+                (loop for attribute in attributes
+                      collect (cons (slot-value attribute 'name)
+                                    (slot-value attribute 'value))))))))
+
 (defclass end-tag (token)
   ((tag-name
     :initarg :tag-name
     :initform nil)))
+
+(defmethod print-object ((end-tag end-tag) stream)
+  (print-unreadable-object (end-tag stream :type t)
+    (with-slots (tag-name) end-tag
+      (format stream "~S" tag-name))))
 
 (defclass comment (token)
   ((data
     :initarg :data
     :initform nil)))
 
-(defclass character (token) ())
+(defmethod print-object ((comment comment) stream)
+  (print-unreadable-object (comment stream :type t)
+    (format stream "~S" (slot-value comment 'data))))
 
 (defclass end-of-file (token) ())
+
+(defmethod print-object ((end-of-file end-of-file) stream)
+  (print-unreadable-object (end-of-file stream :type t)))
 
 (defclass attribute ()
   ((name
@@ -120,13 +152,12 @@
 
 (defmacro append-char (place char)
   `(setf ,place
-         (concatenate 'string (string ,char))))
+         (concatenate 'string ,place (string ,char))))
 
 (defmacro define-tokenizer-state (name &body body)
   `(defun ,name (tokenizer)
      ,@(unless body '((declare (ignore tokenizer))))
      (symbol-macrolet ((next-input-character (next-input-character tokenizer))
-                       (next-few-characters (next-few-characters tokenizer))
                        (current-input-character (current-input-character tokenizer))
                        (end-of-file (make-instance 'end-of-file))
                        (return-state (slot-value tokenizer 'return-state))
@@ -151,6 +182,8 @@
                       (setf (slot-value tokenizer 'last-start-tag-token) token))))
                 (consume (&optional n)
                   (consume tokenizer n))
+                (next-few-characters (n)
+                  (next-few-characters tokenizer n))
                 (appropriate-end-tag-token-p (end-tag-token)
                   (and (typep end-tag-token 'end-tag)
                        (with-slots (last-start-tag-token) tokenizer
@@ -922,27 +955,26 @@
                   current-input-character))))
 
 (define-tokenizer-state markup-declaration-open-state
-  (let ((characters next-few-characters))
-    (cond
-     ((eq "--" characters)
-      (consume 2)
-      (let ((token (make-instance 'comment-token :data "")))
-        (setf current-comment-token token)
-        (switch-to 'comment-start-state)))
-     ((string-equal "DOCTYPE" characters)
-      (consume 7)
-      (switch-to 'doctype-state))
-     ((equal "[CDATA[" characters)
-      (consume 7)
-      ;; TODO
-      (let ((token (make-instance 'comment-token :data "[CDATA[")))
-        (setf current-comment-token token)
-        (switch-to 'bogus-comment-state)))
-     (t
-      (incorrectly-opened-comment)
-      (let ((token (make-instance 'comment-token :data "")))
-        (setf current-comment-token token)
-        (switch-to 'bogus-comment-state))))))
+  (cond
+   ((equal "--" (next-few-characters 2))
+    (consume 2)
+    (let ((token (make-instance 'comment-token :data "")))
+      (setf current-comment-token token)
+      (switch-to 'comment-start-state)))
+   ((string-equal "DOCTYPE" (next-few-characters 7))
+    (consume 7)
+    (switch-to 'doctype-state))
+   ((equal "[CDATA[" (next-few-characters 7))
+    (consume 7)
+    ;; TODO
+    (let ((token (make-instance 'comment-token :data "[CDATA[")))
+      (setf current-comment-token token)
+      (switch-to 'bogus-comment-state)))
+   (t
+    (incorrectly-opened-comment)
+    (let ((token (make-instance 'comment-token :data "")))
+      (setf current-comment-token token)
+      (switch-to 'bogus-comment-state)))))
 
 (define-tokenizer-state comment-start-state
   (case next-input-character
@@ -1156,8 +1188,17 @@
       (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
       (emit end-of-file))
      (t
-      ;; ...
-      ))))
+      (cond
+       ((string-equal "PUBLIC" (next-few-characters 6))
+        (consume 6)
+        (switch-to 'after-doctype-public-keyword-state))
+       ((string-equal "SYSTEM" (next-few-characters 6))
+        (consume 6)
+        (switch-to 'after-doctype-system-keyword-state))
+       (t
+        (invalid-character-sequence-after-doctype-name)
+        (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
+        (reconsume-in 'bogus-doctype-state)))))))
 
 (define-tokenizer-state after-doctype-public-keyword-state
   (case next-input-character
@@ -1643,6 +1684,8 @@
    (stream
     :initarg :stream
     :initform nil)
+   (buffer
+    :initform nil)
    (current-input-character
     :initform nil
     :reader current-input-character)
@@ -1654,19 +1697,33 @@
    (last-start-tag-token :initform nil)))
 
 (defun consume (tokenizer &optional (n 1))
-  )
-
-(defun next-input-character (tokenizer)
-  (with-slots (current-input-character stream) tokenizer
-    (setf current-input-character (read-char stream nil nil))))
+  (with-slots (stream buffer current-input-character) tokenizer
+    (loop for i from 1 upto n
+          for char = (or (pop buffer)
+                         (read-char stream nil nil))
+          when char
+          do (progn
+               (setf current-input-character char)
+               (when (= i n)
+                 (return char)))
+          else do (return))))
 
 (defun reconsume (tokenizer)
-  (with-slots (current-input-character stream) tokenizer
-    (unread-char current-input-character stream)
-    (setf current-input-character nil)))
+  (with-slots (current-input-character buffer) tokenizer
+    (push current-input-character buffer)))
 
-(defun next-few-characters (tokenizer)
-  )
+(defun next-input-character (tokenizer)
+  (consume tokenizer))
+
+(defun next-few-characters (tokenizer n)
+  (with-slots (buffer stream) tokenizer
+    (loop repeat (- n (length buffer))
+          for char = (read-char stream nil nil)
+          while char
+          do (appendf buffer (list char)))
+    (if (> n (length buffer))
+        (coerce buffer 'string)
+      (coerce (subseq buffer 0 n) 'string))))
 
 (defgeneric tokenize (source)
   (:method ((source string))
@@ -1677,7 +1734,6 @@
      (loop with tokens = '()
            do (handler-bind ((on-token (lambda (c)
                                          (let ((token (slot-value c 'token)))
-                                           (format t "~A~%" token)
                                            (if (typep token 'end-of-file)
                                                (loop-finish)
                                              (push token tokens))))))
