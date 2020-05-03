@@ -33,7 +33,9 @@
                          (next-token nil)
                          (document nil)
                          (stack-of-open-elements (slot-value parser 'stack-of-open-elements))
-                         (adjusted-current-node (adjusted-current-node parser)))
+                         (adjusted-current-node (adjusted-current-node parser))
+                         (head-element-pointer (slot-value parser 'head-element-pointer))
+                         (current-node nil))
          (macrolet ((switch-to (insertion-mode)
                       `(setf (slot-value parser 'insertion-mode) ,insertion-mode))
                     (parse-error (message)))
@@ -41,16 +43,33 @@
                       collect `(,(intern (format nil "PROCESS-TOKEN-IN-~A-INSERTION-MODE" insertion-mode))
                                 ()
                                 (,(intern (format nil "PROCESS-TOKEN-IN-~A-INSERTION-MODE" insertion-mode)) parser)))
-                  (insert-comment (token &optional position)
-                    (declare (ignore token position)))
-                  (insert-character (character)
-                    (declare (ignore character)))
+                  (ignore-token ())
+                  (reprocess-current-token ())
+                  (insert-comment (&optional position)
+                    (declare (ignore position)))
+                  (insert-character ())
                   (create-element (token)
                     (declare (ignore token)))
-                  (a-start-tag-whose-name-is (name))
-                  (a-start-tag-whose-name-is-one-of (names))
-                  (an-end-tag-whose-name-is (name))
-                  (an-end-tag-whose-name-is-one-of (names)))
+                  (a-start-tag-whose-tag-name-is (name)
+                    (let ((token (slot-value parser 'current-token)))
+                      (and (typep token 'start-tag)
+                           (equal name (slot-value token 'tag-name)))))
+                  (a-start-tag-whose-tag-name-is-one-of (names)
+                    (let ((token (slot-value parser 'current-token)))
+                      (and (typep token 'start-tag)
+                           (member (slot-value token 'tag-name) names :test 'equal))))
+                  (an-end-tag-whose-tag-name-is (name)
+                    (let ((token (slot-value parser 'current-token)))
+                      (and (typep token 'end-tag)
+                           (equal name (slot-value token 'tag-name)))))
+                  (an-end-tag-whose-tag-name-is-one-of (names)
+                    (let ((token (slot-value parser 'current-token)))
+                      (and (typep token 'end-tag)
+                           (member (slot-value token 'tag-name) names :test 'equal))))
+                  (insert-html-element-for-token (&optional token)
+                    (unless token
+                      (setf token (slot-value parser 'current-token)))
+                    (insert-html-element parser token)))
              ,@(if body
                    body
                  `((error "Parser ~A not implemented" ',name)))))))))
@@ -59,10 +78,10 @@
   (cond
    ((or (eq #\tab token) (eq #\newline token)
         (eq #\page token) (eq #\return token) (eq #\space token))
-    #|ignore|#)
+    (ignore-token))
    
    ((typep token 'comment-token)
-    (insert-comment token))
+    (insert-comment))
    
    ((typep token 'doctype-token)
     ;; ...
@@ -78,19 +97,19 @@
     (parse-error "..."))
 
    ((typep token 'comment-token)
-    (insert-comment token))
+    (insert-comment))
 
    ((or (eq #\tab token) (eq #\newline token)
         (eq #\page token) (eq #\return token) (eq #\space token))
-    #|ignore|#)
+    (ignore-token))
     
-   ((a-start-tag-whose-name-is "html")
+   ((a-start-tag-whose-tag-name-is "html")
     (let ((element (create-element token)))
       (dom:append-child document element)
       (push element stack-of-open-elements))
     (switch-to 'before-head))
     
-   ((an-end-tag-whose-name-is-one-of '("head" "body" "html" "br"))
+   ((an-end-tag-whose-tag-name-is-one-of '("head" "body" "html" "br"))
     ;; Same as T
     (let ((element (make-instance 'element :tag-name "html")))
       (dom:append-child document element)
@@ -110,67 +129,77 @@
   (cond
    ((or (eq #\tab token) (eq #\newline token)
         (eq #\page token) (eq #\return token) (eq #\space token))
-    #|ignore|#)
+    (ignore-token))
    
    ((typep token 'comment-token)
-    (insert-comment token))
+    (insert-comment))
    
    ((typep token 'doctype-token)
-    (parse-error "..."))
+    (parse-error "...")
+    (ignore-token))
    
-   ((a-start-tag-whose-name-is "html")
+   ((a-start-tag-whose-tag-name-is "html")
     (process-token-in-in-body-insertion-mode))
 
-   ((a-start-tag-whose-name-is "head")
-    (and (typep token 'start-tag)
-         (equal "head" (slot-value token 'tag-name))))
+   ((a-start-tag-whose-tag-name-is "head")
+    (let ((head (insert-html-element-for-token)))
+      (setf head-element-pointer head)
+      (switch-to 'in-head)))
 
-   ((an-end-tag-whose-name-is-one-of'("head" "body" "html" "br"))
-    (and (typep token 'end-tag)
-         (member (slot-value token 'tag-name)
-                 :test 'equal)))
+   ((an-end-tag-whose-tag-name-is-one-of '("head" "body" "html" "br"))
+    ;; Same as T
+    (let ((head (insert-html-element-for-token (make-instance 'start-tag :tag-name "head"))))
+      (setf head-element-pointer head))
+    (switch-to 'in-head)
+    (reprocess-current-token))
    
-   ((typep token 'end-tag))
+   ((typep token 'end-tag)
+    (parse-error "...")
+    (ignore-token))
    
-   (t)))
+   (t
+    (let ((head (insert-html-element-for-token (make-instance 'start-tag :tag-name "head"))))
+      (setf head-element-pointer head))
+    (switch-to 'in-head)
+    (reprocess-current-token))))
 
 (define-parser-insertion-mode in-head
   (cond
    ((or (eq #\tab token) (eq #\newline token)
         (eq #\page token) (eq #\return token) (eq #\space token))
-    (insert-character token))
+    (insert-character))
    
    ((typep token 'comment-token)
-    (insert-comment token))
+    (insert-comment))
    
    ((typep token 'doctype-token)
     (parse-error "..."))
    
-   ((a-start-tag-whose-name-is "html")
+   ((a-start-tag-whose-tag-name-is "html")
     (process-token-in-in-body-insertion-mode))
    
-   ((a-start-tag-whose-name-is-one-of '("base" "basefont" "bgsound" "link")))
+   ((a-start-tag-whose-tag-name-is-one-of '("base" "basefont" "bgsound" "link")))
    
-   ((a-start-tag-whose-name-is "meta"))
+   ((a-start-tag-whose-tag-name-is "meta"))
    
-   ((a-start-tag-whose-name-is "title"))
+   ((a-start-tag-whose-tag-name-is "title"))
 
-   ((or (a-start-tag-whose-name-is "noscript")
-        (a-start-tag-whose-name-is-one-of '("noframes" "style"))))
+   ((or (a-start-tag-whose-tag-name-is "noscript")
+        (a-start-tag-whose-tag-name-is-one-of '("noframes" "style"))))
    
-   ((a-start-tag-whose-name-is "noscript"))
+   ((a-start-tag-whose-tag-name-is "noscript"))
   
-   ((a-start-tag-whose-name-is "script"))
+   ((a-start-tag-whose-tag-name-is "script"))
 
-   ((an-end-tag-whose-name-is "head"))
+   ((an-end-tag-whose-tag-name-is "head"))
 
-   ((an-end-tag-whose-name-is-one-of '("body" "html" "br")))
+   ((an-end-tag-whose-tag-name-is-one-of '("body" "html" "br")))
 
-   ((a-start-tag-whose-name-is "template"))
+   ((a-start-tag-whose-tag-name-is "template"))
 
-   ((an-end-tag-whose-name-is "template"))
+   ((an-end-tag-whose-tag-name-is "template"))
 
-   ((or (a-start-tag-whose-name-is "head")
+   ((or (a-start-tag-whose-tag-name-is "head")
         (typep token 'end-tag)))
    
    (t)))
@@ -179,19 +208,19 @@
   (cond
    ((typep token 'doctype-token))
 
-   ((a-start-tag-whose-name-is "html"))
+   ((a-start-tag-whose-tag-name-is "html"))
 
-   ((an-end-tag-whose-name-is "noscript"))
+   ((an-end-tag-whose-tag-name-is "noscript"))
 
    ((or (or (eq #\tab token) (eq #\newline token)
             (eq #\page token) (eq #\return token) (eq #\space token))
         (typep token 'comment-token)
-        (a-start-tag-whose-name-is-one-of '("basefont" "bgsound" "link"
+        (a-start-tag-whose-tag-name-is-one-of '("basefont" "bgsound" "link"
                                             "meta" "noframes" "style"))))
 
-   ((an-end-tag-whose-name-is "br"))
+   ((an-end-tag-whose-tag-name-is "br"))
 
-   ((or (a-start-tag-whose-name-is-one-of '("head" "noscript"))
+   ((or (a-start-tag-whose-tag-name-is-one-of '("head" "noscript"))
         ;; Any other end tag
         (typep token 'end-tag)))
 
@@ -202,30 +231,30 @@
   (cond
    ((or (eq #\tab token) (eq #\newline token)
         (eq #\page token) (eq #\return token) (eq #\space token))
-    (insert-character token))
+    (insert-character))
    
    ((typep token 'comment-token)
-    (insert-comment token))
+    (insert-comment))
    
    ((typep token 'doctype-token)
     (parse-error "..."))
    
-   ((a-start-tag-whose-name-is "html")
+   ((a-start-tag-whose-tag-name-is "html")
     (process-token-in-in-body-insertion-mode))
    
-   ((a-start-tag-whose-name-is "body"))
+   ((a-start-tag-whose-tag-name-is "body"))
    
-   ((a-start-tag-whose-name-is "frameset"))
+   ((a-start-tag-whose-tag-name-is "frameset"))
 
-   ((a-start-tag-whose-name-is-one-of '("base" "basefont" "bgsound" "link"
+   ((a-start-tag-whose-tag-name-is-one-of '("base" "basefont" "bgsound" "link"
                                         "meta" "noframes" "script" "style"
                                         "template" "title")))
 
-   ((an-end-tag-whose-name-is "template"))
+   ((an-end-tag-whose-tag-name-is "template"))
 
-   ((an-end-tag-whose-name-is-one-of '("body" "html" "br")))
+   ((an-end-tag-whose-tag-name-is-one-of '("body" "html" "br")))
 
-   ((or (a-start-tag-whose-name-is "head")
+   ((or (a-start-tag-whose-tag-name-is "head")
         (typep token 'end-tag)))
       
    (t)))
@@ -241,94 +270,94 @@
    ((typep token 'character))
    
    ((typep token 'comment-token)
-    (insert-comment token))
+    (insert-comment))
    
    ((typep token 'doctype-token)
     (parse-error "..."))
    
    ((a-start-tag-whose-tag-name-is "html"))
    
-   ((or (a-start-tag-whose-name-is-one-of '("base" "basefont" "bgsound" "link"
+   ((or (a-start-tag-whose-tag-name-is-one-of '("base" "basefont" "bgsound" "link"
                                             "meta" "noframes" "script" "style"
                                             "template" "title"))
-        (an-end-tag-whose-name-is "template")))
+        (an-end-tag-whose-tag-name-is "template")))
    
    
-   ((a-start-tag-whose-name-is "body"))
+   ((a-start-tag-whose-tag-name-is "body"))
 
-   ((a-start-tag-whose-name-is "frameset"))
+   ((a-start-tag-whose-tag-name-is "frameset"))
    
    ;; An end-of-file token
    ((typep token 'end-of-file))
    
-   ((an-end-tag-whose-name-is "body"))
+   ((an-end-tag-whose-tag-name-is "body"))
 
-   ((an-end-tag-whose-name-is "html"))
+   ((an-end-tag-whose-tag-name-is "html"))
    
-   ((a-start-tag-whose-name-is-one-of '("address" "article" "aside" "blockquote"
+   ((a-start-tag-whose-tag-name-is-one-of '("address" "article" "aside" "blockquote"
                                         "center" "details" "dialog" "dir" "div" "dl"
                                         "fieldset" "figcaption" "figure" "footer" "header"
                                         "hgroup" "main" "menu" "nav" "ol" "p"
                                         "section" "summary" "ul")))
 
-   ((a-start-tag-whose-name-is-one-of '("h1" "h2" "h3" "h4" "h5" "h6")))
+   ((a-start-tag-whose-tag-name-is-one-of '("h1" "h2" "h3" "h4" "h5" "h6")))
 
-   ((a-start-tag-whose-name-is-one-of '("pre" "listing")))
+   ((a-start-tag-whose-tag-name-is-one-of '("pre" "listing")))
 
-   ((a-start-tag-whose-name-is "form"))
+   ((a-start-tag-whose-tag-name-is "form"))
 
-   ((a-start-tag-whose-name-is "li"))
+   ((a-start-tag-whose-tag-name-is "li"))
    
-   ((a-start-tag-whose-name-is-one-of '("dd" "dt")))
+   ((a-start-tag-whose-tag-name-is-one-of '("dd" "dt")))
    
-   ((a-start-tag-whose-name-is "plaintext"))
+   ((a-start-tag-whose-tag-name-is "plaintext"))
 
-   ((a-start-tag-whose-name-is "button"))
+   ((a-start-tag-whose-tag-name-is "button"))
    
 
-   ((an-end-tag-whose-name-is-one-of '("address" "article" "aside" "blockquote"
+   ((an-end-tag-whose-tag-name-is-one-of '("address" "article" "aside" "blockquote"
                                        "center" "details" "dialog" "dir" "div" "dl"
                                        "fieldset" "figcaption" "figure" "footer" "header"
                                        "hgroup" "main" "menu" "nav" "ol" "p"
                                        "section" "summary" "ul")))
 
-   ((an-end-tag-whose-name-is "form"))
+   ((an-end-tag-whose-tag-name-is "form"))
 
-   ((an-end-tag-whose-name-is "p"))
+   ((an-end-tag-whose-tag-name-is "p"))
 
-   ((an-end-tag-whose-name-is "li"))
+   ((an-end-tag-whose-tag-name-is "li"))
    
-   ((an-end-tag-whose-name-is-one-of '("dd" "dt")))
+   ((an-end-tag-whose-tag-name-is-one-of '("dd" "dt")))
 
-   ((an-end-tag-whose-name-is-one-of '("h1" "h2" "h3" "h4" "h5" "h6")))
+   ((an-end-tag-whose-tag-name-is-one-of '("h1" "h2" "h3" "h4" "h5" "h6")))
    
-   ((an-end-tag-whose-name-is "sarcasm"))
+   ((an-end-tag-whose-tag-name-is "sarcasm"))
 
-   ((a-start-tag-whose-name-is "a"))
+   ((a-start-tag-whose-tag-name-is "a"))
 
-   ((a-start-tag-whose-name-is-one-of '("b" "big" "code" "em" "font"
+   ((a-start-tag-whose-tag-name-is-one-of '("b" "big" "code" "em" "font"
                                         "i" "s" "small" "strike" "strong" "tt" "u")))
 
-   ((a-start-tag-whose-name-is "nobr"))
+   ((a-start-tag-whose-tag-name-is "nobr"))
 
-   ((an-end-tag-whose-name-is-one-of '("a" "b" "big" "code" "em" "font"
+   ((an-end-tag-whose-tag-name-is-one-of '("a" "b" "big" "code" "em" "font"
                                        "i" "s" "small" "strike" "strong" "tt" "u")))
 
-   ((a-start-tag-whose-name-is-one-of '("applet" "marquee" "object")))
+   ((a-start-tag-whose-tag-name-is-one-of '("applet" "marquee" "object")))
    
-   ((an-end-tag-whose-name-is-one-of '("applet" "marquee" "object")))
+   ((an-end-tag-whose-tag-name-is-one-of '("applet" "marquee" "object")))
 
-   ((a-start-tag-whose-name-is "table"))
+   ((a-start-tag-whose-tag-name-is "table"))
 
-   ((an-end-tag-whose-name-is "br"))
+   ((an-end-tag-whose-tag-name-is "br"))
 
-   ((a-start-tag-whose-name-is-one-of '("area" "br" "embed" "img" "keygen" "wbr")))
+   ((a-start-tag-whose-tag-name-is-one-of '("area" "br" "embed" "img" "keygen" "wbr")))
    
-   ((a-start-tag-whose-name-is "input"))
+   ((a-start-tag-whose-tag-name-is "input"))
 
-   ((a-start-tag-whose-name-is-one-of '("param" "source" "track")))
+   ((a-start-tag-whose-tag-name-is-one-of '("param" "source" "track")))
 
-   ((a-start-tag-whose-name-is "hr"))
+   ((a-start-tag-whose-tag-name-is "hr"))
   
    ((a-start-tag-whose-tag-name-is "image"))
 
@@ -367,7 +396,7 @@
 
    ((typep token 'end-of-file))
 
-   ((an-end-tag-whose-name-is "script"))
+   ((an-end-tag-whose-tag-name-is "script"))
 
    ((typep token 'end-tag))))
 
@@ -380,29 +409,29 @@
 
    ((typep token 'doctype-token))
 
-   ((a-start-tag-whose-name-is "caption"))
+   ((a-start-tag-whose-tag-name-is "caption"))
 
-   ((a-start-tag-whose-name-is "colgroup"))
+   ((a-start-tag-whose-tag-name-is "colgroup"))
 
-   ((a-start-tag-whose-name-is "col"))
+   ((a-start-tag-whose-tag-name-is "col"))
 
-   ((a-start-tag-whose-name-is-one-of '("tbody" "tfoot" "thead")))
+   ((a-start-tag-whose-tag-name-is-one-of '("tbody" "tfoot" "thead")))
 
-   ((a-start-tag-whose-name-is-one-of '("td" "th" "tr")))
+   ((a-start-tag-whose-tag-name-is-one-of '("td" "th" "tr")))
 
-   ((a-start-tag-whose-name-is "table"))
+   ((a-start-tag-whose-tag-name-is "table"))
 
-   ((an-end-tag-whose-name-is "table"))
+   ((an-end-tag-whose-tag-name-is "table"))
 
-   ((an-end-tag-whose-name-is-one-of '("body" "caption" "col" "colgroup"
+   ((an-end-tag-whose-tag-name-is-one-of '("body" "caption" "col" "colgroup"
                                        "html" "tbody" "td" "tfoot" "th" "thead" "tr")))
 
-   ((or (a-start-tag-whose-name-is-one-of '("style" "script" "template"))
-        (an-end-tag-whose-name-is "template")))
+   ((or (a-start-tag-whose-tag-name-is-one-of '("style" "script" "template"))
+        (an-end-tag-whose-tag-name-is "template")))
 
-   ((a-start-tag-whose-name-is "input"))
+   ((a-start-tag-whose-tag-name-is "input"))
 
-   ((a-start-tag-whose-name-is "form"))
+   ((a-start-tag-whose-tag-name-is "form"))
 
    ((typep token 'end-of-file))
 
@@ -418,13 +447,13 @@
 
 (define-parser-insertion-mode in-caption
   (cond
-   ((an-end-tag-whose-name-is "caption"))
+   ((an-end-tag-whose-tag-name-is "caption"))
 
-   ((or (a-start-tag-whose-name-is-one-of '("caption" "col" "colgroup"
+   ((or (a-start-tag-whose-tag-name-is-one-of '("caption" "col" "colgroup"
                                             "tbody" "td" "tfoot" "th" "thead" "tr"))
-        (an-end-tag-whose-name-is "table")))
+        (an-end-tag-whose-tag-name-is "table")))
 
-   ((an-end-tag-whose-name-is-one-of '("body" "col" "colgroup" "html"
+   ((an-end-tag-whose-tag-name-is-one-of '("body" "col" "colgroup" "html"
                                        "tbody" "td" "tfoot" "th" "thead" "tr")))
 
    (t)))
@@ -438,65 +467,65 @@
 
    ((typep token 'doctype-token))
 
-   ((a-start-tag-whose-name-is "html"))
+   ((a-start-tag-whose-tag-name-is "html"))
 
-   ((a-start-tag-whose-name-is "col"))
+   ((a-start-tag-whose-tag-name-is "col"))
 
-   ((an-end-tag-whose-name-is "colgroup"))
+   ((an-end-tag-whose-tag-name-is "colgroup"))
 
-   ((an-end-tag-whose-name-is "col"))
+   ((an-end-tag-whose-tag-name-is "col"))
 
-   (or (a-start-tag-whose-name-is "template")
-       (an-end-tag-whose-name-is "template"))
+   ((or (a-start-tag-whose-tag-name-is "template")
+       (an-end-tag-whose-tag-name-is "template")))
 
-   (typep token 'end-of-file)
+   ((typep token 'end-of-file))
 
    (t)))
 
 (define-parser-insertion-mode in-table-body
   (cond
-   ((a-start-tag-whose-name-is "tr"))
+   ((a-start-tag-whose-tag-name-is "tr"))
 
-   ((a-start-tag-whose-name-is-one-of '("th" "td")))
+   ((a-start-tag-whose-tag-name-is-one-of '("th" "td")))
 
-   ((an-end-tag-whose-name-is-one-of '("tbody" "tfoot" "thead")))
+   ((an-end-tag-whose-tag-name-is-one-of '("tbody" "tfoot" "thead")))
 
-   (or (a-start-tag-whose-name-is-one-of '("caption" "col" "colgroup" "tbody"
+   ((or (a-start-tag-whose-tag-name-is-one-of '("caption" "col" "colgroup" "tbody"
                                            "tfoot" "thead"))
-       (an-end-tag-whose-name-is "table"))
+       (an-end-tag-whose-tag-name-is "table")))
 
-   ((an-end-tag-whose-name-is-one-of '("body" "caption" "col" "colgroup"
+   ((an-end-tag-whose-tag-name-is-one-of '("body" "caption" "col" "colgroup"
                                        "html" "td" "th" "tr")))
 
    (t)))
 
 (define-parser-insertion-mode in-row
   (cond
-   ((a-start-tag-whose-name-is-one-of '("th" "td")))
+   ((a-start-tag-whose-tag-name-is-one-of '("th" "td")))
 
-   ((an-end-tag-whose-name-is "tr"))
+   ((an-end-tag-whose-tag-name-is "tr"))
 
-   (or (a-start-tag-whose-name-is-one-of '("caption" "col" "colgroup"
+   ((or (a-start-tag-whose-tag-name-is-one-of '("caption" "col" "colgroup"
                                            "tbody" "tfoot" "thead" "tr"))
-       (an-end-tag-whose-name-is "table"))
+       (an-end-tag-whose-tag-name-is "table")))
 
-   ((an-end-tag-whose-name-is-one-of '("tbody" "tfoot" "thead")))
+   ((an-end-tag-whose-tag-name-is-one-of '("tbody" "tfoot" "thead")))
 
-   ((an-end-tag-whose-name-is-one-of '("body" "caption" "col" "colgroup"
+   ((an-end-tag-whose-tag-name-is-one-of '("body" "caption" "col" "colgroup"
                                        "html" "td" "th")))
 
    (t)))
 
 (define-parser-insertion-mode in-cell
   (cond
-   ((an-end-tag-whose-name-is-one-of '("td" "th")))
+   ((an-end-tag-whose-tag-name-is-one-of '("td" "th")))
 
-   ((a-start-tag-whose-name-is-one-of '("caption" "col" "colgroup"
+   ((a-start-tag-whose-tag-name-is-one-of '("caption" "col" "colgroup"
                                         "tbody" "tfoot" "thead" "tr")))
 
-   ((an-end-tag-whose-name-is-one-of '("body" "caption" "col" "colgroup" "html")))
+   ((an-end-tag-whose-tag-name-is-one-of '("body" "caption" "col" "colgroup" "html")))
 
-   ((an-end-tag-whose-name-is-one-of '("table" "tbody" "tfoot" "thead" "tr")))
+   ((an-end-tag-whose-tag-name-is-one-of '("table" "tbody" "tfoot" "thead" "tr")))
 
    (t)))
 
@@ -510,56 +539,56 @@
 
    ((typep token 'doctype-token))
 
-   ((a-start-tag-whose-name-is "html"))
+   ((a-start-tag-whose-tag-name-is "html"))
 
-   ((a-start-tag-whose-name-is "option"))
+   ((a-start-tag-whose-tag-name-is "option"))
 
-   ((a-start-tag-whose-name-is "optgroup"))
+   ((a-start-tag-whose-tag-name-is "optgroup"))
 
-   ((an-end-tag-whose-name-is "optgroup"))
+   ((an-end-tag-whose-tag-name-is "optgroup"))
 
-   ((an-end-tag-whose-name-is "option"))
+   ((an-end-tag-whose-tag-name-is "option"))
 
-   ((an-end-tag-whose-name-is "select"))
+   ((an-end-tag-whose-tag-name-is "select"))
 
-   ((a-start-tag-whose-name-is "select"))
+   ((a-start-tag-whose-tag-name-is "select"))
 
-   ((a-start-tag-whose-name-is-one-of '("input" "keygen" "textarea")))
+   ((a-start-tag-whose-tag-name-is-one-of '("input" "keygen" "textarea")))
 
-   (or (a-start-tag-whose-name-is-one-of '("script" "template"))
-       (an-end-tag-whose-name-is "template"))
+   ((or (a-start-tag-whose-tag-name-is-one-of '("script" "template"))
+       (an-end-tag-whose-tag-name-is "template")))
 
-   ((typep token end-of-file))
+   ((typep token 'end-of-file))
 
    (t)))
 
 (define-parser-insertion-mode in-select-in-table
   (cond
-   ((a-start-tag-whose-name-is-one-of '("caption" "table" "tbody" "tfoot" "thead"
+   ((a-start-tag-whose-tag-name-is-one-of '("caption" "table" "tbody" "tfoot" "thead"
                                         "tr" "td" "th")))
    
-   ((an-end-tag-whose-name-is-one-of '("caption" "table" "tbody" "tfoot" "thead"
+   ((an-end-tag-whose-tag-name-is-one-of '("caption" "table" "tbody" "tfoot" "thead"
                                        "tr" "td" "th")))
 
    (t)))
 
 (define-parser-insertion-mode in-template
   (cond
-   (or (typep token 'character)
+   ((or (typep token 'character)
        (typep token 'comment-token)
-       (typep token 'doctype-token))
+       (typep token 'doctype-token)))
 
-   (or (a-start-tag-whose-name-is-one-of '("base" "basefont" "bgsound" "link" "meta"
+   ((or (a-start-tag-whose-tag-name-is-one-of '("base" "basefont" "bgsound" "link" "meta"
                                            "noframes" "script" "style" "template" "title"))
-       (an-end-tag-whose-name-is "template"))
+       (an-end-tag-whose-tag-name-is "template")))
 
-   ((a-start-tag-whose-name-is-one-of '("caption" "colgroup" "tbody" "tfoot" "thead")))
+   ((a-start-tag-whose-tag-name-is-one-of '("caption" "colgroup" "tbody" "tfoot" "thead")))
 
-   ((a-start-tag-whose-name-is "col"))
+   ((a-start-tag-whose-tag-name-is "col"))
 
-   ((a-start-tag-whose-name-is "tr"))
+   ((a-start-tag-whose-tag-name-is "tr"))
 
-   ((a-start-tag-whose-name-is-one-of '("td" "th")))
+   ((a-start-tag-whose-tag-name-is-one-of '("td" "th")))
 
    ((typep token 'start-tag))
 
@@ -576,9 +605,9 @@
 
    ((typep token 'doctype-token))
 
-   ((a-start-tag-whose-name-is "html"))
+   ((a-start-tag-whose-tag-name-is "html"))
 
-   ((an-end-tag-whose-name-is "html"))
+   ((an-end-tag-whose-tag-name-is "html"))
 
    ((typep token 'end-of-file))
 
@@ -593,15 +622,15 @@
 
    ((typep token 'doctype-token))
 
-   ((a-start-tag-whose-name-is "html"))
+   ((a-start-tag-whose-tag-name-is "html"))
 
-   ((a-start-tag-whose-name-is "frameset"))
+   ((a-start-tag-whose-tag-name-is "frameset"))
 
-   ((an-end-tag-whose-name-is "frameset"))
+   ((an-end-tag-whose-tag-name-is "frameset"))
 
-   ((a-start-tag-whose-name-is "frame"))
+   ((a-start-tag-whose-tag-name-is "frame"))
 
-   ((a-start-tag-whose-name-is "noframes"))
+   ((a-start-tag-whose-tag-name-is "noframes"))
 
    ((typep token 'end-of-file))
 
@@ -616,11 +645,11 @@
 
    ((typep token 'doctype-token))
 
-   ((a-start-tag-whose-name-is "html"))
+   ((a-start-tag-whose-tag-name-is "html"))
 
-   ((an-end-tag-whose-name-is "html"))
+   ((an-end-tag-whose-tag-name-is "html"))
 
-   ((a-start-tag-whose-name-is "noframes"))
+   ((a-start-tag-whose-tag-name-is "noframes"))
 
    ((typep token 'end-of-file))
 
@@ -631,10 +660,10 @@
   (cond
    ((typep token 'comment-token))
 
-   (or ((typep token 'doctype-token))
+   ((or (typep token 'doctype-token)
        (or (eq #\tab token) (eq #\newline token)
            (eq #\page token) (eq #\return token) (eq #\space token))
-       (a-start-tag-whose-name-is "html"))
+       (a-start-tag-whose-tag-name-is "html")))
 
    ((typep token 'end-of-file))
 
@@ -644,14 +673,14 @@
   (cond
    ((typep token 'comment-token))
 
-   (or ((typep token 'doctype-token))
+   ((or (typep token 'doctype-token)
        (or (eq #\tab token) (eq #\newline token)
            (eq #\page token) (eq #\return token) (eq #\space token))
-       (a-start-tag-whose-name-is "html"))
+       (a-start-tag-whose-tag-name-is "html")))
 
    ((typep token 'end-of-file))
 
-   ((a-start-tag-whose-name-is "noframes"))
+   ((a-start-tag-whose-tag-name-is "noframes"))
 
    (t)))
 
@@ -664,9 +693,21 @@
    (current-token
     :initform nil)
    (stack-of-open-elements
+    :initform nil)
+   (head-element-pointer
     :initform nil)))
 
-(defun adjusted-current-node (parser))
+(defun adjusted-current-node (parser)
+  (declare (ignore parser)))
+
+(defun insert-html-element (parser token)
+  (declare (ignore parser token)))
+
+(defun insert-foreign-element (parser token)
+  (declare (ignore parser token)))
+
+(defun appropriate-place-for-inserting-node (parser)
+  (declare (ignore parser)))
 
 (defun tree-construction-dispatcher (parser token)
   (if (or (null (slot-value parser 'stack-of-open-elements)))
