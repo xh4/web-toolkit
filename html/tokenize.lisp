@@ -161,7 +161,7 @@
                        (current-tag-token (slot-value tokenizer 'current-tag-token))
                        (current-attribute (slot-value tokenizer 'current-attribute))
                        (current-doctype-token (slot-value tokenizer 'current-doctype-token))
-                       (current-comment-token (slot-value tokenizer 'current-comment))
+                       (current-comment-token (slot-value tokenizer 'current-comment-token))
                        (temporary-buffer (slot-value tokenizer 'temporary-buffer))
                        (character-reference-code (slot-value tokenizer 'character-reference-code)))
        (macrolet ((switch-to (state)
@@ -958,7 +958,7 @@
   (cond
    ((equal "--" (next-few-characters 2))
     (consume 2)
-    (let ((token (make-instance 'comment-token :data "")))
+    (let ((token (make-instance 'comment :data "")))
       (setf current-comment-token token)
       (switch-to 'comment-start-state)))
    ((string-equal "DOCTYPE" (next-few-characters 7))
@@ -967,12 +967,12 @@
    ((equal "[CDATA[" (next-few-characters 7))
     (consume 7)
     ;; TODO
-    (let ((token (make-instance 'comment-token :data "[CDATA[")))
+    (let ((token (make-instance 'comment :data "[CDATA[")))
       (setf current-comment-token token)
       (switch-to 'bogus-comment-state)))
    (t
     (incorrectly-opened-comment)
-    (let ((token (make-instance 'comment-token :data "")))
+    (let ((token (make-instance 'comment :data "")))
       (setf current-comment-token token)
       (switch-to 'bogus-comment-state)))))
 
@@ -1694,6 +1694,7 @@
    (current-tag-token :initform nil)
    (current-doctype-token :initform nil)
    (current-attribute :initform nil)
+   (current-comment-token :initform nil)
    (temporary-buffer :initform nil)
    (character-reference-code :initform nil)
    (last-start-tag-token :initform nil)))
