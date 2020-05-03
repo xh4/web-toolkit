@@ -4,7 +4,7 @@
 
 (defclass token () ())
 
-(defclass doctype (token)
+(defclass doctype-token (token)
   ((name
     :initarg :name
     :initform nil)
@@ -56,7 +56,7 @@
     (with-slots (tag-name) end-tag
       (format stream "~S" tag-name))))
 
-(defclass comment (token)
+(defclass comment-token (token)
   ((data
     :initarg :data
     :initform nil)))
@@ -270,7 +270,7 @@
       (reconsume-in 'tag-name-state))
      ((eq #\? char)
       (unexpected-question-mark-instead-of-tag-name)
-      (let ((token (make-instance 'comment :data "")))
+      (let ((token (make-instance 'comment-token :data "")))
         (setf current-comment-token token)
         (reconsume-in 'bogus-comment-state)))
      ((null char)
@@ -299,7 +299,7 @@
       (emit end-of-file))
      (t
       (invalid-first-character-of-tag-name)
-      (let ((token (make-instance 'comment :data "")))
+      (let ((token (make-instance 'comment-token :data "")))
         (setf current-comment-token token))
       (reconsume-in 'bogus-comment-state)))))
 
@@ -958,7 +958,7 @@
   (cond
    ((equal "--" (next-few-characters 2))
     (consume 2)
-    (let ((token (make-instance 'comment :data "")))
+    (let ((token (make-instance 'comment-token :data "")))
       (setf current-comment-token token)
       (switch-to 'comment-start-state)))
    ((string-equal "DOCTYPE" (next-few-characters 7))
@@ -967,12 +967,12 @@
    ((equal "[CDATA[" (next-few-characters 7))
     (consume 7)
     ;; TODO
-    (let ((token (make-instance 'comment :data "[CDATA[")))
+    (let ((token (make-instance 'comment-token :data "[CDATA[")))
       (setf current-comment-token token)
       (switch-to 'bogus-comment-state)))
    (t
     (incorrectly-opened-comment)
-    (let ((token (make-instance 'comment :data "")))
+    (let ((token (make-instance 'comment-token :data "")))
       (setf current-comment-token token)
       (switch-to 'bogus-comment-state)))))
 
@@ -1110,7 +1110,7 @@
      (reconsume-in 'before-doctype-name-state))
     ((nil)
      (eof-in-doctype)
-     (let ((token (make-instance 'doctype :force-quirks-flag :on)))
+     (let ((token (make-instance 'doctype-token :force-quirks-flag :on)))
        (setf current-doctype-token token)
        (emit token)
        (emit end-of-file)))
@@ -1124,30 +1124,30 @@
      ((or (eq #\tab char) (eq #\newline char)
           (eq #\page char) (eq #\space char)))
      ((ascii-upper-alpha-p char)
-      (let ((token (make-instance 'doctype
+      (let ((token (make-instance 'doctype-token
                                   :name (string (char-downcase current-input-character)))))
         (setf current-doctype-token token)
         (switch-to 'doctype-name-state)))
      ((eq #\null char)
       (unexpected-null-character)
-      (let ((token (make-instance 'doctype
+      (let ((token (make-instance 'doctype-token
                                   :name (string #\replacement-character))))
         (setf current-doctype-token token)
         (switch-to 'doctype-name-state)))
      ((eq #\> char)
       (missing-doctype-name)
-      (let ((token (make-instance 'doctype :force-quirks-flag :on)))
+      (let ((token (make-instance 'doctype-token :force-quirks-flag :on)))
         (setf current-doctype-token token)
         (switch-to 'data-state)
         (emit token)))
      ((null char)
       (eof-in-doctype)
-      (let ((token (make-instance 'doctype :force-quirks-flag :on)))
+      (let ((token (make-instance 'doctype-token :force-quirks-flag :on)))
         (setf current-doctype-token token)
         (emit token)
         (emit end-of-file)))
      (t
-      (let ((token (make-instance 'doctype :name (string current-input-character))))
+      (let ((token (make-instance 'doctype-token :name (string current-input-character))))
         (setf current-doctype-token token)
         (switch-to 'doctype-name-state))))))
 
