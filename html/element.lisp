@@ -4,9 +4,10 @@
 
 (defmethod print-object ((element element) stream)
   (print-unreadable-object (element stream :type t :identity t)
+    (format stream "~S" (dom:tag-name element))
     (let ((child-count (length (children element))))
       (when (plusp child-count)
-        (format stream "{~A}" child-count)))))
+        (format stream " {~A}" child-count)))))
 
 (defclass void-element (element) ())
 
