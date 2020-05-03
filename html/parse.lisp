@@ -1,5 +1,49 @@
 (in-package :html)
 
+(defmacro define-parser-insertion-mode (name &body body)
+  (let ((function-name (intern (format nil "PROCESS-TOKEN-IN-~A-INSERTION-MODE" name))))
+    `(defun ,function-name (parser)
+       ,@(unless body '((declare (ignore parser))))
+       (symbol-macrolet ((token (slot-value parser 'current-token))
+                         (next-token nil)
+                         (stack-of-open-elements (slot-value parser 'stack-of-open-elements)))
+         (macrolet ()
+           (flet ()
+             ,@(if body
+                   body
+                 `((error "Parser ~A not implemented" ',name)))))))))
+
+(define-parser-insertion-mode initial)
+(define-parser-insertion-mode before-html)
+(define-parser-insertion-mode before-head)
+(define-parser-insertion-mode in-head)
+(define-parser-insertion-mode in-head-noscript)
+(define-parser-insertion-mode after-head)
+(define-parser-insertion-mode in-body)
+(define-parser-insertion-mode text)
+(define-parser-insertion-mode in-table)
+(define-parser-insertion-mode in-table-text)
+(define-parser-insertion-mode in-caption)
+(define-parser-insertion-mode in-column-group)
+(define-parser-insertion-mode in-table-body)
+(define-parser-insertion-mode in-row)
+(define-parser-insertion-mode in-cell)
+(define-parser-insertion-mode in-select)
+(define-parser-insertion-mode in-select-in-table)
+(define-parser-insertion-mode in-template)
+(define-parser-insertion-mode after-body)
+(define-parser-insertion-mode in-frameset)
+(define-parser-insertion-mode after-frameset)
+(define-parser-insertion-mode after-after-body)
+(define-parser-insertion-mode after-after-frameset)
+
+(defclass parser ()
+  ((current-token
+    :initform nil)
+   (stack-of-open-elements
+    :initform nil)))
+
+
 (defgeneric parse (source &key))
 
 (defmethod parse (source &key)
