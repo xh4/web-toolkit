@@ -18,9 +18,9 @@
     :initarg :force-quirks-flag
     :initform nil)))
 
-(defmethod print-object ((doctype doctype) stream)
-  (print-unreadable-object (doctype stream :type t)
-    (with-slots (name public-identifier system-identifier) doctype
+(defmethod print-object ((doctype-token doctype-token) stream)
+  (print-unreadable-object (doctype-token stream :type t)
+    (with-slots (name public-identifier system-identifier) doctype-token
       (when name
         (format stream " NAME: ~S" name))
       (when public-identifier
@@ -61,9 +61,9 @@
     :initarg :data
     :initform nil)))
 
-(defmethod print-object ((comment comment) stream)
-  (print-unreadable-object (comment stream :type t)
-    (format stream "~S" (slot-value comment 'data))))
+(defmethod print-object ((comment-token comment-token) stream)
+  (print-unreadable-object (comment-token stream :type t)
+    (format stream "~S" (slot-value comment-token 'data))))
 
 (defclass end-of-file (token) ())
 

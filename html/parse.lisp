@@ -1,29 +1,30 @@
 (in-package :html)
 
-(defvar *insertion-modes*
-  '(initial
-    before-html
-    before-head
-    in-head
-    in-head-noscript
-    after-head
-    in-body
-    text
-    in-table
-    in-table-text
-    in-caption
-    in-column-group
-    in-table-body
-    in-row
-    in-cell
-    in-select
-    in-select-in-table
-    in-template
-    after-body
-    in-frameset
-    after-frameset
-    after-after-body
-    after-after-frameset))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *insertion-modes*
+    '(initial
+      before-html
+      before-head
+      in-head
+      in-head-noscript
+      after-head
+      in-body
+      text
+      in-table
+      in-table-text
+      in-caption
+      in-column-group
+      in-table-body
+      in-row
+      in-cell
+      in-select
+      in-select-in-table
+      in-template
+      after-body
+      in-frameset
+      after-frameset
+      after-after-body
+      after-after-frameset)))
 
 (defmacro define-parser-insertion-mode (name &body body)
   (let ((function-name (intern (format nil "PROCESS-TOKEN-IN-~A-INSERTION-MODE" name))))
