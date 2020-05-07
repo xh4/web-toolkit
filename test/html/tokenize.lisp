@@ -5,12 +5,12 @@
 (test tokenize/doctype
   (it
     (let ((token (first (html::tokenize "<!doctype html>"))))
-      (is (eq 'html::doctype (type-of token)))
+      (is (eq 'html::doctype-token (type-of token)))
       (is (equal "html" (slot-value token 'html::name)))))
 
   (it
     (let ((token (first (html::tokenize "<!DOCTYPE html>"))))
-      (is (eq 'html::doctype (type-of token)))
+      (is (eq 'html::doctype-token (type-of token)))
       (is (equal "html" (slot-value token 'html::name))))))
 
 (test tokenize/named-character-reference
