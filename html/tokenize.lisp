@@ -73,10 +73,12 @@
 (defclass attribute ()
   ((name
     :initarg :name
-    :initform nil)
+    :initform nil
+    :reader attribute-name)
    (value
     :initarg :value
-    :initform nil)))
+    :initform nil
+    :reader attribute-value)))
 
 (define-condition on-token ()
   ((token

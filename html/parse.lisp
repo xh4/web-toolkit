@@ -41,6 +41,7 @@
             form-element-pointer
             insertion-mode
             original-insertion-mode
+            scripting-flag
             frameset-ok-flag
             pending-table-character-tokens
             active-formatting-elements) parser
@@ -70,8 +71,11 @@
                     (tree-construction-dispatcher parser (slot-value parser 'current-token)))
                   (insert-comment (&optional position)
                     (declare (ignore position)))
-                  (insert-character ()
-                    (insert-character parser (slot-value parser 'current-token)))
+                  (insert-character (&optional character-token)
+                    (insert-character
+                     parser
+                     (or character-token
+                         (slot-value parser 'current-token))))
                   (create-element (token)
                     (create-element-for-token token "html"))
                   (a-start-tag-whose-tag-name-is (name)
@@ -117,6 +121,8 @@
                     (parse-generic-rcdata-element parser))
                   (generate-implied-end-tags (&key except)
                     (generate-implied-end-tags parser :except except))
+                  (generate-all-implied-end-tags-thoroughly ()
+                    (generate-all-implied-end-tags-thoroughly parser))
                   (clear-stack-back-to-table-context ())
                   (reset-insertion-mode-appropriately ())
                   (clear-active-formatting-elements-upto-last-marker ())
@@ -233,10 +239,8 @@
     (process-token-in-in-body-insertion-mode))
    
    ((a-start-tag-whose-tag-name-is-one-of '("base" "basefont" "bgsound" "link"))
-    (let ((element (insert-html-element-for-token)))
-      ;; TODO
-      (declare (ignore element))
-      (pop stack-of-open-elements))
+    (insert-html-element-for-token)
+    (pop stack-of-open-elements)
     (acknowledge-token-self-closing-flag))
    
    ((a-start-tag-whose-tag-name-is "meta")
@@ -244,16 +248,18 @@
       (declare (ignore element))
       (pop stack-of-open-elements)
       (acknowledge-token-self-closing-flag)
-      #|Handle encoding changing|#))
+      #|TODO: Handle encoding changing|#))
 
    ((a-start-tag-whose-tag-name-is "title")
     (parse-generic-rcdata-element))
 
-   ;; TODO
-   ((or (a-start-tag-whose-tag-name-is "noscript")
-        (a-start-tag-whose-tag-name-is-one-of '("noframes" "style"))))
+   ((or (and scripting-flag
+             (a-start-tag-whose-tag-name-is "noscript"))
+        (a-start-tag-whose-tag-name-is-one-of '("noframes" "style")))
+    (parse-generic-rawtext-element))
    
-   ((a-start-tag-whose-tag-name-is "noscript")
+   ((and (not scripting-flag)
+         (a-start-tag-whose-tag-name-is "noscript"))
     (insert-html-element-for-token)
     (switch-to 'in-head-noscript))
 
@@ -270,11 +276,29 @@
     (switch-to 'after-head)
     (reprocess-current-token))
 
-   ;; TODO
-   ((a-start-tag-whose-tag-name-is "template"))
+   ((a-start-tag-whose-tag-name-is "template")
+    (insert-html-element-for-token)
+    (appendf active-formatting-elements (list (make-marker)))
+    (setf frameset-ok-flag nil)
+    (switch-to 'in-template)
+    (push 'in-template stack-of-template-insertion-modes))
 
-   ;; TODO
-   ((an-end-tag-whose-tag-name-is "template"))
+   ((an-end-tag-whose-tag-name-is "template")
+    (if (not (find "template" stack-of-open-elements
+                   :test 'equal
+                   :key (lambda (element) (slot-value element 'dom:tag-name))))
+        (progn
+          (parse-error)
+          (ignore-token))
+      (progn
+        (generate-all-implied-end-tags-thoroughly)
+        (unless (equal "template" (slot-value current-node 'dom:tag-name))
+          (parse-error))
+        (loop for element = (pop stack-of-open-elements)
+              until (equal "template" (slot-value element 'dom:tag-name)))
+        (clear-active-formatting-elements-upto-last-marker)
+        (pop stack-of-template-insertion-modes)
+        (reset-insertion-mode-appropriately))))
 
    ((or (a-start-tag-whose-tag-name-is "head")
         (typep token 'end-tag))
@@ -288,26 +312,47 @@
 
 (define-parser-insertion-mode in-head-noscript
   (cond
-   ((typep token 'doctype-token))
+   ((typep token 'doctype-token)
+    (parse-error)
+    (ignore-token))
 
-   ((a-start-tag-whose-tag-name-is "html"))
+   ((a-start-tag-whose-tag-name-is "html")
+    (process-token-in-in-body-insertion-mode))
 
-   ((an-end-tag-whose-tag-name-is "noscript"))
+   ((an-end-tag-whose-tag-name-is "noscript")
+    (assert (equal "noscript" (slot-value current-node 'dom:tag-name)))
+    (pop stack-of-open-elements)
+    (assert (equal "head" (slot-value current-node 'dom:tag-name)))
+    (switch-to 'in-head))
 
    ((or (or (eq #\tab token) (eq #\newline token)
             (eq #\page token) (eq #\return token) (eq #\space token))
         (typep token 'comment-token)
         (a-start-tag-whose-tag-name-is-one-of '("basefont" "bgsound" "link"
-                                                "meta" "noframes" "style"))))
+                                                "meta" "noframes" "style")))
+    (process-token-in-in-head-insertion-mode))
 
-   ((an-end-tag-whose-tag-name-is "br"))
+   ((an-end-tag-whose-tag-name-is "br")
+    ;; Same as T
+    (parse-error)
+    (assert (equal "noscript" (slot-value current-node 'dom:tag-name)))
+    (pop stack-of-open-elements)
+    (assert (equal "head" (slot-value current-node 'dom:tag-name)))
+    (switch-to 'in-head)
+    (reprocess-current-token))
 
    ((or (a-start-tag-whose-tag-name-is-one-of '("head" "noscript"))
-        ;; Any other end tag
-        (typep token 'end-tag)))
-
-   ;; Anything else
-   (t)))
+        (typep token 'end-tag))
+    (parse-error)
+    (ignore-token))
+   
+   (t
+    (parse-error)
+    (assert (equal "noscript" (slot-value current-node 'dom:tag-name)))
+    (pop stack-of-open-elements)
+    (assert (equal "head" (slot-value current-node 'dom:tag-name)))
+    (switch-to 'in-head)
+    (reprocess-current-token))))
 
 (define-parser-insertion-mode after-head
   (cond
@@ -343,8 +388,8 @@
       (process-token-in-in-head-insertion-mode)
       (setf stack-of-open-elements (remove node stack-of-open-elements))))
 
-   ;; TODO
-   ((an-end-tag-whose-tag-name-is "template"))
+   ((an-end-tag-whose-tag-name-is "template")
+    (process-token-in-in-head-insertion-mode))
 
    ((an-end-tag-whose-tag-name-is-one-of '("body" "html" "br"))
     ;; Same as T
@@ -622,7 +667,7 @@
    ((a-start-tag-whose-tag-name-is-one-of '("applet" "marquee" "object"))
     (reconstruct-active-formatting-elements)
     (insert-html-element-for-token)
-    (appendf active-formatting-elements (list (make-instance 'marker)))
+    (appendf active-formatting-elements (list (make-marker)))
     (setf frameset-ok-flag nil))
    
    ((an-end-tag-whose-tag-name-is-one-of '("applet" "marquee" "object"))
@@ -801,7 +846,7 @@
 
    ((a-start-tag-whose-tag-name-is "caption")
     (clear-stack-back-to-table-context)
-    (appendf active-formatting-elements (list (make-instance 'marker)))
+    (appendf active-formatting-elements (list (make-marker)))
     (insert-html-element-for-token)
     (switch-to 'in-caption))
 
@@ -855,8 +900,23 @@
         (an-end-tag-whose-tag-name-is "template"))
     (process-token-in-in-head-insertion-mode))
 
-   ;; TODO
-   ((a-start-tag-whose-tag-name-is "input"))
+   ((a-start-tag-whose-tag-name-is "input")
+    (let ((attribute (find "type" (slot-value token 'attributes)
+                           :test 'equal
+                           :key 'attribute-name)))
+      (if (or (null attribute)
+              (not (string-equal "hidden" (attribute-value attribute))))
+          ;; Same as T
+          (progn
+            (parse-error)
+            (setf foster-parenting t)
+            (process-token-in-in-body-insertion-mode)
+            (setf foster-parenting nil))
+        (progn
+          (parse-error)
+          (insert-html-element-for-token)
+          (pop stack-of-open-elements)
+          (acknowledge-token-self-closing-flag)))))
 
    ((a-start-tag-whose-tag-name-is "form")
     (parse-error)
@@ -888,8 +948,25 @@
    ((typep token 'cl:character)
     (appendf pending-table-character-tokens (list token)))
 
-   ;; TODO
-   (t)))
+   (t
+    (if (find-if-not 'ascii-whitespace-p pending-table-character-tokens)
+        (progn
+          (parse-error)
+          (loop with previous-token = token
+                for character-token in pending-table-character-tokens
+                do (progn
+                     (setf token character-token)
+                     ;; Same as T in `in-table` insertion mode
+                     (parse-error)
+                     (setf foster-parenting t)
+                     (process-token-in-in-body-insertion-mode)
+                     (setf foster-parenting nil))
+                finally (setf token previous-token)))
+      (progn
+        (loop for character-token in pending-table-character-tokens
+            do (insert-character character-token))
+        (switch-to original-insertion-mode)
+        (reprocess-current-token))))))
 
 (define-parser-insertion-mode in-caption
   (cond
@@ -1034,7 +1111,7 @@
     (clear-stack-back-to-table-context)
     (insert-html-element-for-token)
     (switch-to 'in-cell)
-    (appendf active-formatting-elements (make-instance 'marker)))
+    (appendf active-formatting-elements (make-marker)))
 
    ((an-end-tag-whose-tag-name-is "tr")
     (if (not (have-element-in-table-scope-p "tr"))
@@ -1435,6 +1512,8 @@
     (parse-error)
     (ignore-token))))
 
+(defstruct marker)
+
 (defclass parser ()
   ((tokenizer
     :initarg :tokenizer
@@ -1453,6 +1532,8 @@
    (stack-of-template-insertion-modes
     :initform nil)
    (head-element-pointer
+    :initform nil)
+   (scripting-flag
     :initform nil)
    (frameset-ok-flag
     :initform nil)
@@ -1687,6 +1768,11 @@
         (pop stack-of-open-elements)
         (generate-implied-end-tags parser except)))))
 
+;; TODO
+(defun generate-all-implied-end-tags-thoroughly (parser)
+  (declare (ignore parser)))
+
+;; TODO
 (defun adoption-agency (parser)
   (declare (ignore parser)))
 
