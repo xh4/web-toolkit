@@ -1,6 +1,9 @@
 (in-package :dom)
 
-(defclass node () ())
+(defclass node ()
+  ((document
+    :initarg :document
+    :initform nil)))
 
 (defgeneric node-type (node))
 
@@ -74,7 +77,27 @@
 
 (defgeneric node-equal-p (node))
 
-(defgeneric clone-node (node))
+(defun clone (node &key document clone-children)
+  (flet ((clone-1 (node)
+           (let ((document (or document (slot-value node 'document))))
+             (typecase node
+               (element (make-instance 'element
+                                       :document document
+                                       :local-name (slot-value node 'local-name)
+                                       :namespace (slot-value node 'namespace)
+                                       :namespace-prefix (slot-value node 'prefix)
+                                       :attributes (slot-value node 'attributes)))
+               (document (make-instance 'document))
+               (text (make-instance 'text :data (slot-value node 'data)))))))
+    (let ((copy (clone-1 node)))
+      (when clone-children
+        (loop for child in (children node)
+              do (append-child copy (clone-1 child))))
+      copy)))
+
+(defgeneric clone-node (node &optional deep)
+  (:method ((node node) &optional deep)
+   (clone node :clone-children t)))
 
 (defgeneric contains-p (node other))
 

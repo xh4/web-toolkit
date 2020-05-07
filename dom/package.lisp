@@ -26,6 +26,7 @@
    :preceding
    :following
    :insert-before
+   :clone-node
    ;; element
    :element
    :tag-name

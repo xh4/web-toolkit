@@ -8,10 +8,22 @@
     :initarg :tag-name
     :initform nil
     :reader tag-name)
+   (local-name
+    :initarg :local-name
+    :initform nil
+    :reader local-name)
    (id
     :initarg :id
     :initform nil
     :reader id)
+   (namespace
+    :initarg :namespace
+    :initform nil
+    :reader namespace)
+   (prefix
+    :initarg :namespace-prefix
+    :initform nil
+    :reader namespace-prefix)
    (class-name
     :initarg :class-name
     :initform nil
