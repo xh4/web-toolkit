@@ -11,6 +11,7 @@
   :components ((:module "html"
                 :serial t
                 :components ((:file "package")
+                             (:file "utility")
                              (:file "condition")
                              (:file "named-character-references")
                              (:file "construct")
