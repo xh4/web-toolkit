@@ -31,7 +31,7 @@ WT.HTTP provides HTTP functionality based on [RFC 7231 Hypertext Transfer Protoc
 WT.WEBSOCKET provides WebSocket functionality based on [RFC 6455 The WebSocket Protocol](https://tools.ietf.org/html/rfc6455), with interface inspired by [JSR 356, Java API for WebSocket](https://www.oracle.com/technetwork/articles/java/jsr356-1937161.html). The system is tested against the [Autobahn WebSocket Testsuite](https://github.com/crossbario/autobahn-testsuite).
 
 #### [HTML](https://lisp-web-toolkit.com/#html)
-WT.HTML implements HTML constructor, parser and serializer based on recent version of [HTML Living Standard](https://html.spec.whatwg.org/multipage/). It uses the Document Object Model (DOM) provided by WT.DOM.
+WT.HTML implements HTML constructor, parser and serializer. The parser is designed to conform to the [WHATWG HTML Specification](https://html.spec.whatwg.org/multipage/), as is implemented by all major web browsers. It uses the Document Object Model (DOM) provided by WT.DOM.
 
 #### [JSON](https://lisp-web-toolkit.com/#json)
 WT.JSON implements JSON encoder and decoder based on [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html). It distinguishes `null`, `false` and `[]` from Lisp's `NIL` thus supports identical transformation between JSON values. It provides object constructor and accessor to build and access nesting JSON objects. The system is tested against [JSONTestSuite](https://github.com/nst/JSONTestSuite).
