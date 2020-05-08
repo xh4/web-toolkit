@@ -91,7 +91,7 @@ WT.COMPONENT provices component abstraction, it combines [Web Components](https:
 * URI
   * Test against [Web Platform Tests](https://github.com/web-platform-tests/wpt)
 * HTML
-  * Implement parser
+  * <s>Implement parser</s>
   * <s>Implement pretty print(?) (NO)</s>
   * Refine element constractor error report
   * <s>Implement DOM, abandon CXML's DOM implementation</s>
@@ -101,6 +101,7 @@ WT.COMPONENT provices component abstraction, it combines [Web Components](https:
   * <s>Implement accessors for object</s>
   * <s>Implement identical transformation for JSON values (null, false, [])</s>
 * DOM
+  * Implement common used functions
   * Implement namespace
   * Implement XPath
 * JavaScript
