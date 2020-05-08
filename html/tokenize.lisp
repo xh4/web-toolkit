@@ -34,6 +34,8 @@
     :initform nil)
    (attributes
     :initarg :attributes
+    :initform nil)
+   (self-closing-flag
     :initform nil)))
 
 (defmethod print-object ((start-tag start-tag) stream)
@@ -41,7 +43,7 @@
     (with-slots (tag-name attributes) start-tag
       (format stream "~S" tag-name)
       (when attributes
-        (format stream "~A"
+        (format stream " ~S"
                 (loop for attribute in attributes
                       collect (cons (slot-value attribute 'name)
                                     (slot-value attribute 'value))))))))
@@ -235,7 +237,8 @@
      (emit #\replacement-character))
     ((nil)
      (emit end-of-file))
-    (emit current-input-character)))
+    (t
+     (emit current-input-character))))
 
 (define-tokenizer-state script-data-state
   (case next-input-character
