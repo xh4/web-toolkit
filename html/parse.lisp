@@ -33,6 +33,7 @@
            (tokenizer
             document
             (token current-token)
+            next-token
             foster-parenting
             stack-of-open-elements
             stack-of-template-insertion-modes
@@ -46,8 +47,7 @@
             pending-table-character-tokens
             active-formatting-elements) parser
          (symbol-macrolet
-             ((next-token nil)
-              (current-node (first (slot-value
+             ((current-node (first (slot-value
                                     parser
                                     'stack-of-open-elements))))
            (macrolet
@@ -69,7 +69,7 @@
                   (ignore-token ()
                     (ignore-token parser))
                   (reprocess-current-token ()
-                    (tree-construction-dispatcher parser (slot-value parser 'current-token)))
+                    (tree-construction-dispatcher parser))
                   (insert-comment (&optional position)
                     (declare (ignore position)))
                   (insert-character (&optional character-token)
@@ -130,7 +130,9 @@
                   (clear-active-formatting-elements-upto-last-marker ())
                   (adoption-agency () (adoption-agency parser))
                   (push-onto-active-formatting-elements (element)
-                    (push-onto-active-formatting-elements parser element)))
+                    (push-onto-active-formatting-elements parser element))
+                  (appropriate-place-for-inserting-node (&optional override-target)
+                    (appropriate-place-for-inserting-node parser override-target)))
                ,@body)))))))
 
 (define-condition stop-parsing () ())
@@ -268,7 +270,9 @@
     (switch-to 'in-head-noscript))
 
    ;; TODO
-   ((a-start-tag-whose-tag-name-is "script"))
+   ((a-start-tag-whose-tag-name-is "script")
+    (let ((adjusted-insertion-location (appropriate-place-for-inserting-node)))
+      ))
 
    ((an-end-tag-whose-tag-name-is "head")
     (pop stack-of-open-elements)
@@ -530,7 +534,7 @@
       (close-p-element))
     (insert-html-element-for-token)
     (when (eq #\newline next-token)
-      (ignore-next-token))
+      (setf next-token nil))
     (setf frameset-ok-flag nil))
 
    ((a-start-tag-whose-tag-name-is "form"))
@@ -599,8 +603,22 @@
               until (equal (slot-value token 'tag-name)
                            (slot-value element 'dom:tag-name))))))
 
-   ;; TODO
-   ((an-end-tag-whose-tag-name-is "form"))
+   ((an-end-tag-whose-tag-name-is "form")
+    (if (and form-element-pointer
+             (not (find "template" stack-of-open-elements
+                        :test 'equal
+                        :key (lambda (element) (slot-value element 'dom:tag-name)))))
+        (progn
+          (parse-error)
+          (ignore-token))
+      (progn
+        (when (have-element-in-button-scope-p "p")
+          (close-p-element))
+        (let ((element (insert-html-element-for-token)))
+          (unless (find "template" stack-of-open-elements
+                        :test 'equal
+                        :key (lambda (element) (slot-value element 'dom:tag-name)))
+            (setf form-element-pointer element))))))
 
    ((an-end-tag-whose-tag-name-is "p")
     (when (have-element-in-button-scope-p "p")
@@ -757,8 +775,16 @@
     (setf (slot-value token 'tag-name) "image")
     (reprocess-current-token))
 
-   ;; TODO
-   ((a-start-tag-whose-tag-name-is "textarea"))
+   ((a-start-tag-whose-tag-name-is "textarea")
+    (insert-html-element-for-token)
+    ;; Newlines at the start of textarea elements are ignored as an authoring convenience.
+    (when (eq #\newline next-token)
+      (setf next-token nil))
+    (with-slots (tokenizer) parser
+      (setf (slot-value tokenizer 'state) 'rcdata-state))
+    (setf original-insertion-mode insertion-mode)
+    (setf frameset-ok-flag nil)
+    (setf insertion-mode 'text))
 
    ;; TODO
    ((a-start-tag-whose-tag-name-is "xmp"))
@@ -1558,6 +1584,8 @@
     :initform 'initial)
    (current-token
     :initform nil)
+   (next-token
+    :initform nil)
    (stack-of-open-elements
     :initform nil)
    (stack-of-template-insertion-modes
@@ -1804,11 +1832,17 @@
         (pop stack-of-open-elements)
         (generate-implied-end-tags parser except)))))
 
-;; TODO
 (defun generate-all-implied-end-tags-thoroughly (parser)
-  (declare (ignore parser)))
+  (with-slots (stack-of-open-elements) parser
+    (let ((tag-name (slot-value (first stack-of-open-elements) 'dom:tag-name)))
+      (when (member tag-name '("caption" "colgroup" "dd" "dt"
+                               "li" "optgroup" "option"
+                               "p" "rb" "rp" "rt" "rtc" "tbody" "td"
+                               "tfoot" "th" "thead" "tr")
+                    :test 'equal)
+        (pop stack-of-open-elements)
+        (generate-all-implied-end-tags-thoroughly parser)))))
 
-;; TODO
 (defun adoption-agency (parser)
   (with-slots (stack-of-open-elements active-formatting-elements) parser
     (let ((token (slot-value parser 'current-token))
@@ -2013,7 +2047,7 @@
   (clear-active-formatting-elements-upto-last-marker parser)
   (setf (slot-value parser 'insertion-mode) 'in-row))
 
-(defun tree-construction-dispatcher (parser token)
+(defun tree-construction-dispatcher (parser)
   (if (or (null (slot-value parser 'stack-of-open-elements))
           t
           #|TODO: Handle other cases|#)
@@ -2042,8 +2076,6 @@
                ('after-frameset 'process-token-in-after-frameset-insertion-mode)
                ('after-after-body 'process-token-in-after-after-body-insertion-mode)
                ('after-after-frameset 'process-token-in-after-after-frameset-insertion-mode))))
-        (format t "~A~%" token)
-        (setf (slot-value parser 'current-token) token)
         (funcall function parser))
     (error "TODO: Process the token according to the rules given in the section for parsing tokens in foreign content.")))
 
@@ -2065,8 +2097,16 @@
                  ((on-token
                    (lambda (c)
                      (let ((token (slot-value c 'token)))
-                       (tree-construction-dispatcher parser token)
-                       (when (typep token 'end-of-file)
-                         (return-from :parsing))))))
+                       (with-slots (current-token next-token) parser
+                         (if current-token
+                             (if next-token
+                                 (setf current-token next-token
+                                       next-token token)
+                               (setf next-token token))
+                           (setf current-token token))
+                         (when next-token
+                           (tree-construction-dispatcher parser))
+                         (when (typep next-token 'end-of-file)
+                           (return-from :parsing)))))))
                (loop (funcall (slot-value tokenizer 'state) tokenizer)))))
          document)))))
