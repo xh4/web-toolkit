@@ -669,7 +669,7 @@
             (unless (equal "form" (tag-name current-node))
               (parse-error))
             (loop for element = (pop stack-of-open-elements)
-              until (equal "form" (tag-name element))))))))
+                  until (equal "form" (tag-name element))))))))
 
    ((an-end-tag-whose-tag-name-is "p")
     (unless (have-element-in-button-scope-p "p")
@@ -743,8 +743,8 @@
                                  :key 'tag-name)))))
         (parse-error)
         (adoption-agency)
-        (setf active-formatting-elements (remove a active-formatting-elements)
-              stack-of-open-elements (remove a stack-of-open-elements)))
+        (removef active-formatting-elements a)
+        (removef stack-of-open-elements a))
       (reconstruct-active-formatting-elements)
       (let ((element (insert-html-element-for-token)))
         (appendf active-formatting-elements (list element)))))
@@ -1892,7 +1892,8 @@
 
 ;; TODO
 (defun push-onto-active-formatting-elements (parser element)
-  (declare (ignore parser element)))
+  (with-slots (active-formatting-elements) parser
+    (appendf active-formatting-elements (list element))))
 
 (defun generate-implied-end-tags (parser &key except)
   (with-slots (stack-of-open-elements) parser
@@ -1950,12 +1951,12 @@
                                                 :from-end t)))
          (setf formatting-element
                (find subject active-formatting-elements
-                       :start (if last-marker-position
-                                  (1+ last-marker-position)
-                                0)
-                       :test 'equal
-                       :key 'tag-name
-                       :from-end t))
+                     :start (if last-marker-position
+                                (1+ last-marker-position)
+                              0)
+                     :test 'equal
+                     :key 'tag-name
+                     :from-end t))
          (unless formatting-element
            ;; Act as `any other end tag` entry from `in-body` insertion mode
            (loop for node in stack-of-open-elements
@@ -1978,8 +1979,7 @@
        ;; 7
        (unless (find formatting-element stack-of-open-elements)
          (parse-error parser)
-         (setf stack-of-open-elements
-               (remove formatting-element stack-of-open-elements))
+         (removef stack-of-open-elements formatting-element)
          (return-from adoption-agency))
        ;; 8
        ;; TODO: Check this
@@ -2002,8 +2002,7 @@
        (unless furthest-block
          (loop for el = (pop stack-of-open-elements)
                until (eq el formatting-element))
-         (setf active-formatting-elements
-               (remove formatting-element active-formatting-elements))
+         (removef active-formatting-elements formatting-element)
          (return-from adoption-agency))
        ;; 12
        (let ((formatting-element-position (position formatting-element
@@ -2031,8 +2030,7 @@
        ;; 14.5
        (when (and (> inner-loop-counter 3)
                   (find node active-formatting-elements))
-         (setf active-formatting-elements
-               (remove node active-formatting-elements)))
+         (removef active-formatting-elements node))
        ;; 14.6
        ;; This step may remove `node` from `stack-of-open-elements`,
        ;;   we need to record the `the element that was immediately above node
@@ -2041,8 +2039,7 @@
        (unless (find node active-formatting-elements)
          (let ((node-position (position node stack-of-open-elements)))
            (setf element-above-node (nth (1+ node-position) stack-of-open-elements))
-           (setf stack-of-open-elements
-               (remove node stack-of-open-elements)))
+           (removef stack-of-open-elements node))
          (go :inner-loop))
        ;; 14.7
        (let ((element (create-element-for-token
@@ -2059,8 +2056,7 @@
          (setf bookmark (1+ (position node active-formatting-elements))))
        ;; 14.9
        (when-let ((parent (dom:parent last-node)))
-         (setf (slot-value parent 'dom:children)
-               (remove last-node (slot-value parent 'dom:children))))
+         (removef (slot-value parent 'dom:children) last-node))
        (append-child last-node node)
        ;; 14.10
        (setf last-node node)
@@ -2083,8 +2079,7 @@
          ;; 18
          (append-child element furthest-block)
          ;; 19
-         (setf active-formatting-elements
-               (remove formatting-element active-formatting-elements))
+         (removef active-formatting-elements formatting-element)
          (setf active-formatting-elements
                (append (subseq active-formatting-elements
                                0
@@ -2092,8 +2087,7 @@
                        (list element)
                        (subseq active-formatting-elements bookmark)))
          ;; 20
-         (setf stack-of-open-elements
-               (remove formatting-element stack-of-open-elements))
+         (removef stack-of-open-elements formatting-element)
          (let ((furthest-block-position (position furthest-block
                                                   stack-of-open-elements)))
            (setf stack-of-open-elements
