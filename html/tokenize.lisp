@@ -222,7 +222,7 @@
      (switch-to 'rcdata-less-than-sign-state))
     (#\null
      (unexpected-null-character)
-     (emit #\replacement-character))
+     (emit +replacement-character+))
     ((nil)
      (emit end-of-file))
     (t
@@ -234,7 +234,7 @@
      (switch-to 'rawtext-less-than-sign-state))
     (#\null
      (unexpected-null-character)
-     (emit #\replacement-character))
+     (emit +replacement-character+))
     ((nil)
      (emit end-of-file))
     (t
@@ -246,7 +246,7 @@
      (switch-to 'script-data-less-than-sign-state))
     (#\null
      (unexpected-null-character)
-     (emit #\replacement-character))
+     (emit +replacement-character+))
     ((nil)
      (emit end-of-file))
     (t
@@ -256,7 +256,7 @@
   (case next-input-character
     (#\null
      (unexpected-null-character)
-     (emit #\replacement-character))
+     (emit +replacement-character+))
     ((nil)
      (emit end-of-file))
     (t
@@ -264,7 +264,7 @@
 
 (define-tokenizer-state tag-open-state
   (let ((char next-input-character))
-    (cond 
+    (cond
      ((eq #\! char)
       (switch-to 'markup-declaration-open-state))
      ((eq #\/ char)
@@ -327,7 +327,7 @@
      ((eq #\null char)
       (unexpected-null-character)
       (with-slots (tag-name) current-tag-token
-        (append-char tag-name #\replacement-character)))
+        (append-char tag-name +replacement-character+)))
      ((null char)
       (eof-in-tag)
       (emit end-of-file))
@@ -559,7 +559,7 @@
      (switch-to 'script-data-escaped-less-than-sign-state))
     (#\null
      (unexpected-null-character)
-     (emit #\replacement-character))
+     (emit +replacement-character+))
     ((nil)
      (eof-in-script-html-comment-like-text)
      (emit end-of-file))
@@ -576,7 +576,7 @@
     (#\null
      (unexpected-null-character)
      (switch-to 'script-data-escaped-state)
-     (emit #\replacement-character))
+     (emit +replacement-character+))
     ((nil)
      (eof-in-script-html-comment-like-text)
      (emit end-of-file))
@@ -596,7 +596,7 @@
     (#\null
      (unexpected-null-character)
      (switch-to 'script-data-escaped-state)
-     (emit #\replacement-character))
+     (emit +replacement-character+))
     ((nil)
      (eof-in-script-html-comment-like-text)
      (emit end-of-file))
@@ -703,7 +703,7 @@
      (emit #\<))
     (#\null
      (unexpected-null-character)
-     (emit #\replacement-character))
+     (emit +replacement-character+))
     ((nil)
      (eof-in-script-html-comment-like-text)
      (emit end-of-file))
@@ -721,7 +721,7 @@
     (#\null
      (unexpected-null-character)
      (switch-to 'script-data-double-escaped-state)
-     (emit #\replacement-character))
+     (emit +replacement-character+))
     ((nil)
      (eof-in-script-html-comment-like-text)
      (emit end-of-file))
@@ -742,7 +742,7 @@
     (#\null
      (unexpected-null-character)
      (switch-to 'script-data-double-escaped-state)
-     (emit #\replacement-character))
+     (emit +replacement-character+))
     ((nil)
      (eof-in-script-html-comment-like-text)
      (emit end-of-file))
@@ -811,7 +811,7 @@
                    (char-downcase current-input-character)))
      ((eq #\null char)
       (append-char (slot-value current-attribute 'name)
-                   #\replacement-character))
+                   +replacement-character+))
      ((or (eq #\" char) (eq #\' char) (eq #\< char))
       (unexpected-character-in-attribute-name)
       (append-char (slot-value current-attribute 'name)
@@ -863,7 +863,7 @@
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-attribute 'value)
-                  #\replacement-character))
+                  +replacement-character+))
     ((nil)
      (eof-in-tag)
      (emit end-of-file))
@@ -881,7 +881,7 @@
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-attribute 'value)
-                  #\replacement-character))
+                  +replacement-character+))
     ((nil)
      (eof-in-tag)
      (emit end-of-file))
@@ -902,7 +902,7 @@
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-attribute 'value)
-                  #\replacement-character))
+                  +replacement-character+))
     ((#\" #\' #\< #\= #\`)
      (unexpected-character-in-unquoted-attribute-value)
      (append-char (slot-value current-attribute 'value)
@@ -954,7 +954,7 @@
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-comment-token 'data)
-                  #\replacement-character))
+                  +replacement-character+))
     (t
      (append-char (slot-value current-comment-token 'data)
                   current-input-character))))
@@ -1017,7 +1017,7 @@
      (switch-to 'comment-end-dash-state))
     (#\null
      (unexpected-null-character)
-     (append-char (slot-value current-comment-token 'data) #\replacement-character))
+     (append-char (slot-value current-comment-token 'data) +replacement-character+))
     ((nil)
      (eof-in-comment)
      (emit current-comment-token)
@@ -1136,7 +1136,7 @@
      ((eq #\null char)
       (unexpected-null-character)
       (let ((token (make-instance 'doctype-token
-                                  :name (string #\replacement-character))))
+                                  :name (string +replacement-character+))))
         (setf current-doctype-token token)
         (switch-to 'doctype-name-state)))
      ((eq #\> char)
@@ -1171,7 +1171,7 @@
      ((eq #\null char)
       (unexpected-null-character)
       (append-char (slot-value current-doctype-token 'name)
-                   #\replacement-character))
+                   +replacement-character+))
      ((null char)
       (eof-in-doctype)
       (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
@@ -1262,7 +1262,7 @@
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-doctype-token 'public-identifier)
-                  #\replacement-character))
+                  +replacement-character+))
     (#\>
      (abrupt-doctype-public-identifier)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
@@ -1284,7 +1284,7 @@
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-doctype-token 'public-identifier)
-                  #\replacement-character))
+                  +replacement-character+))
     (#\>
      (abrupt-doctype-public-identifier)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
@@ -1404,7 +1404,7 @@
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-doctype-token 'system-identifier)
-                  #\replacement-character))
+                  +replacement-character+))
     (#\>
      (abrupt-doctype-system-identifier)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
@@ -1426,7 +1426,7 @@
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-doctype-token 'system-identifier)
-                  #\replacement-character))
+                  +replacement-character+))
     (#\>
      (abrupt-doctype-system-identifier)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
