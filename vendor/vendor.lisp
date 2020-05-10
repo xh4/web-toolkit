@@ -31,7 +31,7 @@
   "List of (system system-asd-pathname)")
 
 (defun parse-vendor-line (line)
-  (loop for index from 0
+  (loop for index from 0 upto (1- (length line))
      for char = (aref line index)
      when (eq char #\Space)
      do (return (list (subseq line 0 index) (subseq line (1+ index) (length line))))))
