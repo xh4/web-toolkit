@@ -1,5 +1,7 @@
 (in-package :html)
 
+;; https://html.spec.whatwg.org/multipage/parsing.html#tree-construction
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *insertion-modes*
     '(initial
