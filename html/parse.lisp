@@ -1931,24 +1931,24 @@
           common-ancestor
           bookmark
           element-above-node)
-      ;; 1
+      ;; Step 1
       (setf subject (slot-value token 'tag-name))
-      ;; 2
+      ;; Step 2
       (let ((current-node (current-node parser)))
         (when (and (equal subject (tag-name current-node))
                    (not (find current-node active-formatting-elements)))
           (pop stack-of-open-elements)
           (return-from adoption-agency)))
-      ;; 3
+      ;; Step 3
       (setf outer-loop-counter 0)
       (tagbody
        :outer-loop
-       ;; 4
+       ;; Step 4
        (when (>= outer-loop-counter 8)
          (return-from adoption-agency))
-       ;; 5
+       ;; Step 5
        (incf outer-loop-counter)
-       ;; 6
+       ;; Step 6
        (let ((last-marker-position (position-if 'marker-p active-formatting-elements
                                                 :from-end t)))
          (setf formatting-element
@@ -1978,21 +1978,20 @@
                           (ignore-token parser)
                           (return)))))
            (return-from adoption-agency)))
-       ;; 7
+       ;; Step 7
        (unless (find formatting-element stack-of-open-elements)
          (parse-error parser)
          (removef stack-of-open-elements formatting-element)
          (return-from adoption-agency))
-       ;; 8
-       ;; TODO: Check this
+       ;; Step 8
        (when (and (find formatting-element stack-of-open-elements)
                   (not (have-element-in-scope-p parser formatting-element)))
          (parse-error parser)
          (return-from adoption-agency))
-       ;; 9
+       ;; Step 9
        (unless (eq (current-node parser) formatting-element)
          (parse-error parser))
-       ;; 10
+       ;; Step 10
        (let ((formatting-element-position (position formatting-element
                                                     stack-of-open-elements)))
          (when (and (> formatting-element-position 0)
@@ -2000,40 +1999,40 @@
                                             stack-of-open-elements)))
            (setf furthest-block (nth (1- formatting-element-position)
                                      stack-of-open-elements))))
-       ;; 11
+       ;; Step 11
        (unless furthest-block
          (loop for el = (pop stack-of-open-elements)
                until (eq el formatting-element))
          (removef active-formatting-elements formatting-element)
          (return-from adoption-agency))
-       ;; 12
+       ;; Step 12
        (let ((formatting-element-position (position formatting-element
                                                     stack-of-open-elements)))
          (setf common-ancestor (nth (1+ formatting-element-position)
                                     stack-of-open-elements)))
-       ;; 13
+       ;; Step 13
        (setf bookmark (position formatting-element active-formatting-elements))
-       ;; 14
+       ;; Step 14
        (setf node furthest-block
              last-node furthest-block)
-       ;; 14.1
+       ;; Step 14.1
        (setf inner-loop-counter 0)
-       ;; 14.2
+       ;; Step 14.2
        :inner-loop
        (incf inner-loop-counter)
-       ;; 14.3
+       ;; Step 14.3
        (let ((node-position (position node stack-of-open-elements)))
          (if node-position
              (setf node (nth (1+ node-position) stack-of-open-elements))
            (setf node element-above-node)))
-       ;; 14.4
+       ;; Step 14.4
        (when (eq node formatting-element)
          (go :next-step-in-the-overall-algorithm))
-       ;; 14.5
+       ;; Step 14.5
        (when (and (> inner-loop-counter 3)
                   (find node active-formatting-elements))
          (removef active-formatting-elements node))
-       ;; 14.6
+       ;; Step 14.6
        ;; This step may remove `node` from `stack-of-open-elements`,
        ;;   we need to record the `the element that was immediately above node
        ;;   in the stack of open elements before node was removed.` because
@@ -2043,7 +2042,7 @@
            (setf element-above-node (nth (1+ node-position) stack-of-open-elements))
            (removef stack-of-open-elements node))
          (go :inner-loop))
-       ;; 14.7
+       ;; Step 14.7
        (let ((element (create-element-for-token
                        (slot-value parser 'current-token)
                        "html"
@@ -2053,34 +2052,33 @@
          (let ((node-position (find node stack-of-open-elements)))
            (setf (nth node-position stack-of-open-elements) element))
          (setf node element))
-       ;; 14.8
+       ;; Step 14.8
        (when (eq last-node furthest-block)
          (setf bookmark (1+ (position node active-formatting-elements))))
-       ;; 14.9
+       ;; Step 14.9
        (when-let ((parent (dom:parent last-node)))
          (removef (slot-value parent 'dom:children) last-node))
        (append-child last-node node)
-       ;; 14.10
+       ;; Step 14.10
        (setf last-node node)
-       ;; 14.11
+       ;; Step 14.11
        (go :inner-loop)
        :next-step-in-the-overall-algorithm
-       ;; 15
+       ;; Step 15
        (let ((place (appropriate-place-for-inserting-node parser common-ancestor)))
          (append-child place last-node ))
-       ;; 16
+       ;; Step 16
        (let ((element (create-element-for-token
                        (slot-value parser 'current-token)
                        "html"
                        furthest-block)))
-         ;; 17
+         ;; Step 17
          (loop for child in (children furthest-block)
                do (append-child element child))
-         ;; TODO: Check this
          (setf (slot-value furthest-block 'dom:children) nil)
-         ;; 18
-         (append-child element furthest-block)
-         ;; 19
+         ;; Step 18
+         (append-child furthest-block element)
+         ;; Step 19
          (removef active-formatting-elements formatting-element)
          (setf active-formatting-elements
                (append (subseq active-formatting-elements
@@ -2088,7 +2086,7 @@
                                bookmark)
                        (list element)
                        (subseq active-formatting-elements bookmark)))
-         ;; 20
+         ;; Step 20
          (removef stack-of-open-elements formatting-element)
          (let ((furthest-block-position (position furthest-block
                                                   stack-of-open-elements)))
@@ -2096,7 +2094,7 @@
                  (append (subseq stack-of-open-elements 0 furthest-block-position)
                          (list element)
                          (subseq stack-of-open-elements furthest-block-position))))
-         ;; 21
+         ;; Step 21
          (go :outer-loop))))))
 
 (defun close-p-element (parser)
@@ -2140,91 +2138,91 @@
                               ,insertion-mode)
                       (setf (slot-value parser 'insertion-mode) ,insertion-mode))))
         (block nil
-          ;; 1
+          ;; Step 1
           (setf last nil)
-          ;; 2
+          ;; Step 2
           (setf node (first stack-of-open-elements))
-          ;; 3
+          ;; Step 3
           (tagbody
            :loop
            (when (eq node (car (last stack-of-open-elements)))
              (progn
                (setf last t)
                #|TODO|#))
-           ;; 4
+           ;; Step 4
            (when (equal "select" (tag-name node))
              (tagbody
-              ;; 4.1
+              ;; Step 4.1
               (when last (go :done))
-              ;; 4.2
+              ;; Step 4.2
               (setf ancestor node)
-              ;; 4.3
+              ;; Step 4.3
               :loop
               (when (eq ancestor (car (last stack-of-open-elements)))
                 (go :done))
-              ;; 4.4
+              ;; Step 4.4
               ;; TODO: Check this
               (let ((ancestor-position (position ancestor stack-of-open-elements)))
                 (setf ancestor (nth (1+ ancestor-position) stack-of-open-elements)))
-              ;; 4.5
+              ;; Step 4.5
               (when (equal "template" (tag-name ancestor))
                 (go :done))
-              ;; 4.6
+              ;; Step 4.6
               (when (equal "table" (tag-name ancestor))
                 (switch-to 'in-select-in-table)
                 (return))
-              ;; 4.7
+              ;; Step 4.7
               (go :loop)
-              ;; 4.8
+              ;; Step 4.8
               :done
               (switch-to 'in-select)
               (return)))
-           ;; 5
+           ;; Step 5
            (when (and (or (equal "td" (tag-name node))
                           (equal "th" (tag-name node)))
                       (not last))
              (switch-to 'in-cell)
              (return))
-           ;; 6
+           ;; Step 6
            (when (equal "tr" (tag-name node))
              (switch-to 'in-row)
              (return))
-           ;; 7
+           ;; Step 7
            (when (or (equal "tbody" (tag-name node))
                      (equal "thead" (tag-name node))
                      (equal "tfoot" (tag-name node)))
              (switch-to 'in-table-body)
              (return))
-           ;; 8
+           ;; Step 8
            (when (equal "caption" (tag-name node))
              (switch-to 'in-caption)
              (return))
-           ;; 9
+           ;; Step 9
            (when (equal "colgroup" (tag-name node))
              (switch-to 'in-column-group)
              (return))
-           ;; 10
+           ;; Step 10
            (when (equal "table" (tag-name node))
              (switch-to 'in-table)
              (return))
-           ;; 11
+           ;; Step 11
            (when (equal "template" (tag-name node))
              (switch-to (first stack-of-template-insertion-modes))
              (return))
-           ;; 12
+           ;; Step 12
            (when (and (equal "head" (tag-name node))
                       (not last))
              (switch-to 'in-head)
              (return))
-           ;; 13
+           ;; Step 13
            (when (equal "body" (tag-name node))
              (switch-to 'in-body)
              (return))
-           ;; 14
+           ;; Step 14
            (when (equal "frameset" (tag-name node))
              (switch-to 'in-frameset)
              (return))
-           ;; 15
+           ;; Step 15
            (when (equal "html" (tag-name node))
              (if (null head-element-pointer)
                  (progn
@@ -2233,14 +2231,14 @@
                (progn
                  (switch-to 'after-head)
                  (return))))
-           ;; 16
+           ;; Step 16
            (when last
              (switch-to 'in-body)
              (return))
-           ;; 17
+           ;; Step 17
            (let ((node-position (position node stack-of-open-elements)))
              (setf node (nth (1+ node-position) stack-of-open-elements)))
-           ;; 18
+           ;; Step 18
            (go :loop)))))))
 
 ;; TODO
