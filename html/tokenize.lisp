@@ -179,10 +179,10 @@
                     collect `(,error-name ()
                                (cerror "Continue" ',error-name)))
                 (emit (token)
-                  (prog1
-                      (signal 'on-token :token token)
-                    (when (typep token 'start-tag)
-                      (setf (slot-value tokenizer 'last-start-tag-token) token))))
+                  (when (typep token 'start-tag)
+                    (setf (slot-value tokenizer 'last-start-tag-token) token))
+                  (with-slots (upcoming-tokens) tokenizer
+                    (push token upcoming-tokens)))
                 (consume (&optional n)
                   (consume tokenizer n))
                 (next-few-characters (n)
@@ -1689,6 +1689,8 @@
    (stream
     :initarg :stream
     :initform nil)
+   (upcoming-tokens
+    :initform nil)
    (buffer
     :initform nil)
    (current-input-character
@@ -1732,21 +1734,14 @@
         (coerce buffer 'string)
       (coerce (subseq buffer 0 n) 'string))))
 
-(defgeneric tokenize (source &key errorp)
-  (:method ((source string) &key errorp)
-   (with-input-from-string (stream source)
-     (tokenize stream :errorp errorp)))
-  (:method ((stream stream) &key errorp)
-   (let ((tokenizer (make-instance 'tokenizer :stream stream)))
-     (loop with tokens = '()
-           do (handler-bind ((parse-error (lambda (e)
-                                            (declare (ignore e))
-                                            (unless errorp
-                                              (continue))))
-                             (on-token (lambda (c)
-                                         (let ((token (slot-value c 'token)))
-                                           (if (typep token 'end-of-file)
-                                               (loop-finish)
-                                             (push token tokens))))))
-                (funcall (slot-value tokenizer 'state) tokenizer))
-           finally (return (reverse tokens))))))
+(defun tokenize (tokenizer &key errorp)
+  (with-slots (upcoming-tokens) tokenizer
+    (if-let ((token (pop upcoming-tokens)))
+        token
+      (handler-bind ((parse-error (lambda (e)
+                                    (declare (ignore e))
+                                    (unless errorp
+                                      (continue)))))
+        (funcall (slot-value tokenizer 'state) tokenizer)
+        (nreverse upcoming-tokens)
+        (pop upcoming-tokens)))))

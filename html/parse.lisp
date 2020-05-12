@@ -1669,6 +1669,8 @@
    (active-formatting-elements
     :initform nil)
    (pending-table-character-tokens
+    :initform nil)
+   (open-texts
     :initform nil)))
 
 (defun parse-error (parser)
@@ -1692,8 +1694,10 @@
         (return-from insert-character))
       (let ((text (car (last (children adjusted-insertion-location)))))
         (if (typep text 'text)
-            (append-char (slot-value text 'dom:data) data)
-          (let ((text (make-instance 'text :data (string data))))
+            (write-char data (slot-value text 'data-stream))
+          (let ((text (make-instance 'text :data-stream (make-string-output-stream))))
+            (write-char data (slot-value text 'data-stream))
+            (push text (slot-value parser 'open-texts))
             (append-child adjusted-insertion-location text)))))))
 
 ;; TODO: Respect namespace & parent
@@ -2281,31 +2285,63 @@
   (:method ((stream stream))
    (let ((tokenizer (make-instance 'tokenizer :stream stream)))
      (let ((parser (make-instance 'parser :tokenizer tokenizer)))
-       (with-slots (document) parser
+       (with-slots (document open-texts) parser
          (block :parsing
-           (handler-bind
-               ((stop-parsing
-                 (lambda (c)
-                   (declare (ignore c))
-                   (return-from :parsing)))
-                (parse-error 
-                 (lambda (e)
-                   (declare (ignore e))
-                   (continue))))
-             (handler-bind
-                 ((on-token
-                   (lambda (c)
-                     (let ((token (slot-value c 'token)))
-                       (with-slots (current-token next-token) parser
-                         (if current-token
-                             (if next-token
-                                 (setf current-token next-token
-                                       next-token token)
-                               (setf next-token token))
-                           (setf current-token token))
-                         (when next-token
-                           (tree-construction-dispatcher parser))
-                         (when (typep next-token 'end-of-file)
-                           (return-from :parsing)))))))
-               (loop (funcall (slot-value tokenizer 'state) tokenizer)))))
+           (unwind-protect
+               (handler-bind
+                   ((stop-parsing
+                     (lambda (c)
+                       (declare (ignore c))
+                       (return-from :parsing)))
+                    (parse-error 
+                     (lambda (e)
+                       (declare (ignore e))
+                       (continue))))
+                 (loop for token = (tokenize tokenizer)
+                       until (typep token 'end-of-file)
+                       do (with-slots (current-token next-token) parser
+                            (if current-token
+                                (if next-token
+                                    (setf current-token next-token
+                                          next-token token)
+                                  (setf next-token token))
+                              (setf current-token token))
+                            (when next-token
+                              (tree-construction-dispatcher parser))
+                            (when (typep next-token 'end-of-file)
+                              (return-from :parsing)))))
+             (loop for text in open-texts
+                   for stream = (slot-value text 'data-stream)
+                   for data = (get-output-stream-string stream)
+                   do (progn
+                        (close stream)
+                        (setf (slot-value text 'dom:data) data
+                              (slot-value text 'data-stream) nil))
+                   finally (setf open-texts nil))))
          document)))))
+
+(defun trace-parser ()
+  (trace
+   process-token-in-initial-insertion-mode
+   process-token-in-before-html-insertion-mode
+   process-token-in-before-head-insertion-mode
+   process-token-in-in-head-insertion-mode
+   process-token-in-in-head-noscript-insertion-mode
+   process-token-in-after-head-insertion-mode
+   process-token-in-in-body-insertion-mode
+   process-token-in-text-insertion-mode
+   process-token-in-in-table-insertion-mode
+   process-token-in-in-table-text-insertion-mode
+   process-token-in-in-caption-insertion-mode
+   process-token-in-in-column-group-insertion-mode
+   process-token-in-in-table-body-insertion-mode
+   process-token-in-in-row-insertion-mode
+   process-token-in-in-cell-insertion-mode
+   process-token-in-in-select-insertion-mode
+   process-token-in-in-select-in-table-insertion-mode
+   process-token-in-in-template-insertion-mode
+   process-token-in-after-body-insertion-mode
+   process-token-in-in-frameset-insertion-mode
+   process-token-in-after-frameset-insertion-mode
+   process-token-in-after-after-body-insertion-mode
+   process-token-in-after-after-frameset-insertion-mode))
