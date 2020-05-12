@@ -1,6 +1,9 @@
 (in-package :html)
 
-(defclass text (dom:text) ())
+(defclass text (dom:text)
+  ((data-stream
+    :initarg :data-stream
+    :initform nil)))
 
 (defmethod print-object ((text text) stream)
   (print-unreadable-object (text stream :type t :identity t)
