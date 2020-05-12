@@ -2,4 +2,5 @@
 
 (defpackage :svg
   (:nicknames :wt.svg)
-  (:use :cl :alexandria))
+  (:use :cl :alexandria)
+  (:shadow :use :symbol))

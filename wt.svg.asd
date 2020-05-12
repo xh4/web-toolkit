@@ -10,7 +10,7 @@
   :components ((:module "svg"
                 :serial t
                 :components ((:file "package")
-                             )))
+                             (:file "element"))))
   :in-order-to ((test-op (test-op :wt.svg/test)))
   :perform (load-op :after (o c)
              #+lispworks
