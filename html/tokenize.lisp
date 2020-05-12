@@ -177,9 +177,7 @@
                        (setf (slot-value tokenizer 'state) ,state))))
          (flet (,@(loop for error-name in *parse-errors*
                     collect `(,error-name ()
-                               (restart-case
-                                   (error ',error-name)
-                                 (continue ()))))
+                               (cerror "Continue" ',error-name)))
                 (emit (token)
                   (prog1
                       (signal 'on-token :token token)
@@ -1734,14 +1732,18 @@
         (coerce buffer 'string)
       (coerce (subseq buffer 0 n) 'string))))
 
-(defgeneric tokenize (source)
-  (:method ((source string))
+(defgeneric tokenize (source &key errorp)
+  (:method ((source string) &key errorp)
    (with-input-from-string (stream source)
-     (tokenize stream)))
-  (:method ((stream stream))
+     (tokenize stream :errorp errorp)))
+  (:method ((stream stream) &key errorp)
    (let ((tokenizer (make-instance 'tokenizer :stream stream)))
      (loop with tokens = '()
-           do (handler-bind ((on-token (lambda (c)
+           do (handler-bind ((parse-error (lambda (e)
+                                            (declare (ignore e))
+                                            (unless errorp
+                                              (continue))))
+                             (on-token (lambda (c)
                                          (let ((token (slot-value c 'token)))
                                            (if (typep token 'end-of-file)
                                                (loop-finish)
