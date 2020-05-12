@@ -56,11 +56,7 @@
                                     'stack-of-open-elements))))
            (macrolet
                ((switch-to (insertion-mode)
-                  `(progn
-                     (format t "~A -> ~A~%"
-                             (slot-value parser 'insertion-mode)
-                             ,insertion-mode)
-                     (setf (slot-value parser 'insertion-mode) ,insertion-mode)))
+                  `(setf (slot-value parser 'insertion-mode) ,insertion-mode))
                 (stop-parsing ()
                   `(signal 'stop-parsing)))
              (flet
@@ -1677,7 +1673,7 @@
 
 (defun parse-error (parser)
   (declare (ignore parser))
-  (error "Parse error"))
+  (cerror "Continue" 'parse-error))
 
 (defun ignore-token (parser)
   (declare (ignore parser)))
@@ -2138,11 +2134,7 @@
           node
           ancestor)
       (macrolet ((switch-to (insertion-mode)
-                   `(progn
-                      (format t "~A -> ~A~%"
-                              (slot-value parser 'insertion-mode)
-                              ,insertion-mode)
-                      (setf (slot-value parser 'insertion-mode) ,insertion-mode))))
+                   `(setf (slot-value parser 'insertion-mode) ,insertion-mode)))
         (block nil
           ;; Step 1
           (setf last nil)
@@ -2295,7 +2287,11 @@
                ((stop-parsing
                  (lambda (c)
                    (declare (ignore c))
-                   (return-from :parsing))))
+                   (return-from :parsing)))
+                (parse-error 
+                 (lambda (e)
+                   (declare (ignore e))
+                   (continue))))
              (handler-bind
                  ((on-token
                    (lambda (c)
