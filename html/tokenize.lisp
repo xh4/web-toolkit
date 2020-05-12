@@ -157,7 +157,8 @@
 
 (defmacro define-tokenizer-state (name &body body)
   `(defun ,name (tokenizer)
-     ,@(unless body '((declare (ignore tokenizer))))
+     #+sbcl
+     (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
      (symbol-macrolet ((next-input-character (next-input-character tokenizer))
                        (current-input-character (current-input-character tokenizer))
                        (end-of-file (make-instance 'end-of-file))
@@ -1527,7 +1528,7 @@
                        codepoints result)))
           else do (if last-name-matched
                       (progn (consume (1- (length last-name-matched))) (loop-finish))
-                    (progn (consume (1- name)) (loop-finish)))
+                    (progn (consume (1- (length name))) (loop-finish)))
           finally (if last-name-matched
                       (setf temporary-buffer last-name-matched)
                     (setf temporary-buffer (subseq name 0 (1- (length name))))))
