@@ -4,31 +4,31 @@
 
 (test tokenize/doctype
   (it
-    (let ((token (first (html::tokenize "<!doctype html>"))))
+    (let ((token (first (tokenize-string "<!doctype html>"))))
       (is (eq 'html::doctype-token (type-of token)))
       (is (equal "html" (slot-value token 'html::name)))))
 
   (it
-    (let ((token (first (html::tokenize "<!DOCTYPE html>"))))
+    (let ((token (first (tokenize-string "<!DOCTYPE html>"))))
       (is (eq 'html::doctype-token (type-of token)))
       (is (equal "html" (slot-value token 'html::name))))))
 
 (test tokenize/named-character-reference
   (it
-    (let ((token (first (html::tokenize "&lt;"))))
+    (let ((token (first (tokenize-string "&lt;"))))
       (is (eq #\< token))))
 
   (it
-    (signals error (html::tokenize "I'm &notit; I tell you")))
+    (signals error (tokenize-string "I'm &notit; I tell you")))
 
   (it
-    (handler-bind ((html::parse-error (lambda (c) (continue))))
-      (let ((chars (html::tokenize "I'm &notit; I tell you")))
+    (handler-bind ((html:parse-error (lambda (c) (continue))))
+      (let ((chars (tokenize-string "I'm &notit; I tell you")))
         (is (equal "I'm ¬it; I tell you" (coerce chars 'string))))))
 
   (it
-    (finishes (html::tokenize "I'm &notin; I tell you")))
+    (finishes (tokenize-string "I'm &notin; I tell you")))
 
   (it
-    (let ((chars (html::tokenize "I'm &notin; I tell you")))
+    (let ((chars (tokenize-string "I'm &notin; I tell you")))
       (is (equal "I'm ∉ I tell you" (coerce chars 'string))))))

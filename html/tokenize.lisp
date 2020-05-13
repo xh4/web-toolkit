@@ -1742,6 +1742,8 @@
                                     (declare (ignore e))
                                     (unless errorp
                                       (continue)))))
-        (funcall (slot-value tokenizer 'state) tokenizer)
+        (loop
+         do (funcall (slot-value tokenizer 'state) tokenizer)
+         until upcoming-tokens)
         (nreverse upcoming-tokens)
         (pop upcoming-tokens)))))

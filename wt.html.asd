@@ -31,6 +31,7 @@
   :components ((:module "test/html"
                 :serial t
                 :components ((:file "package")
+                             (:file "helper")
                              (:file "text")
                              (:file "element")
                              (:file "document")
