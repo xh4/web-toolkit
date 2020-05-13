@@ -31,8 +31,6 @@
 (defmacro define-parser-insertion-mode (name &body body)
   (let ((function-name (intern (format nil "PROCESS-TOKEN-IN-~A-INSERTION-MODE" name))))
     `(defun ,function-name (parser)
-       #+sbcl
-       (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
        (with-slots
            (tokenizer
             document
@@ -2391,7 +2389,7 @@
                      (lambda (c)
                        (declare (ignore c))
                        (return-from :parsing)))
-                    (parse-error 
+                    (parse-error
                      (lambda (e)
                        (declare (ignore e))
                        (continue))))
