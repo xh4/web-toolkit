@@ -100,6 +100,8 @@
                     (unless token
                       (setf token (slot-value parser 'current-token)))
                     (insert-html-element-for-token parser token))
+                  (insert-foreign-element-for-token (&optional namespace)
+                    (insert-foreign-element-for-token parser token namespace))
                   (close-p-element ()
                     (close-p-element parser))
                   (close-cell ()
@@ -141,7 +143,13 @@
                   (push-onto-active-formatting-elements (element)
                     (push-onto-active-formatting-elements parser element))
                   (appropriate-place-for-inserting-node (&optional override-target)
-                    (appropriate-place-for-inserting-node parser override-target)))
+                    (appropriate-place-for-inserting-node parser override-target))
+                  (adjust-mathml-attributes ()
+                    (adjust-mathml-attributes parser))
+                  (adjust-svg-attributes ()
+                    (adjust-svg-attributes parser))
+                  (adjust-foreign-attributes ()
+                    (adjust-foreign-attributes parser)))
                ,@body)))))))
 
 (define-condition stop-parsing () ())
@@ -578,34 +586,61 @@
                         :key 'tag-name)
             (setf form-element-pointer element))))))
 
-   ;; https://github.com/html5lib/html5lib-python/blob/master/html5lib/html5parser.py#L1111
-   ;; TODO
    ((a-start-tag-whose-tag-name-is "li")
-    (let ((node current-node))
-      (setf frameset-ok-flag nil)
-      (tagbody
-       :loop
-       (loop while (and (typep node 'element)
-                        (equal "li" (tag-name node)))
-             do
-             (generate-implied-end-tags :except "li")
-             (unless (equal "li" (tag-name node))
-               (parse-error))
-             (loop for element = (pop stack-of-open-elements)
-                   until (equal "li" (tag-name node)))
-             (go :done))
-       (if (and (special-element-p node)
-                (not (member (tag-name node)
-                             '("address" "div" "p")
-                             :test 'equal)))
-           (go :done)
-         (progn
-           ))
-       :done
-       )))
+    (setf frameset-ok-flag nil)
+    (loop for element in stack-of-open-elements
+          if (equal "li" (tag-name element))
+          do (progn
+               (generate-implied-end-tags :except "li")
+               (unless (equal "li" (tag-name current-node))
+                 (parse-error))
+               (loop for element = (pop stack-of-open-elements)
+                     until (equal "li" (tag-name element)))
+               (when (have-element-in-button-scope-p "p")
+                 (close-p-element))
+               (return))
+          else if (and (special-element-p element)
+                       (not (or (equal "address" (tag-name element))
+                                (equal "div" (tag-name element))
+                                (equal "p" (tag-name element)))))
+          do (progn
+               (when (have-element-in-button-scope-p "p")
+                 (close-p-element))
+               (return)))
+    (insert-html-element-for-token))
 
-   ;; TODO
-   ((a-start-tag-whose-tag-name-is-one-of '("dd" "dt")))
+   ((a-start-tag-whose-tag-name-is-one-of '("dd" "dt"))
+    (setf frameset-ok-flag nil)
+    (loop for element in stack-of-open-elements
+          if (equal "dd" (tag-name element))
+          do (progn
+               (generate-implied-end-tags :except "dd")
+               (unless (equal "dd" (tag-name current-node))
+                 (parse-error))
+               (loop for element = (pop stack-of-open-elements)
+                     until (equal "dd" (tag-name element)))
+               (when (have-element-in-button-scope-p "p")
+                 (close-p-element))
+               (return))
+          else if (equal "dt" (tag-name element))
+          do (progn
+               (generate-implied-end-tags :except "dt")
+               (unless (equal "dt" (tag-name current-node))
+                 (parse-error))
+               (loop for element = (pop stack-of-open-elements)
+                     until (equal "dt" (tag-name element)))
+               (when (have-element-in-button-scope-p "p")
+                 (close-p-element))
+               (return))
+          else if (and (special-element-p element)
+                       (not (or (equal "address" (tag-name element))
+                                (equal "div" (tag-name element))
+                                (equal "p" (tag-name element)))))
+          do (progn
+               (when (have-element-in-button-scope-p "p")
+                 (close-p-element))
+               (return)))
+    (insert-html-element-for-token))
 
    ((a-start-tag-whose-tag-name-is "plaintext")
     (when (have-element-in-button-scope-p "p")
@@ -886,11 +921,23 @@
         (parse-error)))
     (insert-html-element-for-token))
 
-   ;; TODO
-   ((a-start-tag-whose-tag-name-is "math"))
+   ((a-start-tag-whose-tag-name-is "math")
+    (reconstruct-active-formatting-elements)
+    (adjust-mathml-attributes)
+    (adjust-foreign-attributes)
+    (insert-foreign-element-for-token "mathml")
+    (when (slot-value token 'self-closing-flag)
+      (pop stack-of-open-elements)
+      (acknowledge-token-self-closing-flag)))
 
-   ;; TODO
-   ((a-start-tag-whose-tag-name-is "svg"))
+   ((a-start-tag-whose-tag-name-is "svg")
+    (reconstruct-active-formatting-elements)
+    (adjust-svg-attributes)
+    (adjust-foreign-attributes)
+    (insert-foreign-element-for-token "svg")
+    (when (slot-value token 'self-closing-flag)
+      (pop stack-of-open-elements)
+      (acknowledge-token-self-closing-flag)))
 
    ((a-start-tag-whose-tag-name-is-one-of '("caption" "col" "colgroup"
                                             "frame" "head" "tbody" "td"
@@ -1731,18 +1778,22 @@
     target))
 
 ;; TODO: Check exact node condition
-(defun have-element-in-specific-scope-p (parser element list)
-  (check-type element (or element string))
+(defun have-element-in-specific-scope-p (parser target scope)
+  (check-type target (or element string))
   (with-slots (stack-of-open-elements) parser
-    (let* ((tag-name (typecase element
-                       (element (tag-name element))
-                       (string element))))
-      (loop for open-element in stack-of-open-elements
-            if (or (eq element open-element)
-                   (equal tag-name (tag-name open-element)))
-            do (return t)
-            else if (find tag-name list :test 'equal)
-            do (return)))))
+    (loop for open-element in stack-of-open-elements
+          if (typecase target
+               (element (eq target open-element))
+               (string (equal target (tag-name open-element))))
+          do (return t)
+          else if (typecase scope
+                    (list (typecase target
+                            (element (find (tag-name target) scope :test 'equal))
+                            (string (find target scope :test 'equal))))
+                    (function (typecase target
+                                (element (funcall scope (tag-name target)))
+                                (string (funcall scope target)))))
+          do (return))))
 
 (defun have-element-in-scope-p (parser element)
   (have-element-in-specific-scope-p
@@ -1757,7 +1808,17 @@
      "marquee"
      "object"
      "template"
-     #|TODO: elements in MathML and SVG namespaces|#)))
+     ;; MathML
+     "mi"
+     "mo"
+     "mn"
+     "ms"
+     "mtext"
+     "annotation-xml"
+     ;; SVG
+     "foreignObject"
+     "desc"
+     "title")))
 
 (defun have-element-in-list-item-scope-p (parser element)
   (have-element-in-specific-scope-p
@@ -1772,7 +1833,18 @@
      "marquee"
      "object"
      "template"
-     #|TODO: elements in MathML and SVG namespaces|#
+     ;; MathML
+     "mi"
+     "mo"
+     "mn"
+     "ms"
+     "mtext"
+     "annotation-xml"
+     ;; SVG
+     "foreignObject"
+     "desc"
+     "title"
+     ;; additional
      "ol"
      "ul")))
 
@@ -1789,7 +1861,18 @@
      "marquee"
      "object"
      "template"
-     #|TODO: elements in MathML and SVG namespaces|#
+     ;; MathML
+     "mi"
+     "mo"
+     "mn"
+     "ms"
+     "mtext"
+     "annotation-xml"
+     ;; SVG
+     "foreignObject"
+     "desc"
+     "title"
+     ;; additional
      "button")))
 
 (defun have-element-in-table-scope-p (parser element)
@@ -1799,6 +1882,13 @@
    '("html"
      "table"
      "template")))
+
+(defun have-element-in-select-scope-p (parser element)
+  (have-element-in-specific-scope-p
+   parser
+   element
+   (lambda (tag-name)
+     (not (member tag-name '("optgroup" "option") :test 'equal)))))
 
 (defun special-element-p (element)
   (let ((tag-name (typecase element
@@ -1819,7 +1909,10 @@
               "source" "style" "summary" "table" "tbody" "td"
               "template" "textarea" "tfoot" "th" "thead" "title"
               "tr" "track" "ul" "wbr" "xmp"
-              #|TODO: MathML and SVG elements|#)
+              ;; MathML
+              "mi" "mo" "mn" "ms" "mtext" "annotation-xml"
+              ;; SVG
+              "foreignObject" "desc" "title")
             :test 'equal)))
 
 (defun formatting-element-p (element)
@@ -1834,13 +1927,6 @@
 (defun ordinary-element-p (element)
   (not (or (special-element-p element)
            (formatting-element-p element))))
-
-;; TODO
-(defun have-element-in-select-scope-p (parser element)
-  (have-element-in-specific-scope-p
-   parser
-   element
-   '()))
 
 (defun parse-generic-rawtext-element (parser)
   (with-slots (tokenizer
@@ -2244,7 +2330,20 @@
            (go :loop)))))))
 
 ;; TODO
-(defun acknowledge-token-self-closing-flag (parser))
+(defun acknowledge-token-self-closing-flag (parser)
+  (declare (ignore parser)))
+
+;; TODO
+(defun adjust-mathml-attributes (parser)
+  (declare (ignore parser)))
+
+;; TODO
+(defun adjust-svg-attributes (parser)
+  (declare (ignore parser)))
+
+;; TODO
+(defun adjust-foreign-attributes (parser)
+  (declare (ignore parser)))
 
 (defun tree-construction-dispatcher (parser)
   (if (or (null (slot-value parser 'stack-of-open-elements))
