@@ -169,33 +169,31 @@
                        (current-comment-token (slot-value tokenizer 'current-comment-token))
                        (temporary-buffer (slot-value tokenizer 'temporary-buffer))
                        (character-reference-code (slot-value tokenizer 'character-reference-code)))
-       (macrolet ((switch-to (state)
+       (macrolet (,@(loop for error-name in *parse-errors*
+                      collect `(,error-name () '(cerror "Continue" ',error-name)))
+                  (switch-to (state)
                     `(setf (slot-value tokenizer 'state) ,state))
                   (reconsume-in (state)
                     `(progn
                        (reconsume tokenizer)
-                       (setf (slot-value tokenizer 'state) ,state))))
-         (flet (,@(loop for error-name in *parse-errors*
-                    collect `(,error-name ()
-                               (cerror "Continue" ',error-name)))
-                (emit (token)
-                  (when (typep token 'start-tag)
-                    (setf (slot-value tokenizer 'last-start-tag-token) token))
-                  (with-slots (upcoming-tokens) tokenizer
-                    (push token upcoming-tokens)))
-                (consume (&optional n)
-                  (consume tokenizer n))
-                (next-few-characters (n)
-                  (next-few-characters tokenizer n))
-                (appropriate-end-tag-token-p (end-tag-token)
-                  (and (typep end-tag-token 'end-tag)
-                       (with-slots (last-start-tag-token) tokenizer
-                         (and last-start-tag-token
-                              (equal (slot-value end-tag-token 'tag-name)
-                                     (slot-value last-start-tag-token 'tag-name)))))))
-           ,@(if body
-                 body
-               `((error "Tokenizer ~A not implemented" ',name))))))))
+                       (setf (slot-value tokenizer 'state) ,state)))
+                  (emit (token)
+                    `(progn
+                       (when (typep ,token 'start-tag)
+                         (setf (slot-value tokenizer 'last-start-tag-token) ,token))
+                       (with-slots (upcoming-tokens) tokenizer
+                         (push ,token upcoming-tokens))))
+                  (consume (&optional n)
+                    `(funcall 'consume tokenizer ,n))
+                  (next-few-characters (n)
+                    `(funcall 'next-few-characters tokenizer ,n))
+                  (appropriate-end-tag-token-p (end-tag-token)
+                    `(and (typep ,end-tag-token 'end-tag)
+                          (with-slots (last-start-tag-token) tokenizer
+                            (and last-start-tag-token
+                                 (equal (slot-value ,end-tag-token 'tag-name)
+                                        (slot-value last-start-tag-token 'tag-name)))))))
+         ,@body))))
 
 (define-tokenizer-state data-state
   (case next-input-character
