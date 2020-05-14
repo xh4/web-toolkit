@@ -157,8 +157,6 @@
 
 (defmacro define-tokenizer-state (name &body body)
   `(defun ,name (tokenizer)
-     #+sbcl
-     (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
      (symbol-macrolet ((next-input-character (next-input-character tokenizer))
                        (current-input-character (current-input-character tokenizer))
                        (end-of-file (make-instance 'end-of-file))
