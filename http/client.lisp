@@ -1,6 +1,6 @@
 (in-package :http)
 
-(defun request (uri &key (method :get) header content (entity t))
+(defun request (uri &key (method :get) header content)
   (check-request uri method header content)
   (let ((connection-manager (make-instance 'connection-manager)))
     (let ((request (make-request uri method header content)))
@@ -9,15 +9,16 @@
         (let ((response (receive-response connection)))
           (release-connection connection-manager connection)
           (shutdown-connection-manager connection-manager)
-          (process-response response request :entity entity)
+          (process-response response request)
           response)))))
 
-;; TODO: add method related generic functions
 (defun check-request (uri method header content)
+  (check-type uri (or uri:uri string))
   (unless (find method *methods*)
     (error "Request method ~A not supported" method))
   (when (and (find method '(:get :head :options)) content)
-    (error "Request method ~A can't carry body" method)))
+    (error "Request method ~A can't carry body" method))
+  (check-type header (or header list)))
 
 (defmacro define-request-method (symbol lambda-list)
   (let ((required-parameters (nth-value 0 (parse-ordinary-lambda-list lambda-list)))
@@ -28,21 +29,84 @@
                 ,@(when (= 2 (length required-parameters))
                     `(:content ,(second required-parameters)))
                 ,@(loop for ((keyword-name name) nil nil) in keyword-parameters
-                      append `(,keyword-name ,name))))))
+                        append `(,keyword-name ,name))))))
 
-(define-request-method get (uri &key header (entity t)))
+(define-request-method get (uri &key header))
+
+(defmacro with-get ((response uri &key header) &body body)
+  (with-gensyms (stream)
+    `(let (,stream)
+       (unwind-protect
+           (let ((,response (get ,uri :header ,header)))
+             (setf ,stream (response-body ,response))
+             ,@body)
+         (progn (when ,stream (ignore-errors (close ,stream))))))))
 
 (define-request-method head (uri &key header))
 
-(define-request-method put (uri content &key header (entity t)))
+(defmacro with-head ((response uri &key header) &body body)
+  (with-gensyms (stream)
+    `(let (,stream)
+       (unwind-protect
+           (let ((,response (head ,uri :header ,header)))
+             (setf ,stream (response-body ,response))
+             ,@body)
+         (progn (when ,stream (ignore-errors (close ,stream))))))))
 
-(define-request-method post (uri content &key header (entity t)))
+(define-request-method put (uri content &key header))
 
-(define-request-method delete (uri content &key header (entity t)))
+(defmacro with-put ((response uri content &key header) &body body)
+  (with-gensyms (stream)
+    `(let (,stream)
+       (unwind-protect
+           (let ((,response (put ,uri ,content :header ,header)))
+             (setf ,stream (response-body ,response))
+             ,@body)
+         (progn (when ,stream (ignore-errors (close ,stream))))))))
 
-(define-request-method patch (uri content &key header (entity t)))
+(define-request-method post (uri content &key header))
+
+(defmacro with-post ((response uri content &key header) &body body)
+  (with-gensyms (stream)
+    `(let (,stream)
+       (unwind-protect
+           (let ((,response (post ,uri ,content :header ,header)))
+             (setf ,stream (response-body ,response))
+             ,@body)
+         (progn (when ,stream (ignore-errors (close ,stream))))))))
+
+(define-request-method delete (uri content &key header))
+
+(defmacro with-delete ((response uri content &key header) &body body)
+  (with-gensyms (stream)
+    `(let (,stream)
+       (unwind-protect
+           (let ((,response (delete ,uri ,content :header ,header)))
+             (setf ,stream (response-body ,response))
+             ,@body)
+         (progn (when ,stream (ignore-errors (close ,stream))))))))
+
+(define-request-method patch (uri content &key header))
+
+(defmacro with-patch ((response uri content &key header) &body body)
+  (with-gensyms (stream)
+    `(let (,stream)
+       (unwind-protect
+           (let ((,response (patch ,uri ,content :header ,header)))
+             (setf ,stream (response-body ,response))
+             ,@body)
+         (progn (when ,stream (ignore-errors (close ,stream))))))))
 
 (define-request-method options (uri &key header))
+
+(defmacro with-options ((response uri &key header) &body body)
+  (with-gensyms (stream)
+    `(let (,stream)
+       (unwind-protect
+           (let ((,response (options ,uri :header ,header)))
+             (setf ,stream (response-body ,response))
+             ,@body)
+         (progn (when ,stream (ignore-errors (close ,stream))))))))
 
 (defun make-request (uri method header content)
   (let ((uri (process-request-uri uri)))
@@ -77,29 +141,18 @@
     ;; TODO: forbid user from setting some header fields
     (typecase header
       (header (loop for header-field in (header-fields header)
-                 do (set-header-field new-header header-field)))
+                    do (set-header-field new-header header-field)))
       (list (when header
               (loop for (name . value) in header
-                 do (set-header-field new-header (header-field name value))))))
+                    do (set-header-field new-header (header-field name value))))))
     new-header))
 
-(defun process-response (response request &key (entity t))
+(defun process-response (response request)
   (when (or (find (request-method request) '(:head :put))
             (not (message-body-present-p response)))
     (setf (response-body response) nil)
     (return-from process-response response))
-  (let ((content-type (header-field-value
-                       (find-header-field
-                        :content-type
-                        response))))
-    (if (and content-type entity)
-        (cond
-          ((search "application/json" content-type)
-           (make-json-entity-from-response response))
-          ((search "text/html" content-type)
-           (make-html-entity-from-response response))
-          (t response))
-        response)))
+  response)
 
 ;; TODO: respect charset?
 (defun make-json-entity-from-response (response)
@@ -124,5 +177,5 @@
 (defmacro with-connections (() &body body)
   `(let ()
      (unwind-protect
-          (progn ,@body)
+         (progn ,@body)
        )))

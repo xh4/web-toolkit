@@ -77,13 +77,13 @@
    :start-server
    :stop-server
    ;; client
-   :get
-   :head
-   :put
-   :post
-   :delete
-   :patch
-   :options
+   :get :with-get
+   :head :with-head
+   :put :with-put
+   :post :with-post
+   :delete :with-delete
+   :patch :with-patch
+   :options :with-options
    :with-connections
    ;; form
    :form
