@@ -55,41 +55,28 @@
 
 (test client
   (it
-   (let ((res (http:get "http://example.com" :entity nil)))
-     (is (equal 200 (status-code res)))
-     (let ((body (http::read-response-body-into-vector res)))
-       (is-true (vectorp body))
-       (is-true (> (length body) 0))))
+    (let ((res (http:get "http://example.com")))
+      (is (equal 200 (status-code res)))
+      (let ((body (http::read-response-body-into-vector res)))
+        (is-true (vectorp body))
+        (is-true (> (length body) 0)))
+      (close (response-body res)))
 
-   (let ((res (http:head "http://example.com")))
-     (is (equal 200 (status-code res)))
-     (is (equal nil (response-body res))))))
+    (with-get (res "http://example.com")
+      (is (equal 200 (status-code res)))
+      (let ((body (http::read-response-body-into-vector res)))
+        (is-true (vectorp body))
+        (is-true (> (length body) 0))))
+
+    (with-head (res "http://example.com")
+      (is (equal 200 (status-code res)))
+      (is (equal nil (response-body res))))))
 
 (test client/https
   (it
-   (let ((res (http:get "https://example.com" :entity nil)))
+   (let ((res (http:get "https://example.com")))
      (is (equal 200 (status-code res)))
      (let ((body (http::read-response-body-into-vector res)))
        (is-true (vectorp body))
        (is-true (> (length body) 0))))))
 
-(test request/entity
-  (it
-    (with-simple-test-server-running
-        (port (lambda ()
-                (reply (html:h1 "Hello"))))
-      (let ((res (http:get (uri "http://127.0.0.1" :port port))))
-        (is (equal 'html-entity (type-of res)))
-        (is (equal 200 (status-code res)))
-        ;; TODO: parse html
-        ;; (is (equal 'html:element (entity-html res)))
-        )))
-
-  (it
-    (with-simple-test-server-running
-        (port (lambda ()
-                (reply (json:object "Hello" "world"))))
-      (let ((res (http:get (uri "http://127.0.0.1" :port port))))
-        (is (equal 'json-entity (type-of res)))
-        (is (equal 200 (status-code res)))
-        (is (equal 'json:object (type-of (entity-json res))))))))
