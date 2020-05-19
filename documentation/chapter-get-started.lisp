@@ -18,9 +18,10 @@
       "Evaluate the following code to load a system:")
      (pre
       "(asdf:load-system :wt.uri)
-(asdf:load-system :wt.html)
 (asdf:load-system :wt.json)
+(asdf:load-system :wt.html)
 (asdf:load-system :wt.css)
+(asdf:load-system :wt.javascript)
 (asdf:load-system :wt.http)
 (asdf:load-system :wt.websocket)")
      (p

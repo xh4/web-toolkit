@@ -13,9 +13,10 @@
        (let ((chapters (list
                         chapter-get-started
                         chapter-uri
-                        chapter-html
                         chapter-json
+                        chapter-html
                         chapter-css
+                        chapter-javascript
                         chapter-http
                         chapter-websocket)))
          (assign-numbers chapters)
@@ -38,7 +39,6 @@
                          (a :class "github-button"
                             :href "https://github.com/xh4/web-toolkit"
                             :data-icon "octicon-star"
-                            :data-show-count "true"
                             :aria-label "Star xh4/web-toolkit on GitHub"
                             :style "margin: 0 10px;"
                             "Star"))
