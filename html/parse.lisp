@@ -3,202 +3,82 @@
 ;; https://html.spec.whatwg.org/multipage/parsing.html#tree-construction
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *insertion-modes*
-    '(initial
-      before-html
-      before-head
-      in-head
-      in-head-noscript
-      after-head
-      in-body
-      text
-      in-table
-      in-table-text
-      in-caption
-      in-column-group
-      in-table-body
-      in-row
-      in-cell
-      in-select
-      in-select-in-table
-      in-template
-      after-body
-      in-frameset
-      after-frameset
-      after-after-body
-      after-after-frameset)))
+  (defvar *parser-insertion-modes* '()))
 
 (defmacro define-parser-insertion-mode (name &body body)
-  (let ((function-name (intern (format nil "PROCESS-TOKEN-IN-~A-INSERTION-MODE" name))))
-    `(defun ,function-name (parser)
-       (with-slots
-           (tokenizer
-            document
-            (token current-token)
-            next-token
-            foster-parenting
-            stack-of-open-elements
-            stack-of-template-insertion-modes
-            adjusted-current-node
-            head-element-pointer
-            form-element-pointer
-            insertion-mode
-            original-insertion-mode
-            scripting-flag
-            frameset-ok-flag
-            pending-table-character-tokens
-            active-formatting-elements) parser
-         (symbol-macrolet
-             ((current-node (first (slot-value
-                                    parser
-                                    'stack-of-open-elements))))
-           (macrolet
-               (,@(loop for insertion-mode in *insertion-modes*
-                    collect `(,(intern (format nil "PROCESS-TOKEN-IN-~A-INSERTION-MODE" insertion-mode))
-                              ()
-                              '(funcall ',(intern (format nil "PROCESS-TOKEN-IN-~A-INSERTION-MODE" insertion-mode)) parser)))
-                (switch-to (insertion-mode)
-                  `(setf (slot-value parser 'insertion-mode) ,insertion-mode))
-                (stop-parsing ()
-                  `(signal 'stop-parsing))
-                (parse-error ()
-                  `(funcall 'parse-error parser))
-                (ignore-token ()
-                  `(funcall 'ignore-token parser))
-                (reprocess-current-token ()
-                  `(funcall 'tree-construction-dispatcher parser))
-                ;; TODO
-                (insert-comment (&optional position))
-                (insert-character (&optional character-token)
-                  `(funcall 'insert-character
-                            parser
-                            (or ,character-token
-                                (slot-value parser 'current-token))))
-                (create-element-for-token (&optional namespace parent)
-                  `(let ((token (slot-value parser 'current-token)))
-                      (funcall 'create-element-for-token token ,namespace ,parent)))
-                (a-start-tag-whose-tag-name-is (name)
-                  `(let ((token (slot-value parser 'current-token)))
-                     (and (typep token 'start-tag)
-                          (equal ,name (slot-value token 'tag-name)))))
-                (a-start-tag-whose-tag-name-is-one-of (names)
-                  `(let ((token (slot-value parser 'current-token)))
-                     (and (typep token 'start-tag)
-                          (member (slot-value token 'tag-name) ,names :test 'equal))))
-                (an-end-tag-whose-tag-name-is (name)
-                  `(let ((token (slot-value parser 'current-token)))
-                     (and (typep token 'end-tag)
-                          (equal ,name (slot-value token 'tag-name)))))
-                (an-end-tag-whose-tag-name-is-one-of (names)
-                  `(let ((token (slot-value parser 'current-token)))
-                     (and (typep token 'end-tag)
-                          (member (slot-value token 'tag-name) ,names :test 'equal))))
-                (insert-html-element-for-token (&optional token)
-                  `(funcall 'insert-html-element-for-token
-                            parser
-                            (or ,token (slot-value parser 'current-token))))
-                (insert-foreign-element-for-token (&optional namespace)
-                  `(funcall 'insert-foreign-element-for-token parser token ,namespace))
-                (close-p-element ()
-                  `(funcall 'close-p-element parser))
-                (close-cell ()
-                  `(funcall 'close-cell parser))
-                (acknowledge-token-self-closing-flag ()
-                  `(funcall 'acknowledge-token-self-closing-flag parser))
-                (reconstruct-active-formatting-elements ()
-                  `(funcall 'reconstruct-active-formatting-elements parser))
-                (have-element-in-scope-p (tag-name)
-                  `(funcall 'have-element-in-scope-p parser ,tag-name))
-                (have-element-in-list-item-scope-p (tag-name)
-                  `(funcall 'have-element-in-list-item-scope-p parser ,tag-name))
-                (have-element-in-button-scope-p (tag-name)
-                  `(funcall 'have-element-in-button-scope-p parser ,tag-name))
-                (have-element-in-table-scope-p (tag-name)
-                  `(funcall 'have-element-in-table-scope-p parser ,tag-name))
-                (have-element-in-select-scope-p (tag-name)
-                  `(funcall 'have-element-in-select-scope-p parser ,tag-name))
-                (parse-generic-rawtext-element ()
-                  `(funcall 'parse-generic-rawtext-element parser))
-                (parse-generic-rcdata-element ()
-                  `(funcall 'parse-generic-rcdata-element parser))
-                (generate-implied-end-tags (&key except)
-                  `(funcall 'generate-implied-end-tags parser :except ,except))
-                (generate-all-implied-end-tags-thoroughly ()
-                  `(funcall 'generate-all-implied-end-tags-thoroughly parser))
-                (clear-stack-back-to-table-context ()
-                  `(funcall 'clear-stack-back-to-table-context parser))
-                (clear-stack-back-to-table-body-context ()
-                  `(funcall 'clear-stack-back-to-table-body-context parser))
-                (clear-stack-back-to-table-row-context ()
-                  `(funcall 'clear-stack-back-to-table-row-context parser))
-                (reset-insertion-mode-appropriately ()
-                  `(funcall 'reset-insertion-mode-appropriately parser))
-                (clear-active-formatting-elements-upto-last-marker ()
-                  `(funcall 'clear-active-formatting-elements-upto-last-marker parser))
-                (adoption-agency ()
-                  `(funcall 'adoption-agency parser))
-                (push-onto-active-formatting-elements (element)
-                  `(funcall 'push-onto-active-formatting-elements parser ,element))
-                (appropriate-place-for-inserting-node (&optional override-target)
-                  `(funcall 'appropriate-place-for-inserting-node parser ,override-target))
-                (adjust-mathml-attributes ()
-                  `(funcall 'adjust-mathml-attributes parser))
-                (adjust-svg-attributes ()
-                  `(funcall 'adjust-svg-attributes parser))
-                (adjust-foreign-attributes ()
-                  `(funcall 'adjust-foreign-attributes parser)))
-             ,@body))))))
+  (if-let ((i (position name *parser-insertion-modes* :key 'first)))
+      (setf (nth i *parser-insertion-modes*) `(,name ,@body))
+    (appendf *parser-insertion-modes* `((,name ,@body))))
+  nil)
+
+(defparameter document (make-instance 'document))
+(defparameter foster-parenting nil)
+(defparameter insertion-mode 'initial)
+(defparameter original-insertion-mode nil)
+(defparameter current-token nil)
+(defparameter next-token nil)
+(defparameter stack-of-open-elements nil)
+(defparameter stack-of-template-insertion-modes nil)
+(defparameter head-element-pointer nil)
+(defparameter form-element-pointer nil)
+(defparameter scripting-flag nil)
+(defparameter frameset-ok-flag nil)
+(defparameter active-formatting-elements nil)
+(defparameter pending-table-character-tokens nil)
+(defparameter open-texts nil)
+
+(define-symbol-macro current-node (first stack-of-open-elements))
 
 (define-condition stop-parsing () ())
 
 (define-parser-insertion-mode initial
   (cond
-   ((or (eq #\tab token) (eq #\newline token)
-        (eq #\page token) (eq #\return token) (eq #\space token))
+   ((or (eq #\tab current-token) (eq #\newline current-token)
+        (eq #\page current-token) (eq #\return current-token) (eq #\space current-token))
     (ignore-token))
 
-   ((typep token 'comment-token)
+   ((typep current-token 'comment-token)
     ;; TODO: Check this
     (insert-comment))
 
-   ((typep token 'doctype-token)
+   ((typep current-token 'doctype-token)
     ;; TODO
-    (switch-to 'before-html))
+    (switch-insertion-mode 'before-html))
 
    (t
     ;; TODO
-    (switch-to 'before-html)
+    (switch-insertion-mode 'before-html)
     (reprocess-current-token))))
 
 (define-parser-insertion-mode before-html
   (cond
-   ((typep token 'doctype-token)
+   ((typep current-token 'doctype-token)
     (parse-error)
     (ignore-token))
 
-   ((typep token 'comment-token)
+   ((typep current-token 'comment-token)
     ;; TODO: Check this
     (insert-comment))
 
-   ((or (eq #\tab token) (eq #\newline token)
-        (eq #\page token) (eq #\return token) (eq #\space token))
+   ((or (eq #\tab current-token) (eq #\newline current-token)
+        (eq #\page current-token) (eq #\return current-token) (eq #\space current-token))
     (ignore-token))
 
    ((a-start-tag-whose-tag-name-is "html")
     (let ((element (create-element-for-token "html" document)))
       (append-child document element)
       (push element stack-of-open-elements))
-    (switch-to 'before-head))
+    (switch-insertion-mode 'before-head))
 
    ((an-end-tag-whose-tag-name-is-one-of '("head" "body" "html" "br"))
     ;; Same as T
     (let ((element (make-instance 'element :tag-name "html")))
       (append-child document element)
       (push element stack-of-open-elements))
-    (switch-to 'before-head)
+    (switch-insertion-mode 'before-head)
     (reprocess-current-token))
 
-   ((typep token 'end-tag)
+   ((typep current-token 'end-tag)
     (parse-error)
     (ignore-token))
 
@@ -206,64 +86,64 @@
     (let ((element (make-instance 'element :tag-name "html")))
       (append-child document element)
       (push element stack-of-open-elements))
-    (switch-to 'before-head)
+    (switch-insertion-mode 'before-head)
     (reprocess-current-token))))
 
 (define-parser-insertion-mode before-head
   (cond
-   ((or (eq #\tab token) (eq #\newline token)
-        (eq #\page token) (eq #\return token) (eq #\space token))
+   ((or (eq #\tab current-token) (eq #\newline current-token)
+        (eq #\page current-token) (eq #\return current-token) (eq #\space current-token))
     (ignore-token))
 
-   ((typep token 'comment-token)
+   ((typep current-token 'comment-token)
     (insert-comment))
 
-   ((typep token 'doctype-token)
+   ((typep current-token 'doctype-token)
     (parse-error)
     (ignore-token))
 
    ((a-start-tag-whose-tag-name-is "html")
-    (process-token-in-in-body-insertion-mode))
+    (process-token-using-in-body-insertion-mode))
 
    ((a-start-tag-whose-tag-name-is "head")
     (let ((head (insert-html-element-for-token)))
       (setf head-element-pointer head)
-      (switch-to 'in-head)))
+      (switch-insertion-mode 'in-head)))
 
    ((an-end-tag-whose-tag-name-is-one-of '("head" "body" "html" "br"))
     ;; Same as T
-    (let ((head (insert-html-element-for-token
-                 (make-instance 'start-tag :tag-name "head"))))
-      (setf head-element-pointer head))
-    (switch-to 'in-head)
+    (let ((current-token (make-instance 'start-tag :tag-name "head")))
+      (let ((head (insert-html-element-for-token)))
+        (setf head-element-pointer head)))
+    (switch-insertion-mode 'in-head)
     (reprocess-current-token))
 
-   ((typep token 'end-tag)
+   ((typep current-token 'end-tag)
     (parse-error)
     (ignore-token))
 
    (t
-    (let ((head (insert-html-element-for-token
-                 (make-instance 'start-tag :tag-name "head"))))
-      (setf head-element-pointer head))
-    (switch-to 'in-head)
+    (let ((current-token (make-instance 'start-tag :tag-name "head")))
+      (let ((head (insert-html-element-for-token)))
+        (setf head-element-pointer head)))
+    (switch-insertion-mode 'in-head)
     (reprocess-current-token))))
 
 (define-parser-insertion-mode in-head
   (cond
-   ((or (eq #\tab token) (eq #\newline token)
-        (eq #\page token) (eq #\return token) (eq #\space token))
+   ((or (eq #\tab current-token) (eq #\newline current-token)
+        (eq #\page current-token) (eq #\return current-token) (eq #\space current-token))
     (insert-character))
 
-   ((typep token 'comment-token)
+   ((typep current-token 'comment-token)
     (insert-comment))
 
-   ((typep token 'doctype-token)
+   ((typep current-token 'doctype-token)
     (parse-error)
     (ignore-token))
 
    ((a-start-tag-whose-tag-name-is "html")
-    (process-token-in-in-body-insertion-mode))
+    (process-token-using-in-body-insertion-mode))
 
    ((a-start-tag-whose-tag-name-is-one-of '("base" "basefont" "bgsound" "link"))
     (insert-html-element-for-token)
@@ -288,28 +168,34 @@
    ((and (not scripting-flag)
          (a-start-tag-whose-tag-name-is "noscript"))
     (insert-html-element-for-token)
-    (switch-to 'in-head-noscript))
+    (switch-insertion-mode 'in-head-noscript))
 
-   ;; TODO
-   ((a-start-tag-whose-tag-name-is "script"))
+   ;; TODO: Check this
+   ((a-start-tag-whose-tag-name-is "script")
+    (let ((adjusted-insertion-location (appropriate-place-for-inserting-node)))
+      (let ((element (create-element-for-token "html" adjusted-insertion-location)))
+        (push element stack-of-open-elements))
+      (switch-state 'script-data-state)
+      (setf original-insertion-mode insertion-mode)
+      (switch-insertion-mode 'text)))
 
    ((an-end-tag-whose-tag-name-is "head")
     (assert (equal "head" (tag-name current-node)))
     (pop stack-of-open-elements)
-    (switch-to 'after-head))
+    (switch-insertion-mode 'after-head))
 
    ((an-end-tag-whose-tag-name-is-one-of '("body" "html" "br"))
     ;; Same as T
     (assert (equal "head" (tag-name current-node)))
     (pop stack-of-open-elements)
-    (switch-to 'after-head)
+    (switch-insertion-mode 'after-head)
     (reprocess-current-token))
 
    ((a-start-tag-whose-tag-name-is "template")
     (insert-html-element-for-token)
     (appendf active-formatting-elements (list (make-marker)))
     (setf frameset-ok-flag nil)
-    (switch-to 'in-template)
+    (switch-insertion-mode 'in-template)
     (push 'in-template stack-of-template-insertion-modes))
 
    ((an-end-tag-whose-tag-name-is "template")
@@ -330,37 +216,37 @@
         (reset-insertion-mode-appropriately))))
 
    ((or (a-start-tag-whose-tag-name-is "head")
-        (typep token 'end-tag))
+        (typep current-token 'end-tag))
     (parse-error)
     (ignore-token))
 
    (t
     (assert (equal "head" (tag-name current-node)))
     (pop stack-of-open-elements)
-    (switch-to 'after-head)
+    (switch-insertion-mode 'after-head)
     (reprocess-current-token))))
 
 (define-parser-insertion-mode in-head-noscript
   (cond
-   ((typep token 'doctype-token)
+   ((typep current-token 'doctype-token)
     (parse-error)
     (ignore-token))
 
    ((a-start-tag-whose-tag-name-is "html")
-    (process-token-in-in-body-insertion-mode))
+    (process-token-using-in-body-insertion-mode))
 
    ((an-end-tag-whose-tag-name-is "noscript")
     (assert (equal "noscript" (tag-name current-node)))
     (pop stack-of-open-elements)
     (assert (equal "head" (tag-name current-node)))
-    (switch-to 'in-head))
+    (switch-insertion-mode 'in-head))
 
-   ((or (or (eq #\tab token) (eq #\newline token)
-            (eq #\page token) (eq #\return token) (eq #\space token))
-        (typep token 'comment-token)
+   ((or (or (eq #\tab current-token) (eq #\newline current-token)
+            (eq #\page current-token) (eq #\return current-token) (eq #\space current-token))
+        (typep current-token 'comment-token)
         (a-start-tag-whose-tag-name-is-one-of '("basefont" "bgsound" "link"
                                                 "meta" "noframes" "style")))
-    (process-token-in-in-head-insertion-mode))
+    (process-token-using-in-head-insertion-mode))
 
    ((an-end-tag-whose-tag-name-is "br")
     ;; Same as T
@@ -368,11 +254,11 @@
     (assert (equal "noscript" (tag-name current-node)))
     (pop stack-of-open-elements)
     (assert (equal "head" (tag-name current-node)))
-    (switch-to 'in-head)
+    (switch-insertion-mode 'in-head)
     (reprocess-current-token))
 
    ((or (a-start-tag-whose-tag-name-is-one-of '("head" "noscript"))
-        (typep token 'end-tag))
+        (typep current-token 'end-tag))
     (parse-error)
     (ignore-token))
 
@@ -381,33 +267,33 @@
     (assert (equal "noscript" (tag-name current-node)))
     (pop stack-of-open-elements)
     (assert (equal "head" (tag-name current-node)))
-    (switch-to 'in-head)
+    (switch-insertion-mode 'in-head)
     (reprocess-current-token))))
 
 (define-parser-insertion-mode after-head
   (cond
-   ((or (eq #\tab token) (eq #\newline token)
-        (eq #\page token) (eq #\return token) (eq #\space token))
+   ((or (eq #\tab current-token) (eq #\newline current-token)
+        (eq #\page current-token) (eq #\return current-token) (eq #\space current-token))
     (insert-character))
 
-   ((typep token 'comment-token)
+   ((typep current-token 'comment-token)
     (insert-comment))
 
-   ((typep token 'doctype-token)
+   ((typep current-token 'doctype-token)
     (parse-error)
     (ignore-token))
 
    ((a-start-tag-whose-tag-name-is "html")
-    (process-token-in-in-body-insertion-mode))
+    (process-token-using-in-body-insertion-mode))
 
    ((a-start-tag-whose-tag-name-is "body")
     (insert-html-element-for-token)
     (setf frameset-ok-flag nil)
-    (switch-to 'in-body))
+    (switch-insertion-mode 'in-body))
 
    ((a-start-tag-whose-tag-name-is "frameset")
     (insert-html-element-for-token)
-    (switch-to 'in-frameset))
+    (switch-insertion-mode 'in-frameset))
 
    ((a-start-tag-whose-tag-name-is-one-of '("base" "basefont" "bgsound" "link"
                                             "meta" "noframes" "script" "style"
@@ -415,48 +301,50 @@
     (parse-error)
     (let ((node head-element-pointer))
       (push node stack-of-open-elements)
-      (process-token-in-in-head-insertion-mode)
+      (process-token-using-in-head-insertion-mode)
       (removef stack-of-open-elements node)))
 
    ((an-end-tag-whose-tag-name-is "template")
-    (process-token-in-in-head-insertion-mode))
+    (process-token-using-in-head-insertion-mode))
 
    ((an-end-tag-whose-tag-name-is-one-of '("body" "html" "br"))
     ;; Same as T
-    (insert-html-element-for-token (make-instance 'start-tag :tag-name "body"))
-    (switch-to 'in-body)
+    (let ((current-token (make-instance 'start-tag :tag-name "body")))
+      (insert-html-element-for-token))
+    (switch-insertion-mode 'in-body)
     (reprocess-current-token))
 
    ((or (a-start-tag-whose-tag-name-is "head")
-        (typep token 'end-tag))
+        (typep current-token 'end-tag))
     (parse-error)
     (ignore-token))
 
    (t
-    (insert-html-element-for-token (make-instance 'start-tag :tag-name "body"))
-    (switch-to 'in-body)
+    (let ((current-token (make-instance 'start-tag :tag-name "body")))
+      (insert-html-element-for-token))
+    (switch-insertion-mode 'in-body)
     (reprocess-current-token))))
 
 (define-parser-insertion-mode in-body
   (cond
-   ((eq #\null token)
+   ((eq #\null current-token)
     (parse-error)
     (ignore-token))
 
-   ((or (eq #\tab token) (eq #\newline token)
-        (eq #\page token) (eq #\return token) (eq #\space token))
+   ((or (eq #\tab current-token) (eq #\newline current-token)
+        (eq #\page current-token) (eq #\return current-token) (eq #\space current-token))
     (reconstruct-active-formatting-elements)
     (insert-character))
 
-   ((typep token 'cl:character)
+   ((typep current-token 'cl:character)
     (reconstruct-active-formatting-elements)
     (insert-character)
     (setf frameset-ok-flag nil))
 
-   ((typep token 'comment-token)
+   ((typep current-token 'comment-token)
     (insert-comment))
 
-   ((typep token 'doctype-token)
+   ((typep current-token 'doctype-token)
     (parse-error)
     (ignore-token))
 
@@ -472,7 +360,7 @@
                                                 "meta" "noframes" "script" "style"
                                                 "template" "title"))
         (an-end-tag-whose-tag-name-is "template"))
-    (process-token-in-in-head-insertion-mode))
+    (process-token-using-in-head-insertion-mode))
 
    ((a-start-tag-whose-tag-name-is "body")
     (parse-error)
@@ -490,9 +378,9 @@
     (parse-error)
     #|TODO|#)
 
-   ((typep token 'end-of-file)
+   ((typep current-token 'end-of-file)
     (if stack-of-template-insertion-modes
-        (process-token-in-in-template-insertion-mode)
+        (process-token-using-in-template-insertion-mode)
       (progn
         (if (not (find-if (lambda (element)
                             (member (tag-name element)
@@ -519,7 +407,7 @@
                                   :test 'equal))
                         stack-of-open-elements))
           (parse-error)))
-    (switch-to 'after-body))
+    (switch-insertion-mode 'after-body))
 
    ((an-end-tag-whose-tag-name-is "html")
     (if (not (have-element-in-scope-p "body"))
@@ -535,7 +423,7 @@
                                   :test 'equal))
                         stack-of-open-elements))
           (parse-error)))
-    (switch-to 'after-body)
+    (switch-insertion-mode 'after-body)
     (reprocess-current-token))
 
    ((a-start-tag-whose-tag-name-is-one-of '("address" "article" "aside" "blockquote"
@@ -643,7 +531,7 @@
     (when (have-element-in-button-scope-p "p")
       (close-p-element))
     (insert-html-element-for-token)
-    (setf (slot-value tokenizer 'state) 'plaintext-state))
+    (switch-state 'plaintext-state))
 
    ((a-start-tag-whose-tag-name-is "button")
     (when (have-element-in-scope-p "button")
@@ -663,18 +551,18 @@
                                            "footer" "header" "hgroup" "listing"
                                            "main" "menu" "nav" "ol" "pre"
                                            "section" "summary" "ul"))
-    (if (not (have-element-in-scope-p (slot-value token 'tag-name)))
+    (if (not (have-element-in-scope-p (slot-value current-token 'tag-name)))
         (progn
           (parse-error)
           (ignore-token))
       (progn
         (generate-implied-end-tags)
         (unless (equal (tag-name current-node)
-                       (slot-value token 'tag-name))
+                       (slot-value current-token 'tag-name))
           (parse-error))
         (loop for element = (pop stack-of-open-elements)
               until (equal (tag-name element)
-                           (slot-value token 'tag-name))))))
+                           (slot-value current-token 'tag-name))))))
 
    ((an-end-tag-whose-tag-name-is "form")
     (if (not (find "template" stack-of-open-elements
@@ -707,8 +595,8 @@
    ((an-end-tag-whose-tag-name-is "p")
     (unless (have-element-in-button-scope-p "p")
       (parse-error)
-      (insert-html-element-for-token
-       (make-instance 'start-tag :tag-name "p")))
+      (let ((current-token (make-instance 'start-tag :tag-name "p")))
+        (insert-html-element-for-token)))
     (close-p-element))
 
    ((an-end-tag-whose-tag-name-is "li")
@@ -724,18 +612,18 @@
               until (equal "li" (tag-name element))))))
 
    ((an-end-tag-whose-tag-name-is-one-of '("dd" "dt"))
-    (if (not (have-element-in-scope-p (slot-value token 'tag-name)))
+    (if (not (have-element-in-scope-p (slot-value current-token 'tag-name)))
         (progn
           (parse-error)
           (ignore-token))
       (progn
-        (generate-implied-end-tags :except (slot-value token 'tag-name))
+        (generate-implied-end-tags :except (slot-value current-token 'tag-name))
         (unless (equal (tag-name current-node)
-                       (slot-value token 'tag-name))
+                       (slot-value current-token 'tag-name))
           (parse-error))
         (loop for element = (pop stack-of-open-elements)
               until (member (tag-name element)
-                            (slot-value token 'tag-name))))))
+                            (slot-value current-token 'tag-name))))))
 
    ((an-end-tag-whose-tag-name-is-one-of '("h1" "h2" "h3" "h4" "h5" "h6"))
     ;; TODO: Check this
@@ -751,7 +639,7 @@
       (progn
         (generate-implied-end-tags)
         (unless (equal (tag-name current-node)
-                       (slot-value token 'tag-name))
+                       (slot-value current-token 'tag-name))
           (parse-error))
         (loop for element = (pop stack-of-open-elements)
               until (member (tag-name element)
@@ -804,29 +692,29 @@
     (setf frameset-ok-flag nil))
 
    ((an-end-tag-whose-tag-name-is-one-of '("applet" "marquee" "object"))
-    (if (not (have-element-in-scope-p (slot-value token 'tag-name)))
+    (if (not (have-element-in-scope-p (slot-value current-token 'tag-name)))
         (progn
           (parse-error)
           (ignore-token))
       (progn
         (generate-implied-end-tags)
         (unless (equal (tag-name current-node)
-                       (slot-value token 'tag-name))
+                       (slot-value current-token 'tag-name))
           (parse-error))
         (loop for element = (pop stack-of-open-elements)
               until (equal (tag-name element)
-                           (slot-value token 'tag-name)))
+                           (slot-value current-token 'tag-name)))
         (clear-active-formatting-elements-upto-last-marker))))
 
    ((a-start-tag-whose-tag-name-is "table")
     #|TODO: If the Document is not set to quirks mode, and the stack of open elements has a p element in button scope, then close a p element.|#
     (insert-html-element-for-token)
     (setf frameset-ok-flag nil)
-    (switch-to 'in-table))
+    (switch-insertion-mode 'in-table))
 
    ((an-end-tag-whose-tag-name-is "br")
     (parse-error)
-    #|TODO: Drop the attributes from the token, and act as described in the next entry; i.e. act as if this was a "br" start tag token with no attributes, rather than the end tag token that it actually is.|#)
+    #|TODO: Drop the attributes from the current-token, and act as described in the next entry; i.e. act as if this was a "br" start tag token with no attributes, rather than the end tag token that it actually is.|#)
 
    ((a-start-tag-whose-tag-name-is-one-of '("area" "br" "embed"
                                             "img" "keygen" "wbr"))
@@ -858,7 +746,7 @@
 
    ((a-start-tag-whose-tag-name-is "image")
     (parse-error)
-    (setf (slot-value token 'tag-name) "img")
+    (setf (slot-value current-token 'tag-name) "img")
     (reprocess-current-token))
 
    ((a-start-tag-whose-tag-name-is "textarea")
@@ -866,11 +754,10 @@
     ;; Newlines at the start of textarea elements are ignored as an authoring convenience.
     (when (eq #\newline next-token)
       (setf next-token nil))
-    (with-slots (tokenizer) parser
-      (setf (slot-value tokenizer 'state) 'rcdata-state))
+    (switch-state 'rcdata-state)
     (setf original-insertion-mode insertion-mode)
     (setf frameset-ok-flag nil)
-    (setf insertion-mode 'text))
+    (switch-insertion-mode 'text))
 
    ((a-start-tag-whose-tag-name-is "xmp")
     (when (have-element-in-button-scope-p "p")
@@ -894,8 +781,8 @@
     (setf frameset-ok-flag nil)
     (if (member insertion-mode '(in-table in-caption in-table-body
                                           in-row in-cell))
-        (switch-to 'in-select-in-table)
-      (switch-to 'in-select)))
+        (switch-insertion-mode 'in-select-in-table)
+      (switch-insertion-mode 'in-select)))
 
    ((a-start-tag-whose-tag-name-is-one-of '("optgroup" "option"))
     (when (equal "option" (tag-name current-node))
@@ -923,7 +810,7 @@
     (adjust-mathml-attributes)
     (adjust-foreign-attributes)
     (insert-foreign-element-for-token "mathml")
-    (when (slot-value token 'self-closing-flag)
+    (when (slot-value current-token 'self-closing-flag)
       (pop stack-of-open-elements)
       (acknowledge-token-self-closing-flag)))
 
@@ -932,7 +819,7 @@
     (adjust-svg-attributes)
     (adjust-foreign-attributes)
     (insert-foreign-element-for-token "svg")
-    (when (slot-value token 'self-closing-flag)
+    (when (slot-value current-token 'self-closing-flag)
       (pop stack-of-open-elements)
       (acknowledge-token-self-closing-flag)))
 
@@ -942,19 +829,19 @@
     (parse-error)
     (ignore-token))
 
-   ((typep token 'start-tag)
+   ((typep current-token 'start-tag)
     (reconstruct-active-formatting-elements)
     (insert-html-element-for-token))
 
    ;; https://github.com/html5lib/html5lib-python/blob/master/html5lib/html5parser.py#L1635
-   ((typep token 'end-tag)
+   ((typep current-token 'end-tag)
     (loop for node in stack-of-open-elements
           do (if (equal (tag-name node)
-                        (slot-value token 'tag-name))
+                        (slot-value current-token 'tag-name))
                  (progn
                    (generate-implied-end-tags)
                    (unless (equal (tag-name (first stack-of-open-elements))
-                                  (slot-value token 'tag-name))
+                                  (slot-value current-token 'tag-name))
                      (parse-error))
                    (loop for n = (pop stack-of-open-elements)
                          until (eq n node))
@@ -967,37 +854,37 @@
 
 (define-parser-insertion-mode text
   (cond
-   ((typep token 'cl:character)
+   ((typep current-token 'cl:character)
     (insert-character))
 
-   ((typep token 'end-of-file)
+   ((typep current-token 'end-of-file)
     (parse-error)
     (pop stack-of-open-elements)
-    (setf insertion-mode original-insertion-mode)
+    (switch-insertion-mode original-insertion-mode)
     (reprocess-current-token))
 
    ;; Don't need this because we don't have a script executing environment
    ;; ((an-end-tag-whose-tag-name-is "script"))
 
-   ((typep token 'end-tag)
+   ((typep current-token 'end-tag)
     (pop stack-of-open-elements)
-    (switch-to original-insertion-mode))))
+    (switch-insertion-mode original-insertion-mode))))
 
 (define-parser-insertion-mode in-table
   (cond
    ((and (member (tag-name current-node)
                  '("table" "tbody" "tfoot" "thead" "tr")
                  :test 'equal)
-         (typep token 'cl:character))
+         (typep current-token 'cl:character))
     (setf pending-table-character-tokens nil)
     (setf original-insertion-mode insertion-mode)
-    (switch-to 'in-table-text)
+    (switch-insertion-mode 'in-table-text)
     (reprocess-current-token))
 
-   ((typep token 'comment-token)
+   ((typep current-token 'comment-token)
     (insert-comment))
 
-   ((typep token 'doctype-token)
+   ((typep current-token 'doctype-token)
     (parse-error)
     (ignore-token))
 
@@ -1005,30 +892,30 @@
     (clear-stack-back-to-table-context)
     (appendf active-formatting-elements (list (make-marker)))
     (insert-html-element-for-token)
-    (switch-to 'in-caption))
+    (switch-insertion-mode 'in-caption))
 
    ((a-start-tag-whose-tag-name-is "colgroup")
     (clear-stack-back-to-table-context)
     (insert-html-element-for-token)
-    (switch-to 'in-column-group))
+    (switch-insertion-mode 'in-column-group))
 
    ((a-start-tag-whose-tag-name-is "col")
     (clear-stack-back-to-table-context)
-    (insert-html-element-for-token
-     (make-instance 'start-tag :tag-name "colgroup"))
-    (switch-to 'in-column-group)
+    (let ((current-token (make-instance 'start-tag :tag-name "colgroup")))
+      (insert-html-element-for-token))
+    (switch-insertion-mode 'in-column-group)
     (reprocess-current-token))
 
    ((a-start-tag-whose-tag-name-is-one-of '("tbody" "tfoot" "thead"))
     (clear-stack-back-to-table-context)
     (insert-html-element-for-token)
-    (switch-to 'in-table-body))
+    (switch-insertion-mode 'in-table-body))
 
    ((a-start-tag-whose-tag-name-is-one-of '("td" "th" "tr"))
     (clear-stack-back-to-table-context)
-    (insert-html-element-for-token
-     (make-instance 'start-tag :tag-name "tbody"))
-    (switch-to 'in-table-body)
+    (let ((current-token (make-instance 'start-tag :tag-name "tbody")))
+      (insert-html-element-for-token))
+    (switch-insertion-mode 'in-table-body)
     (reprocess-current-token))
 
    ((a-start-tag-whose-tag-name-is "table")
@@ -1059,10 +946,10 @@
 
    ((or (a-start-tag-whose-tag-name-is-one-of '("style" "script" "template"))
         (an-end-tag-whose-tag-name-is "template"))
-    (process-token-in-in-head-insertion-mode))
+    (process-token-using-in-head-insertion-mode))
 
    ((a-start-tag-whose-tag-name-is "input")
-    (let ((attribute (find "type" (slot-value token 'attributes)
+    (let ((attribute (find "type" (slot-value current-token 'attributes)
                            :test 'equal
                            :key 'attribute-name)))
       (if (or (null attribute)
@@ -1071,7 +958,7 @@
           (progn
             (parse-error)
             (setf foster-parenting t)
-            (process-token-in-in-body-insertion-mode)
+            (process-token-using-in-body-insertion-mode)
             (setf foster-parenting nil))
         (progn
           (parse-error)
@@ -1091,42 +978,42 @@
           (setf form-element-pointer element))
         (pop stack-of-open-elements))))
 
-   ((typep token 'end-of-file)
-    (process-token-in-in-body-insertion-mode))
+   ((typep current-token 'end-of-file)
+    (process-token-using-in-body-insertion-mode))
 
    (t
     (parse-error)
     (setf foster-parenting t)
-    (process-token-in-in-body-insertion-mode)
+    (process-token-using-in-body-insertion-mode)
     (setf foster-parenting nil))))
 
 (define-parser-insertion-mode in-table-text
   (cond
-   ((eq #\null token)
+   ((eq #\null current-token)
     (parse-error)
     (ignore-token))
 
-   ((typep token 'cl:character)
-    (appendf pending-table-character-tokens (list token)))
+   ((typep current-token 'cl:character)
+    (appendf pending-table-character-tokens (list current-token)))
 
    (t
     (if (find-if-not 'ascii-whitespace-p pending-table-character-tokens)
         (progn
           (parse-error)
-          (loop with previous-token = token
+          (loop with previous-token = current-token
                 for character-token in pending-table-character-tokens
                 do (progn
-                     (setf token character-token)
+                     (setf current-token character-token)
                      ;; Same as T in `in-table` insertion mode
                      (parse-error)
                      (setf foster-parenting t)
-                     (process-token-in-in-body-insertion-mode)
+                     (process-token-using-in-body-insertion-mode)
                      (setf foster-parenting nil))
-                finally (setf token previous-token)))
+                finally (setf current-token previous-token)))
       (progn
         (loop for character-token in pending-table-character-tokens
               do (insert-character character-token))
-        (switch-to original-insertion-mode)
+        (switch-insertion-mode original-insertion-mode)
         (reprocess-current-token))))))
 
 (define-parser-insertion-mode in-caption
@@ -1142,7 +1029,7 @@
     (loop for element = (pop stack-of-open-elements)
           until (equal "caption" (tag-name element)))
     (clear-active-formatting-elements-upto-last-marker)
-    (switch-to 'in-table))
+    (switch-insertion-mode 'in-table))
 
    ((or (a-start-tag-whose-tag-name-is-one-of '("caption" "col" "colgroup"
                                                 "tbody" "td" "tfoot"
@@ -1158,7 +1045,7 @@
     (loop for element = (pop stack-of-open-elements)
           until (equal "caption" (tag-name element)))
     (clear-active-formatting-elements-upto-last-marker)
-    (switch-to 'in-table)
+    (switch-insertion-mode 'in-table)
     (reprocess-current-token))
 
    ((an-end-tag-whose-tag-name-is-one-of '("body" "col" "colgroup" "html"
@@ -1167,23 +1054,23 @@
     (ignore-token))
 
    (t
-    (process-token-in-in-body-insertion-mode))))
+    (process-token-using-in-body-insertion-mode))))
 
 (define-parser-insertion-mode in-column-group
   (cond
-   ((or (eq #\tab token) (eq #\newline token)
-        (eq #\page token) (eq #\return token) (eq #\space token))
+   ((or (eq #\tab current-token) (eq #\newline current-token)
+        (eq #\page current-token) (eq #\return current-token) (eq #\space current-token))
     (insert-character))
 
-   ((typep token 'comment-token)
+   ((typep current-token 'comment-token)
     (insert-comment))
 
-   ((typep token 'doctype-token)
+   ((typep current-token 'doctype-token)
     (parse-error)
     (ignore-token))
 
    ((a-start-tag-whose-tag-name-is "html")
-    (process-token-in-in-body-insertion-mode))
+    (process-token-using-in-body-insertion-mode))
 
    ((a-start-tag-whose-tag-name-is "col")
     (insert-html-element-for-token)
@@ -1197,7 +1084,7 @@
           (ignore-token))
       (progn
         (pop stack-of-open-elements)
-        (switch-to 'in-table))))
+        (switch-insertion-mode 'in-table))))
 
    ((an-end-tag-whose-tag-name-is "col")
     (parse-error)
@@ -1205,10 +1092,10 @@
 
    ((or (a-start-tag-whose-tag-name-is "template")
         (an-end-tag-whose-tag-name-is "template"))
-    (process-token-in-in-head-insertion-mode))
+    (process-token-using-in-head-insertion-mode))
 
-   ((typep token 'end-of-file)
-    (process-token-in-in-body-insertion-mode))
+   ((typep current-token 'end-of-file)
+    (process-token-using-in-body-insertion-mode))
 
    (t
     (if (not (equal "colgroup" (tag-name current-node)))
@@ -1216,7 +1103,7 @@
           (parse-error)
           (ignore-token))
       (pop stack-of-open-elements))
-    (switch-to 'in-table)
+    (switch-insertion-mode 'in-table)
     (reprocess-current-token))))
 
 (define-parser-insertion-mode in-table-body
@@ -1224,25 +1111,25 @@
    ((a-start-tag-whose-tag-name-is "tr")
     (clear-stack-back-to-table-body-context)
     (insert-html-element-for-token)
-    (switch-to 'in-row))
+    (switch-insertion-mode 'in-row))
 
    ((a-start-tag-whose-tag-name-is-one-of '("th" "td"))
     (parse-error)
     (clear-stack-back-to-table-body-context)
-    (insert-html-element-for-token
-     (make-instance 'start-tag :tag-name "tr"))
-    (switch-to 'in-row)
+    (let ((current-token (make-instance 'start-tag :tag-name "tr")))
+      (insert-html-element-for-token))
+    (switch-insertion-mode 'in-row)
     (reprocess-current-token))
 
    ((an-end-tag-whose-tag-name-is-one-of '("tbody" "tfoot" "thead"))
-    (if (not (have-element-in-table-scope-p (slot-value token 'tag-name)))
+    (if (not (have-element-in-table-scope-p (slot-value current-token 'tag-name)))
         (progn
           (parse-error)
           (ignore-token))
       (progn
         (clear-stack-back-to-table-body-context)
         (pop stack-of-open-elements)
-        (switch-to 'in-table))))
+        (switch-insertion-mode 'in-table))))
 
    ((or (a-start-tag-whose-tag-name-is-one-of '("caption" "col" "colgroup" "tbody"
                                                 "tfoot" "thead"))
@@ -1256,7 +1143,7 @@
       (progn
         (clear-stack-back-to-table-body-context)
         (pop stack-of-open-elements)
-        (switch-to 'in-table)
+        (switch-insertion-mode 'in-table)
         (reprocess-current-token))))
 
    ((an-end-tag-whose-tag-name-is-one-of '("body" "caption" "col" "colgroup"
@@ -1265,14 +1152,14 @@
     (ignore-token))
 
    (t
-    (process-token-in-in-table-insertion-mode))))
+    (process-token-using-in-table-insertion-mode))))
 
 (define-parser-insertion-mode in-row
   (cond
    ((a-start-tag-whose-tag-name-is-one-of '("th" "td"))
     (clear-stack-back-to-table-row-context)
     (insert-html-element-for-token)
-    (switch-to 'in-cell)
+    (switch-insertion-mode 'in-cell)
     (appendf active-formatting-elements (list (make-marker))))
 
    ((an-end-tag-whose-tag-name-is "tr")
@@ -1284,7 +1171,7 @@
         (clear-stack-back-to-table-row-context)
         (assert (equal "tr" (tag-name current-node)))
         (pop stack-of-open-elements)
-        (switch-to 'in-table-body))))
+        (switch-insertion-mode 'in-table-body))))
 
    ((or (a-start-tag-whose-tag-name-is-one-of '("caption" "col" "colgroup"
                                                 "tbody" "tfoot" "thead" "tr"))
@@ -1297,11 +1184,11 @@
         (clear-stack-back-to-table-row-context)
         (assert (equal "tr" (tag-name current-node)))
         (pop stack-of-open-elements)
-        (switch-to 'in-table-body)
+        (switch-insertion-mode 'in-table-body)
         (reprocess-current-token))))
 
    ((an-end-tag-whose-tag-name-is-one-of '("tbody" "tfoot" "thead"))
-    (when (not (have-element-in-table-scope-p (slot-value token 'tag-name)))
+    (when (not (have-element-in-table-scope-p (slot-value current-token 'tag-name)))
       (parse-error)
       (ignore-token))
     (if (not (have-element-in-table-scope-p "tr"))
@@ -1310,7 +1197,7 @@
         (clear-stack-back-to-table-row-context)
         (assert (equal "tr" (tag-name current-node)))
         (pop stack-of-open-elements)
-        (switch-to 'in-table-body)
+        (switch-insertion-mode 'in-table-body)
         (reprocess-current-token))))
 
    ((an-end-tag-whose-tag-name-is-one-of '("body" "caption" "col" "colgroup"
@@ -1319,24 +1206,24 @@
     (ignore-token))
 
    (t
-    (process-token-in-in-table-insertion-mode))))
+    (process-token-using-in-table-insertion-mode))))
 
 (define-parser-insertion-mode in-cell
   (cond
    ((an-end-tag-whose-tag-name-is-one-of '("td" "th"))
-    (if (not (have-element-in-table-scope-p (slot-value token 'tag-name)))
+    (if (not (have-element-in-table-scope-p (slot-value current-token 'tag-name)))
         (progn
           (parse-error)
           (ignore-token))
       (generate-implied-end-tags))
     (unless (equal (tag-name current-node)
-                   (slot-value token 'tag-name))
+                   (slot-value current-token 'tag-name))
       (parse-error))
     (loop for element = (pop stack-of-open-elements)
           until (equal (tag-name element)
-                       (slot-value token 'tag-name)))
+                       (slot-value current-token 'tag-name)))
     (clear-active-formatting-elements-upto-last-marker)
-    (switch-to 'in-row))
+    (switch-insertion-mode 'in-row))
 
    ((a-start-tag-whose-tag-name-is-one-of '("caption" "col" "colgroup"
                                             "tbody" "td" "tfoot"
@@ -1355,7 +1242,7 @@
     (ignore-token))
 
    ((an-end-tag-whose-tag-name-is-one-of '("table" "tbody" "tfoot" "thead" "tr"))
-    (if (not (have-element-in-table-scope-p (slot-value token 'tag-name)))
+    (if (not (have-element-in-table-scope-p (slot-value current-token 'tag-name)))
         (progn
           (parse-error)
           (ignore-token))
@@ -1364,26 +1251,26 @@
         (reprocess-current-token))))
 
    (t
-    (process-token-in-in-body-insertion-mode))))
+    (process-token-using-in-body-insertion-mode))))
 
 (define-parser-insertion-mode in-select
   (cond
-   ((eq #\null token)
+   ((eq #\null current-token)
     (parse-error)
     (ignore-token))
 
-   ((typep token 'cl:character)
+   ((typep current-token 'cl:character)
     (insert-character))
 
-   ((typep token 'comment-token)
+   ((typep current-token 'comment-token)
     (insert-comment))
 
-   ((typep token 'doctype-token)
+   ((typep current-token 'doctype-token)
     (parse-error)
     (ignore-token))
 
    ((a-start-tag-whose-tag-name-is "html")
-    (process-token-in-in-body-insertion-mode))
+    (process-token-using-in-body-insertion-mode))
 
    ((a-start-tag-whose-tag-name-is "option")
     (when (equal "option" (tag-name current-node))
@@ -1445,10 +1332,10 @@
 
    ((or (a-start-tag-whose-tag-name-is-one-of '("script" "template"))
         (an-end-tag-whose-tag-name-is "template"))
-    (process-token-in-in-head-insertion-mode))
+    (process-token-using-in-head-insertion-mode))
 
-   ((typep token 'end-of-file)
-    (process-token-in-in-body-insertion-mode))
+   ((typep current-token 'end-of-file)
+    (process-token-using-in-body-insertion-mode))
 
    (t
     (parse-error)
@@ -1467,7 +1354,7 @@
    ((an-end-tag-whose-tag-name-is-one-of '("caption" "table" "tbody"
                                            "tfoot" "thead" "tr" "td" "th"))
     (parse-error)
-    (if (not (have-element-in-table-scope-p (slot-value token 'tag-name)))
+    (if (not (have-element-in-table-scope-p (slot-value current-token 'tag-name)))
         (ignore-token)
       (progn
         (loop for element = (pop stack-of-open-elements)
@@ -1476,57 +1363,57 @@
         (reprocess-current-token))))
 
    (t
-    (process-token-in-in-select-insertion-mode))))
+    (process-token-using-in-select-insertion-mode))))
 
 (define-parser-insertion-mode in-template
   (cond
-   ((or (typep token 'cl:character)
-        (typep token 'comment-token)
-        (typep token 'doctype-token))
-    (process-token-in-in-body-insertion-mode))
+   ((or (typep current-token 'cl:character)
+        (typep current-token 'comment-token)
+        (typep current-token 'doctype-token))
+    (process-token-using-in-body-insertion-mode))
 
    ((or (a-start-tag-whose-tag-name-is-one-of '("base" "basefont" "bgsound"
                                                 "link" "meta" "noframes"
                                                 "script" "style" "template" "title"))
         (an-end-tag-whose-tag-name-is "template"))
-    (process-token-in-in-head-insertion-mode))
+    (process-token-using-in-head-insertion-mode))
 
    ((a-start-tag-whose-tag-name-is-one-of '("caption" "colgroup" "tbody"
                                             "tfoot" "thead"))
     (pop stack-of-template-insertion-modes)
     (push 'in-table stack-of-template-insertion-modes)
-    (switch-to 'in-table)
+    (switch-insertion-mode 'in-table)
     (reprocess-current-token))
 
    ((a-start-tag-whose-tag-name-is "col")
     (pop stack-of-template-insertion-modes)
     (push 'in-column-group stack-of-template-insertion-modes)
-    (switch-to 'in-column-group)
+    (switch-insertion-mode 'in-column-group)
     (reprocess-current-token))
 
    ((a-start-tag-whose-tag-name-is "tr")
     (pop stack-of-template-insertion-modes)
     (push 'in-table-body stack-of-template-insertion-modes)
-    (switch-to 'in-table-body)
+    (switch-insertion-mode 'in-table-body)
     (reprocess-current-token))
 
    ((a-start-tag-whose-tag-name-is-one-of '("td" "th"))
     (pop stack-of-template-insertion-modes)
     (push 'in-row stack-of-template-insertion-modes)
-    (switch-to 'in-row)
+    (switch-insertion-mode 'in-row)
     (reprocess-current-token))
 
-   ((typep token 'start-tag)
+   ((typep current-token 'start-tag)
     (pop stack-of-template-insertion-modes)
     (push 'in-body stack-of-template-insertion-modes)
-    (switch-to 'in-body)
+    (switch-insertion-mode 'in-body)
     (reprocess-current-token))
 
-   ((typep token 'end-tag)
+   ((typep current-token 'end-tag)
     (parse-error)
     (ignore-token))
 
-   ((typep token 'end-of-file)
+   ((typep current-token 'end-of-file)
     (if (not (find "template" stack-of-open-elements
                    :test 'equal
                    :key 'tag-name))
@@ -1541,47 +1428,47 @@
 
 (define-parser-insertion-mode after-body
   (cond
-   ((or (eq #\tab token) (eq #\newline token)
-        (eq #\page token) (eq #\return token) (eq #\space token))
-    (process-token-in-in-body-insertion-mode))
+   ((or (eq #\tab current-token) (eq #\newline current-token)
+        (eq #\page current-token) (eq #\return current-token) (eq #\space current-token))
+    (process-token-using-in-body-insertion-mode))
 
    ;; TODO
-   ((typep token 'comment-token))
+   ((typep current-token 'comment-token))
 
-   ((typep token 'doctype-token)
+   ((typep current-token 'doctype-token)
     (parse-error)
     (ignore-token))
 
    ((a-start-tag-whose-tag-name-is "html")
-    (process-token-in-in-body-insertion-mode))
+    (process-token-using-in-body-insertion-mode))
 
    ((an-end-tag-whose-tag-name-is "html")
     ;; TODO
-    (switch-to 'after-after-body))
+    (switch-insertion-mode 'after-after-body))
 
-   ((typep token 'end-of-file)
+   ((typep current-token 'end-of-file)
     (stop-parsing))
 
    (t
     (parse-error)
-    (switch-to 'in-body)
+    (switch-insertion-mode 'in-body)
     (reprocess-current-token))))
 
 (define-parser-insertion-mode in-frameset
   (cond
-   ((or (eq #\tab token) (eq #\newline token)
-        (eq #\page token) (eq #\return token) (eq #\space token))
+   ((or (eq #\tab current-token) (eq #\newline current-token)
+        (eq #\page current-token) (eq #\return current-token) (eq #\space current-token))
     (insert-character))
 
-   ((typep token 'comment-token)
+   ((typep current-token 'comment-token)
     (insert-comment))
 
-   ((typep token 'doctype-token)
+   ((typep current-token 'doctype-token)
     (parse-error)
     (ignore-token))
 
    ((a-start-tag-whose-tag-name-is "html")
-    (process-token-in-in-body-insertion-mode))
+    (process-token-using-in-body-insertion-mode))
 
    ((a-start-tag-whose-tag-name-is "frameset")
     (insert-html-element-for-token))
@@ -1589,7 +1476,7 @@
    ;; TODO
    ((an-end-tag-whose-tag-name-is "frameset")
     (pop stack-of-open-elements)
-    (switch-to 'after-frameset))
+    (switch-insertion-mode 'after-frameset))
 
    ((a-start-tag-whose-tag-name-is "frame")
     (insert-html-element-for-token)
@@ -1597,10 +1484,10 @@
     (acknowledge-token-self-closing-flag))
 
    ((a-start-tag-whose-tag-name-is "noframes")
-    (process-token-in-in-head-insertion-mode))
+    (process-token-using-in-head-insertion-mode))
 
    ;; TODO
-   ((typep token 'end-of-file)
+   ((typep current-token 'end-of-file)
     (when (not (equal "html" (tag-name current-node)))
       (parse-error))
     (stop-parsing))
@@ -1611,27 +1498,27 @@
 
 (define-parser-insertion-mode after-frameset
   (cond
-   ((or (eq #\tab token) (eq #\newline token)
-        (eq #\page token) (eq #\return token) (eq #\space token))
+   ((or (eq #\tab current-token) (eq #\newline current-token)
+        (eq #\page current-token) (eq #\return current-token) (eq #\space current-token))
     (insert-character))
 
-   ((typep token 'comment-token)
+   ((typep current-token 'comment-token)
     (insert-comment))
 
-   ((typep token 'doctype-token)
+   ((typep current-token 'doctype-token)
     (parse-error)
     (ignore-token))
 
    ((a-start-tag-whose-tag-name-is "html")
-    (process-token-in-in-body-insertion-mode))
+    (process-token-using-in-body-insertion-mode))
 
    ((an-end-tag-whose-tag-name-is "html")
-    (switch-to 'after-after-frameset))
+    (switch-insertion-mode 'after-after-frameset))
 
    ((a-start-tag-whose-tag-name-is "noframes")
-    (process-token-in-in-head-insertion-mode))
+    (process-token-using-in-head-insertion-mode))
 
-   ((typep token 'end-of-file)
+   ((typep current-token 'end-of-file)
     (stop-parsing))
 
    (t
@@ -1642,38 +1529,38 @@
 (define-parser-insertion-mode after-after-body
   (cond
    ;; TODO
-   ((typep token 'comment-token))
+   ((typep current-token 'comment-token))
 
-   ((or (typep token 'doctype-token)
-        (or (eq #\tab token) (eq #\newline token)
-            (eq #\page token) (eq #\return token) (eq #\space token))
+   ((or (typep current-token 'doctype-token)
+        (or (eq #\tab current-token) (eq #\newline current-token)
+            (eq #\page current-token) (eq #\return current-token) (eq #\space current-token))
         (a-start-tag-whose-tag-name-is "html"))
-    (process-token-in-in-body-insertion-mode))
+    (process-token-using-in-body-insertion-mode))
 
-   ((typep token 'end-of-file)
+   ((typep current-token 'end-of-file)
     (stop-parsing))
 
    (t
     (parse-error)
-    (switch-to 'in-body)
+    (switch-insertion-mode 'in-body)
     (reprocess-current-token))))
 
 (define-parser-insertion-mode after-after-frameset
   (cond
    ;; TODO
-   ((typep token 'comment-token))
+   ((typep current-token 'comment-token))
 
-   ((or (typep token 'doctype-token)
-        (or (eq #\tab token) (eq #\newline token)
-            (eq #\page token) (eq #\return token) (eq #\space token))
+   ((or (typep current-token 'doctype-token)
+        (or (eq #\tab current-token) (eq #\newline current-token)
+            (eq #\page current-token) (eq #\return current-token) (eq #\space current-token))
         (a-start-tag-whose-tag-name-is "html"))
-    (process-token-in-in-body-insertion-mode))
+    (process-token-using-in-body-insertion-mode))
 
-   ((typep token 'end-of-file)
+   ((typep current-token 'end-of-file)
     (stop-parsing))
 
    ((a-start-tag-whose-tag-name-is "noframes")
-    (process-token-in-in-head-insertion-mode))
+    (process-token-using-in-head-insertion-mode))
 
    (t
     (parse-error)
@@ -1681,59 +1568,34 @@
 
 (defstruct marker)
 
-(defclass parser ()
-  ((tokenizer
-    :initarg :tokenizer
-    :initform nil)
-   (document
-    :initarg :document
-    :initform (make-instance 'document))
-   (foster-parenting
-    :initform nil)
-   (insertion-mode
-    :initform 'initial)
-   (original-insertion-mode
-    :initform 'initial)
-   (current-token
-    :initform nil)
-   (next-token
-    :initform nil)
-   (stack-of-open-elements
-    :initform nil)
-   (stack-of-template-insertion-modes
-    :initform nil)
-   (head-element-pointer
-    :initform nil)
-   (form-element-pointer
-    :initform nil)
-   (scripting-flag
-    :initform nil)
-   (frameset-ok-flag
-    :initform nil)
-   (active-formatting-elements
-    :initform nil)
-   (pending-table-character-tokens
-    :initform nil)
-   (open-texts
-    :initform nil)))
+(defun a-start-tag-whose-tag-name-is (name)
+  (and (typep current-token 'start-tag)
+       (equal name (slot-value current-token 'tag-name))))
 
-(defun parse-error (parser)
-  (declare (ignore parser))
+(defun a-start-tag-whose-tag-name-is-one-of (names)
+  (and (typep current-token 'start-tag)
+       (member (slot-value current-token 'tag-name) names :test 'equal)))
+
+(defun an-end-tag-whose-tag-name-is (name)           
+  (and (typep current-token 'end-tag)
+       (equal name (slot-value current-token 'tag-name))))
+
+(defun an-end-tag-whose-tag-name-is-one-of (names)
+  (and (typep current-token 'end-tag)
+       (member (slot-value current-token 'tag-name) names :test 'equal)))
+
+(defun parse-error ()
   (cerror "Continue" 'parse-error))
 
-(defun ignore-token (parser)
-  (declare (ignore parser)))
+(defun ignore-token ())
 
-(defun current-node (parser)
-  (first (slot-value parser 'stack-of-open-elements)))
-
-(defun adjusted-current-node (parser)
+(defun adjusted-current-node ()
   ;; TODO: Case for HTML fragment parsing
-  (current-node parser))
+  current-node)
 
-(defun insert-character (parser token)
+(defun insert-character (&optional (token current-token))
   (let ((data token))
-    (let ((adjusted-insertion-location (appropriate-place-for-inserting-node parser)))
+    (let ((adjusted-insertion-location (appropriate-place-for-inserting-node)))
       (when (typep adjusted-insertion-location 'document)
         (return-from insert-character))
       (let ((text (car (last (children adjusted-insertion-location)))))
@@ -1741,60 +1603,61 @@
             (write-char data (slot-value text 'data-stream))
           (let ((text (make-instance 'text :data-stream (make-string-output-stream))))
             (write-char data (slot-value text 'data-stream))
-            (push text (slot-value parser 'open-texts))
+            (push text open-texts)
             (append-child adjusted-insertion-location text)))))))
 
+(defun insert-comment (&optional position)
+  (declare (ignore position)))
+
 ;; TODO: Respect namespace & parent
-(defun create-element-for-token (token &optional namespace parent)
+(defun create-element-for-token (&optional namespace parent)
   (declare (ignore namespace parent))
-  (check-type token start-tag)
+  (check-type current-token start-tag)
   (let ((element (make-instance 'element
-                                :tag-name (slot-value token 'tag-name))))
-    (loop for attribute in (slot-value token 'attributes)
+                                :tag-name (slot-value current-token 'tag-name))))
+    (loop for attribute in (slot-value current-token 'attributes)
           do (dom:set-attribute
               element
               (attribute-name attribute)
               (attribute-value attribute)))
     element))
 
-(defun insert-html-element-for-token (parser token)
-  (insert-foreign-element-for-token parser token "html"))
+(defun insert-html-element-for-token ()
+  (insert-foreign-element-for-token "html"))
 
-(defun insert-foreign-element-for-token (parser token namespace)
-  (let ((adjusted-insertion-location (appropriate-place-for-inserting-node parser)))
-    (let ((element (create-element-for-token token namespace)))
+(defun insert-foreign-element-for-token (namespace)
+  (let ((adjusted-insertion-location (appropriate-place-for-inserting-node)))
+    (let ((element (create-element-for-token namespace)))
       (append-child adjusted-insertion-location element)
-      (push element (slot-value parser 'stack-of-open-elements))
+      (push element stack-of-open-elements)
       element)))
 
 ;; TODO
-(defun appropriate-place-for-inserting-node (parser &optional override-target)
+(defun appropriate-place-for-inserting-node (&optional override-target)
   (let ((target (if override-target
                     override-target
-                  (current-node parser))))
+                  current-node)))
     target))
 
 ;; TODO: Check exact node condition
-(defun have-element-in-specific-scope-p (parser target scope)
+(defun have-element-in-specific-scope-p (target scope)
   (check-type target (or element string))
-  (with-slots (stack-of-open-elements) parser
-    (loop for open-element in stack-of-open-elements
-          if (typecase target
-               (element (eq target open-element))
-               (string (equal target (tag-name open-element))))
-          do (return t)
-          else if (typecase scope
-                    (list (typecase target
-                            (element (find (tag-name target) scope :test 'equal))
-                            (string (find target scope :test 'equal))))
-                    (function (typecase target
-                                (element (funcall scope (tag-name target)))
-                                (string (funcall scope target)))))
-          do (return))))
+  (loop for open-element in stack-of-open-elements
+        if (typecase target
+             (element (eq target open-element))
+             (string (equal target (tag-name open-element))))
+        do (return t)
+        else if (typecase scope
+                  (list (typecase target
+                          (element (find (tag-name target) scope :test 'equal))
+                          (string (find target scope :test 'equal))))
+                  (function (typecase target
+                              (element (funcall scope (tag-name target)))
+                              (string (funcall scope target)))))
+        do (return)))
 
-(defun have-element-in-scope-p (parser element)
+(defun have-element-in-scope-p (element)
   (have-element-in-specific-scope-p
-   parser
    element
    '("applet"
      "caption"
@@ -1817,9 +1680,8 @@
      "desc"
      "title")))
 
-(defun have-element-in-list-item-scope-p (parser element)
+(defun have-element-in-list-item-scope-p (element)
   (have-element-in-specific-scope-p
-   parser
    element
    '("applet"
      "caption"
@@ -1845,9 +1707,8 @@
      "ol"
      "ul")))
 
-(defun have-element-in-button-scope-p (parser element)
+(defun have-element-in-button-scope-p (element)
   (have-element-in-specific-scope-p
-   parser
    element
    '("applet"
      "caption"
@@ -1872,17 +1733,15 @@
      ;; additional
      "button")))
 
-(defun have-element-in-table-scope-p (parser element)
+(defun have-element-in-table-scope-p (element)
   (have-element-in-specific-scope-p
-   parser
    element
    '("html"
      "table"
      "template")))
 
-(defun have-element-in-select-scope-p (parser element)
+(defun have-element-in-select-scope-p (element)
   (have-element-in-specific-scope-p
-   parser
    element
    (lambda (tag-name)
      (not (member tag-name '("optgroup" "option") :test 'equal)))))
@@ -1925,519 +1784,530 @@
   (not (or (special-element-p element)
            (formatting-element-p element))))
 
-(defun parse-generic-rawtext-element (parser)
-  (with-slots (tokenizer
-               current-token
-               original-insertion-mode
-               insertion-mode) parser
-    (insert-html-element-for-token parser current-token)
-    (setf (slot-value tokenizer 'state) 'rawtext-state)
-    (setf original-insertion-mode insertion-mode)
-    (setf insertion-mode 'text)))
+(defun parse-generic-rawtext-element ()
+  (insert-html-element-for-token)
+  (setf state 'rawtext-state)
+  (setf original-insertion-mode insertion-mode)
+  (setf insertion-mode 'text))
 
-(defun parse-generic-rcdata-element (parser)
-  (with-slots (tokenizer
-               current-token
-               original-insertion-mode
-               insertion-mode) parser
-    (insert-html-element-for-token parser current-token)
-    (setf (slot-value tokenizer 'state) 'rcdata-state)
-    (setf original-insertion-mode insertion-mode)
-    (setf insertion-mode 'text)))
+(defun parse-generic-rcdata-element ()
+  (insert-html-element-for-token)
+  (setf state 'rcdata-state)
+  (setf original-insertion-mode insertion-mode)
+  (setf insertion-mode 'text))
 
-(defun reconstruct-active-formatting-elements (parser)
-  (with-slots (active-formatting-elements stack-of-open-elements) parser
-    (when (null active-formatting-elements)
+(defun reconstruct-active-formatting-elements ()
+  (when (null active-formatting-elements)
+    (return-from reconstruct-active-formatting-elements))
+  (let* ((i (1- (length active-formatting-elements)))
+         (entry (nth* i active-formatting-elements)))
+    (when (or (typep entry 'marker)
+              (find entry stack-of-open-elements))
       (return-from reconstruct-active-formatting-elements))
-    (let* ((i (1- (length active-formatting-elements)))
-           (entry (nth* i active-formatting-elements)))
-      (when (or (typep entry 'marker)
-                (find entry stack-of-open-elements))
-        (return-from reconstruct-active-formatting-elements))
-      (loop while (and (not (typep entry 'marker))
-                       (not (find entry stack-of-open-elements)))
-            do (when (= i 0)
-                 (setf i -1)
-                 (return))
-            (decf i)
-            (setf entry (nth* i active-formatting-elements)))
-      (loop
-       (incf i)
-       (setf entry (nth* i active-formatting-elements))
-       (let ((element (insert-html-element-for-token parser entry)))
+    (loop while (and (not (typep entry 'marker))
+                     (not (find entry stack-of-open-elements)))
+          do (when (= i 0)
+               (setf i -1)
+               (return))
+          (decf i)
+          (setf entry (nth* i active-formatting-elements)))
+    (loop
+     (incf i)
+     (setf entry (nth* i active-formatting-elements))
+     (let ((current-token entry))
+       (let ((element (insert-html-element-for-token)))
          (setf (nth* i active-formatting-elements) element)
          (when (eq element (nth* -1 active-formatting-elements))
            (return)))))))
 
-(defun clear-active-formatting-elements-upto-last-marker (parser)
-  (with-slots (active-formatting-elements) parser
-    (reversef active-formatting-elements)
-    (let ((entry (pop active-formatting-elements)))
-      (loop while (and active-formatting-elements
-                       (not (typep entry 'marker)))
-            do (setf entry (pop active-formatting-elements))))
-    (reversef active-formatting-elements)))
+(defun clear-active-formatting-elements-upto-last-marker ()
+  (reversef active-formatting-elements)
+  (let ((entry (pop active-formatting-elements)))
+    (loop while (and active-formatting-elements
+                     (not (typep entry 'marker)))
+          do (setf entry (pop active-formatting-elements))))
+  (reversef active-formatting-elements))
 
 ;; TODO
-(defun push-onto-active-formatting-elements (parser element)
-  (with-slots (active-formatting-elements) parser
-    (appendf active-formatting-elements (list element))))
+(defun push-onto-active-formatting-elements (element)
+  (appendf active-formatting-elements (list element)))
 
-(defun generate-implied-end-tags (parser &key except)
-  (with-slots (stack-of-open-elements) parser
-    (let ((tag-name (tag-name (current-node parser))))
-      (when (and (member tag-name '("dd" "dt" "li" "optgroup" "option"
-                                    "p" "rb" "rp" "rt" "rtc")
-                         :test 'equal)
-                 (not (equal tag-name except)))
-        (pop stack-of-open-elements)
-        (generate-implied-end-tags parser :except except)))))
+(defun generate-implied-end-tags (&key except)
+  (let ((tag-name (tag-name current-node)))
+    (when (and (member tag-name '("dd" "dt" "li" "optgroup" "option"
+                                  "p" "rb" "rp" "rt" "rtc")
+                       :test 'equal)
+               (not (equal tag-name except)))
+      (pop stack-of-open-elements)
+      (generate-implied-end-tags :except except))))
 
-(defun generate-all-implied-end-tags-thoroughly (parser)
-  (with-slots (stack-of-open-elements) parser
-    (let ((tag-name (tag-name (current-node parser))))
-      (when (member tag-name '("caption" "colgroup" "dd" "dt"
-                               "li" "optgroup" "option"
-                               "p" "rb" "rp" "rt" "rtc" "tbody" "td"
-                               "tfoot" "th" "thead" "tr")
-                    :test 'equal)
-        (pop stack-of-open-elements)
-        (generate-all-implied-end-tags-thoroughly parser)))))
+(defun generate-all-implied-end-tags-thoroughly ()
+  (let ((tag-name (tag-name current-node)))
+    (when (member tag-name '("caption" "colgroup" "dd" "dt"
+                             "li" "optgroup" "option"
+                             "p" "rb" "rp" "rt" "rtc" "tbody" "td"
+                             "tfoot" "th" "thead" "tr")
+                  :test 'equal)
+      (pop stack-of-open-elements)
+      (generate-all-implied-end-tags-thoroughly))))
 
-(defun adoption-agency (parser)
-  (with-slots (stack-of-open-elements active-formatting-elements) parser
-    (let ((token (slot-value parser 'current-token))
-          subject
-          node
-          last-node
-          outer-loop-counter
-          inner-loop-counter
-          formatting-element
-          furthest-block
-          common-ancestor
-          bookmark
-          element-above-node)
-      ;; Step 1
-      (setf subject (slot-value token 'tag-name))
-      ;; Step 2
-      (let ((current-node (current-node parser)))
-        (when (and (equal subject (tag-name current-node))
-                   (not (find current-node active-formatting-elements)))
-          (pop stack-of-open-elements)
-          (return-from adoption-agency)))
-      ;; Step 3
-      (setf outer-loop-counter 0)
-      (tagbody
-       :outer-loop
-       ;; Step 4
-       (when (>= outer-loop-counter 8)
-         (return-from adoption-agency))
-       ;; Step 5
-       (incf outer-loop-counter)
-       ;; Step 6
-       (let ((last-marker-position (position-if 'marker-p active-formatting-elements
-                                                :from-end t)))
-         (setf formatting-element
-               (find subject active-formatting-elements
-                     :start (if last-marker-position
-                                (1+ last-marker-position)
-                              0)
-                     :test 'equal
-                     :key 'tag-name
-                     :from-end t))
-         (unless formatting-element
-           ;; Act as `any other end tag` entry from `in-body` insertion mode
-           (loop for node in stack-of-open-elements
-                 do (if (equal (tag-name node)
-                               (slot-value token 'tag-name))
-                        (progn
-                          (generate-implied-end-tags parser)
-                          (unless (equal (tag-name (first stack-of-open-elements))
-                                         (slot-value token 'tag-name))
-                            (parse-error parser))
-                          (loop for n = (pop stack-of-open-elements)
-                                until (eq n node))
-                          (return))
+(defun adoption-agency ()
+  (let (subject
+        node
+        last-node
+        outer-loop-counter
+        inner-loop-counter
+        formatting-element
+        furthest-block
+        common-ancestor
+        bookmark
+        element-above-node)
+    ;; Step 1
+    (setf subject (slot-value current-token 'tag-name))
+    ;; Step 2
+    (when (and (equal subject (tag-name current-node))
+               (not (find current-node active-formatting-elements)))
+      (pop stack-of-open-elements)
+      (return-from adoption-agency))
+    ;; Step 3
+    (setf outer-loop-counter 0)
+    (tagbody
+     :outer-loop
+     ;; Step 4
+     (when (>= outer-loop-counter 8)
+       (return-from adoption-agency))
+     ;; Step 5
+     (incf outer-loop-counter)
+     ;; Step 6
+     (let ((last-marker-position (position-if 'marker-p active-formatting-elements
+                                              :from-end t)))
+       (setf formatting-element
+             (find subject active-formatting-elements
+                   :start (if last-marker-position
+                              (1+ last-marker-position)
+                            0)
+                   :test 'equal
+                   :key 'tag-name
+                   :from-end t))
+       (unless formatting-element
+         ;; Act as `any other end tag` entry from `in-body` insertion mode
+         (loop for node in stack-of-open-elements
+               do (if (equal (tag-name node)
+                             (slot-value current-token 'tag-name))
                       (progn
-                        (when (special-element-p node)
-                          (parse-error parser)
-                          (ignore-token parser)
-                          (return)))))
-           (return-from adoption-agency)))
-       ;; Step 7
-       (unless (find formatting-element stack-of-open-elements)
-         (parse-error parser)
-         (removef stack-of-open-elements formatting-element)
-         (return-from adoption-agency))
-       ;; Step 8
-       (when (and (find formatting-element stack-of-open-elements)
-                  (not (have-element-in-scope-p parser formatting-element)))
-         (parse-error parser)
-         (return-from adoption-agency))
-       ;; Step 9
-       (unless (eq (current-node parser) formatting-element)
-         (parse-error parser))
-       ;; Step 10
-       (let ((formatting-element-position (position formatting-element
-                                                    stack-of-open-elements)))
-         (when (and (> formatting-element-position 0)
-                    (special-element-p (nth (1- formatting-element-position)
-                                            stack-of-open-elements)))
-           (setf furthest-block (nth (1- formatting-element-position)
-                                     stack-of-open-elements))))
-       ;; Step 11
-       (unless furthest-block
-         (loop for el = (pop stack-of-open-elements)
-               until (eq el formatting-element))
-         (removef active-formatting-elements formatting-element)
-         (return-from adoption-agency))
-       ;; Step 12
-       (let ((formatting-element-position (position formatting-element
-                                                    stack-of-open-elements)))
-         (setf common-ancestor (nth (1+ formatting-element-position)
-                                    stack-of-open-elements)))
-       ;; Step 13
-       (setf bookmark (position formatting-element active-formatting-elements))
-       ;; Step 14
-       (setf node furthest-block
-             last-node furthest-block)
-       ;; Step 14.1
-       (setf inner-loop-counter 0)
-       ;; Step 14.2
-       :inner-loop
-       (incf inner-loop-counter)
-       ;; Step 14.3
-       (let ((node-position (position node stack-of-open-elements)))
-         (if node-position
-             (setf node (nth (1+ node-position) stack-of-open-elements))
-           (setf node element-above-node)))
-       ;; Step 14.4
-       (when (eq node formatting-element)
-         (go :next-step-in-the-overall-algorithm))
-       ;; Step 14.5
-       (when (and (> inner-loop-counter 3)
-                  (find node active-formatting-elements))
-         (removef active-formatting-elements node))
-       ;; Step 14.6
-       ;; This step may remove `node` from `stack-of-open-elements`,
-       ;;   we need to record the `the element that was immediately above node
-       ;;   in the stack of open elements before node was removed.` because
-       ;;   step 14.3 need this.
-       (unless (find node active-formatting-elements)
-         (let ((node-position (position node stack-of-open-elements)))
-           (setf element-above-node (nth (1+ node-position) stack-of-open-elements))
-           (removef stack-of-open-elements node))
-         (go :inner-loop))
-       ;; Step 14.7
-       (let ((element (create-element-for-token
-                       (slot-value parser 'current-token)
-                       "html"
-                       common-ancestor)))
-         (let ((node-position (find node active-formatting-elements)))
-           (setf (nth node-position active-formatting-elements) element))
-         (let ((node-position (find node stack-of-open-elements)))
-           (setf (nth node-position stack-of-open-elements) element))
-         (setf node element))
-       ;; Step 14.8
-       (when (eq last-node furthest-block)
-         (setf bookmark (1+ (position node active-formatting-elements))))
-       ;; Step 14.9
-       (when-let ((parent (dom:parent last-node)))
-         (removef (slot-value parent 'dom:children) last-node))
-       (append-child last-node node)
-       ;; Step 14.10
-       (setf last-node node)
-       ;; Step 14.11
-       (go :inner-loop)
-       :next-step-in-the-overall-algorithm
-       ;; Step 15
-       (let ((place (appropriate-place-for-inserting-node parser common-ancestor)))
-         (append-child place last-node ))
-       ;; Step 16
-       (let ((element (create-element-for-token
-                       (slot-value parser 'current-token)
-                       "html"
-                       furthest-block)))
-         ;; Step 17
-         (loop for child in (children furthest-block)
-               do (append-child element child))
-         (setf (slot-value furthest-block 'dom:children) nil)
-         ;; Step 18
-         (append-child furthest-block element)
-         ;; Step 19
-         (removef active-formatting-elements formatting-element)
-         (setf active-formatting-elements
-               (append (subseq active-formatting-elements
-                               0
-                               bookmark)
-                       (list element)
-                       (subseq active-formatting-elements bookmark)))
-         ;; Step 20
-         (removef stack-of-open-elements formatting-element)
-         (let ((furthest-block-position (position furthest-block
+                        (generate-implied-end-tags)
+                        (unless (equal (tag-name (first stack-of-open-elements))
+                                       (slot-value current-token 'tag-name))
+                          (parse-error))
+                        (loop for n = (pop stack-of-open-elements)
+                              until (eq n node))
+                        (return))
+                    (progn
+                      (when (special-element-p node)
+                        (parse-error)
+                        (ignore-token)
+                        (return)))))
+         (return-from adoption-agency)))
+     ;; Step 7
+     (unless (find formatting-element stack-of-open-elements)
+       (parse-error)
+       (removef stack-of-open-elements formatting-element)
+       (return-from adoption-agency))
+     ;; Step 8
+     (when (and (find formatting-element stack-of-open-elements)
+                (not (have-element-in-scope-p formatting-element)))
+       (parse-error)
+       (return-from adoption-agency))
+     ;; Step 9
+     (unless (eq current-node formatting-element)
+       (parse-error))
+     ;; Step 10
+     (let ((formatting-element-position (position formatting-element
                                                   stack-of-open-elements)))
-           (setf stack-of-open-elements
-                 (append (subseq stack-of-open-elements 0 furthest-block-position)
-                         (list element)
-                         (subseq stack-of-open-elements furthest-block-position))))
-         ;; Step 21
-         (go :outer-loop))))))
+       (when (and (> formatting-element-position 0)
+                  (special-element-p (nth (1- formatting-element-position)
+                                          stack-of-open-elements)))
+         (setf furthest-block (nth (1- formatting-element-position)
+                                   stack-of-open-elements))))
+     ;; Step 11
+     (unless furthest-block
+       (loop for el = (pop stack-of-open-elements)
+             until (eq el formatting-element))
+       (removef active-formatting-elements formatting-element)
+       (return-from adoption-agency))
+     ;; Step 12
+     (let ((formatting-element-position (position formatting-element
+                                                  stack-of-open-elements)))
+       (setf common-ancestor (nth (1+ formatting-element-position)
+                                  stack-of-open-elements)))
+     ;; Step 13
+     (setf bookmark (position formatting-element active-formatting-elements))
+     ;; Step 14
+     (setf node furthest-block
+           last-node furthest-block)
+     ;; Step 14.1
+     (setf inner-loop-counter 0)
+     ;; Step 14.2
+     :inner-loop
+     (incf inner-loop-counter)
+     ;; Step 14.3
+     (let ((node-position (position node stack-of-open-elements)))
+       (if node-position
+           (setf node (nth (1+ node-position) stack-of-open-elements))
+         (setf node element-above-node)))
+     ;; Step 14.4
+     (when (eq node formatting-element)
+       (go :next-step-in-the-overall-algorithm))
+     ;; Step 14.5
+     (when (and (> inner-loop-counter 3)
+                (find node active-formatting-elements))
+       (removef active-formatting-elements node))
+     ;; Step 14.6
+     ;; This step may remove `node` from `stack-of-open-elements`,
+     ;;   we need to record the `the element that was immediately above node
+     ;;   in the stack of open elements before node was removed.` because
+     ;;   step 14.3 need this.
+     (unless (find node active-formatting-elements)
+       (let ((node-position (position node stack-of-open-elements)))
+         (setf element-above-node (nth (1+ node-position) stack-of-open-elements))
+         (removef stack-of-open-elements node))
+       (go :inner-loop))
+     ;; Step 14.7
+     (let ((element (create-element-for-token
+                     "html"
+                     common-ancestor)))
+       (let ((node-position (find node active-formatting-elements)))
+         (setf (nth node-position active-formatting-elements) element))
+       (let ((node-position (find node stack-of-open-elements)))
+         (setf (nth node-position stack-of-open-elements) element))
+       (setf node element))
 
-(defun close-p-element (parser)
-  (generate-implied-end-tags parser :except "p")
-  (unless (equal "p" (tag-name (current-node parser)))
-    (parse-error parser))
-  (loop for element = (pop (slot-value parser 'stack-of-open-elements))
+     ;; Step 14.8
+     (when (eq last-node furthest-block)
+       (setf bookmark (1+ (position node active-formatting-elements))))
+     ;; Step 14.9
+     (when-let ((parent (dom:parent last-node)))
+       (removef (slot-value parent 'dom:children) last-node))
+     (append-child last-node node)
+     ;; Step 14.10
+     (setf last-node node)
+     ;; Step 14.11
+     (go :inner-loop)
+     :next-step-in-the-overall-algorithm
+     ;; Step 15
+     (let ((place (appropriate-place-for-inserting-node common-ancestor)))
+       (append-child place last-node))
+     ;; Step 16
+     (let ((element (create-element-for-token
+                     "html"
+                     furthest-block)))
+       ;; Step 17
+       (loop for child in (children furthest-block)
+             do (append-child element child))
+       (setf (slot-value furthest-block 'dom:children) nil)
+       ;; Step 18
+       (append-child furthest-block element)
+       ;; Step 19
+       (removef active-formatting-elements formatting-element)
+       (setf active-formatting-elements
+             (append (subseq active-formatting-elements
+                             0
+                             bookmark)
+                     (list element)
+                     (subseq active-formatting-elements bookmark)))
+       ;; Step 20
+       (removef stack-of-open-elements formatting-element)
+       (let ((furthest-block-position (position furthest-block
+                                                stack-of-open-elements)))
+         (setf stack-of-open-elements
+               (append (subseq stack-of-open-elements 0 furthest-block-position)
+                       (list element)
+                       (subseq stack-of-open-elements furthest-block-position))))
+       ;; Step 21
+       (go :outer-loop)))))
+
+(defun close-p-element ()
+  (generate-implied-end-tags :except "p")
+  (unless (equal "p" (tag-name current-node))
+    (parse-error))
+  (loop for element = (pop stack-of-open-elements)
         until (equal "p" (tag-name element))))
 
-(defun close-cell (parser)
-  (generate-implied-end-tags parser)
-  (when (not (or (equal "td" (tag-name (current-node parser)))
-                 (equal "th" (tag-name (current-node parser)))))
-    (parse-error parser))
-  (loop for element = (pop (slot-value parser 'stack-of-open-elements))
+(defun close-cell ()
+  (generate-implied-end-tags)
+  (when (not (or (equal "td" (tag-name current-node))
+                 (equal "th" (tag-name current-node))))
+    (parse-error))
+  (loop for element = (pop stack-of-open-elements)
         until (or (equal "td" (tag-name element))
                   (equal "th" (tag-name element))))
-  (clear-active-formatting-elements-upto-last-marker parser)
-  (setf (slot-value parser 'insertion-mode) 'in-row))
+  (clear-active-formatting-elements-upto-last-marker)
+  (setf insertion-mode 'in-row))
 
 ;; TODO
-(defun clear-stack-back-to-table-context (parser)
-  (declare (ignore parser)))
+(defun clear-stack-back-to-table-context ())
 
 ;; TODO
-(defun clear-stack-back-to-table-body-context (parser)
-  (declare (ignore parser)))
+(defun clear-stack-back-to-table-body-context ())
 
 ;; TODO
-(defun clear-stack-back-to-table-row-context (parser)
-  (declare (ignore parser)))
+(defun clear-stack-back-to-table-row-context ())
 
-(defun reset-insertion-mode-appropriately (parser)
-  (with-slots (stack-of-open-elements
-               stack-of-template-insertion-modes
-               head-element-pointer) parser
-    (let (last
-          node
-          ancestor)
-      (macrolet ((switch-to (insertion-mode)
-                   `(setf (slot-value parser 'insertion-mode) ,insertion-mode)))
-        (block nil
-          ;; Step 1
-          (setf last nil)
-          ;; Step 2
-          (setf node (first stack-of-open-elements))
-          ;; Step 3
-          (tagbody
-           :loop
-           (when (eq node (car (last stack-of-open-elements)))
-             (progn
-               (setf last t)
-               #|TODO|#))
-           ;; Step 4
-           (when (equal "select" (tag-name node))
-             (tagbody
-              ;; Step 4.1
-              (when last (go :done))
-              ;; Step 4.2
-              (setf ancestor node)
-              ;; Step 4.3
-              :loop
-              (when (eq ancestor (car (last stack-of-open-elements)))
-                (go :done))
-              ;; Step 4.4
-              ;; TODO: Check this
-              (let ((ancestor-position (position ancestor stack-of-open-elements)))
-                (setf ancestor (nth (1+ ancestor-position) stack-of-open-elements)))
-              ;; Step 4.5
-              (when (equal "template" (tag-name ancestor))
-                (go :done))
-              ;; Step 4.6
-              (when (equal "table" (tag-name ancestor))
-                (switch-to 'in-select-in-table)
-                (return))
-              ;; Step 4.7
-              (go :loop)
-              ;; Step 4.8
-              :done
-              (switch-to 'in-select)
-              (return)))
-           ;; Step 5
-           (when (and (or (equal "td" (tag-name node))
-                          (equal "th" (tag-name node)))
-                      (not last))
-             (switch-to 'in-cell)
-             (return))
-           ;; Step 6
-           (when (equal "tr" (tag-name node))
-             (switch-to 'in-row)
-             (return))
-           ;; Step 7
-           (when (or (equal "tbody" (tag-name node))
-                     (equal "thead" (tag-name node))
-                     (equal "tfoot" (tag-name node)))
-             (switch-to 'in-table-body)
-             (return))
-           ;; Step 8
-           (when (equal "caption" (tag-name node))
-             (switch-to 'in-caption)
-             (return))
-           ;; Step 9
-           (when (equal "colgroup" (tag-name node))
-             (switch-to 'in-column-group)
-             (return))
-           ;; Step 10
-           (when (equal "table" (tag-name node))
-             (switch-to 'in-table)
-             (return))
-           ;; Step 11
-           (when (equal "template" (tag-name node))
-             (switch-to (first stack-of-template-insertion-modes))
-             (return))
-           ;; Step 12
-           (when (and (equal "head" (tag-name node))
-                      (not last))
-             (switch-to 'in-head)
-             (return))
-           ;; Step 13
-           (when (equal "body" (tag-name node))
-             (switch-to 'in-body)
-             (return))
-           ;; Step 14
-           (when (equal "frameset" (tag-name node))
-             (switch-to 'in-frameset)
-             (return))
-           ;; Step 15
-           (when (equal "html" (tag-name node))
-             (if (null head-element-pointer)
-                 (progn
-                   (switch-to 'before-head)
-                   (return))
+(defun reset-insertion-mode-appropriately ()
+  (let (last
+        node
+        ancestor)
+    (macrolet ((switch-insertion-mode (insertion-mode)
+                 `(setf insertion-mode ,insertion-mode)))
+      (block nil
+        ;; Step 1
+        (setf last nil)
+        ;; Step 2
+        (setf node (first stack-of-open-elements))
+        ;; Step 3
+        (tagbody
+         :loop
+         (when (eq node (car (last stack-of-open-elements)))
+           (progn
+             (setf last t)
+             #|TODO|#))
+         ;; Step 4
+         (when (equal "select" (tag-name node))
+           (tagbody
+            ;; Step 4.1
+            (when last (go :done))
+            ;; Step 4.2
+            (setf ancestor node)
+            ;; Step 4.3
+            :loop
+            (when (eq ancestor (car (last stack-of-open-elements)))
+              (go :done))
+            ;; Step 4.4
+            ;; TODO: Check this
+            (let ((ancestor-position (position ancestor stack-of-open-elements)))
+              (setf ancestor (nth (1+ ancestor-position) stack-of-open-elements)))
+            ;; Step 4.5
+            (when (equal "template" (tag-name ancestor))
+              (go :done))
+            ;; Step 4.6
+            (when (equal "table" (tag-name ancestor))
+              (switch-insertion-mode 'in-select-in-table)
+              (return))
+            ;; Step 4.7
+            (go :loop)
+            ;; Step 4.8
+            :done
+            (switch-insertion-mode 'in-select)
+            (return)))
+         ;; Step 5
+         (when (and (or (equal "td" (tag-name node))
+                        (equal "th" (tag-name node)))
+                    (not last))
+           (switch-insertion-mode 'in-cell)
+           (return))
+         ;; Step 6
+         (when (equal "tr" (tag-name node))
+           (switch-insertion-mode 'in-row)
+           (return))
+         ;; Step 7
+         (when (or (equal "tbody" (tag-name node))
+                   (equal "thead" (tag-name node))
+                   (equal "tfoot" (tag-name node)))
+           (switch-insertion-mode 'in-table-body)
+           (return))
+         ;; Step 8
+         (when (equal "caption" (tag-name node))
+           (switch-insertion-mode 'in-caption)
+           (return))
+         ;; Step 9
+         (when (equal "colgroup" (tag-name node))
+           (switch-insertion-mode 'in-column-group)
+           (return))
+         ;; Step 10
+         (when (equal "table" (tag-name node))
+           (switch-insertion-mode 'in-table)
+           (return))
+         ;; Step 11
+         (when (equal "template" (tag-name node))
+           (switch-insertion-mode (first stack-of-template-insertion-modes))
+           (return))
+         ;; Step 12
+         (when (and (equal "head" (tag-name node))
+                    (not last))
+           (switch-insertion-mode 'in-head)
+           (return))
+         ;; Step 13
+         (when (equal "body" (tag-name node))
+           (switch-insertion-mode 'in-body)
+           (return))
+         ;; Step 14
+         (when (equal "frameset" (tag-name node))
+           (switch-insertion-mode 'in-frameset)
+           (return))
+         ;; Step 15
+         (when (equal "html" (tag-name node))
+           (if (null head-element-pointer)
                (progn
-                 (switch-to 'after-head)
-                 (return))))
-           ;; Step 16
-           (when last
-             (switch-to 'in-body)
-             (return))
-           ;; Step 17
-           (let ((node-position (position node stack-of-open-elements)))
-             (setf node (nth (1+ node-position) stack-of-open-elements)))
-           ;; Step 18
-           (go :loop)))))))
+                 (switch-insertion-mode 'before-head)
+                 (return))
+             (progn
+               (switch-insertion-mode 'after-head)
+               (return))))
+         ;; Step 16
+         (when last
+           (switch-insertion-mode 'in-body)
+           (return))
+         ;; Step 17
+         (let ((node-position (position node stack-of-open-elements)))
+           (setf node (nth (1+ node-position) stack-of-open-elements)))
+         ;; Step 18
+         (go :loop))))))
 
 ;; TODO
-(defun acknowledge-token-self-closing-flag (parser)
-  (declare (ignore parser)))
+(defun acknowledge-token-self-closing-flag ())
 
 ;; TODO
-(defun adjust-mathml-attributes (parser)
-  (declare (ignore parser)))
+(defun adjust-mathml-attributes ())
 
 ;; TODO
-(defun adjust-svg-attributes (parser)
-  (declare (ignore parser)))
+(defun adjust-svg-attributes ())
 
 ;; TODO
-(defun adjust-foreign-attributes (parser)
-  (declare (ignore parser)))
+(defun adjust-foreign-attributes ())
 
-(defun tree-construction-dispatcher (parser)
-  (if (or (null (slot-value parser 'stack-of-open-elements))
+(defun tree-construction-dispatcher ()
+  (if (or (null stack-of-open-elements)
           t
           #|TODO: Handle other cases|#)
       (let ((function
-             (case (slot-value parser 'insertion-mode)
-               (initial 'process-token-in-initial-insertion-mode)
-               (before-html 'process-token-in-before-html-insertion-mode)
-               (before-head 'process-token-in-before-head-insertion-mode)
-               (in-head 'process-token-in-in-head-insertion-mode)
-               (in-head-noscript 'process-token-in-in-head-noscript-insertion-mode)
-               (after-head 'process-token-in-after-head-insertion-mode)
-               (in-body 'process-token-in-in-body-insertion-mode)
-               (text 'process-token-in-text-insertion-mode)
-               (in-table 'process-token-in-in-table-insertion-mode)
-               (in-table-text 'process-token-in-in-table-text-insertion-mode)
-               (in-caption 'process-token-in-in-caption-insertion-mode)
-               (in-column-group 'process-token-in-in-column-group-insertion-mode)
-               (in-table-body 'process-token-in-in-table-body-insertion-mode)
-               (in-row 'process-token-in-in-row-insertion-mode)
-               (in-cell 'process-token-in-in-cell-insertion-mode)
-               (in-select 'process-token-in-in-select-insertion-mode)
-               (in-select-in-table 'process-token-in-in-select-in-table-insertion-mode)
-               (in-template 'process-token-in-in-template-insertion-mode)
-               (after-body 'process-token-in-after-body-insertion-mode)
-               (in-frameset 'process-token-in-in-frameset-insertion-mode)
-               (after-frameset 'process-token-in-after-frameset-insertion-mode)
-               (after-after-body 'process-token-in-after-after-body-insertion-mode)
-               (after-after-frameset 'process-token-in-after-after-frameset-insertion-mode))))
-        (funcall function parser))
+             (case insertion-mode
+               (initial 'process-token-using-initial-insertion-mode)
+               (before-html 'process-token-using-before-html-insertion-mode)
+               (before-head 'process-token-using-before-head-insertion-mode)
+               (in-head 'process-token-using-in-head-insertion-mode)
+               (in-head-noscript 'process-token-using-in-head-noscript-insertion-mode)
+               (after-head 'process-token-using-after-head-insertion-mode)
+               (in-body 'process-token-using-in-body-insertion-mode)
+               (text 'process-token-using-text-insertion-mode)
+               (in-table 'process-token-using-in-table-insertion-mode)
+               (in-table-text 'process-token-using-in-table-text-insertion-mode)
+               (in-caption 'process-token-using-in-caption-insertion-mode)
+               (in-column-group 'process-token-using-in-column-group-insertion-mode)
+               (in-table-body 'process-token-using-in-table-body-insertion-mode)
+               (in-row 'process-token-using-in-row-insertion-mode)
+               (in-cell 'process-token-using-in-cell-insertion-mode)
+               (in-select 'process-token-using-in-select-insertion-mode)
+               (in-select-in-table 'process-token-using-in-select-in-table-insertion-mode)
+               (in-template 'process-token-using-in-template-insertion-mode)
+               (after-body 'process-token-using-after-body-insertion-mode)
+               (in-frameset 'process-token-using-in-frameset-insertion-mode)
+               (after-frameset 'process-token-using-after-frameset-insertion-mode)
+               (after-after-body 'process-token-using-after-after-body-insertion-mode)
+               (after-after-frameset 'process-token-using-after-after-frameset-insertion-mode))))
+        (funcall function))
     (error "TODO: Process the token according to the rules given in the section for parsing tokens in foreign content.")))
 
-(defgeneric parse (source)
-  (:method ((string string))
-   (with-input-from-string (stream string)
-     (parse stream)))
-  (:method ((stream stream))
-   (let ((tokenizer (make-instance 'tokenizer :stream stream)))
-     (let ((parser (make-instance 'parser :tokenizer tokenizer)))
-       (with-slots (document open-texts) parser
-         (block :parsing
-           (unwind-protect
-               (handler-bind
-                   ((stop-parsing
-                     (lambda (c)
-                       (declare (ignore c))
-                       (return-from :parsing)))
-                    (parse-error
-                     (lambda (e)
-                       (declare (ignore e))
-                       (continue))))
-                 (loop for token = (tokenize tokenizer)
-                       until (typep token 'end-of-file)
-                       do (with-slots (current-token next-token) parser
-                            (if current-token
-                                (if next-token
-                                    (setf current-token next-token
-                                          next-token token)
-                                  (setf next-token token))
-                              (setf current-token token))
-                            (when next-token
-                              (tree-construction-dispatcher parser))
-                            (when (typep next-token 'end-of-file)
-                              (return-from :parsing)))))
-             (loop for text in open-texts
-                   for stream = (slot-value text 'data-stream)
-                   for data = (get-output-stream-string stream)
-                   do (progn
-                        (close stream)
-                        (setf (slot-value text 'dom:data) data
-                              (slot-value text 'data-stream) nil))
-                   finally (setf open-texts nil))))
-         document)))))
+(defmacro define-parse-procedure ()
+  `(defun parse (stream)
+     (macrolet
+         (;; tokenize
+          ,@(loop for error-name in *parse-errors*
+              collect `(,error-name () '(cerror "Continue" ',error-name)))
+          (switch-state (state)
+            `(progn
+               (setf state ,state)))
+          (reconsume-in (state)
+            `(progn
+               (reconsume)
+               (setf state ,state)
+               (go :switch-state)))
+          (emit (token)
+            `(push ,token pending-tokens))
+          (appropriate-end-tag-token-p (end-tag-token)
+            `(and (typep ,end-tag-token 'end-tag)
+                  last-start-tag-token
+                  (equal (slot-value ,end-tag-token 'tag-name)
+                         (slot-value last-start-tag-token 'tag-name))))
+          ;; parse
+          ,@(loop for (insertion-mode) in *parser-insertion-modes*
+              collect `(,(intern (format nil "PROCESS-TOKEN-USING-~A-INSERTION-MODE"
+                                         insertion-mode))
+                        ()
+                        '(go ,(make-keyword insertion-mode))))
+          (switch-insertion-mode (insertion-mode)
+            `(progn
+               (setf insertion-mode ,insertion-mode)))
+          (stop-parsing ()
+            `(go :end))
+          (reprocess-current-token ()
+            `(go :switch-insertion-mode)))
+       (let (;; tokenizer variables
+             (state 'data-state)
+             (return-state nil)
+             (current-input-character nil)
+             (current-tag-token nil)
+             (current-doctype-token nil)
+             (current-attribute nil)
+             (current-comment-token nil)
+             (character-reference-code nil)
+             (last-start-tag-token nil)
+             (temporary-buffer nil)
+             ;; parser variables
+             (document (make-instance 'document))
+             (foster-parenting nil)
+             (insertion-mode 'initial)
+             (original-insertion-mode nil)
+             (current-token nil)
+             (next-token nil)
+             (stack-of-open-elements nil)
+             (stack-of-template-insertion-modes nil)
+             (head-element-pointer nil)
+             (form-element-pointer nil)
+             (scripting-flag nil)
+             (frameset-ok-flag nil)
+             (active-formatting-elements nil)
+             (pending-table-character-tokens nil)
+             (open-texts nil))
+         (tagbody
+          ;; tokenize
+          :switch-state
+          (case state
+            ,@(loop for (state) in *tokenizer-states*
+                    collect `(,state (go ,(make-keyword state)))))
+          ;; body
+          ,@(loop for (state . body) in *tokenizer-states*
+                  append `(,(make-keyword state)
+                           ,@body
+                           (nreverse pending-tokens)
+                           (go :consume-token)))
+          :consume-token
+          (let ((token (pop pending-tokens)))
+            (setf current-token token)
+            (when (typep token 'start-tag)
+              (setf last-start-tag-token token)))
+          (go :switch-insertion-mode)
+          ;; parse
+          :switch-insertion-mode
+          (case insertion-mode
+            ,@(loop for (insertion-mode) in *parser-insertion-modes*
+                    collect `(,insertion-mode (go ,(make-keyword insertion-mode)))))
+          ;; body
+          ,@(loop for (insertion-mode . body) in *parser-insertion-modes*
+                  append `(,(make-keyword insertion-mode)
+                           ,@body
+                           (if pending-tokens
+                               (go :consume-token)
+                             (go :switch-state))))
+          :end)
+         (loop for text in open-texts
+               for stream = (slot-value text 'data-stream)
+               for data = (get-output-stream-string stream)
+               do (progn
+                    (close stream)
+                    (setf (slot-value text 'dom:data) data
+                          (slot-value text 'data-stream) nil))
+               finally (setf open-texts nil))
+         document))))
 
-(defun trace-parser ()
-  (trace
-   process-token-in-initial-insertion-mode
-   process-token-in-before-html-insertion-mode
-   process-token-in-before-head-insertion-mode
-   process-token-in-in-head-insertion-mode
-   process-token-in-in-head-noscript-insertion-mode
-   process-token-in-after-head-insertion-mode
-   process-token-in-in-body-insertion-mode
-   process-token-in-text-insertion-mode
-   process-token-in-in-table-insertion-mode
-   process-token-in-in-table-text-insertion-mode
-   process-token-in-in-caption-insertion-mode
-   process-token-in-in-column-group-insertion-mode
-   process-token-in-in-table-body-insertion-mode
-   process-token-in-in-row-insertion-mode
-   process-token-in-in-cell-insertion-mode
-   process-token-in-in-select-insertion-mode
-   process-token-in-in-select-in-table-insertion-mode
-   process-token-in-in-template-insertion-mode
-   process-token-in-after-body-insertion-mode
-   process-token-in-in-frameset-insertion-mode
-   process-token-in-after-frameset-insertion-mode
-   process-token-in-after-after-body-insertion-mode
-   process-token-in-after-after-frameset-insertion-mode))
+(define-parse-procedure)
+

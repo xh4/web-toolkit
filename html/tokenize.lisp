@@ -2,6 +2,22 @@
 
 ;; https://html.spec.whatwg.org/multipage/parsing.html#tokenization
 
+(defparameter stream nil)
+(defparameter state nil)
+(defparameter return-state nil)
+(defparameter lookahead-buffer nil)
+(defparameter current-input-character nil)
+(defparameter current-tag-token nil)
+(defparameter current-doctype-token nil)
+(defparameter current-attribute nil)
+(defparameter current-comment-token nil)
+(defparameter character-reference-code nil)
+(defparameter last-start-tag-token nil)
+(defparameter temporary-buffer nil)
+(defparameter pending-tokens nil)
+
+(define-symbol-macro next-input-character (consume))
+
 (defclass token () ())
 
 (defclass doctype-token (token)
@@ -39,14 +55,15 @@
     :initform nil)))
 
 (defmethod print-object ((start-tag start-tag) stream)
-  (print-unreadable-object (start-tag stream :type t)
-    (with-slots (tag-name attributes) start-tag
-      (format stream "~S" tag-name)
-      (when attributes
-        (format stream " ~S"
-                (loop for attribute in attributes
-                      collect (cons (slot-value attribute 'name)
-                                    (slot-value attribute 'value))))))))
+  (with-slots (tag-name attributes) start-tag
+    (write-char #\< stream)
+    (write-string (string-upcase tag-name) stream)
+    (when attributes
+      (loop for attribute in attributes
+            do (format stream " ~A=~S"
+                       (slot-value attribute 'name)
+                       (slot-value attribute 'value))))
+    (write-char #\> stream)))
 
 (defclass end-tag (token)
   ((tag-name
@@ -54,9 +71,10 @@
     :initform nil)))
 
 (defmethod print-object ((end-tag end-tag) stream)
-  (print-unreadable-object (end-tag stream :type t)
-    (with-slots (tag-name) end-tag
-      (format stream "~S" tag-name))))
+  (write-char #\< stream)
+  (write-char #\/ stream)
+  (write-string (string-upcase (slot-value end-tag 'tag-name)) stream)
+  (write-char #\> stream))
 
 (defclass comment-token (token)
   ((data
@@ -64,10 +82,11 @@
     :initform nil)))
 
 (defmethod print-object ((comment-token comment-token) stream)
-  (print-unreadable-object (comment-token stream :type t)
-    (format stream "~S" (slot-value comment-token 'data))))
+  (format stream "<!--~A-->" (slot-value comment-token 'data)))
 
 (defclass end-of-file (token) ())
+
+(defvar end-of-file (make-instance 'end-of-file))
 
 (defmethod print-object ((end-of-file end-of-file) stream)
   (print-unreadable-object (end-of-file stream :type t)))
@@ -82,10 +101,12 @@
     :initform nil
     :reader attribute-value)))
 
-(define-condition on-token ()
-  ((token
-    :initarg :token
-    :initform nil)))
+(declaim (inline ascii-alpha-p ascii-upper-alpha-p
+                 ascii-lower-alpha-p ascii-digit-p
+                 ascii-upper-hex-digit-p ascii-lower-hex-digit-p
+                 ascii-hex-digit-p ascii-alphanumeric-p
+                 surrogate-p noncharacter-p c0-control-p
+                 control-p whitespace-p))
 
 (defun ascii-alpha-p (char)
   (or (ascii-upper-alpha-p char)
@@ -155,51 +176,22 @@
   `(setf ,place
          (concatenate 'string ,place (string ,char))))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *tokenizer-states* '()))
+
 (defmacro define-tokenizer-state (name &body body)
-  `(defun ,name (tokenizer)
-     (symbol-macrolet ((next-input-character (next-input-character tokenizer))
-                       (current-input-character (current-input-character tokenizer))
-                       (end-of-file (make-instance 'end-of-file))
-                       (return-state (slot-value tokenizer 'return-state))
-                       (current-tag-token (slot-value tokenizer 'current-tag-token))
-                       (current-attribute (slot-value tokenizer 'current-attribute))
-                       (current-doctype-token (slot-value tokenizer 'current-doctype-token))
-                       (current-comment-token (slot-value tokenizer 'current-comment-token))
-                       (temporary-buffer (slot-value tokenizer 'temporary-buffer))
-                       (character-reference-code (slot-value tokenizer 'character-reference-code)))
-       (macrolet (,@(loop for error-name in *parse-errors*
-                      collect `(,error-name () '(cerror "Continue" ',error-name)))
-                  (switch-to (state)
-                    `(setf (slot-value tokenizer 'state) ,state))
-                  (reconsume-in (state)
-                    `(progn
-                       (reconsume tokenizer)
-                       (setf (slot-value tokenizer 'state) ,state)))
-                  (emit (token)
-                    `(progn
-                       (when (typep ,token 'start-tag)
-                         (setf (slot-value tokenizer 'last-start-tag-token) ,token))
-                       (with-slots (upcoming-tokens) tokenizer
-                         (push ,token upcoming-tokens))))
-                  (consume (&optional n)
-                    `(funcall 'consume tokenizer ,n))
-                  (next-few-characters (n)
-                    `(funcall 'next-few-characters tokenizer ,n))
-                  (appropriate-end-tag-token-p (end-tag-token)
-                    `(and (typep ,end-tag-token 'end-tag)
-                          (with-slots (last-start-tag-token) tokenizer
-                            (and last-start-tag-token
-                                 (equal (slot-value ,end-tag-token 'tag-name)
-                                        (slot-value last-start-tag-token 'tag-name)))))))
-         ,@body))))
+  (if-let ((i (position name *tokenizer-states* :key 'first)))
+      (setf (nth i *tokenizer-states*) `(,name ,@body))
+    (appendf *tokenizer-states* `((,name ,@body))))
+  nil)
 
 (define-tokenizer-state data-state
   (case next-input-character
     (#\&
      (setq return-state 'data-state)
-     (switch-to 'character-reference-state))
+     (switch-state 'character-reference-state))
     (#\<
-     (switch-to 'tag-open-state))
+     (switch-state 'tag-open-state))
     (#\null
      (unexpected-null-character)
      (emit current-input-character))
@@ -212,9 +204,9 @@
   (case next-input-character
     (#\&
      (setf return-state 'rcdata-state)
-     (switch-to 'character-reference-state))
+     (switch-state 'character-reference-state))
     (#\<
-     (switch-to 'rcdata-less-than-sign-state))
+     (switch-state 'rcdata-less-than-sign-state))
     (#\null
      (unexpected-null-character)
      (emit +replacement-character+))
@@ -226,7 +218,7 @@
 (define-tokenizer-state rawtext-state
   (case next-input-character
     (#\<
-     (switch-to 'rawtext-less-than-sign-state))
+     (switch-state 'rawtext-less-than-sign-state))
     (#\null
      (unexpected-null-character)
      (emit +replacement-character+))
@@ -238,7 +230,7 @@
 (define-tokenizer-state script-data-state
   (case next-input-character
     (#\<
-     (switch-to 'script-data-less-than-sign-state))
+     (switch-state 'script-data-less-than-sign-state))
     (#\null
      (unexpected-null-character)
      (emit +replacement-character+))
@@ -261,9 +253,9 @@
   (let ((char next-input-character))
     (cond
      ((eq #\! char)
-      (switch-to 'markup-declaration-open-state))
+      (switch-state 'markup-declaration-open-state))
      ((eq #\/ char)
-      (switch-to 'end-tag-open-state))
+      (switch-state 'end-tag-open-state))
      ((ascii-alpha-p char)
       (let ((token (make-instance 'start-tag :tag-name "")))
         (setf current-tag-token token))
@@ -291,7 +283,7 @@
       (reconsume-in 'tag-name-state))
      ((eq #\> char)
       (missing-end-tag-name)
-      (switch-to 'data-state))
+      (switch-state 'data-state))
      ((null char)
       (eof-before-tag-name)
       (emit #\<)
@@ -310,11 +302,11 @@
           (eq #\newline char)
           (eq #\page char)
           (eq #\space char))
-      (switch-to 'before-attribute-name-state))
+      (switch-state 'before-attribute-name-state))
      ((eq #\/ char)
-      (switch-to 'self-closing-start-tag-state))
+      (switch-state 'self-closing-start-tag-state))
      ((eq #\> char)
-      (switch-to 'data-state)
+      (switch-state 'data-state)
       (emit current-tag-token))
      ((ascii-upper-alpha-p char)
       (with-slots (tag-name) current-tag-token
@@ -334,7 +326,7 @@
   (case next-input-character
     (#\/
      (setf temporary-buffer "")
-     (switch-to 'rcdata-end-tag-open-state))
+     (switch-state 'rcdata-end-tag-open-state))
     (t
      (emit #\<)
      (reconsume-in 'rcdata-state))))
@@ -357,7 +349,7 @@
      ((or (eq #\tab char) (eq #\newline char)
           (eq #\page char) (eq #\space char))
       (if (appropriate-end-tag-token-p current-tag-token)
-          (switch-to 'before-attribute-name-state)
+          (switch-state 'before-attribute-name-state)
         (progn
           (emit #\<)
           (emit #\/)
@@ -365,7 +357,7 @@
           (reconsume-in 'rcdata-state))))
      ((eq #\/ char)
       (if (appropriate-end-tag-token-p current-tag-token)
-          (switch-to 'self-closing-start-tag-state)
+          (switch-state 'self-closing-start-tag-state)
         (progn
           (emit #\<)
           (emit #\/)
@@ -374,7 +366,7 @@
      ((eq #\> char)
       (if (appropriate-end-tag-token-p current-tag-token)
           (progn
-            (switch-to 'data-state)
+            (switch-state 'data-state)
             (emit current-tag-token))
         (progn
           (emit #\<)
@@ -399,7 +391,7 @@
   (case next-input-character
     (#\/
      (setf temporary-buffer "")
-     (switch-to 'rawtext-end-tag-open-state))
+     (switch-state 'rawtext-end-tag-open-state))
     (t
      (emit #\<)
      (reconsume-in 'rawtext-state))))
@@ -422,7 +414,7 @@
      ((or (eq #\tab char) (eq #\newline char)
           (eq #\page char) (eq #\space char))
       (if (appropriate-end-tag-token-p current-tag-token)
-          (switch-to 'before-attribute-name-state)
+          (switch-state 'before-attribute-name-state)
         (progn
           (emit #\<)
           (emit #\/)
@@ -430,7 +422,7 @@
           (reconsume-in 'rawtext-state))))
      ((eq #\/ char)
       (if (appropriate-end-tag-token-p current-tag-token)
-          (switch-to 'self-closing-start-tag-state)
+          (switch-state 'self-closing-start-tag-state)
         (progn
           (emit #\<)
           (emit #\/)
@@ -439,7 +431,7 @@
      ((eq #\> char)
       (if (appropriate-end-tag-token-p current-tag-token)
           (progn
-            (switch-to 'data-state)
+            (switch-state 'data-state)
             (emit current-tag-token))
         (progn
           (emit #\<)
@@ -464,9 +456,9 @@
   (case next-input-character
     (#\/
      (setf temporary-buffer "")
-     (switch-to 'script-data-end-tag-open-state))
+     (switch-state 'script-data-end-tag-open-state))
     (#\!
-     (switch-to 'script-data-escape-start-state)
+     (switch-state 'script-data-escape-start-state)
      (emit #\<)
      (emit #\!))
     (t
@@ -491,7 +483,7 @@
      ((or (eq #\tab char) (eq #\newline char)
           (eq #\page char) (eq #\space char))
       (if (appropriate-end-tag-token-p current-tag-token)
-          (switch-to 'before-attribute-name-state)
+          (switch-state 'before-attribute-name-state)
         (progn
           (emit #\<)
           (emit #\/)
@@ -499,7 +491,7 @@
           (reconsume-in 'script-data-state))))
      ((eq #\/ char)
       (if (appropriate-end-tag-token-p current-tag-token)
-          (switch-to 'self-closing-start-tag-state)
+          (switch-state 'self-closing-start-tag-state)
         (progn
           (emit #\<)
           (emit #\/)
@@ -508,7 +500,7 @@
      ((eq #\> char)
       (if (appropriate-end-tag-token-p current-tag-token)
           (progn
-            (switch-to 'data-state)
+            (switch-state 'data-state)
             (emit current-tag-token))
         (progn
           (emit #\<)
@@ -532,7 +524,7 @@
 (define-tokenizer-state script-data-escape-start-state
   (case next-input-character
     (#\-
-     (switch-to 'script-data-escape-start-dash-state)
+     (switch-state 'script-data-escape-start-dash-state)
      (emit #\-))
     (t
      (reconsume-in 'script-data-state))))
@@ -540,7 +532,7 @@
 (define-tokenizer-state script-data-escape-start-dash-state
   (case next-input-character
     (#\-
-     (switch-to 'script-data-escaped-dash-dash-state)
+     (switch-state 'script-data-escaped-dash-dash-state)
      (emit #\-))
     (t
      (reconsume-in 'script-data-state))))
@@ -548,10 +540,10 @@
 (define-tokenizer-state script-data-escaped-state
   (case next-input-character
     (#\-
-     (switch-to 'script-data-escaped-dash-state)
+     (switch-state 'script-data-escaped-dash-state)
      (emit #\-))
     (#\<
-     (switch-to 'script-data-escaped-less-than-sign-state))
+     (switch-state 'script-data-escaped-less-than-sign-state))
     (#\null
      (unexpected-null-character)
      (emit +replacement-character+))
@@ -564,19 +556,19 @@
 (define-tokenizer-state script-data-escaped-dash-state
   (case next-input-character
     (#\-
-     (switch-to 'script-data-escaped-dash-dash-state)
+     (switch-state 'script-data-escaped-dash-dash-state)
      (emit #\-))
     (#\<
-     (switch-to 'script-data-escaped-less-than-sign-state))
+     (switch-state 'script-data-escaped-less-than-sign-state))
     (#\null
      (unexpected-null-character)
-     (switch-to 'script-data-escaped-state)
+     (switch-state 'script-data-escaped-state)
      (emit +replacement-character+))
     ((nil)
      (eof-in-script-html-comment-like-text)
      (emit end-of-file))
     (t
-     (switch-to 'script-data-escaped-state)
+     (switch-state 'script-data-escaped-state)
      (emit current-input-character))))
 
 (define-tokenizer-state script-data-escaped-dash-dash-state
@@ -584,19 +576,19 @@
     (#\-
      (emit #\-))
     (#\<
-     (switch-to 'script-data-escaped-less-than-sign-state))
+     (switch-state 'script-data-escaped-less-than-sign-state))
     (#\>
-     (switch-to 'script-data-state)
+     (switch-state 'script-data-state)
      (emit #\>))
     (#\null
      (unexpected-null-character)
-     (switch-to 'script-data-escaped-state)
+     (switch-state 'script-data-escaped-state)
      (emit +replacement-character+))
     ((nil)
      (eof-in-script-html-comment-like-text)
      (emit end-of-file))
     (t
-     (switch-to 'script-data-escaped-state)
+     (switch-state 'script-data-escaped-state)
      (emit current-input-character))))
 
 (define-tokenizer-state script-data-escaped-less-than-sign-state
@@ -604,7 +596,7 @@
     (cond
      ((eq #\/ char)
       (setf temporary-buffer "")
-      (switch-to 'script-data-escaped-end-tag-open-state))
+      (switch-state 'script-data-escaped-end-tag-open-state))
      ((ascii-alpha-p char)
       (setf temporary-buffer "")
       (emit #\<)
@@ -631,7 +623,7 @@
      ((or (eq #\tab char) (eq #\newline char)
           (eq #\page char) (eq #\space char))
       (if (appropriate-end-tag-token-p current-tag-token)
-          (switch-to 'before-attribute-name-state)
+          (switch-state 'before-attribute-name-state)
         (progn
           (emit #\<)
           (emit #\/)
@@ -639,7 +631,7 @@
           (reconsume-in 'script-data-escaped-state))))
      ((eq #\/ char)
       (if (appropriate-end-tag-token-p current-tag-token)
-          (switch-to 'self-closing-start-tag-state)
+          (switch-state 'self-closing-start-tag-state)
         (progn
           (emit #\<)
           (emit #\/)
@@ -648,7 +640,7 @@
      ((eq #\> char)
       (if (appropriate-end-tag-token-p current-tag-token)
           (progn
-            (switch-to 'data-state)
+            (switch-state 'data-state)
             (emit current-tag-token))
         (progn
           (emit #\<)
@@ -676,8 +668,8 @@
           (eq #\page char) (eq #\space char)
           (eq #\/ char) (eq #\> char))
       (if (equal temporary-buffer "script")
-          (switch-to 'script-data-double-escaped-state)
-        (switch-to 'script-data-escaped-state))
+          (switch-state 'script-data-double-escaped-state)
+        (switch-state 'script-data-escaped-state))
       (emit current-input-character))
      ((ascii-upper-alpha-p char)
       (append-char temporary-buffer (char-downcase current-input-character))
@@ -691,10 +683,10 @@
 (define-tokenizer-state script-data-double-escaped-state
   (case next-input-character
     (#\-
-     (switch-to 'script-data-double-escaped-dash-state)
+     (switch-state 'script-data-double-escaped-dash-state)
      (emit #\-))
     (#\<
-     (switch-to 'script-data-escaped-less-than-sign-state)
+     (switch-state 'script-data-escaped-less-than-sign-state)
      (emit #\<))
     (#\null
      (unexpected-null-character)
@@ -708,20 +700,20 @@
 (define-tokenizer-state script-data-double-escaped-dash-state
   (case next-input-character
     (#\-
-     (switch-to 'script-data-double-escaped-dash-dash-state)
+     (switch-state 'script-data-double-escaped-dash-dash-state)
      (emit #\-))
     (#\<
-     (switch-to 'script-data-escaped-less-than-sign-state)
+     (switch-state 'script-data-escaped-less-than-sign-state)
      (emit #\<))
     (#\null
      (unexpected-null-character)
-     (switch-to 'script-data-double-escaped-state)
+     (switch-state 'script-data-double-escaped-state)
      (emit +replacement-character+))
     ((nil)
      (eof-in-script-html-comment-like-text)
      (emit end-of-file))
     (t
-     (switch-to 'script-data-double-escaped-state)
+     (switch-state 'script-data-double-escaped-state)
      (emit current-input-character))))
 
 (define-tokenizer-state script-data-double-escaped-dash-dash-state
@@ -729,27 +721,27 @@
     (#\-
      (emit #\-))
     (#\<
-     (switch-to 'script-data-escaped-less-than-sign-state)
+     (switch-state 'script-data-escaped-less-than-sign-state)
      (emit #\<))
     (#\>
-     (switch-to 'script-data-state)
+     (switch-state 'script-data-state)
      (emit #\>))
     (#\null
      (unexpected-null-character)
-     (switch-to 'script-data-double-escaped-state)
+     (switch-state 'script-data-double-escaped-state)
      (emit +replacement-character+))
     ((nil)
      (eof-in-script-html-comment-like-text)
      (emit end-of-file))
     (t
-     (switch-to 'script-data-double-escaped-state)
+     (switch-state 'script-data-double-escaped-state)
      (emit current-input-character))))
 
 (define-tokenizer-state script-data-double-escaped-less-than-sign-state
   (case next-input-character
     (#\/
      (setf temporary-buffer "")
-     (switch-to 'script-data-double-escape-end-state)
+     (switch-state 'script-data-double-escape-end-state)
      (emit #\/))
     (t
      (reconsume-in 'script-data-double-escaped-state))))
@@ -761,8 +753,8 @@
           (eq #\page char) (eq #\space char)
           (eq #\/ char) (eq #\> char))
       (if (equal temporary-buffer "script")
-          (switch-to 'script-data-escaped-state)
-        (switch-to 'script-data-double-escaped-state))
+          (switch-state 'script-data-escaped-state)
+        (switch-state 'script-data-double-escaped-state))
       (emit current-input-character))
      ((ascii-upper-alpha-p char)
       (append-char temporary-buffer (char-downcase current-input-character))
@@ -785,7 +777,7 @@
                                      :value "")))
        (appendf (slot-value current-tag-token 'attributes) (list attribute))
        (setf current-attribute attribute))
-     (switch-to 'attribute-name-state))
+     (switch-state 'attribute-name-state))
     (t
      (let ((attribute (make-instance 'attribute :name "" :value "")))
        (appendf (slot-value current-tag-token 'attributes) (list attribute))
@@ -800,7 +792,7 @@
           (eq #\/ char) (eq #\> char) (null char))
       (reconsume-in 'after-attribute-name-state))
      ((eq #\= char)
-      (switch-to 'before-attribute-value-state))
+      (switch-state 'before-attribute-value-state))
      ((ascii-upper-alpha-p char)
       (append-char (slot-value current-attribute 'name)
                    (char-downcase current-input-character)))
@@ -819,11 +811,11 @@
   (case next-input-character
     ((#\tab #\newline #\page #\space))
     (#\/
-     (switch-to 'self-closing-start-tag-state))
+     (switch-state 'self-closing-start-tag-state))
     (#\=
-     (switch-to 'before-attribute-value-state))
+     (switch-state 'before-attribute-value-state))
     (#\>
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-tag-token))
     ((nil)
      (eof-in-tag)
@@ -838,12 +830,12 @@
   (case next-input-character
     ((#\tab #\newline #\page #\space))
     (#\"
-     (switch-to 'attribute-value-double-quoted-state))
+     (switch-state 'attribute-value-double-quoted-state))
     (#\'
-     (switch-to 'attribute-value-single-quoted-state))
+     (switch-state 'attribute-value-single-quoted-state))
     (#\>
      (missing-attribute-value)
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-tag-token))
     (t
      (reconsume-in 'attribute-value-unquoted-state))))
@@ -851,10 +843,10 @@
 (define-tokenizer-state attribute-value-double-quoted-state
   (case next-input-character
     (#\"
-     (switch-to 'after-attribute-value-quoted-state))
+     (switch-state 'after-attribute-value-quoted-state))
     (#\&
      (setf return-state 'attribute-value-double-quoted-state)
-     (switch-to 'character-reference-state))
+     (switch-state 'character-reference-state))
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-attribute 'value)
@@ -869,10 +861,10 @@
 (define-tokenizer-state attribute-value-single-quoted-state
   (case next-input-character
     (#\'
-     (switch-to 'after-attribute-value-quoted-state))
+     (switch-state 'after-attribute-value-quoted-state))
     (#\&
      (setf return-state 'attribute-value-single-quoted-state)
-     (switch-to 'character-reference-state))
+     (switch-state 'character-reference-state))
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-attribute 'value)
@@ -887,12 +879,12 @@
 (define-tokenizer-state attribute-value-unquoted-state
   (case next-input-character
     ((#\tab #\newline #\page #\space)
-     (switch-to 'before-attribute-name-state))
+     (switch-state 'before-attribute-name-state))
     (#\&
      (setf return-state 'attribute-value-unquoted-state)
-     (switch-to 'character-reference-state))
+     (switch-state 'character-reference-state))
     (#\>
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-tag-token))
     (#\null
      (unexpected-null-character)
@@ -912,11 +904,11 @@
 (define-tokenizer-state after-attribute-value-quoted-state
   (case next-input-character
     ((#\tab #\newline #\page #\space)
-     (switch-to 'before-attribute-name-state))
+     (switch-state 'before-attribute-name-state))
     (#\/
-     (switch-to 'self-closing-start-tag-state))
+     (switch-state 'self-closing-start-tag-state))
     (#\>
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-tag-token))
     ((nil)
      (eof-in-tag)
@@ -929,7 +921,7 @@
   (case next-input-character
     (#\>
      (setf (slot-value current-tag-token 'self-closing-flag) t)
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-tag-token))
     ((nil)
      (eof-in-tag)
@@ -941,7 +933,7 @@
 (define-tokenizer-state bogus-comment-state
   (case next-input-character
     (#\>
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-comment-token))
     ((nil)
      (emit current-comment-token)
@@ -960,29 +952,29 @@
     (consume 2)
     (let ((token (make-instance 'comment-token :data "")))
       (setf current-comment-token token)
-      (switch-to 'comment-start-state)))
+      (switch-state 'comment-start-state)))
    ((string-equal "DOCTYPE" (next-few-characters 7))
     (consume 7)
-    (switch-to 'doctype-state))
+    (switch-state 'doctype-state))
    ((equal "[CDATA[" (next-few-characters 7))
     (consume 7)
     ;; TODO
     (let ((token (make-instance 'comment-token :data "[CDATA[")))
       (setf current-comment-token token)
-      (switch-to 'bogus-comment-state)))
+      (switch-state 'bogus-comment-state)))
    (t
     (incorrectly-opened-comment)
     (let ((token (make-instance 'comment-token :data "")))
       (setf current-comment-token token)
-      (switch-to 'bogus-comment-state)))))
+      (switch-state 'bogus-comment-state)))))
 
 (define-tokenizer-state comment-start-state
   (case next-input-character
     (#\-
-     (switch-to 'comment-start-dash-state))
+     (switch-state 'comment-start-dash-state))
     (#\>
      (abrupt-closing-of-empty-comment)
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-comment-token))
     (t
      (reconsume-in 'comment-state))))
@@ -990,10 +982,10 @@
 (define-tokenizer-state comment-start-dash-state
   (case next-input-character
     (#\-
-     (switch-to 'comment-end-state))
+     (switch-state 'comment-end-state))
     (#\>
      (abrupt-closing-of-empty-comment)
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-comment-token))
     ((nil)
      (eof-in-comment)
@@ -1007,9 +999,9 @@
   (case next-input-character
     (#\<
      (append-char (slot-value current-comment-token 'data) current-input-character)
-     (switch-to 'comment-less-than-sign-state))
+     (switch-state 'comment-less-than-sign-state))
     (#\-
-     (switch-to 'comment-end-dash-state))
+     (switch-state 'comment-end-dash-state))
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-comment-token 'data) +replacement-character+))
@@ -1024,7 +1016,7 @@
   (case next-input-character
     (#\!
      (append-char (slot-value current-comment-token 'data) current-input-character)
-     (switch-to 'comment-less-than-sign-bang-state))
+     (switch-state 'comment-less-than-sign-bang-state))
     (#\<
      (append-char (slot-value current-comment-token 'data) current-input-character))
     (t
@@ -1033,21 +1025,21 @@
 (define-tokenizer-state comment-less-than-sign-bang-state
   (case next-input-character
     (#\-
-     (switch-to 'comment-less-than-sign-bang-dash-state))
+     (switch-state 'comment-less-than-sign-bang-dash-state))
     (t
      (reconsume-in 'comment-state))))
 
 (define-tokenizer-state comment-less-than-sign-bang-dash-state
   (case next-input-character
     (#\-
-     (switch-to 'comment-less-than-sign-bang-dash-dash-state))
+     (switch-state 'comment-less-than-sign-bang-dash-dash-state))
     (t
      (reconsume-in 'comment-end-dash-state))))
 
 (define-tokenizer-state comment-less-than-sign-bang-dash-dash-state
   (case next-input-character
     ((#\- nil)
-     (switch-to 'comment-end-state))
+     (switch-state 'comment-end-state))
     (t
      (nested-comment)
      (reconsume-in 'comment-end-state))))
@@ -1055,7 +1047,7 @@
 (define-tokenizer-state comment-end-dash-state
   (case next-input-character
     ((#\-)
-     (switch-to 'comment-end-state))
+     (switch-state 'comment-end-state))
     ((nil)
      (eof-in-comment)
      (emit current-comment-token)
@@ -1067,10 +1059,10 @@
 (define-tokenizer-state comment-end-state
   (case next-input-character
     (#\>
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-comment-token))
     (#\!
-     (switch-to 'comment-end-bang-state))
+     (switch-state 'comment-end-bang-state))
     (#\-
      (append-char (slot-value current-comment-token 'data) #\-))
     ((nil)
@@ -1087,10 +1079,10 @@
      (append-char (slot-value current-comment-token 'data) #\-)
      (append-char (slot-value current-comment-token 'data) #\-)
      (append-char (slot-value current-comment-token 'data) #\!)
-     (switch-to 'comment-end-dash-state))
+     (switch-state 'comment-end-dash-state))
     (#\>
      (incorrectly-closed-comment)
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-comment-token))
     ((nil)
      (eof-in-comment)
@@ -1105,7 +1097,7 @@
 (define-tokenizer-state doctype-state
   (case next-input-character
     ((#\tab #\newline #\page #\space)
-     (switch-to 'before-doctype-name-state))
+     (switch-state 'before-doctype-name-state))
     (#\>
      (reconsume-in 'before-doctype-name-state))
     ((nil)
@@ -1127,18 +1119,18 @@
       (let ((token (make-instance 'doctype-token
                                   :name (string (char-downcase current-input-character)))))
         (setf current-doctype-token token)
-        (switch-to 'doctype-name-state)))
+        (switch-state 'doctype-name-state)))
      ((eq #\null char)
       (unexpected-null-character)
       (let ((token (make-instance 'doctype-token
                                   :name (string +replacement-character+))))
         (setf current-doctype-token token)
-        (switch-to 'doctype-name-state)))
+        (switch-state 'doctype-name-state)))
      ((eq #\> char)
       (missing-doctype-name)
       (let ((token (make-instance 'doctype-token :force-quirks-flag :on)))
         (setf current-doctype-token token)
-        (switch-to 'data-state)
+        (switch-state 'data-state)
         (emit token)))
      ((null char)
       (eof-in-doctype)
@@ -1149,16 +1141,16 @@
      (t
       (let ((token (make-instance 'doctype-token :name (string current-input-character))))
         (setf current-doctype-token token)
-        (switch-to 'doctype-name-state))))))
+        (switch-state 'doctype-name-state))))))
 
 (define-tokenizer-state doctype-name-state
   (let ((char next-input-character))
     (cond
      ((or (eq #\tab char) (eq #\newline char)
           (eq #\page char) (eq #\space char))
-      (switch-to 'after-doctype-name-state))
+      (switch-state 'after-doctype-name-state))
      ((eq #\> char)
-      (switch-to 'data-state)
+      (switch-state 'data-state)
       (emit current-doctype-token))
      ((ascii-upper-alpha-p char)
       (append-char (slot-value current-doctype-token 'name)
@@ -1181,7 +1173,7 @@
      ((or (eq #\tab char) (eq #\newline char)
           (eq #\page char) (eq #\space char)))
      ((eq #\> char)
-      (switch-to 'data-state)
+      (switch-state 'data-state)
       (emit current-doctype-token))
      ((null char)
       (eof-in-doctype)
@@ -1191,10 +1183,10 @@
       (cond
        ((string-equal "PUBLIC" (next-few-characters 6))
         (consume 6)
-        (switch-to 'after-doctype-public-keyword-state))
+        (switch-state 'after-doctype-public-keyword-state))
        ((string-equal "SYSTEM" (next-few-characters 6))
         (consume 6)
-        (switch-to 'after-doctype-system-keyword-state))
+        (switch-state 'after-doctype-system-keyword-state))
        (t
         (invalid-character-sequence-after-doctype-name)
         (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
@@ -1203,19 +1195,19 @@
 (define-tokenizer-state after-doctype-public-keyword-state
   (case next-input-character
     ((#\tab #\newline #\page #\space)
-     (switch-to 'before-doctype-public-identifier-state))
+     (switch-state 'before-doctype-public-identifier-state))
     (#\"
      (missing-whitespace-after-doctype-public-keyword)
      (setf (slot-value current-doctype-token 'public-identifier) "")
-     (switch-to 'doctype-public-identifier-double-quoted-state))
+     (switch-state 'doctype-public-identifier-double-quoted-state))
     (#\'
      (missing-whitespace-after-doctype-public-keyword)
      (setf (slot-value current-doctype-token 'public-identifier) "")
-     (switch-to 'doctype-public-identifier-single-quoted-state))
+     (switch-state 'doctype-public-identifier-single-quoted-state))
     (#\>
      (missing-doctype-public-identifier)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-doctype-token))
     ((nil)
      (eof-in-doctype)
@@ -1231,14 +1223,14 @@
     ((#\tab #\newline #\page #\space))
     (#\"
      (setf (slot-value current-doctype-token 'public-identifier) "")
-     (switch-to 'doctype-public-identifier-double-quoted-state))
+     (switch-state 'doctype-public-identifier-double-quoted-state))
     (#\'
      (setf (slot-value current-doctype-token 'public-identifier) "")
-     (switch-to 'doctype-public-identifier-single-quoted-state))
+     (switch-state 'doctype-public-identifier-single-quoted-state))
     (#\>
      (missing-doctype-public-identifier)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-doctype-token))
     ((nil)
      (eof-in-doctype)
@@ -1253,7 +1245,7 @@
 (define-tokenizer-state doctype-public-identifier-double-quoted-state
   (case next-input-character
     (#\"
-     (switch-to 'after-doctype-public-identifier-state))
+     (switch-state 'after-doctype-public-identifier-state))
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-doctype-token 'public-identifier)
@@ -1261,7 +1253,7 @@
     (#\>
      (abrupt-doctype-public-identifier)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-doctype-token))
     ((nil)
      (eof-in-doctype)
@@ -1275,7 +1267,7 @@
 (define-tokenizer-state doctype-public-identifier-single-quoted-state
   (case next-input-character
     (#\'
-     (switch-to 'after-doctype-public-identifier-state))
+     (switch-state 'after-doctype-public-identifier-state))
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-doctype-token 'public-identifier)
@@ -1283,7 +1275,7 @@
     (#\>
      (abrupt-doctype-public-identifier)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-doctype-token))
     ((nil)
      (eof-in-doctype)
@@ -1297,18 +1289,18 @@
 (define-tokenizer-state after-doctype-public-identifier-state
   (case next-input-character
     ((#\tab #\newline #\page #\space)
-     (switch-to 'between-doctype-public-and-system-identifiers-state))
+     (switch-state 'between-doctype-public-and-system-identifiers-state))
     (#\>
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-doctype-token))
     (#\"
      (missing-whitespace-between-doctype-public-and-system-identifiers)
      (setf (slot-value current-doctype-token 'system-identifier) "")
-     (switch-to 'doctype-system-identifier-double-quoted-state))
+     (switch-state 'doctype-system-identifier-double-quoted-state))
     (#\'
      (missing-whitespace-between-doctype-public-and-system-identifiers)
      (setf (slot-value current-doctype-token 'system-identifier) "")
-     (switch-to 'doctype-system-identifier-single-quoted-state))
+     (switch-state 'doctype-system-identifier-single-quoted-state))
     ((nil)
      (eof-in-doctype)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
@@ -1323,14 +1315,14 @@
   (case next-input-character
     ((#\tab #\newline #\page #\space))
     (#\>
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-doctype-token))
     (#\"
      (setf (slot-value current-doctype-token 'system-identifier) "")
-     (switch-to 'doctype-system-identifier-double-quoted-state))
+     (switch-state 'doctype-system-identifier-double-quoted-state))
     (#\'
      (setf (slot-value current-doctype-token 'system-identifier) "")
-     (switch-to 'doctype-system-identifier-single-quoted-state))
+     (switch-state 'doctype-system-identifier-single-quoted-state))
     ((nil)
      (eof-in-doctype)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
@@ -1344,19 +1336,19 @@
 (define-tokenizer-state after-doctype-system-keyword-state
   (case next-input-character
     ((#\tab #\newline #\page #\space)
-     (switch-to 'before-doctype-system-identifier-state))
+     (switch-state 'before-doctype-system-identifier-state))
     (#\"
      (missing-whitespace-after-doctype-system-keyword)
      (setf (slot-value current-doctype-token 'system-identifier) "")
-     (switch-to 'doctype-system-identifier-double-quoted-state))
+     (switch-state 'doctype-system-identifier-double-quoted-state))
     (#\'
      (missing-whitespace-after-doctype-system-keyword)
      (setf (slot-value current-doctype-token 'system-identifier) "")
-     (switch-to 'doctype-system-identifier-single-quoted-state))
+     (switch-state 'doctype-system-identifier-single-quoted-state))
     (#\>
      (missing-doctype-system-identifier)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-doctype-token))
     ((nil)
      (eof-in-doctype)
@@ -1373,14 +1365,14 @@
     ((#\tab #\newline #\page #\space))
     (#\"
      (setf (slot-value current-doctype-token 'system-identifier) "")
-     (switch-to 'doctype-system-identifier-double-quoted-state))
+     (switch-state 'doctype-system-identifier-double-quoted-state))
     (#\'
      (setf (slot-value current-doctype-token 'system-identifier) "")
-     (switch-to 'doctype-system-identifier-single-quoted-state))
+     (switch-state 'doctype-system-identifier-single-quoted-state))
     (#\>
      (missing-doctype-system-identifier)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-doctype-token))
     ((nil)
      (eof-in-doctype)
@@ -1395,7 +1387,7 @@
 (define-tokenizer-state doctype-system-identifier-double-quoted-state
   (case next-input-character
     (#\"
-     (switch-to 'after-doctype-system-identifier-state))
+     (switch-state 'after-doctype-system-identifier-state))
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-doctype-token 'system-identifier)
@@ -1403,7 +1395,7 @@
     (#\>
      (abrupt-doctype-system-identifier)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-doctype-token))
     ((nil)
      (eof-in-doctype)
@@ -1417,7 +1409,7 @@
 (define-tokenizer-state doctype-system-identifier-single-quoted-state
   (case next-input-character
     (#\'
-     (switch-to 'after-doctype-system-identifier-state))
+     (switch-state 'after-doctype-system-identifier-state))
     (#\null
      (unexpected-null-character)
      (append-char (slot-value current-doctype-token 'system-identifier)
@@ -1425,7 +1417,7 @@
     (#\>
      (abrupt-doctype-system-identifier)
      (setf (slot-value current-doctype-token 'force-quirks-flag) :on)
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-doctype-token))
     ((nil)
      (eof-in-doctype)
@@ -1440,7 +1432,7 @@
   (case next-input-character
     ((#\tab #\newline #\page #\space))
     (#\>
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-doctype-token))
     ((nil)
      (eof-in-doctype)
@@ -1455,7 +1447,7 @@
   (case next-input-character
     ((#\tab #\newline #\page #\space))
     (#\>
-     (switch-to 'data-state)
+     (switch-state 'data-state)
      (emit current-doctype-token))
     (#\null
      (unexpected-null-character))
@@ -1466,7 +1458,7 @@
 (define-tokenizer-state cdata-section-state
   (case next-input-character
     (#\]
-     (switch-to 'cdata-section-bracket-state))
+     (switch-state 'cdata-section-bracket-state))
     ((nil)
      (eof-in-cdata)
      (emit end-of-file))
@@ -1476,7 +1468,7 @@
 (define-tokenizer-state cdata-section-bracket-state
   (case next-input-character
     (#\]
-     (switch-to 'cdata-section-end-state))
+     (switch-state 'cdata-section-end-state))
     (t
      (emit #\])
      (reconsume-in 'cdata-section-state))))
@@ -1486,7 +1478,7 @@
     (#\]
      (emit #\]))
     (#\>
-     (switch-to 'data-state))
+     (switch-state 'data-state))
     (t
      (emit #\])
      (reconsume-in 'cdata-section-state))))
@@ -1500,7 +1492,7 @@
       (reconsume-in 'named-character-reference-state))
      ((eq #\# char)
       (append-char temporary-buffer current-input-character)
-      (switch-to 'numeric-character-reference-state))
+      (switch-state 'numeric-character-reference-state))
      (t
       (loop for char across temporary-buffer do (emit char))
       (reconsume-in return-state)))))
@@ -1536,7 +1528,7 @@
                        (ascii-alphanumeric-p char))))
             (progn
               (loop for char across temporary-buffer do (emit char))
-              (switch-to return-state))
+              (switch-state return-state))
           (progn
             (unless (eq #\; last-character-matched)
               (missing-semicolon-after-character-reference))
@@ -1544,10 +1536,10 @@
             (loop for code in codepoints
                   do (append-char temporary-buffer (code-char code)))
             (loop for char across temporary-buffer do (emit char))
-            (switch-to return-state)))
+            (switch-state return-state)))
       (progn
         (loop for char across temporary-buffer do (emit char))
-        (switch-to 'ambiguous-ampersand-state)))))
+        (switch-state 'ambiguous-ampersand-state)))))
 
 (define-tokenizer-state ambiguous-ampersand-state
   (let ((char next-input-character))
@@ -1569,7 +1561,7 @@
   (case next-input-character
     ((#\x #\X)
      (append-char temporary-buffer current-input-character)
-     (switch-to 'hexadecimal-character-reference-state))
+     (switch-state 'hexadecimal-character-reference-state))
     (t
      (reconsume-in 'decimal-character-reference-state))))
 
@@ -1609,7 +1601,7 @@
             character-reference-code (+ (- (char-code current-input-character) #x0057)
                                         character-reference-code)))
      ((eq #\; char)
-      (switch-to 'numeric-character-reference-end-state))
+      (switch-state 'numeric-character-reference-end-state))
      (t
       (missing-semicolon-after-character-reference)
       (reconsume-in 'numeric-character-reference-end-state)))))
@@ -1622,7 +1614,7 @@
             character-reference-code (+ (- (char-code current-input-character) #x0030)
                                         character-reference-code)))
      ((eq #\; char)
-      (switch-to 'numeric-character-reference-end-state))
+      (switch-state 'numeric-character-reference-end-state))
      (t
       (missing-semicolon-after-character-reference)
       (reconsume-in 'numeric-character-reference-end-state)))))
@@ -1676,70 +1668,73 @@
   (setf temporary-buffer "")
   (append-char temporary-buffer (code-char character-reference-code))
   (loop for char across temporary-buffer do (emit char))
-  (switch-to return-state))
+  (switch-state return-state))
 
-(defclass tokenizer ()
-  ((state
-    :initarg :state
-    :initform 'data-state)
-   (stream
-    :initarg :stream
-    :initform nil)
-   (upcoming-tokens
-    :initform nil)
-   (buffer
-    :initform nil)
-   (current-input-character
-    :initform nil
-    :reader current-input-character)
-   (return-state :initform nil)
-   (current-tag-token :initform nil)
-   (current-doctype-token :initform nil)
-   (current-attribute :initform nil)
-   (current-comment-token :initform nil)
-   (temporary-buffer :initform nil)
-   (character-reference-code :initform nil)
-   (last-start-tag-token :initform nil)))
+(declaim (inline consume))
+(defun consume (&optional (n 1))
+  (loop for i from 1 upto n
+        for char = (or (pop lookahead-buffer)
+                       (read-char stream nil nil))
+        do (progn
+             (setf current-input-character char)
+             (when (= i n)
+               (return char)))))
 
-(defun consume (tokenizer &optional (n 1))
-  (with-slots (stream buffer current-input-character) tokenizer
-    (loop for i from 1 upto n
-          for char = (or (pop buffer)
-                         (read-char stream nil nil))
-          when char
-          do (progn
-               (setf current-input-character char)
-               (when (= i n)
-                 (return char)))
-          else do (return))))
+(declaim (inline reconsume))
+(defun reconsume ()
+  (push current-input-character lookahead-buffer))
 
-(defun reconsume (tokenizer)
-  (with-slots (current-input-character buffer) tokenizer
-    (push current-input-character buffer)))
+(declaim (notinline next-few-characters))
+(defun next-few-characters (n)
+  (loop repeat (- n (length lookahead-buffer))
+        for char = (read-char stream nil nil)
+        while char
+        do (appendf lookahead-buffer (list char)))
+  (if (> n (length lookahead-buffer))
+      (coerce lookahead-buffer 'string)
+    (coerce (subseq lookahead-buffer 0 n) 'string)))
 
-(defun next-input-character (tokenizer)
-  (consume tokenizer))
+(defmacro make-tokenize-procedure ()
+  `(defun tokenize (stream)
+     (let ((state 'data-state)
+           (return-state nil)
+           (current-input-character nil)
+           (current-tag-token nil)
+           (current-doctype-token nil)
+           (current-attribute nil)
+           (current-comment-token nil)
+           (character-reference-code nil)
+           (last-start-tag-token nil)
+           (temporary-buffer nil))
+       (macrolet (,@(loop for error-name in *parse-errors*
+                      collect `(,error-name () '(cerror "Continue" ',error-name)))
+                  (switch-state (state)
+                    `(setf state ,state))
+                  (reconsume-in (state)
+                    `(progn
+                       (reconsume)
+                       (setf state ,state)))
+                  (emit (token)
+                    `(progn
+                       (format t "~A" ,token)
+                       (typecase ,token
+                         (start-tag (setf last-start-tag-token ,token))
+                         (end-of-file (go :end)))))
+                  (appropriate-end-tag-token-p (end-tag-token)
+                    `(and (typep ,end-tag-token 'end-tag)
+                          last-start-tag-token
+                          (equal (slot-value ,end-tag-token 'tag-name)
+                                 (slot-value last-start-tag-token 'tag-name)))))
+         (tagbody
+          :switch-state
+          (case state
+            ,@(loop for (state) in *tokenizer-states*
+                    collect `(,state (go ,(make-keyword state)))))
+          ;; body
+          ,@(loop for (state . body) in *tokenizer-states*
+                  append `(,(make-keyword state)
+                           ,@body
+                           (go :switch-state)))
+          :end)))))
 
-(defun next-few-characters (tokenizer n)
-  (with-slots (buffer stream) tokenizer
-    (loop repeat (- n (length buffer))
-          for char = (read-char stream nil nil)
-          while char
-          do (appendf buffer (list char)))
-    (if (> n (length buffer))
-        (coerce buffer 'string)
-      (coerce (subseq buffer 0 n) 'string))))
-
-(defun tokenize (tokenizer &key errorp)
-  (with-slots (upcoming-tokens) tokenizer
-    (if-let ((token (pop upcoming-tokens)))
-        token
-      (handler-bind ((parse-error (lambda (e)
-                                    (declare (ignore e))
-                                    (unless errorp
-                                      (continue)))))
-        (loop
-         do (funcall (slot-value tokenizer 'state) tokenizer)
-         until upcoming-tokens)
-        (nreverse upcoming-tokens)
-        (pop upcoming-tokens)))))
+;; (make-tokenize-procedure)
