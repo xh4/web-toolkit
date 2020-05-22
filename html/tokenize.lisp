@@ -132,10 +132,6 @@
                  surrogate-p noncharacter-p c0-control-p
                  control-p whitespace-p))
 
-(defun ascii-alpha-p (char)
-  (or (ascii-upper-alpha-p char)
-      (ascii-lower-alpha-p char)))
-
 (defun ascii-upper-alpha-p (char)
   (and char
        (char<= #\A char #\Z)))
@@ -143,6 +139,10 @@
 (defun ascii-lower-alpha-p (char)
   (and char
        (char<= #\a char #\z)))
+
+(defun ascii-alpha-p (char)
+  (or (ascii-upper-alpha-p char)
+      (ascii-lower-alpha-p char)))
 
 (defun ascii-digit-p (char)
   (and char
