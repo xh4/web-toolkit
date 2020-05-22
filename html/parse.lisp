@@ -1609,18 +1609,49 @@
 (defun insert-comment (&optional position)
   (declare (ignore position)))
 
+(defparameter *html-element-table* nil)
+
+(defun make-html-element-table ()
+  (setf *html-element-table* (make-hash-table :test 'string-equal))
+  (loop for symbol in '(a abbr address area article aside audio
+                          b base bdi bdo blockquote body br button
+                          canvas caption cite code col colgroup
+                          data datalist dd del details dfn dialog div dl dt
+                          em embed
+                          fieldset figcaption figure footer form
+                          h1 h2 h3 h4 h5 h6 head header hgroup hr html
+                          i iframe img input ins
+                          kbd
+                          label legend li link
+                          main mark menu menuitem meta meter
+                          nav noscript
+                          object ol optgroup option output
+                          p param picture pre progress
+                          q
+                          rb rp rt rtc ruby
+                          s samp script section select slot small source
+                          span strong style sub summary sup
+                          table tbody td template textarea tfoot th thead title tr track
+                          u ul
+                          var video
+                          wbr)
+        do (setf (gethash (symbol-name symbol) *html-element-table*) symbol)
+        finally (return *html-element-table*)))
+
 ;; TODO: Respect namespace & parent
 (defun create-element-for-token (&optional namespace parent)
-  (declare (ignore namespace parent))
-  (check-type current-token start-tag)
-  (let ((element (make-instance 'element
-                                :tag-name (slot-value current-token 'tag-name))))
-    (loop for attribute in (slot-value current-token 'attributes)
-          do (dom:set-attribute
-              element
-              (attribute-name attribute)
-              (attribute-value attribute)))
-    element))
+  (unless *html-element-table* (make-html-element-table))
+  (let ((tag-name (slot-value current-token 'tag-name)))
+    (let ((element-class (or (gethash tag-name *html-element-table*)
+                             'element)))
+      (let ((element (make-instance element-class
+                                    :tag-name tag-name)))
+        (loop for attribute in (slot-value current-token 'attributes)
+              do (dom:set-attribute
+                  element
+                  (attribute-name attribute)
+                  (attribute-value attribute)))
+        element))))
 
 (defun insert-html-element-for-token ()
   (insert-foreign-element-for-token "html"))
@@ -2280,7 +2311,11 @@
           ;; body
           ,@(loop for (state . body) in *tokenizer-states*
                   append `(,(make-keyword state)
-                           ,@body
+                           (handler-bind ((parse-error
+                                           (lambda (e)
+                                             (declare (ignore e))
+                                             (continue))))
+                             ,@body)
                            (nreversef pending-tokens)
                            (if pending-tokens
                                (go :consume-token)
@@ -2301,8 +2336,12 @@
                   append `(,(make-keyword insertion-mode)
                            (when *debug*
                              (format t "Process ~S using ~A insertion mode~%"
-                                   current-token ',insertion-mode))
-                           ,@body
+                                     current-token ',insertion-mode))
+                           (handler-bind ((parse-error
+                                           (lambda (e)
+                                             (declare (ignore e))
+                                             (continue))))
+                             ,@body)
                            (if pending-tokens
                                (go :consume-token)
                              (go :switch-state))))
