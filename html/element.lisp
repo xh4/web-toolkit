@@ -5,9 +5,9 @@
 (defmethod print-object ((element element) stream)
   (print-unreadable-object (element stream :type t :identity t)
     (format stream "~S" (dom:tag-name element))
-    (let ((child-count (length (children element))))
-      (when (plusp child-count)
-        (format stream " {~A}" child-count)))))
+    (let ((children-count (length (children element))))
+      (when (plusp children-count)
+        (format stream " {~A}" children-count)))))
 
 (defclass void-element (element) ())
 
@@ -70,6 +70,12 @@
       `(progn
          (defclass ,constructor-symbol (element-constructor)
            ((element-class :initform ',element-symbol)))
+
+         (defmethod print-object ((element ,element-symbol) stream)
+           (print-unreadable-object (element stream :type t :identity t)
+             (let ((children-count (length (children element))))
+               (when (plusp children-count)
+                 (format stream "{~A}" children-count)))))
 
          (defparameter ,element-symbol (make-instance ',constructor-symbol))
 
