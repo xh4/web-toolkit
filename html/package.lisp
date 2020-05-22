@@ -3,7 +3,7 @@
 (defpackage :html
   (:nicknames :wt.html)
   (:use :cl :alexandria)
-  (:shadow :write-char :write-string :character :end-of-file :parse-error)
+  (:shadow :write-char :write-string :character :end-of-file :parse-error :stream)
   #+sb-package-locks
   (:lock t)
   (:export

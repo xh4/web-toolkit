@@ -1576,7 +1576,7 @@
   (and (typep current-token 'start-tag)
        (member (slot-value current-token 'tag-name) names :test 'equal)))
 
-(defun an-end-tag-whose-tag-name-is (name)           
+(defun an-end-tag-whose-tag-name-is (name)
   (and (typep current-token 'end-tag)
        (equal name (slot-value current-token 'tag-name))))
 
@@ -2281,7 +2281,7 @@
           ,@(loop for (state . body) in *tokenizer-states*
                   append `(,(make-keyword state)
                            ,@body
-                           (nreverse pending-tokens)
+                           (nreversef pending-tokens)
                            (if pending-tokens
                                (go :consume-token)
                              (go :switch-state))))
@@ -2323,5 +2323,5 @@
   (:method ((string string))
    (with-input-from-string (stream string)
      (%parse stream)))
-  (:method ((stream stream))
+  (:method ((stream cl:stream))
    (%parse stream)))
