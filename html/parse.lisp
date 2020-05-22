@@ -11,6 +11,8 @@
     (appendf *parser-insertion-modes* `((,name ,@body))))
   nil)
 
+(defparameter *debug* nil)
+
 (defparameter document (make-instance 'document))
 (defparameter foster-parenting nil)
 (defparameter insertion-mode 'initial)
@@ -28,8 +30,6 @@
 (defparameter open-texts nil)
 
 (define-symbol-macro current-node (first stack-of-open-elements))
-
-(define-condition stop-parsing () ())
 
 (define-parser-insertion-mode initial
   (cond
@@ -2208,7 +2208,7 @@
     (error "TODO: Process the token according to the rules given in the section for parsing tokens in foreign content.")))
 
 (defmacro define-parse-procedure ()
-  `(defun parse (stream)
+  `(defun %parse (stream)
      (macrolet
          (;; tokenize
           ,@(loop for error-name in *parse-errors*
@@ -2222,7 +2222,10 @@
                (setf state ,state)
                (go :switch-state)))
           (emit (token)
-            `(push ,token pending-tokens))
+            `(let ((token ,token))
+               (when *debug*
+                 (format t "Emit ~S from ~A~%" token state))
+               (push token pending-tokens)))
           (appropriate-end-tag-token-p (end-tag-token)
             `(and (typep ,end-tag-token 'end-tag)
                   last-start-tag-token
@@ -2279,7 +2282,9 @@
                   append `(,(make-keyword state)
                            ,@body
                            (nreverse pending-tokens)
-                           (go :consume-token)))
+                           (if pending-tokens
+                               (go :consume-token)
+                             (go :switch-state))))
           :consume-token
           (let ((token (pop pending-tokens)))
             (setf current-token token)
@@ -2294,6 +2299,9 @@
           ;; body
           ,@(loop for (insertion-mode . body) in *parser-insertion-modes*
                   append `(,(make-keyword insertion-mode)
+                           (when *debug*
+                             (format t "Process ~S using ~A insertion mode~%"
+                                   current-token ',insertion-mode))
                            ,@body
                            (if pending-tokens
                                (go :consume-token)
@@ -2311,3 +2319,9 @@
 
 (define-parse-procedure)
 
+(defgeneric parse (source)
+  (:method ((string string))
+   (with-input-from-string (stream string)
+     (%parse stream)))
+  (:method ((stream stream))
+   (%parse stream)))

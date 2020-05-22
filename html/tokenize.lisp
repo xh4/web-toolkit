@@ -101,6 +101,30 @@
     :initform nil
     :reader attribute-value)))
 
+(declaim (inline consume))
+(defun consume (&optional (n 1))
+  (loop for i from 1 upto n
+        for char = (or (pop lookahead-buffer)
+                       (read-char stream nil nil))
+        do (progn
+             (setf current-input-character char)
+             (when (= i n)
+               (return char)))))
+
+(declaim (inline reconsume))
+(defun reconsume ()
+  (push current-input-character lookahead-buffer))
+
+(declaim (inline next-few-characters))
+(defun next-few-characters (n)
+  (loop repeat (- n (length lookahead-buffer))
+        for char = (read-char stream nil nil)
+        while char
+        do (appendf lookahead-buffer (list char)))
+  (if (> n (length lookahead-buffer))
+      (coerce lookahead-buffer 'string)
+    (coerce (subseq lookahead-buffer 0 n) 'string)))
+
 (declaim (inline ascii-alpha-p ascii-upper-alpha-p
                  ascii-lower-alpha-p ascii-digit-p
                  ascii-upper-hex-digit-p ascii-lower-hex-digit-p
@@ -1669,72 +1693,3 @@
   (append-char temporary-buffer (code-char character-reference-code))
   (loop for char across temporary-buffer do (emit char))
   (switch-state return-state))
-
-(declaim (inline consume))
-(defun consume (&optional (n 1))
-  (loop for i from 1 upto n
-        for char = (or (pop lookahead-buffer)
-                       (read-char stream nil nil))
-        do (progn
-             (setf current-input-character char)
-             (when (= i n)
-               (return char)))))
-
-(declaim (inline reconsume))
-(defun reconsume ()
-  (push current-input-character lookahead-buffer))
-
-(declaim (notinline next-few-characters))
-(defun next-few-characters (n)
-  (loop repeat (- n (length lookahead-buffer))
-        for char = (read-char stream nil nil)
-        while char
-        do (appendf lookahead-buffer (list char)))
-  (if (> n (length lookahead-buffer))
-      (coerce lookahead-buffer 'string)
-    (coerce (subseq lookahead-buffer 0 n) 'string)))
-
-(defmacro make-tokenize-procedure ()
-  `(defun tokenize (stream)
-     (let ((state 'data-state)
-           (return-state nil)
-           (current-input-character nil)
-           (current-tag-token nil)
-           (current-doctype-token nil)
-           (current-attribute nil)
-           (current-comment-token nil)
-           (character-reference-code nil)
-           (last-start-tag-token nil)
-           (temporary-buffer nil))
-       (macrolet (,@(loop for error-name in *parse-errors*
-                      collect `(,error-name () '(cerror "Continue" ',error-name)))
-                  (switch-state (state)
-                    `(setf state ,state))
-                  (reconsume-in (state)
-                    `(progn
-                       (reconsume)
-                       (setf state ,state)))
-                  (emit (token)
-                    `(progn
-                       (format t "~A" ,token)
-                       (typecase ,token
-                         (start-tag (setf last-start-tag-token ,token))
-                         (end-of-file (go :end)))))
-                  (appropriate-end-tag-token-p (end-tag-token)
-                    `(and (typep ,end-tag-token 'end-tag)
-                          last-start-tag-token
-                          (equal (slot-value ,end-tag-token 'tag-name)
-                                 (slot-value last-start-tag-token 'tag-name)))))
-         (tagbody
-          :switch-state
-          (case state
-            ,@(loop for (state) in *tokenizer-states*
-                    collect `(,state (go ,(make-keyword state)))))
-          ;; body
-          ,@(loop for (state . body) in *tokenizer-states*
-                  append `(,(make-keyword state)
-                           ,@body
-                           (go :switch-state)))
-          :end)))))
-
-;; (make-tokenize-procedure)
