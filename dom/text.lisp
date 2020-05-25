@@ -10,3 +10,5 @@
 
 (defclass text (character-data)
   ())
+
+(defmethod children ((text text)))

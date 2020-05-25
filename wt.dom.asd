@@ -4,7 +4,8 @@
   :author "Xiangyu He"
   :mailto "xh@coobii.com"
   :license "BSD 3-Clause"
-  :depends-on (:alexandria)
+  :depends-on (:alexandria
+               :split-sequence)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "dom"
                 :serial t

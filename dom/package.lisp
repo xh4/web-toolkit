@@ -46,4 +46,9 @@
    :next-node
    :previous-node
    :tree-walker
-   :current-node))
+   :current-node
+   ;; query
+   :get-element-by-id
+   :get-elements-by-class-name)
+  (:import-from :split-sequence
+                :split-sequence))

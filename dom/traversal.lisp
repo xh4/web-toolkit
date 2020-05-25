@@ -217,3 +217,37 @@
                  :root root
                  :current root
                  :filter filter))
+
+(defgeneric get-element-by-id (node id)
+  (:method ((node node) id)
+   (let ((walker (create-tree-walker node)))
+     (loop for node = (next-node walker)
+           while node
+           when (and (typep node 'element)
+                     (equal id (get-attribute node "id")))
+           do (return node)))))
+
+(defgeneric get-element-by-id (node id)
+  (:method ((node node) id)
+   (let ((walker (create-tree-walker node)))
+     (loop for node = (next-node walker)
+           while node
+           when (and (typep node 'element)
+                     (equal id (get-attribute node "id")))
+           do (return node)))))
+
+(defgeneric get-elements-by-class-name (node class-names)
+  (:method ((node node) class-names)
+   (let ((walker (create-tree-walker node))
+         (class-names (split-sequence #\space class-names))
+         (elements '()))
+     (loop for node = (next-node walker)
+           while node
+           when (and (typep node 'element)
+                     (let ((element-class-names
+                            (split-sequence #\space (get-attribute node "class"))))
+                       (= (cl:length class-names)
+                          (cl:length (intersection class-names element-class-names
+                                                   :test 'equal)))))
+           do (push node elements)
+           finally (return (nreverse elements))))))
