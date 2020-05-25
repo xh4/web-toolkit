@@ -654,7 +654,7 @@
       (when-let ((a
                   (or (and last-marker-position
                            (find "a" (subseq active-formatting-elements
-                                             last-marker-position
+                                             (1+ last-marker-position)
                                              (length active-formatting-elements))
                                  :test 'equal
                                  :key 'tag-name))
