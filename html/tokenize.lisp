@@ -197,8 +197,7 @@
            (= #x0020 code))))
 
 (defmacro append-char (place char)
-  `(setf ,place
-         (concatenate 'string ,place (string ,char))))
+  `(vector-push-extend ,char ,place))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *tokenizer-states* '()))
@@ -281,12 +280,12 @@
      ((eq #\/ char)
       (switch-state 'end-tag-open-state))
      ((ascii-alpha-p char)
-      (let ((token (make-instance 'start-tag :tag-name "")))
+      (let ((token (make-instance 'start-tag :tag-name (make-adjustable-string))))
         (setf current-tag-token token))
       (reconsume-in 'tag-name-state))
      ((eq #\? char)
       (unexpected-question-mark-instead-of-tag-name)
-      (let ((token (make-instance 'comment-token :data "")))
+      (let ((token (make-instance 'comment-token :data (make-adjustable-string))))
         (setf current-comment-token token)
         (reconsume-in 'bogus-comment-state)))
      ((null char)
@@ -302,7 +301,7 @@
   (let ((char next-input-character))
     (cond
      ((ascii-alpha-p char)
-      (let ((token (make-instance 'end-tag :tag-name "")))
+      (let ((token (make-instance 'end-tag :tag-name (make-adjustable-string))))
         (setf current-tag-token token))
       (reconsume-in 'tag-name-state))
      ((eq #\> char)
@@ -315,7 +314,7 @@
       (emit end-of-file))
      (t
       (invalid-first-character-of-tag-name)
-      (let ((token (make-instance 'comment-token :data "")))
+      (let ((token (make-instance 'comment-token :data (make-adjustable-string))))
         (setf current-comment-token token))
       (reconsume-in 'bogus-comment-state)))))
 
@@ -349,7 +348,7 @@
 (define-tokenizer-state rcdata-less-than-sign-state
   (case next-input-character
     (#\/
-     (setf temporary-buffer "")
+     (setf temporary-buffer (make-adjustable-string))
      (switch-state 'rcdata-end-tag-open-state))
     (t
      (emit #\<)
@@ -359,7 +358,7 @@
   (let ((char next-input-character))
     (cond
      ((ascii-alpha-p char)
-      (let ((token (make-instance 'end-tag :tag-name "")))
+      (let ((token (make-instance 'end-tag :tag-name (make-adjustable-string))))
         (setf current-tag-token token)
         (reconsume-in 'rcdata-end-tag-name-state)))
      (t
@@ -414,7 +413,7 @@
 (define-tokenizer-state rawtext-less-than-sign-state
   (case next-input-character
     (#\/
-     (setf temporary-buffer "")
+     (setf temporary-buffer (make-adjustable-string))
      (switch-state 'rawtext-end-tag-open-state))
     (t
      (emit #\<)
@@ -424,7 +423,7 @@
   (let ((char next-input-character))
     (cond
      ((ascii-alpha-p char)
-      (let ((token (make-instance 'end-tag :tag-name "")))
+      (let ((token (make-instance 'end-tag :tag-name (make-adjustable-string))))
         (setf current-tag-token token)
         (reconsume-in 'rawtext-end-tag-name-state)))
      (t
@@ -479,7 +478,7 @@
 (define-tokenizer-state script-data-less-than-sign-state
   (case next-input-character
     (#\/
-     (setf temporary-buffer "")
+     (setf temporary-buffer (make-adjustable-string))
      (switch-state 'script-data-end-tag-open-state))
     (#\!
      (switch-state 'script-data-escape-start-state)
@@ -493,7 +492,7 @@
   (let ((char next-input-character))
     (cond
      ((ascii-alpha-p char)
-      (let ((token (make-instance 'end-tag :tag-name "")))
+      (let ((token (make-instance 'end-tag :tag-name (make-adjustable-string))))
         (setf current-tag-token token)
         (reconsume-in 'script-data-end-tag-name-state)))
      (t
@@ -619,10 +618,10 @@
   (let ((char next-input-character))
     (cond
      ((eq #\/ char)
-      (setf temporary-buffer "")
+      (setf temporary-buffer (make-adjustable-string))
       (switch-state 'script-data-escaped-end-tag-open-state))
      ((ascii-alpha-p char)
-      (setf temporary-buffer "")
+      (setf temporary-buffer (make-adjustable-string))
       (emit #\<)
       (reconsume-in 'script-data-double-escape-start-state))
      (t
@@ -633,7 +632,7 @@
   (let ((char next-input-character))
     (cond
      ((ascii-alpha-p char)
-      (let ((token (make-instance 'end-tag :tag-name "")))
+      (let ((token (make-instance 'end-tag :tag-name (make-adjustable-string))))
         (setf current-tag-token token)
         (reconsume-in 'script-data-escaped-end-tag-name-state)))
      (t
@@ -764,7 +763,7 @@
 (define-tokenizer-state script-data-double-escaped-less-than-sign-state
   (case next-input-character
     (#\/
-     (setf temporary-buffer "")
+     (setf temporary-buffer (make-adjustable-string))
      (switch-state 'script-data-double-escape-end-state)
      (emit #\/))
     (t
@@ -797,13 +796,16 @@
     (#\=
      (unexpected-equals-sign-before-attribute-name)
      (let ((attribute (make-instance 'attribute
-                                     :name (string current-input-character)
-                                     :value "")))
+                                     :name (make-adjustable-string
+                                            (string current-input-character))
+                                     :value (make-adjustable-string))))
        (appendf (slot-value current-tag-token 'attributes) (list attribute))
        (setf current-attribute attribute))
      (switch-state 'attribute-name-state))
     (t
-     (let ((attribute (make-instance 'attribute :name "" :value "")))
+     (let ((attribute (make-instance 'attribute
+                                     :name (make-adjustable-string)
+                                     :value (make-adjustable-string))))
        (appendf (slot-value current-tag-token 'attributes) (list attribute))
        (setf current-attribute attribute))
      (reconsume-in 'attribute-name-state))))
@@ -845,7 +847,9 @@
      (eof-in-tag)
      (emit end-of-file))
     (t
-     (let ((attribute (make-instance 'attribute :name "" :value "")))
+     (let ((attribute (make-instance 'attribute
+                                     :name (make-adjustable-string)
+                                     :value (make-adjustable-string))))
        (appendf (slot-value current-tag-token 'attributes) (list attribute))
        (setf current-attribute attribute))
      (reconsume-in 'attribute-name-state))))
@@ -974,7 +978,7 @@
   (cond
    ((equal "--" (next-few-characters 2))
     (consume 2)
-    (let ((token (make-instance 'comment-token :data "")))
+    (let ((token (make-instance 'comment-token :data (make-adjustable-string))))
       (setf current-comment-token token)
       (switch-state 'comment-start-state)))
    ((string-equal "DOCTYPE" (next-few-characters 7))
@@ -983,12 +987,12 @@
    ((equal "[CDATA[" (next-few-characters 7))
     (consume 7)
     ;; TODO
-    (let ((token (make-instance 'comment-token :data "[CDATA[")))
+    (let ((token (make-instance 'comment-token :data (make-adjustable-string "[CDATA["))))
       (setf current-comment-token token)
       (switch-state 'bogus-comment-state)))
    (t
     (incorrectly-opened-comment)
-    (let ((token (make-instance 'comment-token :data "")))
+    (let ((token (make-instance 'comment-token :data (make-adjustable-string))))
       (setf current-comment-token token)
       (switch-state 'bogus-comment-state)))))
 
@@ -1141,13 +1145,17 @@
           (eq #\page char) (eq #\space char)))
      ((ascii-upper-alpha-p char)
       (let ((token (make-instance 'doctype-token
-                                  :name (string (char-downcase current-input-character)))))
+                                  :name (make-adjustable-string
+                                         (string
+                                          (char-downcase
+                                           current-input-character))))))
         (setf current-doctype-token token)
         (switch-state 'doctype-name-state)))
      ((eq #\null char)
       (unexpected-null-character)
       (let ((token (make-instance 'doctype-token
-                                  :name (string +replacement-character+))))
+                                  :name (make-adjustable-string
+                                         (string +replacement-character+)))))
         (setf current-doctype-token token)
         (switch-state 'doctype-name-state)))
      ((eq #\> char)
@@ -1163,7 +1171,8 @@
         (emit token)
         (emit end-of-file)))
      (t
-      (let ((token (make-instance 'doctype-token :name (string current-input-character))))
+      (let ((token (make-instance 'doctype-token :name (make-adjustable-string
+                                                        (string current-input-character)))))
         (setf current-doctype-token token)
         (switch-state 'doctype-name-state))))))
 
@@ -1222,11 +1231,13 @@
      (switch-state 'before-doctype-public-identifier-state))
     (#\"
      (missing-whitespace-after-doctype-public-keyword)
-     (setf (slot-value current-doctype-token 'public-identifier) "")
+     (setf (slot-value current-doctype-token 'public-identifier)
+           (make-adjustable-string))
      (switch-state 'doctype-public-identifier-double-quoted-state))
     (#\'
      (missing-whitespace-after-doctype-public-keyword)
-     (setf (slot-value current-doctype-token 'public-identifier) "")
+     (setf (slot-value current-doctype-token 'public-identifier)
+           (make-adjustable-string))
      (switch-state 'doctype-public-identifier-single-quoted-state))
     (#\>
      (missing-doctype-public-identifier)
@@ -1246,10 +1257,12 @@
   (case next-input-character
     ((#\tab #\newline #\page #\space))
     (#\"
-     (setf (slot-value current-doctype-token 'public-identifier) "")
+     (setf (slot-value current-doctype-token 'public-identifier)
+           (make-adjustable-string))
      (switch-state 'doctype-public-identifier-double-quoted-state))
     (#\'
-     (setf (slot-value current-doctype-token 'public-identifier) "")
+     (setf (slot-value current-doctype-token 'public-identifier)
+           (make-adjustable-string))
      (switch-state 'doctype-public-identifier-single-quoted-state))
     (#\>
      (missing-doctype-public-identifier)
@@ -1319,11 +1332,13 @@
      (emit current-doctype-token))
     (#\"
      (missing-whitespace-between-doctype-public-and-system-identifiers)
-     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (setf (slot-value current-doctype-token 'system-identifier)
+           (make-adjustable-string))
      (switch-state 'doctype-system-identifier-double-quoted-state))
     (#\'
      (missing-whitespace-between-doctype-public-and-system-identifiers)
-     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (setf (slot-value current-doctype-token 'system-identifier)
+           (make-adjustable-string))
      (switch-state 'doctype-system-identifier-single-quoted-state))
     ((nil)
      (eof-in-doctype)
@@ -1342,10 +1357,12 @@
      (switch-state 'data-state)
      (emit current-doctype-token))
     (#\"
-     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (setf (slot-value current-doctype-token 'system-identifier)
+           (make-adjustable-string))
      (switch-state 'doctype-system-identifier-double-quoted-state))
     (#\'
-     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (setf (slot-value current-doctype-token 'system-identifier)
+           (make-adjustable-string))
      (switch-state 'doctype-system-identifier-single-quoted-state))
     ((nil)
      (eof-in-doctype)
@@ -1363,11 +1380,13 @@
      (switch-state 'before-doctype-system-identifier-state))
     (#\"
      (missing-whitespace-after-doctype-system-keyword)
-     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (setf (slot-value current-doctype-token 'system-identifier)
+           (make-adjustable-string))
      (switch-state 'doctype-system-identifier-double-quoted-state))
     (#\'
      (missing-whitespace-after-doctype-system-keyword)
-     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (setf (slot-value current-doctype-token 'system-identifier)
+           (make-adjustable-string))
      (switch-state 'doctype-system-identifier-single-quoted-state))
     (#\>
      (missing-doctype-system-identifier)
@@ -1388,10 +1407,12 @@
   (case next-input-character
     ((#\tab #\newline #\page #\space))
     (#\"
-     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (setf (slot-value current-doctype-token 'system-identifier)
+           (make-adjustable-string))
      (switch-state 'doctype-system-identifier-double-quoted-state))
     (#\'
-     (setf (slot-value current-doctype-token 'system-identifier) "")
+     (setf (slot-value current-doctype-token 'system-identifier)
+           (make-adjustable-string))
      (switch-state 'doctype-system-identifier-single-quoted-state))
     (#\>
      (missing-doctype-system-identifier)
@@ -1508,7 +1529,7 @@
      (reconsume-in 'cdata-section-state))))
 
 (define-tokenizer-state character-reference-state
-  (setf temporary-buffer "")
+  (setf temporary-buffer (make-adjustable-string))
   (append-char temporary-buffer #\&)
   (let ((char next-input-character))
     (cond
@@ -1556,7 +1577,7 @@
           (progn
             (unless (eq #\; last-character-matched)
               (missing-semicolon-after-character-reference))
-            (setf temporary-buffer "")
+            (setf temporary-buffer (make-adjustable-string))
             (loop for code in codepoints
                   do (append-char temporary-buffer (code-char code)))
             (loop for char across temporary-buffer do (emit char))
@@ -1689,7 +1710,7 @@
                                     (0x9E . 0x017E)
                                     (0x9F . 0x0178))))))
       (when code-point (setf character-reference-code code-point)))))
-  (setf temporary-buffer "")
+  (setf temporary-buffer (make-adjustable-string))
   (append-char temporary-buffer (code-char character-reference-code))
   (loop for char across temporary-buffer do (emit char))
   (switch-state return-state))
