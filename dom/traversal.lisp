@@ -227,15 +227,6 @@
                      (equal id (get-attribute node "id")))
            do (return node)))))
 
-(defgeneric get-element-by-id (node id)
-  (:method ((node node) id)
-   (let ((walker (create-tree-walker node)))
-     (loop for node = (next-node walker)
-           while node
-           when (and (typep node 'element)
-                     (equal id (get-attribute node "id")))
-           do (return node)))))
-
 (defgeneric get-elements-by-class-name (node class-names)
   (:method ((node node) class-names)
    (let ((walker (create-tree-walker node))
@@ -251,3 +242,17 @@
                                                    :test 'equal)))))
            do (push node elements)
            finally (return (nreverse elements))))))
+
+(defun elements-with-qualified-name (root qualified-name)
+  (let ((walker (create-tree-walker root))
+        (collection '()))
+     (loop for node = (next-node walker)
+           when (and (typep node 'element)
+                     (string-equal qualified-name (qualified-name node)))
+           do (push node collection)
+           until (null node))
+     (reverse collection)))
+
+(defgeneric get-elements-by-tag-name (root qualified-name)
+  (:method ((root node) qualified-name)
+   (elements-with-qualified-name root qualified-name)))
