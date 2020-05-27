@@ -10,7 +10,7 @@
 
 (defmethod print-object ((element element) stream)
   (print-unreadable-object (element stream :type t :identity t)
-    (format stream "~S" (dom:tag-name element))
+    (format stream "~S" (dom:local-name element))
     (let ((children-count (length (children element))))
       (cond
        ((= 1 children-count)
@@ -94,8 +94,18 @@
          (defmethod print-object ((element ,element-symbol) stream)
            (print-unreadable-object (element stream :type t :identity t)
              (let ((children-count (length (children element))))
-               (when (plusp children-count)
-                 (format stream "{~A}" children-count)))))
+               (cond
+                ((= 1 children-count)
+                 (let ((child (first (children element))))
+                   (if (typep child 'text)
+                       (let ((data (dom:data child)))
+                         (if (> (length data) 30)
+                             (format stream " {~S}"
+                                     (concatenate 'string (subseq data 0 30) "..."))
+                           (format stream " {~S}" data)))
+                     (format stream " {~A}" children-count))))
+                ((> children-count 1)
+                 (format stream " {~A}" children-count))))))
 
          (defun ,element-symbol (&rest arguments)
            (apply 'construct (make-instance ',constructor-symbol) arguments))))))
