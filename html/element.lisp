@@ -12,8 +12,18 @@
   (print-unreadable-object (element stream :type t :identity t)
     (format stream "~S" (dom:tag-name element))
     (let ((children-count (length (children element))))
-      (when (plusp children-count)
-        (format stream " {~A}" children-count)))))
+      (cond
+       ((= 1 children-count)
+        (let ((child (first (children element))))
+          (if (typep child 'text)
+              (let ((data (dom:data child)))
+                (if (> (length data) 30)
+                    (format stream " {~S}"
+                            (concatenate 'string (subseq data 0 30) "..."))
+                  (format stream " {~S}" data)))
+            (format stream " {~A}" children-count))))
+       ((> children-count 1)
+        (format stream " {~A}" children-count))))))
 
 (defclass void-element (element) ())
 
@@ -46,7 +56,7 @@
 (defmethod construct ((constructor element-constructor) &rest arguments)
   (let* ((element-class (constructor-element-class constructor))
          (element-tag-name (string-downcase (symbol-name element-class)))
-         (element (make-instance element-class :tag-name element-tag-name)))
+         (element (make-instance element-class :local-name element-tag-name)))
     (multiple-value-bind (attributes children)
         (segment-attributes-children arguments)
       (loop for (_name _value) on attributes by #'cddr

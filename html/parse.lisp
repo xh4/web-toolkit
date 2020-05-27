@@ -1645,7 +1645,7 @@
     (let ((element-class (or (gethash tag-name *html-element-table*)
                              'element)))
       (let ((element (make-instance element-class
-                                    :tag-name tag-name)))
+                                    :local-name tag-name)))
         (loop for attribute in (slot-value current-token 'attributes)
               do (dom:set-attribute
                   element

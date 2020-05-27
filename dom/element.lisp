@@ -6,8 +6,7 @@
                    child-node)
   ((tag-name
     :initarg :tag-name
-    :initform nil
-    :reader tag-name)
+    :initform nil)
    (local-name
     :initarg :local-name
     :initform nil
@@ -36,6 +35,25 @@
 (defmethod print-object ((object element) stream)
   (print-unreadable-object (object stream :type t :identity t)
     (princ (tag-name object) stream)))
+
+(defgeneric tag-name (element)
+  (:method ((element element))
+   (html-uppercased-qualified-name element)))
+
+(defgeneric qualified-name (element)
+  (:method ((element element))
+   (with-slots (local-name prefix) element
+     (if prefix
+         (format nil "~A:~A" prefix local-name)
+       local-name))))
+
+;; TODO: https://dom.spec.whatwg.org/#element-html-uppercased-qualified-name
+(defgeneric html-uppercased-qualified-name (element)
+  (:method ((element element))
+   (qualified-name element)))
+
+(defmethod node-name ((element element))
+  (html-uppercased-qualified-name element))
 
 (defgeneric has-attributes (element)
   (:method ((element element))
