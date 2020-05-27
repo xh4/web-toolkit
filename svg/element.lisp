@@ -1,7 +1,12 @@
 (in-package :svg)
 
 (defclass element (dom:element)
-  ())
+  ((dom:namespace
+    :initform "http://www.w3.org/2000/svg"
+    :allocation :class)
+   (dom:prefix
+    :initform "svg"
+    :allocation :class)))
 
 (defclass graphics-element (element) ())
 
