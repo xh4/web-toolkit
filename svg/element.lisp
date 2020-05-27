@@ -8,6 +8,23 @@
     :initform "svg"
     :allocation :class)))
 
+(defmethod print-object ((element element) stream)
+  (print-unreadable-object (element stream :type t :identity t)
+    (format stream "~S" (dom:local-name element))
+    (let ((children-count (length (dom:children element))))
+      (cond
+       ((= 1 children-count)
+        (let ((child (first (dom:children element))))
+          (if (typep child 'text)
+              (let ((data (dom:data child)))
+                (if (> (length data) 30)
+                    (format stream " {~S}"
+                            (concatenate 'string (subseq data 0 30) "..."))
+                  (format stream " {~S}" data)))
+            (format stream " {~A}" children-count))))
+       ((> children-count 1)
+        (format stream " {~A}" children-count))))))
+
 (defclass graphics-element (element) ())
 
 (defclass geometry-element (graphics-element) ())
@@ -36,10 +53,58 @@
 
 (defclass paint-server-element (element) ())
 
-(defmacro define-svg-element (name superclasses slots &rest options)
+(defun segment-attributes-children (form)
+  (let* ((body (loop for rest on form by #'cddr
+                  unless (and (keywordp (car rest)) (cdr rest))
+                  return rest))
+         (attributes (ldiff form body)))
+    (values attributes body)))
+
+(defmacro define-svg-element (element-name superclasses slots &rest options)
   (unless (find 'element superclasses)
     (appendf superclasses '(element)))
-  `(defclass ,name ,superclasses ,slots ,@options))
+  `(progn
+     (defclass ,element-name ,superclasses ,slots ,@options)
+
+     (defun ,element-name (&rest arguments)
+       (let* ((local-name (string-downcase (symbol-name ',element-name)))
+              (element (make-instance ',element-name :local-name local-name)))
+         (multiple-value-bind (attributes children)
+             (segment-attributes-children arguments)
+           (loop for (_name _value) on attributes by #'cddr
+                 for name = (string-downcase (symbol-name _name))
+                 for value = (if (eq _value t)
+                                 ""
+                               (typecase _value
+                                 (null nil)
+                                 (string _value)
+                                 (list (format nil "~{~A~^ ~}" _value))
+                                 (t (format nil "~A" _value))))
+                 when value
+                 do (dom:set-attribute element name value))
+           (loop for child in (flatten children)
+                 do
+                 (typecase child
+                   (string (dom:append-child element (text child)))
+                   ((or element text) (dom:append-child element child))
+                   (t (dom:append-child element (text (format nil "~A" child)))))))
+         element))
+
+     (defmethod print-object ((element ,element-name) stream)
+       (print-unreadable-object (element stream :type t :identity t)
+         (let ((children-count (length (dom:children element))))
+           (cond
+            ((= 1 children-count)
+             (let ((child (first (dom:children element))))
+               (if (typep child 'text)
+                   (let ((data (dom:data child)))
+                     (if (> (length data) 30)
+                         (format stream " {~S}"
+                                 (concatenate 'string (subseq data 0 30) "..."))
+                       (format stream " {~S}" data)))
+                 (format stream " {~A}" children-count))))
+            ((> children-count 1)
+             (format stream " {~A}" children-count))))))))
 
 (define-svg-element svg (container-element
                          renderable-element
