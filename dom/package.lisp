@@ -29,6 +29,9 @@
    :clone-node
    ;; element
    :element
+   :namespace
+   :prefix
+   :local-name
    :tag-name
    :has-attributes
    :get-attribute-names
