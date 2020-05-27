@@ -1,6 +1,12 @@
 (in-package :html)
 
-(defclass element (dom:element) ())
+(defclass element (dom:element)
+  ((dom:namespace
+    :initform "http://www.w3.org/1999/xhtml"
+    :allocation :class)
+   (dom:prefix
+    :initform "html"
+    :allocation :class)))
 
 (defmethod print-object ((element element) stream)
   (print-unreadable-object (element stream :type t :identity t)
