@@ -78,7 +78,7 @@
   (when value
     (write-char #\space stream)
     (write-string name stream)
-    (unless (eq t value)
+    (when (plusp (length value))
       (write-char #\= stream)
       (write-double-quoted-attribute-value value stream))))
 
