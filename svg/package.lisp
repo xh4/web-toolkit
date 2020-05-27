@@ -3,7 +3,7 @@
 (defpackage :svg
   (:nicknames :wt.svg)
   (:use :cl :alexandria)
-  (:shadow :use :symbol)
+  (:shadow :use :symbol :switch)
   (:export
    :element
    :graphics-element
