@@ -4,10 +4,7 @@
                    parent-node
                    non-document-type-child-node
                    child-node)
-  ((tag-name
-    :initarg :tag-name
-    :initform nil)
-   (local-name
+  ((local-name
     :initarg :local-name
     :initform nil
     :reader local-name)
