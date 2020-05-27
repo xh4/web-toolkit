@@ -71,15 +71,15 @@
          (defclass ,constructor-symbol (element-constructor)
            ((element-class :initform ',element-symbol)))
 
+         (defparameter ,element-symbol (make-instance ',constructor-symbol))
+
+         (defclass ,element-symbol ,superclasses ())
+
          (defmethod print-object ((element ,element-symbol) stream)
            (print-unreadable-object (element stream :type t :identity t)
              (let ((children-count (length (children element))))
                (when (plusp children-count)
                  (format stream "{~A}" children-count)))))
-
-         (defparameter ,element-symbol (make-instance ',constructor-symbol))
-
-         (defclass ,element-symbol ,superclasses ())
 
          (defun ,element-symbol (&rest arguments)
            (apply 'construct (make-instance ',constructor-symbol) arguments))))))
