@@ -31,6 +31,7 @@
    :element
    :namespace
    :prefix
+   :namespace-prefix
    :local-name
    :tag-name
    :has-attributes
