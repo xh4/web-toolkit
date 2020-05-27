@@ -72,7 +72,7 @@
 
    ((an-end-tag-whose-tag-name-is-one-of '("head" "body" "html" "br"))
     ;; Same as T
-    (let ((element (make-instance 'element :tag-name "html")))
+    (let ((element (make-instance 'element :local-name "html")))
       (append-child document element)
       (push element stack-of-open-elements))
     (switch-insertion-mode 'before-head)
@@ -83,7 +83,7 @@
     (ignore-token))
 
    (t
-    (let ((element (make-instance 'element :tag-name "html")))
+    (let ((element (make-instance 'element :local-name "html")))
       (append-child document element)
       (push element stack-of-open-elements))
     (switch-insertion-mode 'before-head)
