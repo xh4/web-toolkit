@@ -22,14 +22,14 @@
            (:enter (typecase node
                      (text
                       (signal 'event :type :enter :node node))
-                     ((or element document)
+                     ((or dom:element document)
                       (signal 'event :type :enter :node node)
                       (push `(:leave . ,node) stack)
                       (unless (typep node 'custom-element)
                         (loop for child in (reverse (dom:children node))
                            do (push `(:enter . ,child) stack))))))
            (:leave (typecase node
-                     (element
+                     (dom:element
                       (signal 'event :type :leave :node node))))))))
 
 (defun write-char (char &optional (stream *standard-output*) &key)
@@ -68,7 +68,7 @@
 
 (defun write-element-start-tag (element &optional (stream *standard-output*) &key)
   (write-string "<" stream)
-  (write-string (dom:tag-name element) stream)
+  (write-string (dom:local-name element) stream)
   (loop for name in (dom:get-attribute-names element)
      for value = (dom:get-attribute element name)
      do (write-attribute name value stream))
@@ -93,7 +93,7 @@
 (defun write-element-end-tag (element &optional (stream *standard-output*) &key)
   (unless (typep element 'void-element)
     (write-string "</" stream)
-    (write-string (dom:tag-name element) stream)
+    (write-string (dom:local-name element) stream)
     (write-string ">" stream)))
 
 (defun write-doctype (document &optional (stream *standard-output*) &key)
@@ -112,12 +112,13 @@
                   (:enter (typecase node
                             (document (write-doctype node stream))
                             (custom-element (serialize node stream))
-                            (element (write-element-start-tag node stream))
+                            (dom:element (write-element-start-tag node stream))
                             (text (write-text node stream))))
                   (:leave (unless (typep node 'void-element)
                             (typecase node
-                              (element (unless (typep node 'custom-element)
-                                         (write-element-end-tag node stream)))))))))))
+                              (dom:element
+                               (unless (typep node 'custom-element)
+                                 (write-element-end-tag node stream)))))))))))
         (traverse root))
       (when string-stream-p
         (get-output-stream-string stream)))))

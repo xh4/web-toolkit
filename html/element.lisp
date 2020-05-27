@@ -74,7 +74,11 @@
          do
            (typecase child
              (string (dom:append-child element (text child)))
-             ((or element text) (dom:append-child element child))
+             (dom:element
+              (when (or (equal "html" (dom:namespace-prefix child))
+                        (equal "svg" (dom:namespace-prefix child)))
+                (dom:append-child element child)))
+             (text (dom:append-child element child))
              (t (dom:append-child element (text (format nil "~A" child)))))))
     element))
 
@@ -252,3 +256,4 @@
 ;; Web Components
 (define-element slot ())
 (define-element template (template-element))
+
