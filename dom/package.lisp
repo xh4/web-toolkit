@@ -52,6 +52,8 @@
    :current-node
    ;; query
    :get-element-by-id
-   :get-elements-by-class-name)
+   :get-elements-by-class-name
+   :get-elements-by-tag-name)
   (:import-from :split-sequence
                 :split-sequence))
+
