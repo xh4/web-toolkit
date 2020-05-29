@@ -40,6 +40,7 @@
    :tspan
    :text-path
    :image
+   :foreign-object
    :marker
    :a
    :view))

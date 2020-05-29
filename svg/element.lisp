@@ -185,6 +185,10 @@
                            renderable-element
                            structurally-external-element) ())
 
+(define-svg-element foreign-object (graphics-element
+                                    renderable-element
+                                    structurally-external-element) ())
+
 (define-svg-element marker (container-element
                             never-rendered-element) ())
 
