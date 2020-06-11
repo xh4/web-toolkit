@@ -4,7 +4,7 @@
   ((title
     :initform "Lisp Web Toolkit")
    (description
-    :initform "Object-Oriented Reactive Lisp Systems for Rapid Web Application Development")
+    :initform "Object-Oriented Lisp Systems for Rapid Web Application Development")
    (author
     :initform "Xiangyu He"))
   (:render
