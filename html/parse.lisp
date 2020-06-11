@@ -1639,7 +1639,7 @@
 (defparameter *html-element-table* nil)
 
 (defun make-html-element-table ()
-  (setf *html-element-table* (make-hash-table :test 'string-equal))
+  (setf *html-element-table* (make-hash-table :test 'equal))
   (loop for symbol in '(a abbr address area article aside audio
                           b base bdi bdo blockquote body br button
                           canvas caption cite code col colgroup
@@ -1662,20 +1662,24 @@
                           u ul
                           var video
                           wbr)
-        do (setf (gethash (symbol-name symbol) *html-element-table*) symbol)
+        do (setf (gethash (string-downcase (symbol-name symbol))
+                          *html-element-table*)
+                 symbol)
         finally (return *html-element-table*)))
 
 (defparameter *svg-element-table* nil)
 
 (defun make-svg-element-table ()
-  (setf *svg-element-table* (make-hash-table :test 'string-equal))
+  (setf *svg-element-table* (make-hash-table :test 'equal))
   (loop for symbol in '(svg:svg svg:g svg:defs svg:desc svg:metadata
                                 svg:title svg:symbol svg:use svg:switch
                                 svg:path svg:rect svg:circle svg:ellipse
                                 svg:line svg:polyline svg:polygon svg:text
                                 svg:tspan svg:text-path svg:image
                                 svg:foreign-object svg:marker svg:a svg:view)
-        do (setf (gethash (symbol-name symbol) *svg-element-table*) symbol)
+        do (setf (gethash (string-downcase (symbol-name symbol))
+                          *svg-element-table*)
+                 symbol)
         finally (return *svg-element-table*)))
 
 ;; TODO: Respect parent
