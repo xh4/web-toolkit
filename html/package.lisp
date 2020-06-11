@@ -97,7 +97,6 @@
    :unexpected-solidus-in-tag
    :unknown-named-character-reference)
   (:import-from :dom
-                :tag-name
                 :children
                 :append-child
                 :root))
