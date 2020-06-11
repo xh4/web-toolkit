@@ -21,3 +21,9 @@
   (let ((el (p :class t)))
     (is (equal "" (dom:get-attribute el "class")))
     (is-true (dom:has-attribute el "class"))))
+
+(test tag-name
+  (is (equal "H1" (dom:tag-name (html:h1)))))
+
+(test local-name
+  (is (equal "h1" (dom:local-name (html:h1)))))

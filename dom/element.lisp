@@ -44,10 +44,12 @@
          (format nil "~A:~A" prefix local-name)
        local-name))))
 
-;; TODO: https://dom.spec.whatwg.org/#element-html-uppercased-qualified-name
 (defgeneric html-uppercased-qualified-name (element)
   (:method ((element element))
-   (qualified-name element)))
+    (let ((qualified-name (qualified-name element)))
+      (when (equal "http://www.w3.org/1999/xhtml" (namespace element))
+        (setf qualified-name (string-upcase qualified-name)))
+      qualified-name)))
 
 (defmethod node-name ((element element))
   (html-uppercased-qualified-name element))
