@@ -65,7 +65,7 @@
     (ignore-token))
 
    ((a-start-tag-whose-tag-name-is "html")
-    (let ((element (create-element-for-token "html" document)))
+    (let ((element (create-element-for-token "http://www.w3.org/1999/xhtml" document)))
       (append-child document element)
       (push element stack-of-open-elements))
     (switch-insertion-mode 'before-head))
@@ -173,7 +173,8 @@
    ;; TODO: Check this
    ((a-start-tag-whose-tag-name-is "script")
     (let ((adjusted-insertion-location (appropriate-place-for-inserting-node)))
-      (let ((element (create-element-for-token "html" adjusted-insertion-location)))
+      (let ((element (create-element-for-token "http://www.w3.org/1999/xhtml"
+                                               adjusted-insertion-location)))
         (push element stack-of-open-elements))
       (switch-state 'script-data-state)
       (setf original-insertion-mode insertion-mode)
@@ -1694,7 +1695,8 @@
                              'element))
                           ((equal "http://www.w3.org/2000/svg" namespace)
                            (or (gethash tag-name *svg-element-table*)
-                             'svg:element)))))
+                             'svg:element))
+                          (t 'element))))
       (let ((element (make-instance element-class
                                     :local-name tag-name
                                     :namespace-uri namespace)))
@@ -2059,7 +2061,7 @@
        (go :inner-loop))
      ;; Step 14.7
      (let ((element (create-element-for-token
-                     "html"
+                     "http://www.w3.org/1999/xhtml"
                      common-ancestor)))
        (let ((node-position (find node active-formatting-elements)))
          (setf (nth node-position active-formatting-elements) element))
@@ -2084,7 +2086,7 @@
        (append-child place last-node))
      ;; Step 16
      (let ((element (create-element-for-token
-                     "html"
+                     "http://www.w3.org/1999/xhtml"
                      furthest-block)))
        ;; Step 17
        (loop for child in (children furthest-block)
