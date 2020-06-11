@@ -1,11 +1,8 @@
 (in-package :svg)
 
 (defclass element (dom:element)
-  ((dom:namespace
+  ((dom:namespace-uri
     :initform "http://www.w3.org/2000/svg"
-    :allocation :class)
-   (dom:prefix
-    :initform "svg"
     :allocation :class)))
 
 (defmethod print-object ((element element) stream)

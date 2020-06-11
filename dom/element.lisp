@@ -12,14 +12,14 @@
     :initarg :id
     :initform nil
     :reader id)
-   (namespace
-    :initarg :namespace
+   (namespace-uri
+    :initarg :namespace-uri
     :initform nil
-    :reader namespace)
+    :reader namespace-uri)
    (prefix
-    :initarg :namespace-prefix
+    :initarg :prefix
     :initform nil
-    :reader namespace-prefix)
+    :reader prefix)
    (class-name
     :initarg :class-name
     :initform nil
@@ -47,7 +47,7 @@
 (defgeneric html-uppercased-qualified-name (element)
   (:method ((element element))
     (let ((qualified-name (qualified-name element)))
-      (when (equal "http://www.w3.org/1999/xhtml" (namespace element))
+      (when (equal "http://www.w3.org/1999/xhtml" (namespace-uri element))
         (setf qualified-name (string-upcase qualified-name)))
       qualified-name)))
 

@@ -29,9 +29,8 @@
    :clone-node
    ;; element
    :element
-   :namespace
    :prefix
-   :namespace-prefix
+   :namespace-uri
    :local-name
    :tag-name
    :has-attributes
@@ -44,6 +43,7 @@
    ;; text
    :text
    :data
+   :text-content
    ;; traversal
    :create-node-iterator
    :node-iterator
@@ -57,4 +57,3 @@
    :get-elements-by-tag-name)
   (:import-from :split-sequence
                 :split-sequence))
-

@@ -180,13 +180,13 @@
       (switch-insertion-mode 'text)))
 
    ((an-end-tag-whose-tag-name-is "head")
-    (assert (equal "head" (tag-name current-node)))
+    (assert (string-equal "head" (tag-name current-node)))
     (pop stack-of-open-elements)
     (switch-insertion-mode 'after-head))
 
    ((an-end-tag-whose-tag-name-is-one-of '("body" "html" "br"))
     ;; Same as T
-    (assert (equal "head" (tag-name current-node)))
+    (assert (string-equal "head" (tag-name current-node)))
     (pop stack-of-open-elements)
     (switch-insertion-mode 'after-head)
     (reprocess-current-token))
@@ -200,17 +200,17 @@
 
    ((an-end-tag-whose-tag-name-is "template")
     (if (not (find "template" stack-of-open-elements
-                   :test 'equal
+                   :test 'string-equal
                    :key 'tag-name))
         (progn
           (parse-error)
           (ignore-token))
       (progn
         (generate-all-implied-end-tags-thoroughly)
-        (unless (equal "template" (tag-name current-node))
+        (unless (string-equal "template" (tag-name current-node))
           (parse-error))
         (loop for element = (pop stack-of-open-elements)
-              until (equal "template" (tag-name element)))
+              until (string-equal "template" (tag-name element)))
         (clear-active-formatting-elements-upto-last-marker)
         (pop stack-of-template-insertion-modes)
         (reset-insertion-mode-appropriately))))
@@ -221,7 +221,7 @@
     (ignore-token))
 
    (t
-    (assert (equal "head" (tag-name current-node)))
+    (assert (string-equal "head" (tag-name current-node)))
     (pop stack-of-open-elements)
     (switch-insertion-mode 'after-head)
     (reprocess-current-token))))
@@ -236,9 +236,9 @@
     (process-token-using-in-body-insertion-mode))
 
    ((an-end-tag-whose-tag-name-is "noscript")
-    (assert (equal "noscript" (tag-name current-node)))
+    (assert (string-equal "noscript" (tag-name current-node)))
     (pop stack-of-open-elements)
-    (assert (equal "head" (tag-name current-node)))
+    (assert (string-equal "head" (tag-name current-node)))
     (switch-insertion-mode 'in-head))
 
    ((or (or (eq #\tab current-token) (eq #\newline current-token)
@@ -251,9 +251,9 @@
    ((an-end-tag-whose-tag-name-is "br")
     ;; Same as T
     (parse-error)
-    (assert (equal "noscript" (tag-name current-node)))
+    (assert (string-equal "noscript" (tag-name current-node)))
     (pop stack-of-open-elements)
-    (assert (equal "head" (tag-name current-node)))
+    (assert (string-equal "head" (tag-name current-node)))
     (switch-insertion-mode 'in-head)
     (reprocess-current-token))
 
@@ -264,9 +264,9 @@
 
    (t
     (parse-error)
-    (assert (equal "noscript" (tag-name current-node)))
+    (assert (string-equal "noscript" (tag-name current-node)))
     (pop stack-of-open-elements)
-    (assert (equal "head" (tag-name current-node)))
+    (assert (string-equal "head" (tag-name current-node)))
     (switch-insertion-mode 'in-head)
     (reprocess-current-token))))
 
@@ -351,7 +351,7 @@
    ((a-start-tag-whose-tag-name-is "html")
     (parse-error)
     (if (find "template" stack-of-open-elements
-              :test 'equal
+              :test 'string-equal
               :key 'tag-name)
         (ignore-token)
       #|TODO|#))
@@ -365,9 +365,9 @@
    ((a-start-tag-whose-tag-name-is "body")
     (parse-error)
     (if (or (= 1 (length stack-of-open-elements))
-            (not (equal "body" (tag-name (second stack-of-open-elements))))
+            (not (string-equal "body" (tag-name (second stack-of-open-elements))))
             (find "template" stack-of-open-elements
-                  :test 'equal
+                  :test 'string-equal
                   :key 'tag-name))
         (ignore-token)
       (progn
@@ -388,7 +388,7 @@
                                       "p" "rb" "rp" "rt" "rtc"
                                       "tbody" "td" "tfoot" "th" "thead" "tr"
                                       "body" "html")
-                                    :test 'equal))
+                                    :test 'string-equal))
                           stack-of-open-elements))
             (parse-error))
         (stop-parsing))))
@@ -404,7 +404,7 @@
                                     "p" "rb" "rp" "rt" "rtc"
                                     "tbody" "td" "tfoot" "th" "thead" "tr"
                                     "body" "html")
-                                  :test 'equal))
+                                  :test 'string-equal))
                         stack-of-open-elements))
           (parse-error)))
     (switch-insertion-mode 'after-body))
@@ -420,7 +420,7 @@
                                     "p" "rb" "rp" "rt" "rtc"
                                     "tbody" "td" "tfoot" "th" "thead" "tr"
                                     "body" "html")
-                                  :test 'equal))
+                                  :test 'string-equal))
                         stack-of-open-elements))
           (parse-error)))
     (switch-insertion-mode 'after-body)
@@ -441,7 +441,7 @@
     (when (and (typep current-node 'element)
                (member (tag-name current-node)
                        '("h1" "h2" "h3" "h4" "h5" "h6")
-                       :test 'equal))
+                       :test 'string-equal))
       (parse-error)
       (pop stack-of-open-elements))
     (insert-html-element-for-token))
@@ -457,7 +457,7 @@
    ((a-start-tag-whose-tag-name-is "form")
     (if (and form-element-pointer
              (not (find "template" stack-of-open-elements
-                        :test 'equal
+                        :test 'string-equal
                         :key 'tag-name)))
         (progn
           (parse-error)
@@ -467,27 +467,27 @@
           (close-p-element))
         (let ((element (insert-html-element-for-token)))
           (unless (find "template" stack-of-open-elements
-                        :test 'equal
+                        :test 'string-equal
                         :key 'tag-name)
             (setf form-element-pointer element))))))
 
    ((a-start-tag-whose-tag-name-is "li")
     (setf frameset-ok-flag nil)
     (loop for element in stack-of-open-elements
-          if (equal "li" (tag-name element))
+          if (string-equal "li" (tag-name element))
           do (progn
                (generate-implied-end-tags :except "li")
-               (unless (equal "li" (tag-name current-node))
+               (unless (string-equal "li" (tag-name current-node))
                  (parse-error))
                (loop for element = (pop stack-of-open-elements)
-                     until (equal "li" (tag-name element)))
+                     until (string-equal "li" (tag-name element)))
                (when (have-element-in-button-scope-p "p")
                  (close-p-element))
                (return))
           else if (and (special-element-p element)
-                       (not (or (equal "address" (tag-name element))
-                                (equal "div" (tag-name element))
-                                (equal "p" (tag-name element)))))
+                       (not (or (string-equal "address" (tag-name element))
+                                (string-equal "div" (tag-name element))
+                                (string-equal "p" (tag-name element)))))
           do (progn
                (when (have-element-in-button-scope-p "p")
                  (close-p-element))
@@ -497,30 +497,30 @@
    ((a-start-tag-whose-tag-name-is-one-of '("dd" "dt"))
     (setf frameset-ok-flag nil)
     (loop for element in stack-of-open-elements
-          if (equal "dd" (tag-name element))
+          if (string-equal "dd" (tag-name element))
           do (progn
                (generate-implied-end-tags :except "dd")
-               (unless (equal "dd" (tag-name current-node))
+               (unless (string-equal "dd" (tag-name current-node))
                  (parse-error))
                (loop for element = (pop stack-of-open-elements)
-                     until (equal "dd" (tag-name element)))
+                     until (string-equal "dd" (tag-name element)))
                (when (have-element-in-button-scope-p "p")
                  (close-p-element))
                (return))
-          else if (equal "dt" (tag-name element))
+          else if (string-equal "dt" (tag-name element))
           do (progn
                (generate-implied-end-tags :except "dt")
-               (unless (equal "dt" (tag-name current-node))
+               (unless (string-equal "dt" (tag-name current-node))
                  (parse-error))
                (loop for element = (pop stack-of-open-elements)
-                     until (equal "dt" (tag-name element)))
+                     until (string-equal "dt" (tag-name element)))
                (when (have-element-in-button-scope-p "p")
                  (close-p-element))
                (return))
           else if (and (special-element-p element)
-                       (not (or (equal "address" (tag-name element))
-                                (equal "div" (tag-name element))
-                                (equal "p" (tag-name element)))))
+                       (not (or (string-equal "address" (tag-name element))
+                                (string-equal "div" (tag-name element))
+                                (string-equal "p" (tag-name element)))))
           do (progn
                (when (have-element-in-button-scope-p "p")
                  (close-p-element))
@@ -539,7 +539,7 @@
       (generate-implied-end-tags)
       (loop for element = (pop stack-of-open-elements)
 
-            until (equal "button" (tag-name element))))
+            until (string-equal "button" (tag-name element))))
     (reconstruct-active-formatting-elements)
     (insert-html-element-for-token)
     (setf frameset-ok-flag nil))
@@ -557,16 +557,16 @@
           (ignore-token))
       (progn
         (generate-implied-end-tags)
-        (unless (equal (tag-name current-node)
-                       (slot-value current-token 'tag-name))
+        (unless (string-equal (tag-name current-node)
+                              (slot-value current-token 'tag-name))
           (parse-error))
         (loop for element = (pop stack-of-open-elements)
-              until (equal (tag-name element)
-                           (slot-value current-token 'tag-name))))))
+              until (string-equal (tag-name element)
+                                  (slot-value current-token 'tag-name))))))
 
    ((an-end-tag-whose-tag-name-is "form")
     (if (not (find "template" stack-of-open-elements
-                   :test 'equal
+                   :test 'string-equal
                    :key 'tag-name))
         (let ((node form-element-pointer))
           (setf form-element-pointer nil)
@@ -587,10 +587,10 @@
               (ignore-token))
           (progn
             (generate-implied-end-tags)
-            (unless (equal "form" (tag-name current-node))
+            (unless (string-equal "form" (tag-name current-node))
               (parse-error))
             (loop for element = (pop stack-of-open-elements)
-                  until (equal "form" (tag-name element))))))))
+                  until (string-equal "form" (tag-name element))))))))
 
    ((an-end-tag-whose-tag-name-is "p")
     (unless (have-element-in-button-scope-p "p")
@@ -606,10 +606,10 @@
           (ignore-token))
       (progn
         (generate-implied-end-tags :except "li")
-        (unless (equal "li" (tag-name current-node))
+        (unless (string-equal "li" (tag-name current-node))
           (parse-error))
         (loop for element = (pop stack-of-open-elements)
-              until (equal "li" (tag-name element))))))
+              until (string-equal "li" (tag-name element))))))
 
    ((an-end-tag-whose-tag-name-is-one-of '("dd" "dt"))
     (if (not (have-element-in-scope-p (slot-value current-token 'tag-name)))
@@ -618,8 +618,8 @@
           (ignore-token))
       (progn
         (generate-implied-end-tags :except (slot-value current-token 'tag-name))
-        (unless (equal (tag-name current-node)
-                       (slot-value current-token 'tag-name))
+        (unless (string-equal (tag-name current-node)
+                              (slot-value current-token 'tag-name))
           (parse-error))
         (loop for element = (pop stack-of-open-elements)
               until (member (tag-name element)
@@ -638,13 +638,13 @@
           (ignore-token))
       (progn
         (generate-implied-end-tags)
-        (unless (equal (tag-name current-node)
-                       (slot-value current-token 'tag-name))
+        (unless (string-equal (tag-name current-node)
+                              (slot-value current-token 'tag-name))
           (parse-error))
         (loop for element = (pop stack-of-open-elements)
               until (member (tag-name element)
                             '("h1" "h2" "h3" "h4" "h5" "h6")
-                            :test 'equal)))))
+                            :test 'string-equal)))))
 
    ((an-end-tag-whose-tag-name-is "sarcasm"))
 
@@ -656,11 +656,11 @@
                            (find "a" (subseq active-formatting-elements
                                              (1+ last-marker-position)
                                              (length active-formatting-elements))
-                                 :test 'equal
+                                 :test 'string-equal
                                  :key 'tag-name))
                       (and (null last-marker-position)
                            (find "a" active-formatting-elements
-                                 :test 'equal
+                                 :test 'string-equal
                                  :key 'tag-name)))))
         (parse-error)
         (adoption-agency)
@@ -698,12 +698,12 @@
           (ignore-token))
       (progn
         (generate-implied-end-tags)
-        (unless (equal (tag-name current-node)
-                       (slot-value current-token 'tag-name))
+        (unless (string-equal (tag-name current-node)
+                              (slot-value current-token 'tag-name))
           (parse-error))
         (loop for element = (pop stack-of-open-elements)
-              until (equal (tag-name element)
-                           (slot-value current-token 'tag-name)))
+              until (string-equal (tag-name element)
+                                  (slot-value current-token 'tag-name)))
         (clear-active-formatting-elements-upto-last-marker))))
 
    ((a-start-tag-whose-tag-name-is "table")
@@ -785,7 +785,7 @@
       (switch-insertion-mode 'in-select)))
 
    ((a-start-tag-whose-tag-name-is-one-of '("optgroup" "option"))
-    (when (equal "option" (tag-name current-node))
+    (when (string-equal "option" (tag-name current-node))
       (pop stack-of-open-elements))
     (reconstruct-active-formatting-elements)
     (insert-html-element-for-token))
@@ -793,15 +793,15 @@
    ((a-start-tag-whose-tag-name-is-one-of '("rb" "rtc"))
     (when (have-element-in-scope-p "ruby")
       (generate-implied-end-tags)
-      (unless (equal "ruby" (tag-name current-node))
+      (unless (string-equal "ruby" (tag-name current-node))
         (parse-error)))
     (insert-html-element-for-token))
 
    ((a-start-tag-whose-tag-name-is-one-of '("rp" "rt"))
     (when (have-element-in-scope-p "ruby")
       (generate-implied-end-tags :except "rtc")
-      (unless (or (equal "rtc" (tag-name current-node))
-                  (equal "ruby" (tag-name current-node)))
+      (unless (or (string-equal "rtc" (tag-name current-node))
+                  (string-equal "ruby" (tag-name current-node)))
         (parse-error)))
     (insert-html-element-for-token))
 
@@ -836,12 +836,12 @@
    ;; https://github.com/html5lib/html5lib-python/blob/master/html5lib/html5parser.py#L1635
    ((typep current-token 'end-tag)
     (loop for node in stack-of-open-elements
-          do (if (equal (tag-name node)
-                        (slot-value current-token 'tag-name))
+          do (if (string-equal (tag-name node)
+                               (slot-value current-token 'tag-name))
                  (progn
                    (generate-implied-end-tags)
-                   (unless (equal (tag-name (first stack-of-open-elements))
-                                  (slot-value current-token 'tag-name))
+                   (unless (string-equal (tag-name (first stack-of-open-elements))
+                                         (slot-value current-token 'tag-name))
                      (parse-error))
                    (loop for n = (pop stack-of-open-elements)
                          until (eq n node))
@@ -874,7 +874,7 @@
   (cond
    ((and (member (tag-name current-node)
                  '("table" "tbody" "tfoot" "thead" "tr")
-                 :test 'equal)
+                 :test 'string-equal)
          (typep current-token 'cl:character))
     (setf pending-table-character-tokens nil)
     (setf original-insertion-mode insertion-mode)
@@ -924,7 +924,7 @@
         (ignore-token)
       (progn
         (loop for element = (pop stack-of-open-elements)
-              until (equal "table" (tag-name element)))
+              until (string-equal "table" (tag-name element)))
         (reset-insertion-mode-appropriately)
         (reprocess-current-token))))
 
@@ -935,7 +935,7 @@
           (ignore-token))
       (progn
         (loop for element = (pop stack-of-open-elements)
-              until (equal "table" (tag-name element)))
+              until (string-equal "table" (tag-name element)))
         (reset-insertion-mode-appropriately))))
 
    ((an-end-tag-whose-tag-name-is-one-of '("body" "caption" "col"
@@ -969,7 +969,7 @@
    ((a-start-tag-whose-tag-name-is "form")
     (parse-error)
     (if (or (find "template" stack-of-open-elements
-                  :test 'equal
+                  :test 'string-equal
                   :key 'tag-name)
             form-element-pointer)
         (ignore-token)
@@ -1024,10 +1024,10 @@
           (parse-error)
           (ignore-token))
       (generate-implied-end-tags))
-    (unless (equal "caption" (tag-name current-node))
+    (unless (string-equal "caption" (tag-name current-node))
       (parse-error))
     (loop for element = (pop stack-of-open-elements)
-          until (equal "caption" (tag-name element)))
+          until (string-equal "caption" (tag-name element)))
     (clear-active-formatting-elements-upto-last-marker)
     (switch-insertion-mode 'in-table))
 
@@ -1043,7 +1043,7 @@
     (unless (equal "caption" (tag-name current-node))
       (parse-error))
     (loop for element = (pop stack-of-open-elements)
-          until (equal "caption" (tag-name element)))
+          until (string-equal "caption" (tag-name element)))
     (clear-active-formatting-elements-upto-last-marker)
     (switch-insertion-mode 'in-table)
     (reprocess-current-token))
@@ -1078,7 +1078,7 @@
     (acknowledge-token-self-closing-flag))
 
    ((an-end-tag-whose-tag-name-is "colgroup")
-    (if (not (equal "colgroup" (tag-name current-node)))
+    (if (not (string-equal "colgroup" (tag-name current-node)))
         (progn
           (parse-error)
           (ignore-token))
@@ -1098,7 +1098,7 @@
     (process-token-using-in-body-insertion-mode))
 
    (t
-    (if (not (equal "colgroup" (tag-name current-node)))
+    (if (not (string-equal "colgroup" (tag-name current-node)))
         (progn
           (parse-error)
           (ignore-token))
@@ -1169,7 +1169,7 @@
           (ignore-token))
       (progn
         (clear-stack-back-to-table-row-context)
-        (assert (equal "tr" (tag-name current-node)))
+        (assert (string-equal "tr" (tag-name current-node)))
         (pop stack-of-open-elements)
         (switch-insertion-mode 'in-table-body))))
 
@@ -1182,7 +1182,7 @@
           (ignore-token))
       (progn
         (clear-stack-back-to-table-row-context)
-        (assert (equal "tr" (tag-name current-node)))
+        (assert (string-equal "tr" (tag-name current-node)))
         (pop stack-of-open-elements)
         (switch-insertion-mode 'in-table-body)
         (reprocess-current-token))))
@@ -1195,7 +1195,7 @@
         (ignore-token)
       (progn
         (clear-stack-back-to-table-row-context)
-        (assert (equal "tr" (tag-name current-node)))
+        (assert (string-equal "tr" (tag-name current-node)))
         (pop stack-of-open-elements)
         (switch-insertion-mode 'in-table-body)
         (reprocess-current-token))))
@@ -1216,12 +1216,12 @@
           (parse-error)
           (ignore-token))
       (generate-implied-end-tags))
-    (unless (equal (tag-name current-node)
-                   (slot-value current-token 'tag-name))
+    (unless (string-equal (tag-name current-node)
+                          (slot-value current-token 'tag-name))
       (parse-error))
     (loop for element = (pop stack-of-open-elements)
-          until (equal (tag-name element)
-                       (slot-value current-token 'tag-name)))
+          until (string-equal (tag-name element)
+                              (slot-value current-token 'tag-name)))
     (clear-active-formatting-elements-upto-last-marker)
     (switch-insertion-mode 'in-row))
 
@@ -1273,29 +1273,29 @@
     (process-token-using-in-body-insertion-mode))
 
    ((a-start-tag-whose-tag-name-is "option")
-    (when (equal "option" (tag-name current-node))
+    (when (string-equal "option" (tag-name current-node))
       (pop stack-of-open-elements))
     (insert-html-element-for-token))
 
    ((a-start-tag-whose-tag-name-is "optgroup")
-    (when (equal "option" (tag-name current-node))
+    (when (string-equal "option" (tag-name current-node))
       (pop stack-of-open-elements))
-    (when (equal "optgroup" (tag-name current-node))
+    (when (string-equal "optgroup" (tag-name current-node))
       (pop stack-of-open-elements))
     (insert-html-element-for-token))
 
    ((an-end-tag-whose-tag-name-is "optgroup")
-    (when (and (equal "option" (tag-name current-node))
-               (equal "optgroup" (tag-name (second stack-of-open-elements))))
+    (when (and (string-equal "option" (tag-name current-node))
+               (string-equal "optgroup" (tag-name (second stack-of-open-elements))))
       (pop stack-of-open-elements))
-    (if (equal "optgroup" (tag-name current-node))
+    (if (string-equal "optgroup" (tag-name current-node))
         (pop stack-of-open-elements)
       (progn
         (parse-error)
         (ignore-token))))
 
    ((an-end-tag-whose-tag-name-is "option")
-    (if (equal "option" (tag-name current-node))
+    (if (string-equal "option" (tag-name current-node))
         (pop stack-of-open-elements)
       (progn
         (parse-error)
@@ -1308,7 +1308,7 @@
           (ignore-token))
       (progn
         (loop for element = (pop stack-of-open-elements)
-              until (equal "select" (tag-name element)))
+              until (string-equal "select" (tag-name element)))
         (reset-insertion-mode-appropriately))))
 
    ((a-start-tag-whose-tag-name-is "select")
@@ -1317,7 +1317,7 @@
         (ignore-token)
       (progn
         (loop for element = (pop stack-of-open-elements)
-              until (equal "select" (tag-name element)))
+              until (string-equal "select" (tag-name element)))
         (reset-insertion-mode-appropriately))))
 
    ((a-start-tag-whose-tag-name-is-one-of '("input" "keygen" "textarea"))
@@ -1326,7 +1326,7 @@
         (ignore-token)
       (progn
         (loop for element = (pop stack-of-open-elements)
-              until (equal "select" (tag-name element)))
+              until (string-equal "select" (tag-name element)))
         (reset-insertion-mode-appropriately)
         (reprocess-current-token))))
 
@@ -1347,7 +1347,7 @@
                                             "tfoot" "thead" "tr" "td" "th"))
     (parse-error)
     (loop for element = (pop stack-of-open-elements)
-          until (equal "select" (tag-name element)))
+          until (string-equal "select" (tag-name element)))
     (reset-insertion-mode-appropriately)
     (reprocess-current-token))
 
@@ -1358,7 +1358,7 @@
         (ignore-token)
       (progn
         (loop for element = (pop stack-of-open-elements)
-              until (equal "select" (tag-name element)))
+              until (string-equal "select" (tag-name element)))
         (reset-insertion-mode-appropriately)
         (reprocess-current-token))))
 
@@ -1415,12 +1415,12 @@
 
    ((typep current-token 'end-of-file)
     (if (not (find "template" stack-of-open-elements
-                   :test 'equal
+                   :test 'string-equal
                    :key 'tag-name))
         (stop-parsing)
       (parse-error))
     (loop for element = (pop stack-of-open-elements)
-          until (equal "template" (tag-name element)))
+          until (string-equal "template" (tag-name element)))
     (clear-active-formatting-elements-upto-last-marker)
     (pop stack-of-template-insertion-modes)
     (reset-insertion-mode-appropriately)
@@ -1488,7 +1488,7 @@
 
    ;; TODO
    ((typep current-token 'end-of-file)
-    (when (not (equal "html" (tag-name current-node)))
+    (when (not (string-equal "html" (tag-name current-node)))
       (parse-error))
     (stop-parsing))
 
@@ -1570,19 +1570,21 @@
 
 (defun a-start-tag-whose-tag-name-is (name)
   (and (typep current-token 'start-tag)
-       (equal name (slot-value current-token 'tag-name))))
+       (string-equal name (slot-value current-token 'tag-name))))
 
 (defun a-start-tag-whose-tag-name-is-one-of (names)
   (and (typep current-token 'start-tag)
-       (member (slot-value current-token 'tag-name) names :test 'equal)))
+       (member (slot-value current-token 'tag-name) names
+               :test 'string-equal)))
 
 (defun an-end-tag-whose-tag-name-is (name)
   (and (typep current-token 'end-tag)
-       (equal name (slot-value current-token 'tag-name))))
+       (string-equal name (slot-value current-token 'tag-name))))
 
 (defun an-end-tag-whose-tag-name-is-one-of (names)
   (and (typep current-token 'end-tag)
-       (member (slot-value current-token 'tag-name) names :test 'equal)))
+       (member (slot-value current-token 'tag-name) names
+               :test 'string-equal)))
 
 (defun parse-error ()
   (cerror "Continue" 'parse-error))
@@ -1647,10 +1649,10 @@
       (let ((element (make-instance element-class
                                     :local-name tag-name)))
         (loop for attribute in (slot-value current-token 'attributes)
-              do (dom:set-attribute
-                  element
-                  (attribute-name attribute)
-                  (attribute-value attribute)))
+           do (dom:set-attribute
+               element
+               (attribute-name attribute)
+               (attribute-value attribute)))
         element))))
 
 (defun insert-html-element-for-token ()
@@ -1667,25 +1669,27 @@
 (defun appropriate-place-for-inserting-node (&optional override-target)
   (let ((target (if override-target
                     override-target
-                  current-node)))
+                    current-node)))
     target))
 
 ;; TODO: Check exact node condition
 (defun have-element-in-specific-scope-p (target scope)
   (check-type target (or element string))
   (loop for open-element in stack-of-open-elements
-        if (typecase target
-             (element (eq target open-element))
-             (string (equal target (tag-name open-element))))
-        do (return t)
-        else if (typecase scope
-                  (list (typecase target
-                          (element (find (tag-name target) scope :test 'equal))
-                          (string (find target scope :test 'equal))))
-                  (function (typecase target
-                              (element (funcall scope (tag-name target)))
-                              (string (funcall scope target)))))
-        do (return)))
+     if (typecase target
+          (element (eq target open-element))
+          (string (string-equal target (tag-name open-element))))
+     do (return t)
+     else if (typecase scope
+               (list (typecase target
+                       (element (find (tag-name target) scope
+                                      :test 'string-equal))
+                       (string (find target scope
+                                     :test 'string-equal))))
+               (function (typecase target
+                           (element (funcall scope (tag-name target)))
+                           (string (funcall scope target)))))
+     do (return)))
 
 (defun have-element-in-scope-p (element)
   (have-element-in-specific-scope-p
@@ -1775,7 +1779,7 @@
   (have-element-in-specific-scope-p
    element
    (lambda (tag-name)
-     (not (member tag-name '("optgroup" "option") :test 'equal)))))
+     (not (member tag-name '("optgroup" "option") :test 'string-equal)))))
 
 (defun special-element-p (element)
   (let ((tag-name (typecase element
@@ -1800,7 +1804,7 @@
               "mi" "mo" "mn" "ms" "mtext" "annotation-xml"
               ;; SVG
               "foreignObject" "desc" "title")
-            :test 'equal)))
+            :test 'string-equal)))
 
 (defun formatting-element-p (element)
   (let ((tag-name (typecase element
@@ -1809,7 +1813,7 @@
     (member tag-name
             '("a" "b" "big" "code" "em" "font" "i" "nobr" "s"
               "small" "strike" "strong" "tt" "u")
-            :test 'equal)))
+            :test 'string-equal)))
 
 (defun ordinary-element-p (element)
   (not (or (special-element-p element)
@@ -1867,8 +1871,8 @@
   (let ((tag-name (tag-name current-node)))
     (when (and (member tag-name '("dd" "dt" "li" "optgroup" "option"
                                   "p" "rb" "rp" "rt" "rtc")
-                       :test 'equal)
-               (not (equal tag-name except)))
+                       :test 'string-equal)
+               (not (string-equal tag-name except)))
       (pop stack-of-open-elements)
       (generate-implied-end-tags :except except))))
 
@@ -1878,7 +1882,7 @@
                              "li" "optgroup" "option"
                              "p" "rb" "rp" "rt" "rtc" "tbody" "td"
                              "tfoot" "th" "thead" "tr")
-                  :test 'equal)
+                  :test 'string-equal)
       (pop stack-of-open-elements)
       (generate-all-implied-end-tags-thoroughly))))
 
@@ -1896,7 +1900,7 @@
     ;; Step 1
     (setf subject (slot-value current-token 'tag-name))
     ;; Step 2
-    (when (and (equal subject (tag-name current-node))
+    (when (and (string-equal subject (tag-name current-node))
                (not (find current-node active-formatting-elements)))
       (pop stack-of-open-elements)
       (return-from adoption-agency))
@@ -1917,18 +1921,18 @@
                    :start (if last-marker-position
                               (1+ last-marker-position)
                             0)
-                   :test 'equal
+                   :test 'string-equal
                    :key 'tag-name
                    :from-end t))
        (unless formatting-element
          ;; Act as `any other end tag` entry from `in-body` insertion mode
          (loop for node in stack-of-open-elements
-               do (if (equal (tag-name node)
-                             (slot-value current-token 'tag-name))
+               do (if (string-equal (tag-name node)
+                                    (slot-value current-token 'tag-name))
                       (progn
                         (generate-implied-end-tags)
-                        (unless (equal (tag-name (first stack-of-open-elements))
-                                       (slot-value current-token 'tag-name))
+                        (unless (string-equal (tag-name (first stack-of-open-elements))
+                                              (slot-value current-token 'tag-name))
                           (parse-error))
                         (loop for n = (pop stack-of-open-elements)
                               until (eq n node))
@@ -2059,19 +2063,19 @@
 
 (defun close-p-element ()
   (generate-implied-end-tags :except "p")
-  (unless (equal "p" (tag-name current-node))
+  (unless (string-equal "p" (tag-name current-node))
     (parse-error))
   (loop for element = (pop stack-of-open-elements)
-        until (equal "p" (tag-name element))))
+        until (string-equal "p" (tag-name element))))
 
 (defun close-cell ()
   (generate-implied-end-tags)
-  (when (not (or (equal "td" (tag-name current-node))
-                 (equal "th" (tag-name current-node))))
+  (when (not (or (string-equal "td" (tag-name current-node))
+                 (string-equal "th" (tag-name current-node))))
     (parse-error))
   (loop for element = (pop stack-of-open-elements)
-        until (or (equal "td" (tag-name element))
-                  (equal "th" (tag-name element))))
+        until (or (string-equal "td" (tag-name element))
+                  (string-equal "th" (tag-name element))))
   (clear-active-formatting-elements-upto-last-marker)
   (setf insertion-mode 'in-row))
 
@@ -2103,7 +2107,7 @@
              (setf last t)
              #|TODO|#))
          ;; Step 4
-         (when (equal "select" (tag-name node))
+         (when (string-equal "select" (tag-name node))
            (tagbody
             ;; Step 4.1
             (when last (go :done))
@@ -2118,10 +2122,10 @@
             (let ((ancestor-position (position ancestor stack-of-open-elements)))
               (setf ancestor (nth (1+ ancestor-position) stack-of-open-elements)))
             ;; Step 4.5
-            (when (equal "template" (tag-name ancestor))
+            (when (string-equal "template" (tag-name ancestor))
               (go :done))
             ;; Step 4.6
-            (when (equal "table" (tag-name ancestor))
+            (when (string-equal "table" (tag-name ancestor))
               (switch-insertion-mode 'in-select-in-table)
               (return))
             ;; Step 4.7
@@ -2131,52 +2135,52 @@
             (switch-insertion-mode 'in-select)
             (return)))
          ;; Step 5
-         (when (and (or (equal "td" (tag-name node))
-                        (equal "th" (tag-name node)))
+         (when (and (or (string-equal "td" (tag-name node))
+                        (string-equal "th" (tag-name node)))
                     (not last))
            (switch-insertion-mode 'in-cell)
            (return))
          ;; Step 6
-         (when (equal "tr" (tag-name node))
+         (when (string-equal "tr" (tag-name node))
            (switch-insertion-mode 'in-row)
            (return))
          ;; Step 7
-         (when (or (equal "tbody" (tag-name node))
-                   (equal "thead" (tag-name node))
-                   (equal "tfoot" (tag-name node)))
+         (when (or (string-equal "tbody" (tag-name node))
+                   (string-equal "thead" (tag-name node))
+                   (string-equal "tfoot" (tag-name node)))
            (switch-insertion-mode 'in-table-body)
            (return))
          ;; Step 8
-         (when (equal "caption" (tag-name node))
+         (when (string-equal "caption" (tag-name node))
            (switch-insertion-mode 'in-caption)
            (return))
          ;; Step 9
-         (when (equal "colgroup" (tag-name node))
+         (when (string-equal "colgroup" (tag-name node))
            (switch-insertion-mode 'in-column-group)
            (return))
          ;; Step 10
-         (when (equal "table" (tag-name node))
+         (when (string-equal "table" (tag-name node))
            (switch-insertion-mode 'in-table)
            (return))
          ;; Step 11
-         (when (equal "template" (tag-name node))
+         (when (string-equal "template" (tag-name node))
            (switch-insertion-mode (first stack-of-template-insertion-modes))
            (return))
          ;; Step 12
-         (when (and (equal "head" (tag-name node))
+         (when (and (string-equal "head" (tag-name node))
                     (not last))
            (switch-insertion-mode 'in-head)
            (return))
          ;; Step 13
-         (when (equal "body" (tag-name node))
+         (when (string-equal "body" (tag-name node))
            (switch-insertion-mode 'in-body)
            (return))
          ;; Step 14
-         (when (equal "frameset" (tag-name node))
+         (when (string-equal "frameset" (tag-name node))
            (switch-insertion-mode 'in-frameset)
            (return))
          ;; Step 15
-         (when (equal "html" (tag-name node))
+         (when (string-equal "html" (tag-name node))
            (if (null head-element-pointer)
                (progn
                  (switch-insertion-mode 'before-head)
@@ -2260,8 +2264,8 @@
           (appropriate-end-tag-token-p (end-tag-token)
             `(and (typep ,end-tag-token 'end-tag)
                   last-start-tag-token
-                  (equal (slot-value ,end-tag-token 'tag-name)
-                         (slot-value last-start-tag-token 'tag-name))))
+                  (string-equal (slot-value ,end-tag-token 'tag-name)
+                                (slot-value last-start-tag-token 'tag-name))))
           ;; parse
           ,@(loop for (insertion-mode) in *parser-insertion-modes*
               collect `(,(intern (format nil "PROCESS-TOKEN-USING-~A-INSERTION-MODE"
@@ -2308,7 +2312,7 @@
           (case state
             ,@(loop for (state) in *tokenizer-states*
                     collect `(,state (go ,(make-keyword state)))))
-          ;; body
+          ;; tokenize states
           ,@(loop for (state . body) in *tokenizer-states*
                   append `(,(make-keyword state)
                            (handler-bind ((parse-error
@@ -2325,13 +2329,12 @@
             (setf current-token token)
             (when (typep token 'start-tag)
               (setf last-start-tag-token token)))
-          (go :switch-insertion-mode)
           ;; parse
           :switch-insertion-mode
           (case insertion-mode
             ,@(loop for (insertion-mode) in *parser-insertion-modes*
                     collect `(,insertion-mode (go ,(make-keyword insertion-mode)))))
-          ;; body
+          ;; insertion modes
           ,@(loop for (insertion-mode . body) in *parser-insertion-modes*
                   append `(,(make-keyword insertion-mode)
                            (when *debug*

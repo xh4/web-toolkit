@@ -1,7 +1,7 @@
 (in-package :html)
 
 (defclass element (dom:element)
-  ((dom:namespace
+  ((dom:namespace-uri
     :initform "http://www.w3.org/1999/xhtml"
     :allocation :class)))
 
@@ -72,8 +72,10 @@
            (typecase child
              (string (dom:append-child element (text child)))
              (dom:element
-              (when (or (equal "html" (dom:namespace-prefix child))
-                        (equal "svg" (dom:namespace-prefix child)))
+              (when (or (equal "http://www.w3.org/1999/xhtml"
+                               (dom:namespace-uri child))
+                        (equal "http://www.w3.org/2000/svg"
+                         (dom:namespace-uri child)))
                 (dom:append-child element child)))
              (text (dom:append-child element child))
              (t (dom:append-child element (text (format nil "~A" child)))))))
