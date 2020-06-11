@@ -65,7 +65,12 @@
                 (html:script
                  :async t
                  :src "https://platform.twitter.com/widgets.js"
-                 :charset "utf-8")))
+                 :charset "utf-8"))
+            (dt "Update")
+            (dd (local-time:format-timestring
+                 nil
+                 (local-time:now) 
+                 :format '(:long-month " " (:day 2) ", " (:year 4)))))
            (p :class "copyright"
               "Copyright © 2018-2020 "
               (a :href "https://xh.coobii.com"
