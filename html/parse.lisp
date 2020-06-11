@@ -809,7 +809,7 @@
     (reconstruct-active-formatting-elements)
     (adjust-mathml-attributes)
     (adjust-foreign-attributes)
-    (insert-foreign-element-for-token "mathml")
+    (insert-foreign-element-for-token "http://www.w3.org/1998/Math/MathML")
     (when (slot-value current-token 'self-closing-flag)
       (pop stack-of-open-elements)
       (acknowledge-token-self-closing-flag)))
@@ -818,7 +818,7 @@
     (reconstruct-active-formatting-elements)
     (adjust-svg-attributes)
     (adjust-foreign-attributes)
-    (insert-foreign-element-for-token "svg")
+    (insert-foreign-element-for-token "http://www.w3.org/2000/svg")
     (when (slot-value current-token 'self-closing-flag)
       (pop stack-of-open-elements)
       (acknowledge-token-self-closing-flag)))
@@ -1566,6 +1566,31 @@
     (parse-error)
     (ignore-token))))
 
+(defmacro process-token-in-foreign-content ()
+  `(cond
+    ((eq #\null current-token)
+     (parse-error)
+     (insert-character +replacement-character+))
+    ((or (eq #\tab current-token) (eq #\newline current-token)
+         (eq #\page current-token) (eq #\return current-token)
+         (eq #\space current-token))
+     (insert-character))
+    ((typep current-token 'cl:character)
+     (insert-character)
+     (setf frameset-ok-flag nil))
+    ((typep current-token 'doctype-token)
+     (parse-error)
+     (ignore-token))
+    ((or (a-start-tag-whose-tag-name-is-one-of '("b" "big" "blockquote" "body" "br" "center" "code" "dd" "div" "dl" "dt" "em" "embed" "h1" "h2" "h3" "h4" "h5" "h6" "head" "hr" "i" "img" "li" "listing" "menu" "meta" "nobr" "ol" "p" "pre" "ruby" "s" "small" "span" "strong" "strike" "sub" "sup" "table" "tt" "u" "ul" "var"))
+         )
+     (parse-error)
+     (pop stack-of-open-elements)
+     (reprocess-current-token))
+    ((typep current-token 'start-tag)
+     (let ((adjusted-current-node (adjusted-current-node)))
+       (insert-foreign-element-for-token (dom:namespace-uri adjusted-current-node))))
+    ((typep current-token 'end-tag))))
+
 (defstruct marker)
 
 (defun a-start-tag-whose-tag-name-is (name)
@@ -1640,14 +1665,35 @@
         do (setf (gethash (symbol-name symbol) *html-element-table*) symbol)
         finally (return *html-element-table*)))
 
-;; TODO: Respect namespace & parent
+(defparameter *svg-element-table* nil)
+
+(defun make-svg-element-table ()
+  (setf *svg-element-table* (make-hash-table :test 'string-equal))
+  (loop for symbol in '(svg:svg svg:g svg:defs svg:desc svg:metadata
+                                svg:title svg:symbol svg:use svg:switch
+                                svg:path svg:rect svg:circle svg:ellipse
+                                svg:line svg:polyline svg:polygon svg:text
+                                svg:tspan svg:text-path svg:image
+                                svg:foreign-object svg:marker svg:a svg:view)
+        do (setf (gethash (symbol-name symbol) *svg-element-table*) symbol)
+        finally (return *svg-element-table*)))
+
+;; TODO: Respect parent
 (defun create-element-for-token (&optional namespace parent)
   (unless *html-element-table* (make-html-element-table))
+  (unless *svg-element-table* (make-svg-element-table))
   (let ((tag-name (slot-value current-token 'tag-name)))
-    (let ((element-class (or (gethash tag-name *html-element-table*)
-                             'element)))
+    (let ((element-class (cond
+                          ((or (null namespace)
+                               (equal "http://www.w3.org/1999/xhtml" namespace))
+                           (or (gethash tag-name *html-element-table*)
+                             'element))
+                          ((equal "http://www.w3.org/2000/svg" namespace)
+                           (or (gethash tag-name *svg-element-table*)
+                             'svg:element)))))
       (let ((element (make-instance element-class
-                                    :local-name tag-name)))
+                                    :local-name tag-name
+                                    :namespace-uri namespace)))
         (loop for attribute in (slot-value current-token 'attributes)
            do (dom:set-attribute
                element
@@ -1656,7 +1702,7 @@
         element))))
 
 (defun insert-html-element-for-token ()
-  (insert-foreign-element-for-token "html"))
+  (insert-foreign-element-for-token "http://www.w3.org/1999/xhtml"))
 
 (defun insert-foreign-element-for-token (namespace)
   (let ((adjusted-insertion-location (appropriate-place-for-inserting-node)))
@@ -2210,37 +2256,11 @@
 ;; TODO
 (defun adjust-foreign-attributes ())
 
-(defun tree-construction-dispatcher ()
-  (if (or (null stack-of-open-elements)
-          t
-          #|TODO: Handle other cases|#)
-      (let ((function
-             (case insertion-mode
-               (initial 'process-token-using-initial-insertion-mode)
-               (before-html 'process-token-using-before-html-insertion-mode)
-               (before-head 'process-token-using-before-head-insertion-mode)
-               (in-head 'process-token-using-in-head-insertion-mode)
-               (in-head-noscript 'process-token-using-in-head-noscript-insertion-mode)
-               (after-head 'process-token-using-after-head-insertion-mode)
-               (in-body 'process-token-using-in-body-insertion-mode)
-               (text 'process-token-using-text-insertion-mode)
-               (in-table 'process-token-using-in-table-insertion-mode)
-               (in-table-text 'process-token-using-in-table-text-insertion-mode)
-               (in-caption 'process-token-using-in-caption-insertion-mode)
-               (in-column-group 'process-token-using-in-column-group-insertion-mode)
-               (in-table-body 'process-token-using-in-table-body-insertion-mode)
-               (in-row 'process-token-using-in-row-insertion-mode)
-               (in-cell 'process-token-using-in-cell-insertion-mode)
-               (in-select 'process-token-using-in-select-insertion-mode)
-               (in-select-in-table 'process-token-using-in-select-in-table-insertion-mode)
-               (in-template 'process-token-using-in-template-insertion-mode)
-               (after-body 'process-token-using-after-body-insertion-mode)
-               (in-frameset 'process-token-using-in-frameset-insertion-mode)
-               (after-frameset 'process-token-using-after-frameset-insertion-mode)
-               (after-after-body 'process-token-using-after-after-body-insertion-mode)
-               (after-after-frameset 'process-token-using-after-after-frameset-insertion-mode))))
-        (funcall function))
-    (error "TODO: Process the token according to the rules given in the section for parsing tokens in foreign content.")))
+(defun html-integration-point-p (element)
+  (or (and (equal "http://www.w3.org/2000/svg" (dom:namespace-uri element))
+           (member (dom:local-name element)
+                   '("foreignObject" "desc" "title")
+                   :test 'equal))))
 
 (defmacro define-parse-procedure ()
   `(defun %parse (stream)
@@ -2330,6 +2350,21 @@
             (when (typep token 'start-tag)
               (setf last-start-tag-token token)))
           ;; parse
+          :tree-construction-dispatch
+          (if (or (null stack-of-open-elements)
+                  (let ((adjusted-current-node (adjusted-current-node)))
+                    (or (equal "http://www.w3.org/1999/xhtml"
+                               (dom:namespace-uri adjusted-current-node))
+                        (and (html-integration-point-p adjusted-current-node)
+                             (or (typep current-token 'start-tag)
+                                 (typep current-token 'cl:character)))
+                        (typep current-token 'end-of-file))))
+              (go :switch-insertion-mode)
+            (progn
+              (process-token-in-foreign-content)
+              (if pending-tokens
+                  (go :consume-token)
+                (go :switch-state))))
           :switch-insertion-mode
           (case insertion-mode
             ,@(loop for (insertion-mode) in *parser-insertion-modes*
