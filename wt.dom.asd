@@ -15,6 +15,7 @@
                              (:file "node")
                              (:file "document")
                              (:file "element")
+                             (:file "attribute")
                              (:file "text")
                              (:file "traversal"))))
   :in-order-to ((test-op (test-op :wt.dom/test)))
