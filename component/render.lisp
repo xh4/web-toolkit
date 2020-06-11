@@ -17,7 +17,7 @@
     (prog1 root
       (without-propagation
         ;; Set tag name
-        (setf (slot-value component 'dom:tag-name) (dom:tag-name root))
+        ;; (setf (slot-value component 'dom:tag-name) (dom:tag-name root))
         ;; Set class
         ;; FIXME: handle special characters in class names
         (loop for class in (compute-component-class component)

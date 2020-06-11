@@ -19,14 +19,6 @@
            (render com)
            (is (equal 'html:h1 (type-of (component::component-root com))))))))
 
-  (it "should set component's tag name"
-      (ensure-cleanup (foo)
-        (compile-and-load-toplevel-forms
-         (define-component com () () (:render (lambda () (html:h1))))
-         (let ((com (com)))
-           (render com)
-           (is (equal "h1" (dom:tag-name com)))))))
-
   (it "should set has component's name as class"
       (ensure-cleanup (foo)
         (compile-and-load-toplevel-forms
