@@ -21,6 +21,16 @@
    :header-fields
    :find-header-field
    :set-header-field
+   ;; cookie
+   :cookie
+   :cookie-name
+   :cookie-value
+   :cookie-domain
+   :cookie-path
+   :cookie-expires
+   :cookie-max-age
+   :cookie-secure
+   :cookie-http-only
    ;; request
    :request
    :request-method
