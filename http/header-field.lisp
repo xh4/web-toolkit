@@ -1,24 +1,16 @@
 (in-package :http)
 
-(defgeneric header-field-name (header-field))
-
-(defgeneric (setf header-field-name) (name header-field))
-
-(defgeneric header-field-value (header-field))
-
-(defgeneric (setf header-field-value) (value header-field))
-
 (defgeneric header-field-name-match-p (header-field name))
 
-(defclass header-field ()
+(defclass header-field (field)
   ((name
     :initarg :name
     :initform nil
-    :reader header-field-name)
+    :accessor header-field-name)
    (value
     :initarg :value
     :initform nil
-    :reader header-field-value)))
+    :accessor header-field-value)))
 
 (defmethod print-object ((header-field header-field) stream)
   (print-unreadable-object (header-field stream :type t)
@@ -30,7 +22,7 @@
   (setf (header-field-name header-field) (slot-value header-field 'name)
         (header-field-value header-field) (slot-value header-field 'value)))
 
-(defmethod (setf header-field-name) (name header-field)
+(defmethod (setf header-field-name) (name (header-field header-field))
   (let ((name (typecase name
                 (string name)
                 (t (header-case (format nil "~A" name))))))
@@ -39,7 +31,7 @@
 (defmethod header-field-name ((header-field null))
   nil)
 
-(defmethod (setf header-field-value) (value header-field)
+(defmethod (setf header-field-value) (value (header-field header-field))
   (let ((value (typecase value
                  (string value)
                  (t (format nil "~A" value)))))

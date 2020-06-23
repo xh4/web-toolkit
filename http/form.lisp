@@ -1,12 +1,22 @@
 (in-package :http)
 
+(defgeneric form-fields (form))
+
+(defgeneric (setf form-fields) (fields form))
+
 (defclass form ()
   ((fields
     :initarg :fields
-    :initform nil
-    :accessor form-fields)))
+    :initform '()
+    :accessor fields)))
 
-(defclass form-field ()
+(defmethod form-fields ((form form))
+  (fields form))
+
+(defmethod (setf form-fields) (fields (form form))
+  (setf (fields form) fields))
+
+(defclass form-field (field)
   ((name
     :initarg :name
     :initform nil

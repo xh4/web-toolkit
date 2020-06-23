@@ -1,18 +1,20 @@
 (in-package :http)
 
-(defgeneric header-fields (object))
+(defgeneric header-fields (header))
 
-(defgeneric (setf header-fields) (value object))
+(defgeneric (setf header-fields) (fields header))
 
 (defclass header ()
   ((fields
     :initarg :fields
     :initform '()
-    :type list
-    :reader header-fields)))
+    :accessor fields)))
 
-(defmethod (setf header-fields) (value (header header))
-  (setf (slot-value header 'fields) value))
+(defmethod header-fields ((header header))
+  (fields header))
+
+(defmethod (setf header-fields) (fields (header header))
+  (setf (fields header) fields))
 
 (defun process-header-objects (header objects)
   (if objects

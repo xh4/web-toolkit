@@ -7,6 +7,11 @@
   #+sb-package-locks
   (:lock t)
   (:export
+   ;; field
+   :field
+   :fields
+   :field-name
+   :field-value
    ;; header-field
    :header-field
    :header-field-name
@@ -77,6 +82,7 @@
    :start-server
    :stop-server
    ;; client
+   :with-request
    :get :with-get
    :head :with-head
    :put :with-put
