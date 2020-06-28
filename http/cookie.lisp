@@ -78,7 +78,7 @@
                  (write-string name stream)
                  (write-char #\= stream)
                  (format stream "~A" value))))
-        (format stream "~A-~A" name value)
+        (format stream "~A=~A" name value)
         (write-attribute-1 "Domain" domain)
         (write-attribute-1 "Path" path)
         (write-attribute-1 "Expires" expires)
