@@ -203,10 +203,11 @@
   (defvar *tokenizer-states* '()))
 
 (defmacro define-tokenizer-state (name &body body)
-  (if-let ((i (position name *tokenizer-states* :key 'first)))
-      (setf (nth i *tokenizer-states*) `(,name ,@body))
-    (appendf *tokenizer-states* `((,name ,@body))))
-  nil)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (if-let ((i (position ',name *tokenizer-states* :key 'first)))
+         (setf (nth i *tokenizer-states*) '(,name ,@body))
+       (appendf *tokenizer-states* '((,name ,@body))))
+     nil))
 
 (define-tokenizer-state data-state
   (case next-input-character

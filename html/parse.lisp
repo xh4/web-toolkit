@@ -6,10 +6,11 @@
   (defvar *parser-insertion-modes* '()))
 
 (defmacro define-parser-insertion-mode (name &body body)
-  (if-let ((i (position name *parser-insertion-modes* :key 'first)))
-      (setf (nth i *parser-insertion-modes*) `(,name ,@body))
-    (appendf *parser-insertion-modes* `((,name ,@body))))
-  nil)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (if-let ((i (position ',name *parser-insertion-modes* :key 'first)))
+         (setf (nth i *parser-insertion-modes*) '(,name ,@body))
+       (appendf *parser-insertion-modes* '((,name ,@body))))
+     nil))
 
 (defparameter *debug* nil)
 
