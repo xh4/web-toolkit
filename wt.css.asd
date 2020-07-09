@@ -52,6 +52,7 @@
                              (:file "pointer-events")
                              (:file "filter-effects")
                              (:file "rule")
+                             (:file "stylesheet")
                              (:file "tokenize")
                              (:file "parse"))))
   :in-order-to ((test-op (test-op :wt.css/test)))

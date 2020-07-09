@@ -6,6 +6,8 @@
   (:shadow :length :float :declaration :rem :time :position :shadow :rotate
            :parse-error :function :function-name :function-value :block)
   (:export
+   ;; stylesheet
+   :stylesheet
    ;; rule
    :rule :qualified-rule :style-rule :at-rule
    :rule-prelude :rule-block :rule-selector :rule-declarations :rule-name
@@ -15,7 +17,7 @@
    ;; serialize
    :serialize
    ;; tokenize
-   :tokenize :serialize-tokens   
+   :tokenize :serialize-tokens
    ;; parse
    :parse-rules :parse-declarations :syntax-error
    ;; length
