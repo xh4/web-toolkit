@@ -52,6 +52,11 @@
                                      :status (response-status *response*)
                                      :header (response-header *response*))))
 
+(defmethod reply-object ((array json:array))
+  (setf *response* (make-json-entity array
+                                     :status (response-status *response*)
+                                     :header (response-header *response*))))
+
 (defmethod reply-object ((document html:document))
   (setf *response* (make-html-entity document
                                      :status (response-status *response*)
