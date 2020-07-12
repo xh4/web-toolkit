@@ -37,7 +37,7 @@ satisfy `whitespacep'."
     (declare (ignore reserve))
     (let ((octets (babel:string-to-octets (string char))))
       (let ((pct-encoded (mapcar
-                          (lambda (n) (format nil "%~X" n))
+                          (lambda (n) (format nil "%~:@(~X~)" n))
                           (coerce octets 'list))))
         (apply #'concatenate 'string pct-encoded))))
   (:method ((o null) &key reserve) (declare (ignore reserve))))
