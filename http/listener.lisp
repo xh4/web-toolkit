@@ -7,7 +7,7 @@
     :accessor listener-port)
    (address
     :initarg :address
-    :initform nil
+    :initform "127.0.0.1"
     :accessor listener-address)
    (name
     :initarg :name
@@ -34,7 +34,7 @@
   (print-unreadable-object (listener stream :type t :identity t)
     (with-slots (port address) listener
       (let ((started-p (listener-started-p listener)))
-        (format stream "Address: ~A, Port: ~A, Started: ~A" address port started-p)))))
+        (format stream "Address: ~S, Port: ~A, Started: ~A" address port started-p)))))
 
 (defmethod initialize-instance :after ((listener listener) &key)
   (with-slots (port) listener
@@ -44,8 +44,8 @@
 
 (defmacro listener (&key port address)
   `(make-instance 'listener
-                  :port ,port
-                  :address ,address))
+                  ,@(when port `(:port ,port))
+                  ,@(when address `(:address ,address))))
 
 (defgeneric start-listener (listener &key))
 
