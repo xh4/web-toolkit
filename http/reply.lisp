@@ -2,7 +2,9 @@
 
 (defmacro reply (&rest forms)
   (with-gensyms (object)
-    `(let ((*response* (or *response* (make-instance 'response))))
+    `(progn
+       (unless *response*
+         (setf *response* (make-instance 'response)))
        ,@(loop for form in forms
             collect
               `(let ((,object ,form))
@@ -36,14 +38,18 @@
   (setf (response-body *response*) data))
 
 (defmethod reply-object ((pathname pathname))
-  (let ((entity (if (directory-pathname-p pathname)
-                    (make-directory-entity pathname
-                                           :status (response-status *response*)
-                                           :header (response-header *response*))
-                    (make-file-entity pathname
-                                      :status (response-status *response*)
-                                      :header (response-header *response*)))))
-    (setf *response* entity)))
+  (if (probe-file pathname)
+      (let ((entity (if (directory-pathname-p pathname)
+                        (make-directory-entity pathname
+                                               :status (response-status *response*)
+                                               :header (response-header *response*))
+                        (make-file-entity pathname
+                                          :status (response-status *response*)
+                                          :header (response-header *response*)))))
+        (setf *response* entity))
+      (setf *response* (reply
+                        (status 404)
+                        "not found"))))
 
 (defmethod reply-object ((nothing null)))
 
