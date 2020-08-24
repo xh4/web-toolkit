@@ -133,7 +133,7 @@ return NIL."
         (c (read-char stream)))
     (case c
       (#\" nil)                         ; End of string
-      ((or #\Newline #\Linefeed #\Tab #\Formfeed #\Null)
+      ((or #\Newline #\Linefeed #\Tab #\Page #\Null)
        (json-syntax-error stream
                           (format nil "Unescaped character ~S" c)))
       (#\\ (let ((c (read-char stream)))
