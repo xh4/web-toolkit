@@ -42,11 +42,22 @@
     :initarg :handler
     :initform nil)))
 
+(defun request-uri-variables (request)
+  *request-uri-variables*)
+
 (defmethod route ((route simple-route) request)
-  (let ((uri (uri (request-uri request))))
-    (when (and (equal (route-path route) (uri-path uri))
-               (equal (symbol-name (route-method route))
-                      (request-method request)))
+  (let ((request-uri (request-uri request)))
+    (when (and (equal (symbol-name (route-method route))
+                      (request-method request))
+               (or (equal (route-path route) (uri-path request-uri))
+                   (cl-uri-templates:with-uri-environment
+                     (let ((variables (plist-alist
+                                       (cl-uri-templates:destructure-uri (uri-path request-uri)
+                                                                         (route-path route)))))
+
+                       (and variables
+                            (notany (lambda (v) (find #\/ (cdr v))) variables)
+                            (setf *request-uri-variables* variables))))))
       (slot-value route 'handler))))
 
 (defmethod make-route ((type (eql :get)) form)

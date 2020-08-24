@@ -5,23 +5,23 @@
   (:metaclass handler-class)
   (:function
    (lambda (handler request)
-     (restart-case
-         (handler-bind ((error (lambda (error)
-                                 (invoke-restart 'reply-error handler request error))))
-           (call-next-handler))
-       (reply-error (error-handler request error)
-         (handle-error error-handler request error))))))
+     (block nil
+       (handler-bind
+           ((error (lambda (error)
+                     (restart-case
+                         (handle-error *handler* request error)
+                       (reply-error ()
+                         (return (reply-error *handler* request error))))
+                     (return (reply-error *handler* request error)))))
+         (call-next-handler))))))
 
 (defgeneric handle-error (handler request error)
   (:method ((handler error-handler) (request request) error)
-    (reply (status 500))
-    (let ((accept (header-field-value
-                   (find-header-field "Accept" request))))
-      (when (or (search "text/html" accept)
-                (equal "*/*" accept))
-        (reply
-         (html:document
-          (html:html
-           (html:head)
-           (html:body
-            (html:h1 "Internal Server Error")))))))))
+    ;; (invoke-debugger error)
+    ))
+
+(defgeneric reply-error (handler request error)
+  (:method ((handler error-handler) (request request) error)
+    (reply
+     (status 500)
+     "Internal Server Error")))

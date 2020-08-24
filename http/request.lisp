@@ -45,7 +45,7 @@
 (defmethod uri-path ((request request) &key decode)
   (uri-path (request-uri request) :decode decode))
 
-(defmethod uri-query ((request request) &key type decode)
+(defmethod uri-query ((request request) &key (type :alist) (decode nil))
   (uri-query (request-uri request) :type type :decode decode))
 
 (defgeneric request-version (request))
