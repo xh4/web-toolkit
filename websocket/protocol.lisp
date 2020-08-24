@@ -151,9 +151,15 @@
 
 (defun check-handshake-request (request)
   ;; TODO: case insensitive
+  ;;
+  ;; The `websocket` package from tcllib will send two header fields with
+  ;;   the name `Connection`, the first is with value `Keep-Alive`, the second
+  ;;   is with value `Upgrade`
   (unless (and
-           (search "Upgrade" (header-field-value
-                              (find-header-field "Connection" request)))
+           (loop for header-field in (header-fields request)
+              when (and (string-equal "Connection" (header-field-name header-field))
+                        (string-equal "Upgrade" (header-field-value header-field)))
+              do (return header-field))
            (string-equal "WebSocket" (header-field-value
                                       (find-header-field "Upgrade" request)))
            (string-equal "13" (header-field-value
