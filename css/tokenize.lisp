@@ -146,7 +146,7 @@
       (char<= #\A char #\F)))
 
 (define-code-point-predicate non-ascii-code-point-p (char)
-  (char>= char #\U+0080))
+  (>= (char-code char) #x0080))
 
 (define-code-point-predicate name-start-code-point-p (char)
   (or (letter-p char)
