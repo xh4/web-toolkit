@@ -41,9 +41,11 @@
     :initform (local-time:now)
     :accessor connection-open-time)))
 
-(defvar *connection* nil)
+(let ((counter 0))
+  (defun next-connection-id ()
+    (excl:incf-atomic counter)))
 
-(defvar *global-connection-indexer* 0)
+(defvar *connection* nil)
 
 ;; TODO: Use weak hash table
 (defvar *connection-table* (make-hash-table))
@@ -81,7 +83,7 @@
                  (error "Expect IPv4 address, got ~A" address))
                (format nil "~{~A~,^.~}" (coerce address 'list))))
         (let ((connection (make-instance 'connection
-                                         :id (excl:incf-atomic *global-connection-indexer*)
+                                         :id (next-connection-id)
                                          :listener listener
                                          :socket socket
                                          :input-stream stream
