@@ -56,30 +56,38 @@
                                       &key on-open on-close on-error on-message
                                         &allow-other-keys)
   (declare (ignore slot-names))
-  (when on-open
+  (if on-open
     (let* ((handler (eval (car on-open)))
            (handler-lambda-list (function-lambda-list handler)))
       (check-open-handler-lambda-list handler-lambda-list)
       (setf (slot-value class 'open-handler) handler
-            (slot-value class 'open-handler-lambda-list) handler-lambda-list)))
-  (when on-close
+            (slot-value class 'open-handler-lambda-list) handler-lambda-list))
+    (setf (slot-value class 'open-handler) nil
+          (slot-value class 'open-handler-lambda-list) nil))
+  (if on-close
     (let* ((handler (eval (car on-close)))
            (handler-lambda-list (function-lambda-list handler)))
       (check-close-handler-lambda-list handler-lambda-list)
       (setf (slot-value class 'close-handler) handler
-            (slot-value class 'close-handler-lambda-list) handler-lambda-list)))
-  (when on-error
+            (slot-value class 'close-handler-lambda-list) handler-lambda-list))
+    (setf (slot-value class 'close-handler) nil
+          (slot-value class 'close-handler-lambda-list) nil))
+  (if on-error
     (let* ((handler (eval (car on-error)))
            (handler-lambda-list (function-lambda-list handler)))
       (check-error-handler-lambda-list handler-lambda-list)
       (setf (slot-value class 'error-handler) handler
-            (slot-value class 'error-handler-lambda-list) handler-lambda-list)))
-  (when on-message
+            (slot-value class 'error-handler-lambda-list) handler-lambda-list))
+    (setf (slot-value class 'error-handler) nil
+          (slot-value class 'error-handler-lambda-list) nil))
+  (if on-message
     (let* ((handler (eval (car on-message)))
            (handler-lambda-list (function-lambda-list handler)))
       (check-message-handler-lambda-list handler-lambda-list)
       (setf (slot-value class 'message-handler) handler
-            (slot-value class 'message-handler-lambda-list) handler-lambda-list))))
+            (slot-value class 'message-handler-lambda-list) handler-lambda-list))
+    (setf (slot-value class 'message-handler) nil
+          (slot-value class 'message-handler-lambda-list) nil)))
 
 (defgeneric close-session  (session &optional reason)
   (:method ((session session) &optional reason)
