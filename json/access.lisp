@@ -18,8 +18,8 @@
                             (t (fail value accessor)))))
                  (object (typecase accessor
                            ((or string symbol)
-                            (with-slots (pairs) value
-                              (if-let ((cons (assoc accessor pairs :test 'equal)))
+                            (with-slots (properties) value
+                              (if-let ((cons (assoc accessor properties :test 'equal)))
                                 (setf found-p t
                                       current-value (cdr cons))
                                 (setf found-p nil
@@ -49,13 +49,13 @@
                       (when (>= accessor (length (value thing)))
                         (error "Can't set ~A to ~A, accessor ~A out of index" value thing accessor))
                       (setf (nth accessor (value thing)) value))
-               (object (with-slots (pairs) thing
-                         (loop for (name . nil) in pairs
+               (object (with-slots (properties) thing
+                         (loop for (name . nil) in properties
                             for index from 0
                             when (equal accessor name)
-                            do (return (setf (cdr (nth index pairs)) value))
+                            do (return (setf (cdr (nth index properties)) value))
                             finally
-                              (appendf pairs (list (cons accessor value)))
+                              (appendf properties (list (cons accessor value)))
                               (return value))))
                (t (error "Can't set ~A to ~A, accessor: ~A" value thing accessor))))
            (set2 (thing accessors)
@@ -65,8 +65,8 @@
                    (typecase thing
                      (array (let ((list (value thing)))
                               (set2 (nth accessor list) (rest accessors))))
-                     (object (with-slots (pairs) thing
-                               (loop for (name . value) in pairs
+                     (object (with-slots (properties) thing
+                               (loop for (name . value) in properties
                                   when (equal name accessor)
                                   do (return (set2 value (rest accessors)))
                                   finally (error "Object name ~A not found" accessor))))

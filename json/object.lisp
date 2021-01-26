@@ -1,18 +1,18 @@
 (in-package :json)
 
 (defclass object ()
-  ((pairs
-    :initarg :pairs
+  ((properties
+    :initarg :properties
     :initform nil
-    :accessor object-pairs)))
+    :accessor object-properties)))
 
 (defun object-form (object)
   (check-type object object)
   (labels ((value-expr (value)
              (typecase value
                (object
-                (let ((pairs (slot-value value 'pairs)))
-                  (loop for (name . value) in pairs
+                (let ((properties (slot-value value 'properties)))
+                  (loop for (name . value) in properties
                      append (list name (value-expr value)) into body
                      finally (return `(object ,@body)))))
                (true 'true)
@@ -23,13 +23,11 @@
     (value-expr object)))
 
 (defmethod print-object ((object object) stream)
-  (let ((*print-case* :downcase))
-    (prin1 (object-form object) stream)))
+  (prin1 (object-form object) stream))
 
 (defun pprint-object (object &optional (stream *standard-output*))
   (check-type object object)
-  (let ((*print-case* :downcase)
-        (*print-pretty* t)
+  (let ((*print-pretty* t)
         (list (object-form object)))
     (pprint-logical-block (nil list :prefix "(" :suffix ")")
       (write (first list))
@@ -62,12 +60,24 @@
                      (t (typecase value0
                           ((or true false null array object number) value0)
                           (t (format nil "~A" value0)))))
-       collect (cons name value) into pairs
-       finally (setf (slot-value object 'pairs) pairs))
+       collect (cons name value) into properties
+       finally (setf (slot-value object 'properties) properties))
     object))
 
 (defmacro do-object ((name value object &optional result-form) &body body)
-  `(loop :for (,name . ,value) :in (slot-value ,object 'pairs)
+  `(loop :for (,name . ,value) :in (slot-value ,object 'properties)
       :do
         ,@body
       :finally (return ,result-form)))
+
+(defun object-names (object)
+  (let ((names '()))
+    (do-object (name value object)
+      (push name names))
+    (nreverse names)))
+
+(defun object-values (object)
+  (let ((values '()))
+    (do-object (name value object)
+      (push value values))
+    (nreverse values)))

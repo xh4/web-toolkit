@@ -20,6 +20,8 @@
    ;; object
    :object
    :do-object
+   :object-names
+   :object-values
    ;; access
    :get
    ;; encode

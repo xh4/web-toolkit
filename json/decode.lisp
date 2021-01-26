@@ -509,7 +509,7 @@ list."
   "Return a CLOS object, using keys and values accumulated so far in
 the list accumulator as slot names and values, respectively. Create a OBJECT with slots interned in *JSON-SYMBOLS-PACKAGE*."
   (let ((bindings (cdr *accumulator*)))
-    (make-instance 'object :pairs bindings)))
+    (make-instance 'object :properties bindings)))
 
 (defun init-string-stream-accumulator ()
   "Initialize a string-stream accumulator."

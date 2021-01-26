@@ -253,9 +253,9 @@ and the result is written as String."
         (format stream "[]"))))
 
 (defmethod encode-json ((object object) &optional (stream *json-output*))
-  (let ((pairs (slot-value object 'pairs)))
+  (let ((properties (slot-value object 'properties)))
     (with-object (stream)
-      (loop for (name . value) in pairs
+      (loop for (name . value) in properties
          do (as-object-member (name stream)
               (encode-json value stream))))))
 
