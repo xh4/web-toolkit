@@ -147,10 +147,28 @@
       (= byte #.(char-code #\Tab))))
 
 (defun read-part-header (stream &key (parse t))
-  (loop for line = (read-line stream)
+  (loop for line = (read-multiple-part-header-line stream)
      while (and line (> (length line) 0))
      collect line into header
      finally (return (if parse (parse-part-header header) header))))
+
+;; 与 read-line 的区别是不限制字符
+(defun read-multiple-part-header-line (stream)
+  (let ((octets (babel-streams:with-output-to-sequence (line)
+                  (loop for byte = (read-byte stream nil)
+                     for is-cr-p = (and byte (= byte #.(char-code #\Return)))
+                     until (or (null byte)
+                               is-cr-p)
+                     when byte
+                     do (write-byte byte line)
+                     finally (if is-cr-p
+                                 (if (= (read-byte stream nil) #.(char-code #\Linefeed))
+                                     t
+                                     (return-from read-multiple-part-header-line nil))
+                                 (if (null byte)
+                                     t
+                                     (return-from read-multiple-part-header-line nil)))))))
+    (babel:octets-to-string octets)))
 
 (defun parse-part-header (header)
   (let (content-type ~name filename)
@@ -181,12 +199,36 @@
   (let ((parts '()))
     (loop
        (let* ((header (read-part-header stream))
-              (name (getf header :name)))
-         (multiple-value-bind (data has-next)
-             (read-until-next-boundary stream boundary)
-           (push (cons name data) parts)
-           (unless has-next
-             (return)))))
+              (content-type (getf header :content-type))
+              (name (getf header :name))
+              (filename (getf header :filename)))
+         (if filename
+             (let* ((directory-pathname
+                     (merge-pathnames
+                      (format nil "~A/" (uuid:make-v4-uuid))
+                      uiop:*temporary-directory*))
+                    (file-pathname
+                     (merge-pathnames
+                      filename
+                      directory-pathname)))
+               (ensure-directories-exist file-pathname)
+               (with-open-file (output-stream file-pathname
+                                              :direction :output
+                                              :if-does-not-exist :create
+                                              :if-exists :supersede
+                                              :element-type '(unsigned-byte 8))
+                 (multiple-value-bind (output-stream has-next)
+                     (read-until-next-boundary stream boundary nil output-stream)
+                   ;; 在 ACL 下存在文件不完整的问题，加上下面这句之后结局
+                   (close output-stream)
+                   (push (cons name file-pathname) parts)
+                   (unless has-next
+                     (return)))))
+             (multiple-value-bind (data has-next)
+                 (read-until-next-boundary stream boundary)
+               (push (cons name data) parts)
+               (unless has-next
+                 (return))))))
     (nreverse parts)))
 
 (defvar +ascii-alphabet+

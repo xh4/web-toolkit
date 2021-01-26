@@ -12,7 +12,7 @@
 
 (defmethod print-object ((field field) stream)
   (print-unreadable-object (field stream :type t :identity t)
-    (format stream "~S ~A" (field-name field) (field-value field))))
+    (format stream "~S ~S" (field-name field) (field-value field))))
 
 (defgeneric fields (object))
 

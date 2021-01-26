@@ -15,6 +15,7 @@
                :cl-change-case
                :split-sequence
                :cl-fad
+               :uuid
                :trivial-backtrace
                :trivial-gray-streams
                (:feature (:not :lispworks) :usocket)

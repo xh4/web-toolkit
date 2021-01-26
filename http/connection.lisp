@@ -37,9 +37,33 @@
     :initarg :peer-address
     :initform nil
     :accessor connection-peer-address)
+   (method
+    :initarg :method
+    :initform nil
+    :accessor connection-method)
+   (uri
+    :initarg :uri
+    :initform nil
+    :accessor connection-uri)
+   (header
+    :initarg :header
+    :initform nil
+    :accessor connection-header)
    (open-time
     :initform (local-time:now)
     :accessor connection-open-time)))
+
+(defmethod print-object ((connection connection) stream)
+  (print-unreadable-object (connection stream :type t :identity t)
+    (format stream "[~A:~A - ~A:~A] "
+            (connection-peer-address connection)
+            (connection-peer-port connection)
+            (connection-local-address connection)
+            (connection-local-port connection))
+    (when-let ((method (connection-method connection)))
+      (format stream "~A " method))
+    (when-let ((uri (connection-uri connection)))
+      (format stream "~S" uri))))
 
 (let ((counter 0))
   (defun next-connection-id ()
@@ -124,12 +148,17 @@
                              (declare (ignore error))
                              (go :end))))
        (when-let ((request (receive-request connection)))
-         (format t "[~A] ~A ~A~%"
-                 (connection-id *connection*)
-                 (request-method request)
-                 (uri-string (request-uri request)))
-         (let ((response (mp:with-timeout (10 (error "Handle timeout"))
-                           (handle-request connection request))))
+         (setf (connection-method connection) (request-method request)
+               (connection-uri connection) (request-uri request)
+               (connection-header connection) (request-header request))
+         (let ((response (if (string-equal "Upgrade"
+                                           (header-field-value
+                                            (find-header-field
+                                             "Connection"
+                                             request)))
+                             (handle-request connection request)
+                             (mp:with-timeout (300 (error "Handle timeout"))
+                               (handle-request connection request)))))
            (if (equal 101 (status-code (response-status response)))
                (go :end)
                (progn

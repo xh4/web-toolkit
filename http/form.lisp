@@ -53,6 +53,7 @@
 (defgeneric find-form-field (name form)
   (:method (name (form form))
     (find name (form-fields form)
+          :key 'form-field-name
           :test 'equal)))
 
 (defgeneric set-form-field (form form-field)
@@ -80,6 +81,7 @@
       (when query
         (let ((data (uri-string :query query)))
           (babel:string-to-octets data))))))
+
 
 
 (defmacro skip-form-field ()
