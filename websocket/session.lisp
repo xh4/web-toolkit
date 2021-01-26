@@ -84,7 +84,7 @@
 (defgeneric close-session  (session &optional reason)
   (:method ((session session) &optional reason)
     (with-slots (connection) session
-      (close-connection connection reason))))
+      (close-connection connection :reason reason))))
 
 (defgeneric send-text (session text &key)
   (:method ((session session) text &key)
