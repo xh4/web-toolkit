@@ -10,13 +10,16 @@
   :components ((:module "dom"
                 :serial t
                 :components ((:file "package")
+                             (:file "namespace")
                              (:file "tree")
                              (:file "mixin")
                              (:file "node")
+                             (:file "attribute")
                              (:file "document")
                              (:file "element")
-                             (:file "attribute")
+                             (:file "comment")
                              (:file "text")
+                             (:file "cdata")
                              (:file "traversal"))))
   :in-order-to ((test-op (test-op :wt.dom/test)))
   :perform (load-op :after (o c)

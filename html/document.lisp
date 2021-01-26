@@ -4,4 +4,7 @@
 
 (defun document (&optional child)
   (check-type child (or html null))
-  (make-instance 'document :children (ensure-list child)))
+  (let ((document (make-instance 'document)))
+    (prog1 document
+      (when child
+        (dom:append-child document child)))))

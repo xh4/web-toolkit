@@ -1,26 +1,26 @@
 (in-package :svg)
 
 (defclass element (dom:element)
-  ((dom:namespace-uri
-    :initform "http://www.w3.org/2000/svg"
+  ((dom:namespace
+    :initform dom:svg-namespace
     :allocation :class)))
 
 (defmethod print-object ((element element) stream)
   (print-unreadable-object (element stream :type t :identity t)
-    (format stream "~S" (dom:local-name element))
-    (let ((children-count (length (dom:children element))))
+    (format stream "~S" (dom:tag-name element))
+    (let ((children-count (dom:length (dom:child-nodes element))))
       (cond
-       ((= 1 children-count)
-        (let ((child (first (dom:children element))))
-          (if (typep child 'text)
-              (let ((data (dom:data child)))
-                (if (> (length data) 30)
-                    (format stream " {~S}"
-                            (concatenate 'string (subseq data 0 30) "..."))
-                  (format stream " {~S}" data)))
-            (format stream " {~A}" children-count))))
-       ((> children-count 1)
-        (format stream " {~A}" children-count))))))
+        ((= 1 children-count)
+         (let ((child (dom:first-child element)))
+           (if (typep child 'dom:text)
+               (let ((data (dom:data child)))
+                 (if (> (length data) 30)
+                     (format stream " {~S}"
+                             (concatenate 'string (subseq data 0 30) "..."))
+                     (format stream " {~S}" data)))
+               (format stream " {~A}" children-count))))
+        ((> children-count 1)
+         (format stream " {~A}" children-count))))))
 
 (defclass graphics-element (element) ())
 
@@ -69,39 +69,41 @@
          (multiple-value-bind (attributes children)
              (segment-attributes-children arguments)
            (loop for (_name _value) on attributes by #'cddr
-                 for name = (string-downcase (symbol-name _name))
-                 for value = (if (eq _value t)
-                                 ""
-                               (typecase _value
-                                 (null nil)
-                                 (string _value)
-                                 (list (format nil "~{~A~^ ~}" _value))
-                                 (t (format nil "~A" _value))))
-                 when value
-                 do (dom:set-attribute element name value))
+              for name = (cl-change-case:camel-case (symbol-name _name))
+              for value = (if (eq _value t)
+                              ""
+                              (typecase _value
+                                (null nil)
+                                (string _value)
+                                (list (format nil "~{~A~^ ~}" _value))
+                                (t (format nil "~A" _value))))
+              when value
+              do (dom:set-attribute element name value))
            (loop for child in (flatten children)
-                 do
-                 (typecase child
-                   (string (dom:append-child element (text child)))
-                   ((or element text) (dom:append-child element child))
-                   (t (dom:append-child element (text (format nil "~A" child)))))))
+              do
+                (typecase child
+                  (string (dom:append-child element (make-instance 'dom:text
+                                                                   :data child)))
+                  ((or element text) (dom:append-child element child))
+                  (t (dom:append-child element (make-instance 'dom:text
+                                                              :data (format nil "~A" child)))))))
          element))
 
      (defmethod print-object ((element ,element-name) stream)
        (print-unreadable-object (element stream :type t :identity t)
-         (let ((children-count (length (dom:children element))))
+         (let ((children-count (dom:length (dom:child-nodes element))))
            (cond
-            ((= 1 children-count)
-             (let ((child (first (dom:children element))))
-               (if (typep child 'text)
-                   (let ((data (dom:data child)))
-                     (if (> (length data) 30)
-                         (format stream " {~S}"
-                                 (concatenate 'string (subseq data 0 30) "..."))
-                       (format stream " {~S}" data)))
-                 (format stream " {~A}" children-count))))
-            ((> children-count 1)
-             (format stream " {~A}" children-count))))))))
+             ((= 1 children-count)
+              (let ((child (dom:first-child element)))
+                (if (typep child 'dom:text)
+                    (let ((data (dom:data child)))
+                      (if (> (length data) 30)
+                          (format stream " {~S}"
+                                  (concatenate 'string (subseq data 0 30) "..."))
+                          (format stream " {~S}" data)))
+                    (format stream " {~A}" children-count))))
+             ((> children-count 1)
+              (format stream " {~A}" children-count))))))))
 
 (define-svg-element svg (container-element
                          renderable-element
@@ -193,3 +195,5 @@
                        renderable-element) ())
 
 (define-svg-element view () ())
+
+(define-svg-element style (never-rendered-element) ())

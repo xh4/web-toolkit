@@ -1,18 +1,18 @@
 (in-package :html)
 
 (defclass element (dom:element)
-  ((dom:namespace-uri
-    :initform "http://www.w3.org/1999/xhtml"
+  ((dom:namespace
+    :initform dom:html-namespace
     :allocation :class)))
 
 (defmethod print-object ((element element) stream)
   (print-unreadable-object (element stream :type t :identity t)
-    (format stream "~S" (dom:local-name element))
-    (let ((children-count (length (children element))))
+    (format stream "~S" (dom:tag-name element))
+    (let ((children-count (dom:length (dom:child-nodes element))))
       (cond
        ((= 1 children-count)
-        (let ((child (first (children element))))
-          (if (typep child 'text)
+        (let ((child (dom:first-child element)))
+          (if (typep child 'dom:text)
               (let ((data (dom:data child)))
                 (if (> (length data) 30)
                     (format stream " {~S}"
@@ -72,12 +72,12 @@
            (typecase child
              (string (dom:append-child element (text child)))
              (dom:element
-              (when (or (equal "http://www.w3.org/1999/xhtml"
+              (if (or (equal dom:html-namespace
                                (dom:namespace-uri child))
-                        (equal "http://www.w3.org/2000/svg"
-                         (dom:namespace-uri child)))
-                (dom:append-child element child)))
-             (text (dom:append-child element child))
+                      (equal dom:svg-namespace
+                             (dom:namespace-uri child)))
+                  (dom:append-child element child)))
+             (dom:text (dom:append-child element child))
              (t (dom:append-child element (text (format nil "~A" child)))))))
     element))
 
@@ -96,11 +96,11 @@
 
          (defmethod print-object ((element ,element-symbol) stream)
            (print-unreadable-object (element stream :type t :identity t)
-             (let ((children-count (length (children element))))
+             (let ((children-count (dom:length (dom:child-nodes element))))
                (cond
                 ((= 1 children-count)
-                 (let ((child (first (children element))))
-                   (if (typep child 'text)
+                 (let ((child (dom:first-child element)))
+                   (if (typep child 'dom:text)
                        (let ((data (dom:data child)))
                          (if (> (length data) 30)
                              (format stream " {~S}"

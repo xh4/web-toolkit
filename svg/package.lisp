@@ -43,4 +43,5 @@
    :foreign-object
    :marker
    :a
-   :view))
+   :view
+   :style))

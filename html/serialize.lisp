@@ -20,13 +20,13 @@
        do
          (case action
            (:enter (typecase node
-                     (text
+                     (dom:text
                       (signal 'event :type :enter :node node))
-                     ((or dom:element document)
+                     ((or dom:element dom:document)
                       (signal 'event :type :enter :node node)
                       (push `(:leave . ,node) stack)
                       (unless (typep node 'custom-element)
-                        (loop for child in (reverse (dom:children node))
+                        (loop for child in (reverse (dom:node-list-nodes (dom:child-nodes node)))
                            do (push `(:enter . ,child) stack))))))
            (:leave (typecase node
                      (dom:element
@@ -40,7 +40,7 @@
 
 ;; FIXME: rethink this
 (defun write-text (text &optional (stream *standard-output*) &key)
-  (let ((parent (dom:parent text)))
+  (let ((parent (dom:parent-node text)))
     (etypecase parent
       (raw-text-element (write-raw-text text stream))
       (escapable-raw-text-element (write-escapable-raw-text text stream))
@@ -49,7 +49,10 @@
 (defun write-normal-text (text &optional (stream *standard-output*) &key)
   (loop for char across (dom:data text)
      do (cond
+          ((char= char #\&) (write-string "&amp;" stream))
+          ((char= char #\No-Break_Space) (write-string "&nbsp;" stream))
           ((char= char #\<) (write-string "&lt;" stream))
+          ((char= char #\>) (write-string "&gt;" stream))
           (t (write-char char stream)))))
 
 (defun write-raw-text (text &optional (stream *standard-output*) &key)
@@ -68,7 +71,7 @@
 
 (defun write-element-start-tag (element &optional (stream *standard-output*) &key)
   (write-string "<" stream)
-  (write-string (dom:local-name element) stream)
+  (write-string (dom:tag-name element) stream)
   (loop for name in (dom:get-attribute-names element)
      for value = (dom:get-attribute element name)
      do (write-attribute name value stream))
@@ -93,7 +96,7 @@
 (defun write-element-end-tag (element &optional (stream *standard-output*) &key)
   (unless (typep element 'void-element)
     (write-string "</" stream)
-    (write-string (dom:local-name element) stream)
+    (write-string (dom:tag-name element) stream)
     (write-string ">" stream)))
 
 (defun write-doctype (document &optional (stream *standard-output*) &key)
@@ -110,10 +113,10 @@
               (with-slots (type node) event
                 (case type
                   (:enter (typecase node
-                            (document (write-doctype node stream))
+                            (dom:document (write-doctype node stream))
                             (custom-element (serialize node stream))
                             (dom:element (write-element-start-tag node stream))
-                            (text (write-text node stream))))
+                            (dom:text (write-text node stream))))
                   (:leave (unless (typep node 'void-element)
                             (typecase node
                               (dom:element

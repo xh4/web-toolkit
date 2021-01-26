@@ -66,7 +66,7 @@
     (ignore-token))
 
    ((a-start-tag-whose-tag-name-is "html")
-    (let ((element (create-element-for-token "http://www.w3.org/1999/xhtml" document)))
+    (let ((element (create-element-for-token dom:html-namespace document)))
       (append-child document element)
       (push element stack-of-open-elements))
     (switch-insertion-mode 'before-head))
@@ -174,7 +174,7 @@
    ;; TODO: Check this
    ((a-start-tag-whose-tag-name-is "script")
     (let ((adjusted-insertion-location (appropriate-place-for-inserting-node)))
-      (let ((element (create-element-for-token "http://www.w3.org/1999/xhtml"
+      (let ((element (create-element-for-token dom:html-namespace
                                                adjusted-insertion-location)))
         (push element stack-of-open-elements))
       (switch-state 'script-data-state)
@@ -811,7 +811,7 @@
     (reconstruct-active-formatting-elements)
     (adjust-mathml-attributes)
     (adjust-foreign-attributes)
-    (insert-foreign-element-for-token "http://www.w3.org/1998/Math/MathML")
+    (insert-foreign-element-for-token dom:mathml-namespace)
     (when (slot-value current-token 'self-closing-flag)
       (pop stack-of-open-elements)
       (acknowledge-token-self-closing-flag)))
@@ -820,7 +820,7 @@
     (reconstruct-active-formatting-elements)
     (adjust-svg-attributes)
     (adjust-foreign-attributes)
-    (insert-foreign-element-for-token "http://www.w3.org/2000/svg")
+    (insert-foreign-element-for-token dom:svg-namespace)
     (when (slot-value current-token 'self-closing-flag)
       (pop stack-of-open-elements)
       (acknowledge-token-self-closing-flag)))
@@ -1627,7 +1627,7 @@
     (let ((adjusted-insertion-location (appropriate-place-for-inserting-node)))
       (when (typep adjusted-insertion-location 'document)
         (return-from insert-character))
-      (let ((text (car (last (children adjusted-insertion-location)))))
+      (let ((text (dom:last-child adjusted-insertion-location)))
         (if (typep text 'text)
             (write-char data (slot-value text 'data-stream))
           (let ((text (make-instance 'text :data-stream (make-string-output-stream))))
@@ -1691,16 +1691,16 @@
   (let ((tag-name (slot-value current-token 'tag-name)))
     (let ((element-class (cond
                           ((or (null namespace)
-                               (equal "http://www.w3.org/1999/xhtml" namespace))
+                               (equal dom:html-namespace namespace))
                            (or (gethash tag-name *html-element-table*)
                              'element))
-                          ((equal "http://www.w3.org/2000/svg" namespace)
+                          ((equal dom:svg-namespace namespace)
                            (or (gethash tag-name *svg-element-table*)
                              'svg:element))
                           (t 'element))))
       (let ((element (make-instance element-class
                                     :local-name tag-name
-                                    :namespace-uri namespace)))
+                                    :namespace namespace)))
         (loop for attribute in (slot-value current-token 'attributes)
            do (dom:set-attribute
                element
@@ -1709,7 +1709,7 @@
         element))))
 
 (defun insert-html-element-for-token ()
-  (insert-foreign-element-for-token "http://www.w3.org/1999/xhtml"))
+  (insert-foreign-element-for-token dom:html-namespace))
 
 (defun insert-foreign-element-for-token (namespace)
   (let ((adjusted-insertion-location (appropriate-place-for-inserting-node)))
@@ -2064,7 +2064,7 @@
        (go :inner-loop))
      ;; Step 14.7
      (let ((element (create-element-for-token
-                     "http://www.w3.org/1999/xhtml"
+                     dom:html-namespace
                      common-ancestor)))
        (let ((node-position (find node active-formatting-elements)))
          (setf (nth node-position active-formatting-elements) element))
@@ -2076,8 +2076,8 @@
      (when (eq last-node furthest-block)
        (setf bookmark (1+ (position node active-formatting-elements))))
      ;; Step 14.9
-     (when-let ((parent (dom:parent last-node)))
-       (removef (slot-value parent 'dom:children) last-node))
+     (when-let ((parent (dom:parent-node last-node)))
+       (dom:remove-child parent last-node))
      (append-child last-node node)
      ;; Step 14.10
      (setf last-node node)
@@ -2089,12 +2089,13 @@
        (append-child place last-node))
      ;; Step 16
      (let ((element (create-element-for-token
-                     "http://www.w3.org/1999/xhtml"
+                     dom:html-namespace
                      furthest-block)))
        ;; Step 17
-       (loop for child in (children furthest-block)
-             do (append-child element child))
-       (setf (slot-value furthest-block 'dom:children) nil)
+       (loop for child in (dom:node-list-nodes (dom:child-nodes furthest-block))
+          do (append-child element child))
+       (loop for child in (dom:node-list-nodes (dom:child-nodes furthest-block))
+          do (dom:remove-child furthest-block child))
        ;; Step 18
        (append-child furthest-block element)
        ;; Step 19
@@ -2266,7 +2267,7 @@
 (defun adjust-foreign-attributes ())
 
 (defun html-integration-point-p (element)
-  (or (and (equal "http://www.w3.org/2000/svg" (dom:namespace-uri element))
+  (or (and (equal dom:svg-namespace (dom:namespace-uri element))
            (member (dom:local-name element)
                    '("foreignObject" "desc" "title")
                    :test 'equal))))
@@ -2362,7 +2363,7 @@
           :tree-construction-dispatch
           (if (or (null stack-of-open-elements)
                   (let ((adjusted-current-node (adjusted-current-node)))
-                    (or (equal "http://www.w3.org/1999/xhtml"
+                    (or (equal dom:html-namespace
                                (dom:namespace-uri adjusted-current-node))
                         (and (html-integration-point-p adjusted-current-node)
                              (or (typep current-token 'start-tag)

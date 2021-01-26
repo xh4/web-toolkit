@@ -11,5 +11,5 @@
     (format stream "~S" (slot-value text 'dom:data))))
 
 (defun text (&optional data)
-  (check-type data (or null string))
-  (make-instance 'text :data data))
+  (check-type data string)
+  (make-instance 'text :data (or data "")))

@@ -5,7 +5,8 @@
   :mailto "xh@coobii.com"
   :license "BSD 3-Clause"
   :depends-on (:wt.dom
-               :alexandria)
+               :alexandria
+               :cl-change-case)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "svg"
                 :serial t

@@ -7,10 +7,9 @@
 (defclass document-or-shadow-root () ())
 
 (defclass parent-node ()
-  ((children
-    :initarg :children
-    :initform nil
-    :accessor children)))
+  ((child-nodes
+    :initarg :child-nodes
+    :initform (make-array 5 :adjustable t :fill-pointer 0))))
 
 (defgeneric first-child (node))
 
@@ -37,10 +36,9 @@
     :accessor next-sibling)))
 
 (defclass child-node ()
-  ((parent
-    :initarg :parent
-    :initform nil
-    :accessor parent)))
+  ((parent-node
+    :initarg :parent-node
+    :initform nil)))
 
 (defgeneric before (node nodes))
 
