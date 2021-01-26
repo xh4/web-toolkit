@@ -117,10 +117,12 @@
                       (loop for frame in ordered-frames
                          do (write-sequence (frame-payload-data frame)
                                             fstream)))))
-               (unwind-protect
+               (handler-case
                     (signal 'binary-received
                             :data temp-file)
-                 (delete-file temp-file))))))
+                 (error (e)
+                   (declare (ignore e))
+                   (delete-file temp-file)))))))
     (setf pending-fragments nil
           pending-opcode nil)))
 
