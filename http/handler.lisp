@@ -44,19 +44,23 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *request* nil)
   (defvar *response* nil)
+  (defvar *handler* nil)
   (defvar *next-handlers* nil)
 
   (defmacro call-next-handler ()
-    (with-gensyms (handler result)
+    (with-gensyms (result)
       `(if *next-handlers*
-           (let ((,handler (first *next-handlers*))
+           (let ((*handler* (first *next-handlers*))
                  (*next-handlers* (rest *next-handlers*)))
-             (let ((,result (call-handler ,handler *request*)))
+             (let ((,result (call-handler *handler* *request*)))
                (when (or (typep ,result 'response)
                          (typep ,result 'entity))
                  (setf *response* ,result))
                *response*))
            *response*)))
+
+  (defmacro next-handler ()
+    `(first *next-handlers*))
 
   (define-condition abort-handler () ())
 
@@ -149,7 +153,7 @@
       (handler-bind ((abort-handler
                       (lambda (c)
                         (declare (ignore c))
-                        (return)))
+                        (return *response*)))
                      (redirect
                       (lambda (c)
                         (with-slots (location status) c

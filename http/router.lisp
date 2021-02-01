@@ -7,20 +7,32 @@
     :accessor router-routes))
   (:instanize nil)
   (:function (lambda (router request)
-               (let ((handler))
-                 (loop for route in (router-routes router)
-                    do (setf handler (route route request))
+               (let ((handler)
+                     (route))
+                 (loop for r in (router-routes router)
+                    do (setf handler (route r request)
+                             route r)
                     when handler
                     do (return))
                  (if handler
-                     (typecase handler
-                       (handler (invoke-handler handler request))
-                       (symbol (if (boundp handler)
-                                   (progn
-                                     (setf handler (symbol-value handler))
-                                     (check-type handler handler)
-                                     (invoke-handler handler request))
-                                   (error "Handler not bound"))))
+                     (cl-uri-templates:with-uri-environment
+                       (let ((*request-uri-variables*
+                              (loop with variables = nil
+                                 for (name value) on (cl-uri-templates:destructure-uri (uri-path request)
+                                                                                       (route-path route))
+                                 by #'cddr
+                                 do (progn
+                                      (push (uri::percent-decode value) variables)
+                                      (push name variables))
+                                 finally (return (plist-alist variables)))))
+                         (typecase handler
+                           (handler (invoke-handler handler request))
+                           (symbol (if (boundp handler)
+                                       (progn
+                                         (setf handler (symbol-value handler))
+                                         (check-type handler handler)
+                                         (invoke-handler handler request))
+                                       (error "Handler not bound"))))))
                      (handle-missing request))))))
 
 (defclass route () ())
@@ -42,11 +54,20 @@
     :initarg :handler
     :initform nil)))
 
+(defun request-uri-variables (request)
+  *request-uri-variables*)
+
 (defmethod route ((route simple-route) request)
-  (let ((uri (uri (request-uri request))))
-    (when (and (equal (route-path route) (uri-path uri))
-               (equal (symbol-name (route-method route))
-                      (request-method request)))
+  (let ((request-uri (request-uri request)))
+    (when (and (equal (symbol-name (route-method route))
+                      (request-method request))
+               (or (equal (route-path route) (uri-path request-uri))
+                   (cl-uri-templates:with-uri-environment
+                     (let ((variables (plist-alist
+                                       (cl-uri-templates:destructure-uri (uri-path request)
+                                                                         (route-path route)))))
+                       (and variables
+                            (notany (lambda (v) (find #\/ (cdr v))) variables))))))
       (slot-value route 'handler))))
 
 (defmethod make-route ((type (eql :get)) form)

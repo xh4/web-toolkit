@@ -15,17 +15,20 @@
                :cl-change-case
                :split-sequence
                :cl-fad
+               :uuid
                :trivial-backtrace
                :trivial-gray-streams
                (:feature (:not :lispworks) :usocket)
                (:feature (:not :lispworks) :cl+ssl)
                :chunga
                :cl-cont
-               :local-time)
+               :local-time
+               :cl-uri-templates)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "http"
                 :serial t
                 :components ((:file "package")
+                             (:file "variable")
                              (:file "condition")
                              (:file "utility")
                              (:file "stream")

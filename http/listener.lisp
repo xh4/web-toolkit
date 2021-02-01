@@ -68,10 +68,12 @@
                       #'listener-loop
                       :name (format nil "Listener (~A)" (listener-port listener))
                       :initial-bindings `((*standard-output* . ,*standard-output*)
-                                          (*error-output* . ,*error-output*)))))
+                                          (*error-output* . ,*error-output*)
+                                          (*request-uri-variables* . nil)))))
         (setf (listener-process listener) process)))))
 
 #+lispworks
+;; TODO: *request-uri-variables*
 (defmethod start-listener ((listener listener) &key)
   (unless (listener-server listener)
     (error "Missing server in listener"))

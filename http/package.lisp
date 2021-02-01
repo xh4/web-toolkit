@@ -87,6 +87,7 @@
    :router
    :route
    :make-route
+   :request-uri-variables
    ;; server
    :define-server
    :start-server

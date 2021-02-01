@@ -1,7 +1,11 @@
 (in-package :http)
 
 (defclass connection ()
-  ((listener
+  ((id
+    :initarg :id
+    :initform 0
+    :accessor connection-id)
+   (listener
     :initarg :listener
     :initform nil
     :accessor connection-listener)
@@ -32,7 +36,53 @@
    (peer-address
     :initarg :peer-address
     :initform nil
-    :accessor connection-peer-address)))
+    :accessor connection-peer-address)
+   (method
+    :initarg :method
+    :initform nil
+    :accessor connection-method)
+   (uri
+    :initarg :uri
+    :initform nil
+    :accessor connection-uri)
+   (header
+    :initarg :header
+    :initform nil
+    :accessor connection-header)
+   (open-time
+    :initform (local-time:now)
+    :accessor connection-open-time)))
+
+(defmethod print-object ((connection connection) stream)
+  (print-unreadable-object (connection stream :type t :identity t)
+    (format stream "[~A:~A - ~A:~A] "
+            (connection-peer-address connection)
+            (connection-peer-port connection)
+            (connection-local-address connection)
+            (connection-local-port connection))
+    (when-let ((method (connection-method connection)))
+      (format stream "~A " method))
+    (when-let ((uri (connection-uri connection)))
+      (format stream "~S" uri))))
+
+(let ((counter 0))
+  (defun next-connection-id ()
+    (excl:incf-atomic counter)))
+
+(defvar *connection* nil)
+
+;; TODO: Use weak hash table
+(defvar *connection-table* (make-hash-table))
+
+(defvar *connection-table-lock* (bt:make-lock))
+
+(defun add-connection (connection)
+  (bt:with-lock-held (*connection-table-lock*)
+    (setf (gethash (connection-id connection) *connection-table*) connection)))
+
+(defun remove-connection (connection)
+  (bt:with-lock-held (*connection-table-lock*)
+    (remhash (connection-id connection) *connection-table*)))
 
 (defun make-and-process-connection (listener socket)
   (let ((connection (make-connection socket listener)))
@@ -41,7 +91,8 @@
        (process-connection connection))
      :name (format nil "Connection on ~A" (listener-port listener))
      :initial-bindings `((*standard-output* . ,*standard-output*)
-                         (*error-output* . ,*error-output*)))
+                         (*error-output* . ,*error-output*)
+                         (*connection* . ,connection)))
     connection))
 
 #-lispworks
@@ -56,6 +107,7 @@
                  (error "Expect IPv4 address, got ~A" address))
                (format nil "~{~A~,^.~}" (coerce address 'list))))
         (let ((connection (make-instance 'connection
+                                         :id (next-connection-id)
                                          :listener listener
                                          :socket socket
                                          :input-stream stream
@@ -64,7 +116,7 @@
                                          :local-address (format-ip-address local-address)
                                          :peer-port peer-port
                                          :peer-address (format-ip-address peer-address))))
-          connection)))))
+          (add-connection connection))))))
 
 #+lispworks
 (defun make-connection (socket &optional listener)
@@ -94,10 +146,19 @@
      ;; TODO: handle errors here
      (handler-bind ((error (lambda (error)
                              (declare (ignore error))
-                             (format t "~A~%" error)
                              (go :end))))
        (when-let ((request (receive-request connection)))
-         (let ((response (handle-request connection request)))
+         (setf (connection-method connection) (request-method request)
+               (connection-uri connection) (request-uri request)
+               (connection-header connection) (request-header request))
+         (let ((response (if (string-equal "Upgrade"
+                                           (header-field-value
+                                            (find-header-field
+                                             "Connection"
+                                             request)))
+                             (handle-request connection request)
+                             (mp:with-timeout (300 (error "Handle timeout"))
+                               (handle-request connection request)))))
            (if (equal 101 (status-code (response-status response)))
                (go :end)
                (progn
@@ -115,8 +176,15 @@
             ;; TODO: handler error
             (declare (ignore e))))))
 
+#-lispworks
 (defun close-connection (connection)
-  (with-slots (input-stream output-stream) connection
+  (with-slots (socket) connection
+    (usocket:socket-close socket))
+  (remove-connection connection))
+
+#+lispworks
+(defun close-connection (connection)
+  (with-slots (socket) connection
     (close input-stream)
     (close output-stream)))
 
