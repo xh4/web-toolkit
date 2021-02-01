@@ -29,7 +29,7 @@
            (char<= #\a char #\z)
            (eq #\\ char)
            ;; TODO
-           (and (char>= char #\U+0080)))))
+           (and (>= (char-code char) #x0080)))))
 
 (defun identifier-part-p (char)
   (and char
@@ -40,7 +40,7 @@
            (char<= #\0 char #\9)
            (eq #\\ char)
            ;; TODO
-           (and (char>= char #\U+0080)))))
+           (and (>= (char-code char) #x0080)))))
 
 (defun decimal-digit-p (char)
   (and char

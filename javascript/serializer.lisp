@@ -114,7 +114,7 @@
             ((eq #\\ char)
              (write-char #\\ stream)
              (write-char #\\ stream))
-            ((char<= #\U+00BF char #\U+FFFF)
+            ((<= #x00BF (char-code char) #xFFFF)
              (format stream "\\u~X" (char-code char)))
             (t (write-char char stream))))
   (write-char #\" stream))
