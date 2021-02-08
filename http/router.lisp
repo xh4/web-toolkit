@@ -42,8 +42,14 @@
     :initarg :handler
     :initform nil)))
 
+;; FIXME: When deploy with fasl, variable names (symbols) are in package CL-USER
 (defun request-uri-variables (request)
   *request-uri-variables*)
+
+(defun request-uri-variable (request name)
+  (loop for (symbol . value) in (request-uri-variables request)
+     when (string-equal (symbol-name symbol) name)
+     do (return value)))
 
 (defmethod route ((route simple-route) request)
   (let ((request-uri (request-uri request)))
