@@ -139,40 +139,48 @@
   (:method ((request request))
     (pipe-message-body-chunks-as-vector request)))
 
-(defgeneric read-request-form-data (request &key as)
-  (:method ((request request) &key (as :form))
-    (cond
-      ((search "application/x-www-form-urlencoded"
-               (header-field-value
-                (find-header-field "Content-Type" request)))
-       (read-request-urlencoded-form-data request :as as))
-      ((search "multipart/form-data"
-               (header-field-value
-                (find-header-field "Content-Type" request)))
-       (read-request-multipart-form-data request :as as))
-      (t (error "Request does not carry form data")))))
+(defgeneric read-request-form-data (request)
+  (:method ((request request))
+    (let ((content-type (header-field-value
+                         (find-header-field "Content-Type" request))))
+      (cond
+        ((search "application/x-www-form-urlencoded" content-type)
+         (read-request-urlencoded-form-data request))
+        ((search "multipart/form-data" content-type)
+         (read-request-multipart-form-data request))
+        (t (error "Request does not carry form data"))))))
 
-(defun read-request-urlencoded-form-data (request &key (as :form))
-  (let ((types '(:form :alist :hash-table)))
-    (unless (member as types)
-      (error "The value of `AS` argument should be member of ~A" types)))
+(defun read-request-urlencoded-form-data (request)
   (let ((data (babel:octets-to-string
                (read-request-body-into-vector request))))
     (let ((uri (uri :query data)))
-      (case as
-        ((or :alist :hash-table) (uri-query uri :type as))
-        (:form (let ((alist (uri-query uri :type :alist)))
-                 (let ((form (make-instance 'form)))
-                   (loop for (name . value) in alist
-                      do (appendf (form-fields form)
-                                  (list (form-field name value))))
-                   form)))))))
+      ;; FIXME: Handle `+` character
+      (let ((alist (uri-query uri :type :alist)))
+        (let ((form (make-instance 'form)))
+          (loop for (name . value) in alist
+             do (appendf (form-fields form)
+                         (list (form-field name value))))
+          form)))))
 
-(defun read-request-multipart-form-data (request &key (as :form))
-  (let ((boundary ""))
+(defun read-request-multipart-form-data (request)
+  (let* ((content-type (header-field-value
+                        (find-header-field "Content-Type" request)))
+         (boundary (first
+                   (coerce
+                    (nth-value
+                     1
+                     (cl-ppcre:scan-to-strings
+                      "boundary=(.*)"
+                      content-type))
+                    'list))))
     (let ((stream (request-body request)))
       (handler-bind ()
-        (read-multipart-form-data stream boundary)))))
+        (let ((alist (read-multipart-form-data stream boundary)))
+          (let ((form (make-instance 'form)))
+            (loop for (name . value) in alist
+               do (appendf (form-fields form)
+                           (list (form-field name value))))
+            form))))))
 
 (defun write-request-body (stream request)
   (let ((body (request-body request)))

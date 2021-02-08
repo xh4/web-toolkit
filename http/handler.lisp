@@ -59,6 +59,9 @@
                *response*))
            *response*)))
 
+  (defmacro next-handler ()
+    `(first *next-handlers*))
+
   (define-condition abort-handler () ())
 
   (defmacro abort-handler ()
