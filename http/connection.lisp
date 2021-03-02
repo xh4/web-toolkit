@@ -65,16 +65,16 @@
     (when-let ((uri (connection-uri connection)))
       (format stream "~S" uri))))
 
-(let ((counter 0))
-  (defun next-connection-id ()
+(defvar *counter* 0)
+(defun next-connection-id ()
     #+allegro
-    (excl:incf-atomic counter)
+    (excl:incf-atomic *counter*)
     #+lispworks
-    (system:atomic-incf counter)
+    (system:atomic-incf *counter*)
     #+sbcl
-    (sb-ext:atomic-incf counter)
+    (sb-ext:atomic-incf *counter*)
     #-(or allegro lispworks sbcl)
-    (+ counter)))
+    (+ *counter*))
 
 (defvar *connection* nil)
 
