@@ -157,8 +157,10 @@
                                              "Connection"
                                              request)))
                              (handle-request connection request)
+                             #+allegro
                              (mp:with-timeout (300 (error "Handle timeout"))
-                               (handle-request connection request)))))
+                               (handle-request connection request))
+                             #-allegro (handle-request connection request))))
            (if (equal 101 (status-code (response-status response)))
                (go :end)
                (progn
