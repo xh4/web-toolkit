@@ -67,7 +67,14 @@
 
 (let ((counter 0))
   (defun next-connection-id ()
-    (excl:incf-atomic counter)))
+    #+allegro
+    (excl:incf-atomic counter)
+    #+lispworks
+    (system:atomic-incf counter)
+    #+sbcl
+    (sb-ext:atomic-incf counter)
+    #-(or allegro lispworks sbcl)
+    (+ counter)))
 
 (defvar *connection* nil)
 
