@@ -50,7 +50,8 @@
   (loop for char across (dom:data text)
      do (cond
           ((char= char #\&) (write-string "&amp;" stream))
-          ((char= char #\No-Break_Space) (write-string "&nbsp;" stream))
+          ((char= char #-lispworks #\No-Break_Space #+lispworks #\No-Break-Space)
+           (write-string "&nbsp;" stream))
           ((char= char #\<) (write-string "&lt;" stream))
           ((char= char #\>) (write-string "&gt;" stream))
           (t (write-char char stream)))))
