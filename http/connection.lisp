@@ -78,19 +78,6 @@
 
 (defvar *connection* nil)
 
-;; TODO: Use weak hash table
-(defvar *connection-table* (make-hash-table))
-
-(defvar *connection-table-lock* (bt:make-lock))
-
-(defun add-connection (connection)
-  (bt:with-lock-held (*connection-table-lock*)
-    (setf (gethash (connection-id connection) *connection-table*) connection)))
-
-(defun remove-connection (connection)
-  (bt:with-lock-held (*connection-table-lock*)
-    (remhash (connection-id connection) *connection-table*)))
-
 (defun make-and-process-connection (listener socket)
   (let ((connection (make-connection socket listener)))
     (bt:make-thread
@@ -123,7 +110,7 @@
                                          :local-address (format-ip-address local-address)
                                          :peer-port peer-port
                                          :peer-address (format-ip-address peer-address))))
-          (add-connection connection))))))
+          connection)))))
 
 #+lispworks
 (defun make-connection (socket &optional listener)
@@ -188,8 +175,7 @@
 #-lispworks
 (defun close-connection (connection)
   (with-slots (socket) connection
-    (usocket:socket-close socket))
-  (remove-connection connection))
+    (usocket:socket-close socket)))
 
 #+lispworks
 (defun close-connection (connection)
