@@ -15,24 +15,14 @@
                     when handler
                     do (return))
                  (if handler
-                     (cl-uri-templates:with-uri-environment
-                       (let ((*request-uri-variables*
-                              (loop with variables = nil
-                                 for (name value) on (cl-uri-templates:destructure-uri (uri-path request)
-                                                                                       (route-path route))
-                                 by #'cddr
-                                 do (progn
-                                      (push (uri::percent-decode value) variables)
-                                      (push name variables))
-                                 finally (return (plist-alist variables)))))
-                         (typecase handler
-                           (handler (invoke-handler handler request))
-                           (symbol (if (boundp handler)
-                                       (progn
-                                         (setf handler (symbol-value handler))
-                                         (check-type handler handler)
-                                         (invoke-handler handler request))
-                                       (error "Handler not bound"))))))
+                     (typecase handler
+                       (handler (invoke-handler handler request))
+                       (symbol (if (boundp handler)
+                                   (progn
+                                     (setf handler (symbol-value handler))
+                                     (check-type handler handler)
+                                     (invoke-handler handler request))
+                                   (error "Handler not bound"))))
                      (handle-missing request))))))
 
 (defclass route () ())
@@ -50,31 +40,37 @@
     :initarg :path
     :initform nil
     :accessor route-path)
+   (regex
+    :initarg :regex
+    :initform nil
+    :accessor route-regex)
+   (variable-names
+    :initarg :variable-names
+    :initform nil
+    :accessor route-variable-names)
    (handler
     :initarg :handler
     :initform nil)))
 
-;; FIXME: When deploy with fasl, variable names (symbols) are in package CL-USER
 (defun request-uri-variables (request)
   *request-uri-variables*)
 
 (defun request-uri-variable (request name)
-  (loop for (symbol . value) in (request-uri-variables request)
-     when (string-equal (symbol-name symbol) name)
+  (loop for (name0 . value) in (request-uri-variables request)
+     when (equal name name0)
      do (return value)))
 
 (defmethod route ((route simple-route) request)
-  (let ((request-uri (request-uri request)))
-    (when (and (equal (symbol-name (route-method route))
-                      (request-method request))
-               (or (equal (route-path route) (uri-path request-uri))
-                   (cl-uri-templates:with-uri-environment
-                     (let ((variables (plist-alist
-                                       (cl-uri-templates:destructure-uri (uri-path request)
-                                                                         (route-path route)))))
-                       (and variables
-                            (notany (lambda (v) (find #\/ (cdr v))) variables))))))
-      (slot-value route 'handler))))
+  (when (equal (symbol-name (route-method route))
+               (request-method request))
+    (multiple-value-bind (match variable-values)
+        (cl-ppcre:scan-to-strings (route-regex route) (uri-path request))
+      (when match
+        (loop for name in (route-variable-names route)
+           for value across variable-values
+           collect (cons name value) into variables
+           finally (setf *request-uri-variables* variables))
+        (slot-value route 'handler)))))
 
 (defmethod make-route ((type (eql :get)) form)
   (apply 'make-simple-route form))
@@ -86,10 +82,26 @@
   (apply 'make-simple-route form))
 
 (defun make-simple-route (method path handler)
-  (make-instance 'simple-route
-                 :method method
-                 :path path
-                 :handler (handler-form handler)))
+  (let* ((variable-names '())
+         (regex (concatenate
+                 'string
+                 (cl-ppcre:regex-replace-all
+                  "{[^}]*}"
+                  path
+                  (lambda (target-string start end match-start match-end reg-starts reg-ends)
+                    (declare (ignore start end reg-starts reg-ends))
+                    (let* ((match (subseq target-string match-start match-end))
+                           (variable-name (subseq match 1 (1- (length match)))))
+                      (push variable-name variable-names)
+                      "([^/]+)")))
+                 "$")))
+    (nreversef variable-names)
+    (make-instance 'simple-route
+                   :method method
+                   :path path
+                   :regex regex
+                   :variable-names variable-names
+                   :handler (handler-form handler))))
 
 (defmacro router (&rest route-forms)
   (let ((make-route-forms

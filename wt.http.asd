@@ -22,8 +22,7 @@
                (:feature (:not :lispworks) :cl+ssl)
                :chunga
                :cl-cont
-               :local-time
-               :cl-uri-templates)
+               :local-time)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "http"
                 :serial t
