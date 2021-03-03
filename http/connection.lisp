@@ -74,7 +74,7 @@
     #+sbcl
     (sb-ext:atomic-incf *counter*)
     #-(or allegro lispworks sbcl)
-    (+ *counter*))
+    (incf *counter*))
 
 (defvar *connection* nil)
 
