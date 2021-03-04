@@ -34,10 +34,10 @@
 (define-parser .unreserved ()
   (.satisfies 'unreserved-p))
 
-(define-parser .scheme ()
+(define-traced-parser .scheme ()
   (.seq/s (.alpha) (.maybe (.any/s (.or (.alpha) (.digit) (.eq #\+) (.eq #\-) (.eq #\.))))))
 
-(define-parser .userinfo ()
+(define-traced-parser .userinfo ()
   (.maybe (.any/s (.or (.unreserved) (.pct-encoded) (.sub-delims) (.eq #\:)))))
 
 (define-parser .10-99-digit ()
@@ -115,10 +115,10 @@
 (define-parser .reg-name ()
   (.maybe (.any/s (.or (.unreserved) (.pct-encoded) (.sub-delims)))))
 
-(define-parser .host ()
+(define-traced-parser .host ()
   (.or (.ip-literal) (.ipv4-address) (.reg-name)))
 
-(define-parser .port ()
+(define-traced-parser .port ()
   (.maybe (.any/s (.digit))))
 
 (define-parser .authority ()
@@ -139,27 +139,27 @@
   ;; non-zero-length segment wihout any colon ":"
   (.some/s (.or (.unreserved) (.pct-encoded) (.sub-delims) (.eq #\@))))
 
-(define-parser .path-abempty ()
+(define-traced-parser .path-abempty ()
   (.maybe (.any/s (.seq/s (.eq #\/) (.segment)))))
 
-(define-parser .path-absolute ()
+(define-traced-parser .path-absolute ()
   (.seq/s (.eq #\/) (.maybe (.seq/s (.segment-nz)
                                     (.maybe (.any/s (.seq/s (.eq #\/) (.segment))))))))
 
-(define-parser .path-noscheme ()
+(define-traced-parser .path-noscheme ()
   (.seq/s (.segment-nz-nc) (.maybe (.any/s (.seq/s (.eq #\/) (.segment))))))
 
-(define-parser .path-rootless ()
+(define-traced-parser .path-rootless ()
   (.seq/s (.segment-nz) (.maybe (.any/s (.seq/s (.eq #\/) (.segment))))))
 
 ;; path-empty = 0<pchar>
-(define-parser .path-empty ()
+(define-traced-parser .path-empty ()
   (.not (.pchar)))
 
-(define-parser .query ()
+(define-traced-parser .query ()
   (.maybe (.any/s (.or (.pchar) (.eq #\/) (.eq #\?)))))
 
-(define-parser .fragment ()
+(define-traced-parser .fragment ()
   (.maybe (.any/s (.or (.pchar) (.eq #\/) (.eq #\?)))))
 
 (define-parser .relative-part ()
@@ -191,39 +191,34 @@
 (define-parser .uri-reference ()
   (.or (.uri) (.relative-ref)))
 
-(defun parse-uri (uri-string)
-  (check-type uri-string string)
-  (setf uri-string (string-trim whitespace uri-string))
-  (with-parser-stack (stack :trace '(.scheme
-                                     .userinfo .host .port
-                                     .path-abempty .path-absolute
-                                     .path-rootless .path-noscheme
-                                     .path-empty
-                                     .query .fragment))
-    (let ((input (parse (.uri-reference) (maxpc::make-input uri-string))))
-      (unless (maxpc::input-empty-p input)
-        (error 'parse-uri-error :uri-string uri-string)))
-    (let ((uri (make-instance 'uri)))
-      (loop for parser in (reverse stack)
-         for value = (parser-value parser)
-         do
-           (typecase parser
-             (.scheme (setf (slot-value uri 'scheme)
-                            (when value (string-downcase value))))
-             (.userinfo (setf (slot-value uri 'userinfo) value))
-             (.host (when value
-                      (setf value (string-downcase value))
-                      (when (eq #\[ (char value 0))
-                        (setf value (subseq value 1 (1- (length value)))))
-                      (setf (slot-value uri 'host) value)))
-             (.port (setf (slot-value uri 'port)
-                          (parse-integer value)))
-             ((or .path-abempty
-                  .path-noscheme
-                  .path-rootless
-                  .path-absolute)
-              (when (plusp (length value))
-                (setf (slot-value uri 'path) value)))
-             (.query (setf (slot-value uri 'query) value))
-             (.fragment (setf (slot-value uri 'fragment) value)))
-         finally (return uri)))))
+(let ((uri-reference-parser (.uri-reference)))
+  (defun parse-uri (uri-string)
+    (check-type uri-string string)
+    (setf uri-string (string-trim whitespace uri-string))
+    (with-parser-stack (stack)
+      (let ((input (parse uri-reference-parser (maxpc::make-input uri-string))))
+        (unless (maxpc::input-empty-p input)
+          (error 'parse-uri-error :uri-string uri-string)))
+      (let ((uri (make-instance 'uri)))
+        (loop for (parser-name . value) in (reverse stack)
+           do
+             (case parser-name
+               (.scheme (setf (slot-value uri 'scheme)
+                              (when value (string-downcase value))))
+               (.userinfo (setf (slot-value uri 'userinfo) value))
+               (.host (when value
+                        (setf value (string-downcase value))
+                        (when (eq #\[ (char value 0))
+                          (setf value (subseq value 1 (1- (length value)))))
+                        (setf (slot-value uri 'host) value)))
+               (.port (setf (slot-value uri 'port)
+                            (parse-integer value)))
+               ((or .path-abempty
+                    .path-noscheme
+                    .path-rootless
+                    .path-absolute)
+                (when (plusp (length value))
+                  (setf (slot-value uri 'path) value)))
+               (.query (setf (slot-value uri 'query) value))
+               (.fragment (setf (slot-value uri 'fragment) value)))
+           finally (return uri))))))

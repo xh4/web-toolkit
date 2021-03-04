@@ -18,6 +18,7 @@
    :uri-error)
    (:import-from :utility
                  :define-parser
+                 :define-traced-parser
                  :parse
                  :parser-match-all-p
                  :with-parser-stack

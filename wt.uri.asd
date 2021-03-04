@@ -23,10 +23,7 @@
                              (:file "accessor")
                              (:file "merge")
                              (:file "query"))))
-  :in-order-to ((test-op (test-op :wt.uri/test)))
-  :perform (load-op :after (o c)
-             #+lispworks
-             (pushnew :uri hcl:*packages-for-warn-on-redefinition*)))
+  :in-order-to ((test-op (test-op :wt.uri/test))))
 
 (defsystem wt.uri/test
   :depends-on (:wt.uri

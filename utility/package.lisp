@@ -18,6 +18,7 @@
    ;; parser
    :parser
    :define-parser
+   :define-traced-parser
    :parse
    :*parser-stack*
    :with-parser-stack

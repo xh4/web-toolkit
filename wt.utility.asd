@@ -18,10 +18,7 @@
                              (:file "tree")
                              (:file "string")
                              (:file "parser"))))
-  :in-order-to ((test-op (test-op :wt.utility/test)))
-  :perform (load-op :after (o c)
-             #+lispworks
-             (pushnew :utility hcl:*packages-for-warn-on-redefinition*)))
+  :in-order-to ((test-op (test-op :wt.utility/test))))
 
 (defsystem wt.utility/test
   :depends-on (:wt.utility
