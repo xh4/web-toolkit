@@ -1,8 +1,7 @@
 (in-package :json)
 
 (defun get (object &rest accessors)
-  (let ((current-value object)
-        (found-p t))
+  (let ((current-value object))
     (labels ((fail (value accessor)
                (error "Can't get ~A in ~A" accessor value))
              (get1 (value accessor)
@@ -11,26 +10,24 @@
                  (array (let ((list (value value)))
                           (typecase accessor
                             (integer (if (> accessor (1- (length list)))
-                                         (setf found-p nil
-                                               current-value nil)
-                                         (setf found-p t
-                                               current-value (nth accessor list))))
+                                         (setf current-value nil)
+                                         (setf current-value (nth accessor list))))
                             (t (fail value accessor)))))
                  (object (typecase accessor
                            ((or string symbol)
                             (with-slots (properties) value
                               (if-let ((cons (assoc accessor properties :test 'equal)))
-                                (setf found-p t
-                                      current-value (cdr cons))
-                                (setf found-p nil
-                                      current-value nil))))
+                                (setf current-value (cdr cons))
+                                (setf current-value nil))))
                            (t (get1 value (format nil "~A" accessor)))))
                  (t (fail value accessor))))
              (get2 (value accessors)
                (if (cl:null accessors)
-                   (values
-                    (value current-value)
-                    found-p)
+                   (typecase current-value
+                     ((or json:array json:true json:false json:null)
+                      (values (value current-value) current-value))
+                     (cl:null nil)
+                     (t (values current-value t)))
                    (get2 (get1 value (car accessors)) (cdr accessors)))))
       (get2 object (flatten accessors)))))
 

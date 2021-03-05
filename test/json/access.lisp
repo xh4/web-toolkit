@@ -30,34 +30,34 @@
       (is-false present-p)))
 
   (it
-    (multiple-value-bind (value present-p)
+    (multiple-value-bind (value json-value)
         (json:get (object "aaa" (json:array 1 2 3)) "aaa")
       (is (equal '(1 2 3) value))
-      (is-true present-p)))
+      (is (typep json-value 'json:array))))
 
   (it
-    (multiple-value-bind (value present-p)
+    (multiple-value-bind (value json-value)
         (json:get (object "aaa" (json:array)) "aaa")
       (is (equal nil value))
-      (is-true present-p)))
+      (is (typep json-value 'json:array))))
 
   (it
-    (multiple-value-bind (value present-p)
+    (multiple-value-bind (value json-value)
         (json:get (object "aaa" json:true) "aaa")
       (is (equal t value))
-      (is-true present-p)))
+      (is (eq json:true json-value))))
 
   (it
-    (multiple-value-bind (value present-p)
+    (multiple-value-bind (value json-value)
         (json:get (object "aaa" json:false) "aaa")
       (is (equal nil value))
-      (is-true present-p)))
+      (is (eq json:false json-value))))
 
   (it
-    (multiple-value-bind (value present-p)
+    (multiple-value-bind (value json-value)
         (json:get (object "aaa" json:null) "aaa")
       (is (equal nil value))
-      (is-true present-p)))
+      (is (eq json:null json-value))))
 
   (it
     (multiple-value-bind (value present-p)
