@@ -7,22 +7,18 @@
     :accessor router-routes))
   (:instanize nil)
   (:function (lambda (router request)
-               (let (handler route *request-uri-variables*)
-                 (loop for r in (router-routes router)
-                    do (setf handler (route r request)
-                             route r)
-                    when handler
-                    do (return))
-                 (if handler
-                     (typecase handler
-                       (handler (invoke-handler handler request))
-                       (symbol (if (boundp handler)
-                                   (progn
-                                     (setf handler (symbol-value handler))
-                                     (check-type handler handler)
-                                     (invoke-handler handler request))
-                                   (error "Handler not bound"))))
-                     (handle-missing request))))))
+               (if-let ((result (match-route router request)))
+                 (let ((handler (getf result :handler))
+                       (*request-uri-variables* (getf result :uri-variables)))
+                   (typecase handler
+                     (handler (invoke-handler handler request))
+                     (symbol (if (boundp handler)
+                                 (progn
+                                   (setf handler (symbol-value handler))
+                                   (check-type handler handler)
+                                   (invoke-handler handler request))
+                                 (error "Handler not bound")))))
+                 (handle-missing request)))))
 
 (defclass route () ())
 
@@ -62,14 +58,25 @@
 (defmethod route ((route simple-route) request)
   (when (equal (symbol-name (route-method route))
                (request-method request))
-    (multiple-value-bind (match variable-values)
-        (cl-ppcre:scan-to-strings (route-regex route) (uri-path request))
-      (when match
-        (loop for name in (route-variable-names route)
-           for value across variable-values
-           collect (cons name value) into variables
-           finally (setf *request-uri-variables* variables))
+    (if-let ((variable-names (route-variable-names route)))
+      (multiple-value-bind (match variable-values)
+          (cl-ppcre:scan-to-strings (route-regex route) (uri-path request))
+        (when match
+          (loop for name in variable-names
+             for value across variable-values
+             for decoded = (uri::percent-decode value)
+             collect (cons name decoded) into variables
+             finally (setf *request-uri-variables* variables))
+          (slot-value route 'handler)))
+      (when (string-equal (route-path route) (uri-path (request-uri request)))
         (slot-value route 'handler)))))
+
+(defun match-route (router request)
+  (loop with *request-uri-variables* = '()
+     for route in (router-routes router)
+     for handler = (route route request)
+     when handler
+     do (return (list :handler handler :route route :uri-variables *request-uri-variables*))))
 
 (defmethod make-route ((type (eql :get)) form)
   (apply 'make-simple-route form))
