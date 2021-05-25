@@ -13,7 +13,8 @@
                :cl-cont
                :closer-mop
                :usocket
-               :cl-base64)
+               :cl-base64
+               :trivial-garbage)
   :defsystem-depends-on (:wt.vendor)
   :components ((:module "websocket"
                 :serial t

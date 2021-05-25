@@ -37,19 +37,10 @@
 (defmethod validate-superclass ((class session-class) (super-class standard-class))
   t)
 
+(defvar *session-connection-mapping* (make-weak-hash-table :weakness :key))
+
 (defclass session ()
-  ((connection
-    :initarg :connection
-    :initform nil
-    :reader session-connection)
-   (opening-uri
-    :initarg :opening-uri
-    :initform nil
-    :reader session-opening-uri)
-   (opening-header
-    :initarg :opening-header
-    :initform nil
-    :reader session-opening-header))
+  ()
   (:metaclass session-class))
 
 (defmethod shared-initialize :after ((class session-class) slot-names
@@ -89,33 +80,36 @@
     (setf (slot-value class 'message-handler) nil
           (slot-value class 'message-handler-lambda-list) nil)))
 
+(defmethod http:connection ((session session))
+  (gethash session *session-connection-mapping*))
+
 (defgeneric close-session  (session &optional reason)
   (:method ((session session) &optional reason)
-    (with-slots (connection) session
+    (let ((connection (http:connection session)))
       (close-connection connection :reason reason))))
 
 (defgeneric send-text (session text &key)
   (:method ((session session) text &key)
-    (with-slots (connection) session
+    (let ((connection (http:connection session)))
       (send-frame connection +opcode-text+
                   (string-to-octets text :encoding :utf-8)))))
 
 (defgeneric send-binary (session data &key)
   (:method ((session session) (pathname pathname) &key)
-    (with-slots (connection) session
+    (let ((connection (http:connection session)))
       (let ((data (alexandria::read-file-into-byte-vector pathname)))
         (send-frame connection +opcode-binary+ data))))
   (:method ((session session) data &key)
-    (with-slots (connection) session
+    (let ((connection (http:connection session)))
       (send-frame connection +opcode-binary+ data))))
 
 (defgeneric ping (session &optional data &key)
   (:method ((session session) &optional data &key)
-    (with-slots (connection) session
+    (let ((connection (http:connection session)))
       (send-frame connection +opcode-ping+))))
 
 (defun session-open-p (session)
-  (let ((connection (session-connection session)))
+  (let ((connection (http:connection session)))
     ;; FIXME: Connection 的 State 有问题
     (let ((output-stream (slot-value connection 'output-stream)))
       (open-stream-p output-stream))))

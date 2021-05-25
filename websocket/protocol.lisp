@@ -58,10 +58,8 @@
                     (t (error "Expect symbol"))))))))
 
 (defun make-session-instance (session-class connection request)
-  (make-instance session-class
-                 :connection connection
-                 :opening-uri (request-uri request)
-                 :opening-header (request-header request)))
+  (declare (ignore connection request))
+  (make-instance session-class))
 
 (defun handle-endpoint-request (endpoint request)
   (handler-bind ((error (lambda (c)
@@ -76,7 +74,7 @@
                                         :output-stream stream)))
         (let ((session-class (decide-endpoint-session-class endpoint request)))
           (let ((session (make-session-instance session-class connection request)))
-
+            (setf (gethash session *session-connection-mapping*) connection)
             (let ((result (invoke-open-handler endpoint session request)))
               (when (typep result 'session)
                 (setf session result)))

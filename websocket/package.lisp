@@ -9,10 +9,9 @@
    ;; endpoint
    :define-endpoint
    ;; session
+   :session
    :define-session
    :session-class
-   :session-opening-uri
-   :session-opening-header
    :session-open-p
    :send-text
    :send-binary
@@ -49,4 +48,6 @@
                 :validate-superclass)
   (:import-from :cl-cont
                 :call/cc
-                :lambda/cc))
+                :lambda/cc)
+  (:import-from :trivial-garbage
+                :make-weak-hash-table))
