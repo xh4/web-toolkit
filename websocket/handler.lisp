@@ -37,32 +37,38 @@
                     do (error "Malformed lambda-list for ~A: ~A" ',handler-name ,lambda-list/s))))))))))
 
 (define-handler-lambda-list-checker open-handler
-    :max-length 2)
+  :max-length 2
+  :allowed-keys '(:request))
 
-(defun invoke-open-handler/1 (class endpoint session)
+(defun invoke-open-handler/1 (class endpoint session request)
   (when-let ((open-handler (open-handler class))
              (open-handler-lambda-list (open-handler-lambda-list class)))
     (let ((lambda-list-groups (multiple-value-list
                                (parse-ordinary-lambda-list
                                 open-handler-lambda-list))))
-      (let ((required-parameters (first lambda-list-groups)))
-        (ignore-errors
-          (handler-bind ((error (lambda (e)
-                                  (invoke-error-handler endpoint session e))))
-            (cond
-              ((= 0 (length required-parameters)) (funcall open-handler))
-              ((= 1 (length required-parameters)) (funcall open-handler session))
-              ((= 2 (length required-parameters)) (funcall open-handler endpoint session)))))))))
+      (let ((required-parameters (first lambda-list-groups))
+            (keyword-parameters (fourth lambda-list-groups)))
+        (let ((arguments (cond
+                           ((= 0 (length required-parameters)) nil)
+                           ((= 1 (length required-parameters)) `(,session))
+                           ((= 2 (length required-parameters)) `(,endpoint
+                                                                 ,session)))))
+          (when (find :request keyword-parameters :key 'caar)
+            (appendf arguments (list :request request)))
+          (ignore-errors
+           (handler-bind ((error (lambda (e)
+                                   (invoke-error-handler endpoint session e))))
+             (apply open-handler arguments))))))))
 
-(defun invoke-open-handler (endpoint session)
+(defun invoke-open-handler (endpoint session request)
   (let ((endpoint-classes (reverse
                            (compute-endpoint-class-precedence-list endpoint))))
     (loop for endpoint-class in endpoint-classes
-       do (invoke-open-handler/1 endpoint-class endpoint session)))
+       do (invoke-open-handler/1 endpoint-class endpoint session request)))
   (let ((session-classes (reverse
                           (compute-session-class-precedence-list session))))
     (loop for session-class in session-classes
-       do (invoke-open-handler/1 session-class endpoint session))))
+       do (invoke-open-handler/1 session-class endpoint session request))))
 
 (define-handler-lambda-list-checker close-handler
     :max-length 2

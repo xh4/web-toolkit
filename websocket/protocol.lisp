@@ -77,7 +77,7 @@
         (let ((session-class (decide-endpoint-session-class endpoint request)))
           (let ((session (make-session-instance session-class connection request)))
 
-            (let ((result (invoke-open-handler endpoint session)))
+            (let ((result (invoke-open-handler endpoint session request)))
               (when (typep result 'session)
                 (setf session result)))
 
