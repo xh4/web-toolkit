@@ -22,6 +22,13 @@
     :initform nil
     :accessor request-body)))
 
+(defmethod print-object ((request request) stream)
+  (print-unreadable-object (request stream :type t :identity t)
+    (when-let ((method (request-method request)))
+      (format stream "~A" method))
+    (when-let ((uri (request-uri request)))
+      (format stream " ~A" uri))))
+
 (defgeneric request-method (request))
 
 (defgeneric (setf request-method) (value request))

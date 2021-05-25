@@ -14,6 +14,11 @@
     :initform nil
     :accessor response-body)))
 
+(defmethod print-object ((response response) stream)
+  (print-unreadable-object (response stream :type t :identity t)
+    (when-let ((status (response-status response)))
+      (format stream "~A" (status-code status)))))
+
 (defgeneric response-status (response))
 
 (defgeneric (setf response-status) (value response))
