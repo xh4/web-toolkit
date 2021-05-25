@@ -18,6 +18,7 @@
                :uuid
                :trivial-backtrace
                :trivial-gray-streams
+               :trivial-garbage
                (:feature (:not :lispworks) :usocket)
                (:feature (:not :lispworks) :cl+ssl)
                :chunga

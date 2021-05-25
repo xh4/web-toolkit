@@ -92,6 +92,8 @@
    :define-server
    :start-server
    :stop-server
+   ;; connection
+   :connection
    ;; client
    :with-request
    :get :with-get
@@ -137,4 +139,8 @@
                 :fundamental-binary-output-stream)
   (:import-from :cl-cont
                 :lambda/cc
-                :funcallable/cc))
+                :funcallable/cc)
+  (:import-from :trivial-garbage
+                :make-weak-hash-table
+                :make-weak-pointer
+                :weak-pointer-value))

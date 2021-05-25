@@ -37,18 +37,10 @@
     :initarg :peer-address
     :initform nil
     :accessor connection-peer-address)
-   (method
-    :initarg :method
+   (last-request
+    :initarg :last-request
     :initform nil
-    :accessor connection-method)
-   (uri
-    :initarg :uri
-    :initform nil
-    :accessor connection-uri)
-   (header
-    :initarg :header
-    :initform nil
-    :accessor connection-header)
+    :accessor connection-last-request)
    (open-time
     :initform (local-time:now)
     :accessor connection-open-time)))
@@ -60,10 +52,10 @@
             (connection-peer-port connection)
             (connection-local-address connection)
             (connection-local-port connection))
-    (when-let ((method (connection-method connection)))
-      (format stream "~A " method))
-    (when-let ((uri (connection-uri connection)))
-      (format stream "~S" uri))))
+    (when-let* ((pointer (connection-last-request connection))
+                (request (weak-pointer-value pointer)))
+      (format stream "~A" (request-method request))
+      (format stream " ~A" (request-uri request)))))
 
 (defvar *counter* 0)
 (defun next-connection-id ()
@@ -77,6 +69,8 @@
     (incf *counter*))
 
 (defvar *connection* nil)
+
+(defvar *request-connection-mapping* (make-weak-hash-table :weakness :key))
 
 (defun make-and-process-connection (listener socket)
   (let ((connection (make-connection socket listener)))
@@ -142,9 +136,8 @@
                              (declare (ignore error))
                              (go :end))))
        (when-let ((request (receive-request connection)))
-         (setf (connection-method connection) (request-method request)
-               (connection-uri connection) (request-uri request)
-               (connection-header connection) (request-header request))
+         (setf (gethash request *request-connection-mapping*) connection)
+         (setf (connection-last-request connection) (make-weak-pointer request))
          (let ((response (if (string-equal "Upgrade"
                                            (header-field-value
                                             (find-header-field
@@ -254,3 +247,7 @@
        (not (equal 101 (status-code (response-status response))))
        (open-stream-p (connection-input-stream connection))
        (open-stream-p (connection-output-stream connection))))
+
+(defgeneric connection (object)
+  (:method ((request request))
+    (gethash request *request-connection-mapping*)))
