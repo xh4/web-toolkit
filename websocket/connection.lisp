@@ -112,11 +112,12 @@
             ((eq +opcode-binary+ pending-opcode)
              ;; A binary message was received
              (let ((temp-file
-                    (fad:with-output-to-temporary-file
-                        (fstream :element-type '(unsigned-byte 8))
-                      (loop for frame in ordered-frames
-                         do (write-sequence (frame-payload-data frame)
-                                            fstream)))))
+                     (uiop:with-temporary-file (:stream stream :pathname pathname :keep t
+                                                :element-type '(unsigned-byte 8))
+                       (loop for frame in ordered-frames
+                             do (write-sequence (frame-payload-data frame)
+                                                stream))
+                       pathname)))
                (handler-case
                     (signal 'binary-received
                             :data temp-file)

@@ -172,7 +172,7 @@
 
 #+lispworks
 (defun close-connection (connection)
-  (with-slots (socket) connection
+  (with-slots (input-stream output-stream) connection
     (close input-stream)
     (close output-stream)))
 
