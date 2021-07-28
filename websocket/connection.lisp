@@ -17,7 +17,7 @@
     :initform (bt:make-lock))
    (state
     :initarg :state
-    :initform :disconnected) ;; :open, :awaiting-close, :closed
+    :initform :disconnected) ;; :open, :closing, :closed
    (pending-fragments
     :initform nil)
    (pending-opcode
@@ -55,7 +55,7 @@
                                            'vector)
                                    (when reason
                                      (string-to-octets reason)))))
-      (setf state :awaiting-close)
+      (setf state :closing)
       (signal 'close-received :code code :reason reason))))
 
 (defun drop-connection (connection)
@@ -197,7 +197,7 @@
 
 (defun handle-frame (connection frame)
   (with-slots (state) connection
-    (if (eq :awaiting-close state)
+    (if (eq :closing state)
         (handle-last-frame connection frame)
         (if (control-frame-p frame)
             (handle-control-frame connection frame)
