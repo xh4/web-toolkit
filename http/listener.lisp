@@ -44,8 +44,24 @@
 
 (defmacro listener (&key port address)
   `(make-instance 'listener
-                  ,@(when port `(:port ,port))
-                  ,@(when address `(:address ,address))))
+                  ,@(when port `(:port ,(typecase port
+                                          ((or integer string) port)
+                                          (symbol `(lambda () ,port)))))
+                  ,@(when address `(:address ,(typecase address
+                                                (string address)
+                                                (symbol `(lambda () ,address)))))))
+
+(defmethod listener-port :around (listener)
+  (let ((value (call-next-method)))
+    (if (functionp value)
+        (funcall value)
+        value)))
+
+(defmethod listener-address :around (listener)
+  (let ((value (call-next-method)))
+    (if (functionp value)
+        (funcall value)
+        value)))
 
 (defgeneric start-listener (listener &key))
 
